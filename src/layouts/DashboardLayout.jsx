@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { NAVIGATION } from '../config/navigation'
 
@@ -7,6 +7,21 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   const navigate = useNavigate()
   const config = NAVIGATION[role]
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    const previousTouchAction = document.body.style.touchAction
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.touchAction = previousTouchAction
+    }
+  }, [sidebarOpen])
 
   if (fullWidth) {
     return <div className="full-width-page min-h-screen w-full bg-slate-50">{children}</div>
@@ -26,7 +41,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 z-50 flex h-screen w-[270px] shrink-0 flex-col
+        className={`fixed lg:sticky top-0 z-50 flex h-[100vh] max-h-[100vh] w-[270px] shrink-0 flex-col overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]
           bg-gradient-to-b from-navy-900 to-navy-950 text-white
           border-r border-white/5 shadow-xl
           transition-transform duration-300 ease-out
