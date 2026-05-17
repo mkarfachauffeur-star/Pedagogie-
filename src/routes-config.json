@@ -1,0 +1,158 @@
+[
+  {
+    "route": "/manager/dashboard",
+    "component": "GérantDashboardPage",
+    "role": "manager",
+    "css": "dashboard.DllOWOC4.css"
+  },
+  {
+    "route": "/manager/contracts",
+    "component": "GérantContractsPage",
+    "role": "manager",
+    "css": "contracts.CGWys5c7.css"
+  },
+  {
+    "route": "/manager/teachers",
+    "component": "GérantEnseignantsPage",
+    "role": "manager",
+    "css": "teachers.DZpEzi4r.css"
+  },
+  {
+    "route": "/manager/students",
+    "component": "GérantÉlèvesPage",
+    "role": "manager",
+    "css": "students.DLWMqKg9.css"
+  },
+  {
+    "route": "/student/exams",
+    "component": "ÉlèveExamsPage",
+    "role": "student",
+    "css": "exams.CC7BcZKs.css"
+  },
+  {
+    "route": "/student/accompanied-driving",
+    "component": "ÉlèveAccompanied-drivingPage",
+    "role": "student",
+    "css": "accompanied-driving.DjiJ6qag.css"
+  },
+  {
+    "route": "/student/progress",
+    "component": "ÉlèveProgressPage",
+    "role": "student",
+    "css": "progress.LCtKWE8F.css"
+  },
+  {
+    "route": "/student/lessons",
+    "component": "ÉlèveLessonsPage",
+    "role": "student",
+    "css": "lessons.CH_2-tfl.css"
+  },
+  {
+    "route": "/student/messages",
+    "component": "ÉlèveMessagesPage",
+    "role": "student",
+    "css": "messages.BlGtR93D.css"
+  },
+  {
+    "route": "/student/dashboard",
+    "component": "ÉlèveDashboardPage",
+    "role": "student",
+    "css": "dashboard.OLRzDybu.css"
+  },
+  {
+    "route": "/teacher/dashboard",
+    "component": "EnseignantDashboardPage",
+    "role": "teacher",
+    "css": "dashboard.BQ9XEF6I.css"
+  },
+  {
+    "route": "/teacher/planning",
+    "component": "EnseignantPlanningPage",
+    "role": "teacher",
+    "css": "planning.ZXtBP4ay.css"
+  },
+  {
+    "route": "/teacher/students",
+    "component": "EnseignantÉlèvesPage",
+    "role": "teacher",
+    "css": "students.CnvzKJbh.css"
+  },
+  {
+    "route": "/teacher/lessons",
+    "component": "EnseignantLessonsPage",
+    "role": "teacher",
+    "css": "lessons.BDLCPTdK.css"
+  },
+  {
+    "route": "/teacher/resources",
+    "component": "EnseignantResourcesPage",
+    "role": "teacher",
+    "css": "resources.DXQi68dr.css"
+  },
+  {
+    "route": "/teacher/profile",
+    "component": "EnseignantProfilePage",
+    "role": "teacher",
+    "css": "profile.By8SarIW.css"
+  },
+  {
+    "route": "/secretary/dashboard",
+    "component": "SecrétariatDashboardPage",
+    "role": "secretary",
+    "css": "dashboard.Df5T8lhQ.css"
+  },
+  {
+    "route": "/secretary/inscriptions",
+    "component": "SecrétariatInscriptionsPage",
+    "role": "secretary",
+    "css": "inscriptions.CFIMFWEq.css"
+  },
+  {
+    "route": "/secretary/planning",
+    "component": "SecrétariatPlanningPage",
+    "role": "secretary",
+    "css": "planning.J-Iiqnub.css"
+  },
+  {
+    "route": "/secretary/paiements",
+    "component": "SecrétariatPaiementsPage",
+    "role": "secretary",
+    "css": "paiements.BVW0ILKU.css"
+  },
+  {
+    "route": "/secretary/documents",
+    "component": "SecrétariatDocumentsPage",
+    "role": "secretary",
+    "css": "documents.BiSojdmq.css"
+  },
+  {
+    "route": "/secretary/messages",
+    "component": "SecrétariatMessagesPage",
+    "role": "secretary",
+    "css": "messages.C-A82d7f.css"
+  },
+  {
+    "route": "/manager/payments",
+    "component": "GérantPaymentsPage",
+    "role": "manager",
+    "css": "payments.IJeoSXEd.css"
+  },
+  {
+    "route": "/manager/settings",
+    "component": "GérantSettingsPage",
+    "role": "manager",
+    "css": "settings.D3BUn31Y.css"
+  },
+  {
+    "route": "/manager/planning",
+    "component": "GérantPlanningPage",
+    "role": "manager",
+    "css": "planning.lY6eLNi5.css"
+  },
+  {
+    "route": "/manager/statistics",
+    "component": "GérantStatisticsPage",
+    "role": "manager",
+    "css": "statistics.DR_X_9cc.css"
+  }
+]

@@ -1,0 +1,241 @@
+/* Fixes: black circles, broken legacy styles, SaaS polish */
+
+.archive-page-content {
+  width: 100%;
+  max-width: 1400px;
+}
+
+.archive-page-content ul,
+.archive-page-content ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Kill oversized circular artifacts */
+.archive-page-content [class*='segment']:not(.bar-segment):not(.bar-fill),
+.archive-page-content .pie-segment,
+.archive-page-content .segment-1,
+.archive-page-content .segment-2,
+.archive-page-content .segment-3,
+.archive-page-content .segment-4 {
+  display: none !important;
+}
+
+.archive-page-content .pie-chart {
+  width: 200px !important;
+  height: 200px !important;
+  max-width: 100%;
+  border-radius: 50% !important;
+  margin: 0 auto;
+  box-shadow: var(--pd-shadow-md);
+}
+
+.archive-page-content .legend-dot,
+.archive-page-content [class*='-dot'] {
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  max-width: 12px !important;
+  max-height: 12px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.archive-page-content .profile-arrow {
+  border-radius: var(--pd-radius-sm) !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Avatars in content — never huge circles */
+.archive-page-content .avatar,
+.archive-page-content .student-avatar,
+.archive-page-content .teacher-avatar,
+.archive-page-content .contact-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  border-radius: 10px !important;
+  font-size: 0.875rem !important;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.archive-page-content .kpi-icon {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: var(--pd-radius-md) !important;
+  font-size: 1.5rem !important;
+  flex-shrink: 0;
+}
+
+/* Cards & surfaces */
+.archive-page-content .card,
+.archive-page-content .kpi-card,
+.archive-page-content .stat-card {
+  background: var(--pd-surface) !important;
+  border: 1px solid var(--pd-border) !important;
+  border-radius: var(--pd-radius-lg) !important;
+  box-shadow: var(--pd-shadow-sm) !important;
+}
+
+.archive-page-content .page-header h1 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: var(--pd-text) !important;
+  letter-spacing: -0.02em;
+}
+
+.archive-page-content .subtitle {
+  color: var(--pd-text-muted) !important;
+  font-size: 0.9rem !important;
+}
+
+/* Buttons */
+.archive-page-content .btn-primary {
+  background: linear-gradient(135deg, var(--pd-teal-400), var(--pd-teal-500)) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--pd-radius-sm) !important;
+  padding: 0.6rem 1.25rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.archive-page-content .btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.archive-page-content .btn-secondary {
+  background: var(--pd-surface) !important;
+  color: var(--pd-slate-700) !important;
+  border: 1px solid var(--pd-border) !important;
+  border-radius: var(--pd-radius-sm) !important;
+  padding: 0.6rem 1.25rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+.archive-page-content .btn-secondary:hover {
+  background: var(--pd-slate-50) !important;
+}
+
+/* Tables */
+.archive-page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.archive-page-content th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: var(--pd-text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--pd-border);
+  background: var(--pd-slate-50);
+}
+
+.archive-page-content td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--pd-slate-100);
+  color: var(--pd-text);
+}
+
+.archive-page-content tr:hover td {
+  background: var(--pd-slate-50);
+}
+
+/* Status badges */
+.archive-page-content .status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.archive-page-content .status-badge.active,
+.archive-page-content .status-badge.actif,
+.archive-page-content .status-badge.validé,
+.archive-page-content .status-badge.payé {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.archive-page-content .status-badge.pending,
+.archive-page-content .status-badge.en-attente,
+.archive-page-content .status-badge.retard {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Grids responsive */
+.archive-page-content .kpi-grid,
+.archive-page-content .stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 1rem !important;
+}
+
+.archive-page-content .dashboard-grid {
+  display: grid !important;
+  grid-template-columns: repeat(12, 1fr) !important;
+  gap: 1rem !important;
+}
+
+.archive-page-content .dashboard-grid > [class*='card'] {
+  grid-column: span 6;
+}
+
+@media (max-width: 1024px) {
+  .archive-page-content .dashboard-grid > [class*='card'] {
+    grid-column: span 12 !important;
+  }
+}
+
+/* Messaging full-width */
+.full-width-page .messaging-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--pd-bg);
+}
+
+.full-width-page .conversations-sidebar {
+  width: 320px;
+  max-width: 100%;
+  background: var(--pd-navy-900);
+  color: #fff;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.full-width-page .chat-area {
+  flex: 1;
+  background: var(--pd-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .full-width-page .messaging-app {
+    flex-direction: column;
+  }
+
+  .full-width-page .conversations-sidebar {
+    width: 100%;
+    max-height: 40vh;
+  }
+}

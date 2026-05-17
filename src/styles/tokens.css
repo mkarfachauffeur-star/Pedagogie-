@@ -1,0 +1,41 @@
+:root {
+  /* Premium auto-ecole palette */
+  --pd-navy-950: #0a1628;
+  --pd-navy-900: #0f2744;
+  --pd-navy-800: #163a5f;
+  --pd-teal-500: #0d9488;
+  --pd-teal-400: #14b8a6;
+  --pd-amber-500: #f59e0b;
+  --pd-amber-400: #fbbf24;
+  --pd-slate-50: #f8fafc;
+  --pd-slate-100: #f1f5f9;
+  --pd-slate-200: #e2e8f0;
+  --pd-slate-400: #94a3b8;
+  --pd-slate-500: #64748b;
+  --pd-slate-700: #334155;
+  --pd-slate-900: #0f172a;
+
+  --pd-primary: #0d9488;
+  --pd-primary-hover: #0f766e;
+  --pd-primary-soft: rgba(13, 148, 136, 0.12);
+  --pd-accent: #f59e0b;
+  --pd-accent-soft: rgba(245, 158, 11, 0.12);
+
+  --pd-bg: #f4f7fb;
+  --pd-surface: #ffffff;
+  --pd-border: #e2e8f0;
+  --pd-text: #0f172a;
+  --pd-text-muted: #64748b;
+
+  --pd-radius-sm: 8px;
+  --pd-radius-md: 12px;
+  --pd-radius-lg: 16px;
+  --pd-radius-xl: 20px;
+
+  --pd-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --pd-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --pd-shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12);
+
+  --pd-sidebar-width: 260px;
+  --pd-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}

@@ -1,0 +1,240 @@
+/* Dashboard shell — SaaS layout */
+.pd-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--pd-bg);
+}
+
+.pd-sidebar {
+  width: var(--pd-sidebar-width);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--pd-navy-900) 0%, var(--pd-navy-950) 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pd-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 1.25rem 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pd-sidebar-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--pd-teal-400), var(--pd-teal-500));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+}
+
+.pd-sidebar-brand-text {
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.pd-sidebar-brand-text span {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pd-user-card {
+  margin: 0 1rem 1rem;
+  padding: 0.875rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--pd-radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pd-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--pd-teal-400), var(--pd-navy-800));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.pd-user-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.pd-user-role {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.pd-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0.75rem;
+  overflow-y: auto;
+}
+
+.pd-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.875rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  border-radius: var(--pd-radius-sm);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pd-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.pd-nav-link.active {
+  background: var(--pd-primary-soft);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--pd-teal-400);
+}
+
+.pd-nav-icon {
+  font-size: 1.1rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pd-sidebar-footer {
+  padding: 1rem 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+}
+
+.pd-btn-ghost {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--pd-radius-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pd-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.pd-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--pd-surface);
+  border-bottom: 1px solid var(--pd-border);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.pd-menu-btn {
+  background: var(--pd-slate-100);
+  border: none;
+  border-radius: var(--pd-radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.pd-content {
+  flex: 1;
+  padding: 1.5rem 1.75rem 2.5rem;
+  overflow-x: hidden;
+}
+
+.pd-full-page {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Mobile */
+@media (max-width: 1024px) {
+  .pd-sidebar {
+    position: fixed;
+    left: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--pd-shadow-lg);
+  }
+
+  .pd-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .pd-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 22, 40, 0.5);
+    z-index: 99;
+  }
+
+  .pd-sidebar-overlay.visible {
+    display: block;
+  }
+
+  .pd-topbar {
+    display: flex;
+  }
+
+  .pd-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pd-content {
+    padding: 0.75rem;
+  }
+}
