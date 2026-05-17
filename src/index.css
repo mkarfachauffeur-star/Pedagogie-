@@ -29,6 +29,28 @@
   }
 }
 
+@layer components {
+  .app-sidebar {
+    transition:
+      transform 300ms ease,
+      opacity 300ms ease,
+      width 300ms ease,
+      min-width 300ms ease,
+      flex-basis 300ms ease,
+      border-color 300ms ease;
+  }
+
+  body.learning-modal-open .app-sidebar {
+    width: 0 !important;
+    min-width: 0 !important;
+    flex-basis: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-100%) !important;
+    border-right-width: 0 !important;
+  }
+}
+
 /* ─── Archive HTML content (preserved functionality) ─── */
 @layer components {
   .archive-page-content {

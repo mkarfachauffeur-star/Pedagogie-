@@ -49,10 +49,10 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
       )}
 
       <aside
-        className={`pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] w-[270px] shrink-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen
+        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] w-[270px] shrink-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen
           bg-gradient-to-b from-navy-900 to-navy-950 text-white
           border-r border-white/5 shadow-xl
-          transition-transform duration-300 ease-out
+          transition-all duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >

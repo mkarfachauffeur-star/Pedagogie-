@@ -628,8 +628,10 @@ export default function StudentLessonsPage() {
     document.body.style.position = 'fixed'
     document.body.style.top = `-${scrollY}px`
     document.body.style.width = '100%'
+    document.body.classList.add('learning-modal-open')
 
     return () => {
+      document.body.classList.remove('learning-modal-open')
       document.body.style.overflow = previousOverflow
       document.body.style.position = previousPosition
       document.body.style.top = previousTop
@@ -839,7 +841,7 @@ export default function StudentLessonsPage() {
 
       {openedModule && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
-          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
+          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
             <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                 <div>
