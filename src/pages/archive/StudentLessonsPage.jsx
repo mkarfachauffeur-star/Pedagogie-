@@ -102,16 +102,16 @@ const subcompetenciesByCompetency = {
       description:
         'Adapter le rapport de vitesse, gérer l’embrayage et éviter les à-coups.',
       accent: 'teal',
-      video: '11 min',
+      video: 'Disponible',
       qcm: 'À faire',
     },
     {
       id: 'SC1.7',
-      title: 'Diriger en marche avant et arrière',
+      title: 'Diriger le véhicule en marche avant et en marche arrière',
       description:
         'Conserver une trajectoire précise en marche avant, marche arrière et manoeuvres simples.',
       accent: 'cyan',
-      video: '13 min',
+      video: 'Disponible',
       qcm: 'À faire',
     },
     {
@@ -120,7 +120,7 @@ const subcompetenciesByCompetency = {
       description:
         'Observer avant d’agir, contrôler les angles morts et avertir les autres usagers au bon moment.',
       accent: 'emerald',
-      video: '10 min',
+      video: 'Disponible',
       qcm: 'À faire',
     },
   ],
@@ -312,6 +312,25 @@ const subcompetenciesByCompetency = {
       qcm: 'À faire',
     },
   ],
+}
+
+function createRandomizedQuestion(question, correctChoice, wrongChoices, explanation) {
+  const choices = [correctChoice, ...wrongChoices].map((choice, index) => ({
+    choice,
+    correct: index === 0,
+  }))
+
+  for (let index = choices.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[choices[index], choices[swapIndex]] = [choices[swapIndex], choices[index]]
+  }
+
+  return {
+    question,
+    choices: choices.map((item) => item.choice),
+    answer: choices.findIndex((item) => item.correct),
+    explanation,
+  }
 }
 
 const drivingPositionModule = {
@@ -831,6 +850,376 @@ const accelerationBrakingQuestions = [
   },
 ]
 
+const gearboxModule = {
+  id: 'SC1.6',
+  storageKey: 'pedagogia:lesson:gearbox',
+  title: 'Utiliser la boîte de vitesses',
+  intro:
+    'La boîte de vitesses permet d’adapter la puissance du moteur, la vitesse du véhicule et la situation de circulation. Elle fonctionne avec le moteur, le volant moteur et l’embrayage. Le volant moteur transmet la rotation du moteur à l’embrayage, puis l’embrayage transmet cette puissance à la boîte de vitesses afin d’entraîner les roues.',
+  summary: [
+    {
+      title: 'Fonctionnement de la boîte de vitesses',
+      description:
+        'La boîte de vitesses adapte la puissance du moteur, la vitesse du véhicule et la situation de circulation. Elle fonctionne avec le moteur, le volant moteur et l’embrayage pour transmettre la puissance aux roues.',
+    },
+    {
+      title: 'Transmission de la puissance',
+      description:
+        'Le volant moteur transmet la rotation du moteur à l’embrayage. L’embrayage transmet ensuite cette puissance à la boîte de vitesses afin d’entraîner les roues.',
+    },
+    {
+      title: 'Utiliser les vitesses avec souplesse',
+      description:
+        'Le conducteur doit utiliser les vitesses avec souplesse afin d’éviter les à-coups, d’éviter le calage et de garder le contrôle du véhicule.',
+    },
+    {
+      title: 'Rôle des vitesses',
+      description:
+        'Plus la vitesse est petite, plus elle possède de puissance moteur. La 1ère vitesse est la plus puissante. Les vitesses élevées possèdent moins de puissance moteur mais permettent plus de vitesse.',
+    },
+    {
+      title: 'Utiliser les petites vitesses',
+      description:
+        'Les petites vitesses sont principalement utilisées pour démarrer, en montée, à faible allure et dans les situations difficiles.',
+    },
+    {
+      title: 'Utiliser les grandes vitesses',
+      description:
+        'Les grandes vitesses sont utilisées lorsque le véhicule roule plus rapidement, pour stabiliser l’allure et pour réduire le régime moteur.',
+    },
+    {
+      title: 'Utilisation de l’embrayage',
+      description:
+        'L’embrayage permet de démarrer, de s’arrêter et de changer les vitesses. Pour changer une vitesse, il faut embrayer à fond, changer le rapport, relâcher progressivement l’embrayage puis accélérer progressivement.',
+    },
+    {
+      title: 'Gestes à éviter',
+      description:
+        'Le conducteur ne doit pas garder le pied sur l’embrayage, regarder le levier de vitesse ou garder la main sur le levier de vitesse.',
+    },
+    {
+      title: 'Monter les rapports',
+      description:
+        'Monter les vitesses permet d’augmenter progressivement l’allure, de réduire le bruit moteur et d’éviter le sur-régime. Un moteur qui hurle indique souvent un sur-régime.',
+    },
+    {
+      title: 'Descendre les vitesses',
+      description:
+        'Le rétrogradage permet d’utiliser le frein moteur, de ralentir le véhicule et de récupérer de la puissance. Un moteur qui manque de puissance indique souvent un sous-régime.',
+    },
+  ],
+  safetyAdvice: [
+    'Regarder loin devant.',
+    'Adapter les vitesses à la situation.',
+    'Utiliser les pédales avec souplesse.',
+    'Garder les deux mains sur le volant autant que possible.',
+    'Anticiper les ralentissements.',
+  ],
+}
+
+const gearboxQuestions = [
+  createRandomizedQuestion(
+    'Quel est le rôle principal de la boîte de vitesses ?',
+    'Adapter la puissance du moteur à la vitesse et à la situation de circulation',
+    ['Augmenter automatiquement l’adhérence du véhicule', 'Remplacer le système de freinage', 'Stabiliser automatiquement la direction'],
+    'La boîte de vitesses sert à adapter la puissance du moteur selon la vitesse du véhicule et la situation de circulation.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi la 1ère vitesse possède-t-elle davantage de puissance moteur ?',
+    'Parce qu’elle possède le rapport le plus court et transmet plus de force aux roues',
+    ['Parce qu’elle permet d’atteindre la vitesse maximale du véhicule', 'Parce qu’elle réduit totalement la consommation', 'Parce qu’elle utilise automatiquement le frein moteur'],
+    'La 1ère vitesse possède un rapport très court : elle donne plus de force aux roues pour démarrer ou avancer à faible allure.',
+  ),
+  createRandomizedQuestion(
+    'Dans quelle situation la 1ère vitesse est-elle principalement utilisée ?',
+    'Pour démarrer et circuler à faible allure',
+    ['Pour stabiliser l’allure sur voie rapide', 'Pour rouler à vitesse élevée', 'Pour réduire le bruit du moteur'],
+    'La 1ère vitesse est surtout utilisée au démarrage et à faible allure, car elle fournit beaucoup de puissance.',
+  ),
+  createRandomizedQuestion(
+    'Quel est le bon ordre pour monter une vitesse ?',
+    'Embrayer → changer le rapport → relâcher progressivement l’embrayage → accélérer',
+    ['Relâcher l’embrayage → changer la vitesse → accélérer', 'Accélérer fortement → changer la vitesse sans embrayer', 'Freiner → accélérer → changer le rapport'],
+    'Pour monter une vitesse, il faut embrayer à fond, changer le rapport, relâcher progressivement l’embrayage puis accélérer progressivement.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi faut-il relâcher progressivement l’embrayage après un changement de vitesse ?',
+    'Pour éviter les à-coups et garder le contrôle du véhicule',
+    ['Pour augmenter immédiatement la vitesse du moteur', 'Pour utiliser automatiquement le frein moteur', 'Pour réduire la rotation du volant moteur'],
+    'Un relâchement progressif évite les à-coups, limite le risque de calage et aide à garder le contrôle du véhicule.',
+  ),
+  createRandomizedQuestion(
+    'Un moteur qui “hurle” indique généralement :',
+    'Un sur-régime moteur',
+    ['Un régime moteur adapté à la situation', 'Un sous-régime moteur', 'Une perte d’adhérence des pneus'],
+    'Un moteur qui hurle indique souvent un sur-régime : le rapport engagé est trop petit par rapport à l’allure.',
+  ),
+  createRandomizedQuestion(
+    'Le rétrogradage permet principalement :',
+    'D’utiliser le frein moteur et récupérer de la puissance',
+    ['D’augmenter rapidement la vitesse du véhicule', 'De supprimer l’effet de l’embrayage', 'De réduire automatiquement la consommation'],
+    'Le rétrogradage permet d’utiliser le frein moteur, de ralentir le véhicule et de récupérer de la puissance.',
+  ),
+  createRandomizedQuestion(
+    'Le sous-régime correspond généralement à :',
+    'Un moteur qui manque de puissance par rapport à la vitesse engagée',
+    ['Un moteur qui tourne trop vite', 'Une vitesse moteur adaptée', 'Un freinage trop puissant'],
+    'Le sous-régime apparaît lorsque le moteur manque de puissance par rapport au rapport engagé et à l’allure du véhicule.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi le conducteur ne doit-il pas garder le pied sur l’embrayage ?',
+    'Cela peut provoquer une usure prématurée et perturber le contrôle de la vitesse',
+    ['Cela bloque automatiquement le passage des vitesses', 'Cela empêche le moteur de fonctionner', 'Cela augmente uniquement le bruit moteur'],
+    'Garder le pied sur l’embrayage peut user prématurément le mécanisme et perturber le contrôle de la vitesse.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi le conducteur doit-il éviter de regarder le levier de vitesse ?',
+    'Pour garder son attention sur la route et l’environnement',
+    ['Pour accélérer plus rapidement', 'Pour éviter le sous-régime moteur', 'Pour réduire la consommation de carburant'],
+    'Le conducteur doit garder son attention sur la route, les usagers et l’environnement pour rester en sécurité.',
+  ),
+]
+
+const forwardReverseModule = {
+  id: 'SC1.7',
+  storageKey: 'pedagogia:lesson:forward-reverse',
+  title: 'Diriger le véhicule en marche avant et en marche arrière',
+  intro:
+    'Le conducteur doit être capable de diriger le véhicule avec précision tout en gardant le contrôle de la trajectoire. La direction dépend du regard, de la vitesse et des mouvements du volant. Le véhicule suit généralement le regard du conducteur.',
+  summary: [
+    {
+      title: 'La marche avant',
+      description:
+        'En marche avant, les roues directrices se situent à l’avant du véhicule. Le conducteur doit regarder loin devant, maintenir une trajectoire stable et effectuer des mouvements souples sur le volant.',
+    },
+    {
+      title: 'Le rôle du regard en marche avant',
+      description:
+        'Le regard permet d’anticiper, de corriger la trajectoire et d’éviter les écarts. La marche avant est généralement plus facile à maîtriser car les roues directrices se trouvent du côté où le conducteur regarde.',
+    },
+    {
+      title: 'Adapter les mouvements du volant',
+      description:
+        'Plus la vitesse augmente, moins il faut tourner le volant et plus les mouvements doivent être précis. Les gestes doivent rester souples pour conserver une trajectoire stable.',
+    },
+    {
+      title: 'La marche arrière',
+      description:
+        'En marche arrière, les roues arrière ne sont pas directrices. Le véhicule réagit donc plus rapidement et la trajectoire est plus difficile à contrôler.',
+    },
+    {
+      title: 'Contrôler en marche arrière',
+      description:
+        'Le conducteur doit rouler lentement, contrôler autour du véhicule et regarder principalement vers l’arrière. Un petit mouvement du volant peut provoquer un changement important de trajectoire.',
+    },
+    {
+      title: 'Gestes précis en marche arrière',
+      description:
+        'Le conducteur doit utiliser une faible allure, effectuer des gestes lents et précis, puis contrôler régulièrement les rétroviseurs.',
+    },
+    {
+      title: 'Le regard et la trajectoire',
+      description:
+        'Le regard est essentiel pour guider le véhicule, maintenir la trajectoire et anticiper les obstacles. Regarder trop près du véhicule augmente les erreurs de trajectoire.',
+    },
+    {
+      title: 'Contrôles indispensables',
+      description:
+        'Le conducteur doit regarder loin, contrôler les rétroviseurs et vérifier les angles morts si nécessaire afin de garder une trajectoire sûre.',
+    },
+  ],
+  safetyAdvice: [
+    'Garder une allure adaptée.',
+    'Tourner le volant progressivement.',
+    'Anticiper les obstacles.',
+    'Contrôler l’environnement autour du véhicule.',
+    'Garder le contrôle de la trajectoire.',
+  ],
+}
+
+const forwardReverseQuestions = [
+  createRandomizedQuestion(
+    'Pourquoi la marche arrière demande-t-elle généralement plus de précision que la marche avant ?',
+    'Parce que les roues directrices restent à l’avant du véhicule',
+    ['Parce que les roues arrière deviennent directrices', 'Parce que le volant tourne moins en marche arrière', 'Parce que le frein moteur ne fonctionne plus'],
+    'En marche arrière, les roues directrices restent à l’avant : le véhicule réagit différemment et la trajectoire devient plus délicate à contrôler.',
+  ),
+  createRandomizedQuestion(
+    'En marche avant, les roues directrices permettent principalement :',
+    'De guider immédiatement la trajectoire du véhicule',
+    ['De stabiliser le moteur', 'D’augmenter automatiquement l’adhérence', 'De réduire les distances de freinage'],
+    'En marche avant, les roues directrices situées à l’avant orientent directement la trajectoire du véhicule.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi un petit mouvement du volant peut-il avoir un effet important en marche arrière ?',
+    'Parce que le véhicule pivote autour des roues arrière',
+    ['Parce que le moteur transmet plus de puissance', 'Parce que les roues arrière deviennent motrices', 'Parce que le rayon de braquage augmente automatiquement'],
+    'En marche arrière, le véhicule réagit plus vite aux corrections et pivote autour de son arrière, ce qui amplifie les petits mouvements.',
+  ),
+  createRandomizedQuestion(
+    'Lorsque la vitesse augmente, les mouvements du volant doivent devenir :',
+    'Plus précis et plus limités',
+    ['Plus rapides et plus amples', 'Plus brusques pour garder la trajectoire', 'Identiques quelle que soit l’allure'],
+    'Plus l’allure augmente, plus les mouvements du volant doivent être limités, précis et progressifs.',
+  ),
+  createRandomizedQuestion(
+    'Quel regard permet généralement de mieux stabiliser une trajectoire ?',
+    'Un regard porté loin dans la direction souhaitée',
+    ['Un regard proche du capot', 'Un regard alterné entre le volant et le levier de vitesse', 'Un regard fixé sur les rétroviseurs intérieurs uniquement'],
+    'Un regard porté loin aide à anticiper et à stabiliser la trajectoire.',
+  ),
+  createRandomizedQuestion(
+    'En marche arrière, le conducteur doit principalement :',
+    'Contrôler l’environnement et rouler à faible allure',
+    ['Se fier uniquement aux radars de recul', 'Accélérer légèrement pour stabiliser la direction', 'Garder le volant immobile le plus longtemps possible'],
+    'En marche arrière, la priorité est de contrôler autour du véhicule et de rouler lentement pour pouvoir corriger.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi regarder trop près du véhicule peut-il provoquer des erreurs de trajectoire ?',
+    'Parce que le conducteur anticipe moins les déplacements du véhicule',
+    ['Parce que les roues deviennent moins réactives', 'Parce que le volant devient plus sensible', 'Parce que le frein moteur agit moins efficacement'],
+    'Regarder trop près limite l’anticipation et rend les corrections de trajectoire plus tardives.',
+  ),
+  createRandomizedQuestion(
+    'En marche arrière, une allure faible permet principalement :',
+    'De corriger plus facilement la trajectoire',
+    ['D’éviter d’utiliser l’embrayage', 'D’augmenter la puissance moteur', 'De réduire automatiquement le rayon de braquage'],
+    'Une allure faible laisse le temps de contrôler, d’observer et de corriger la trajectoire avec précision.',
+  ),
+  createRandomizedQuestion(
+    'Le véhicule suit généralement :',
+    'Le regard du conducteur',
+    ['Les mouvements du levier de vitesse', 'La position des pédales uniquement', 'Le rétroviseur intérieur'],
+    'Le véhicule suit généralement le regard du conducteur : regarder loin aide à guider la trajectoire.',
+  ),
+  createRandomizedQuestion(
+    'Pour conserver une bonne maîtrise de la trajectoire, le conducteur doit :',
+    'Effectuer des gestes souples et anticiper les corrections',
+    ['Tourner le volant rapidement dès qu’un écart apparaît', 'Corriger la trajectoire uniquement avec les pédales', 'Regarder principalement le tableau de bord'],
+    'La maîtrise de la trajectoire repose sur l’anticipation, le regard et des gestes souples sur le volant.',
+  ),
+]
+
+const observationWarningModule = {
+  id: 'SC1.8',
+  storageKey: 'pedagogia:lesson:observation-warning',
+  title: 'Regarder autour et avertir',
+  intro:
+    'Le conducteur doit observer son environnement afin d’anticiper les dangers, d’adapter sa conduite et d’informer les autres usagers de ses intentions. Observer permet d’anticiper, avertir permet d’être compris.',
+  summary: [
+    {
+      title: 'Regarder autour',
+      description:
+        'Le conducteur doit contrôler régulièrement loin devant, les rétroviseurs, les côtés du véhicule et les angles morts. Le regard doit rester mobile, régulier et rapide.',
+    },
+    {
+      title: 'Ne pas regarder uniquement devant',
+      description:
+        'Un conducteur qui regarde uniquement devant lui manque des informations importantes autour du véhicule. Il doit organiser ses contrôles pour comprendre toute la situation.',
+    },
+    {
+      title: 'Les rétroviseurs',
+      description:
+        'Les rétroviseurs permettent de contrôler l’arrière, les côtés et l’environnement du véhicule. Ils doivent être utilisés avant de ralentir, tourner, changer de direction ou freiner fortement.',
+    },
+    {
+      title: 'Les limites des rétroviseurs',
+      description:
+        'Les rétroviseurs ne montrent pas toute la zone autour du véhicule. Certaines zones restent invisibles et nécessitent un contrôle direct.',
+    },
+    {
+      title: 'Les angles morts',
+      description:
+        'Les angles morts sont des zones invisibles dans les rétroviseurs. Un véhicule, un vélo ou un piéton peut s’y trouver sans être visible.',
+    },
+    {
+      title: 'Contrôler les angles morts',
+      description:
+        'Le contrôle des angles morts est indispensable avant un changement de direction, un dépassement, une manœuvre ou l’ouverture d’une portière.',
+    },
+    {
+      title: 'Avertir les autres usagers',
+      description:
+        'Le conducteur doit signaler ses intentions afin d’éviter les surprises. Les principaux moyens d’avertir sont les clignotants, les feux stop et l’avertisseur sonore uniquement en cas de danger.',
+    },
+    {
+      title: 'Observer, avertir, agir',
+      description:
+        'Le clignotant n’est pas une priorité : c’est une information. Le conducteur doit d’abord observer, puis avertir, puis agir.',
+    },
+  ],
+  safetyAdvice: [
+    'Regarder loin et régulièrement.',
+    'Contrôler les rétroviseurs fréquemment.',
+    'Vérifier les angles morts.',
+    'Mettre le clignotant suffisamment tôt.',
+    'Anticiper les réactions des autres usagers.',
+  ],
+}
+
+const observationWarningQuestions = [
+  createRandomizedQuestion(
+    'Pourquoi le conducteur doit-il contrôler régulièrement ses rétroviseurs ?',
+    'Pour surveiller l’environnement autour du véhicule et anticiper les situations',
+    ['Pour vérifier uniquement la vitesse des véhicules derrière', 'Pour éviter l’utilisation du volant', 'Pour maintenir automatiquement la trajectoire'],
+    'Les rétroviseurs permettent de surveiller l’environnement autour du véhicule et d’anticiper les situations.',
+  ),
+  createRandomizedQuestion(
+    'Les angles morts correspondent :',
+    'Aux zones invisibles dans les rétroviseurs',
+    ['Aux zones visibles uniquement dans le rétroviseur intérieur', 'Aux espaces situés derrière le tableau de bord', 'Aux parties cachées par les montants du pare-brise uniquement'],
+    'Les angles morts sont les zones qui ne sont pas visibles dans les rétroviseurs.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi le contrôle des angles morts reste-t-il indispensable ?',
+    'Parce que certains usagers peuvent rester invisibles dans les rétroviseurs',
+    ['Parce que les rétroviseurs empêchent de voir devant', 'Parce que les angles morts concernent uniquement les motos', 'Parce que le clignotant remplace les rétroviseurs'],
+    'Un véhicule, un vélo ou un piéton peut se trouver dans un angle mort sans être visible dans les rétroviseurs.',
+  ),
+  createRandomizedQuestion(
+    'Quel est le bon ordre avant de changer de direction ?',
+    'Observer → avertir → agir',
+    ['Avertir → agir → observer', 'Agir → observer → avertir', 'Observer → agir → avertir'],
+    'Avant de changer de direction, il faut observer, avertir les autres usagers, puis agir.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi le clignotant doit-il être mis suffisamment tôt ?',
+    'Pour prévenir les autres usagers de l’intention du conducteur',
+    ['Pour obtenir automatiquement la priorité', 'Pour éviter de contrôler les rétroviseurs', 'Pour réduire la distance de sécurité'],
+    'Le clignotant informe les autres usagers de l’intention du conducteur et doit être mis assez tôt pour être compris.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi dit-on que “le clignotant n’est pas une priorité” ?',
+    'Parce qu’il informe sans donner le droit de passage',
+    ['Parce qu’il fonctionne uniquement hors agglomération', 'Parce qu’il remplace le contrôle des angles morts', 'Parce qu’il doit être utilisé seulement à l’arrêt'],
+    'Le clignotant donne une information, mais il ne donne jamais automatiquement la priorité.',
+  ),
+  createRandomizedQuestion(
+    'Avant un freinage important, le conducteur doit principalement :',
+    'Contrôler ses rétroviseurs',
+    ['Regarder le levier de vitesse', 'Mettre immédiatement le clignotant', 'Accélérer légèrement avant de freiner'],
+    'Avant un freinage important, le conducteur doit contrôler ses rétroviseurs pour vérifier ce qui se passe derrière lui.',
+  ),
+  createRandomizedQuestion(
+    'Un conducteur qui regarde uniquement devant lui risque :',
+    'De manquer des informations importantes autour du véhicule',
+    ['D’améliorer son anticipation', 'De réduire les angles morts', 'De mieux stabiliser sa trajectoire'],
+    'Regarder uniquement devant soi fait perdre des informations importantes sur les côtés et à l’arrière du véhicule.',
+  ),
+  createRandomizedQuestion(
+    'L’avertisseur sonore doit être utilisé principalement :',
+    'En cas de danger immédiat',
+    ['Pour signaler une priorité', 'Pour prévenir d’un stationnement', 'Pour demander le passage aux intersections'],
+    'L’avertisseur sonore doit rester exceptionnel et servir principalement à prévenir un danger immédiat.',
+  ),
+  createRandomizedQuestion(
+    'Pourquoi le regard doit-il être mobile et régulier ?',
+    'Pour surveiller l’ensemble de l’environnement et anticiper les dangers',
+    ['Pour éviter d’utiliser les rétroviseurs', 'Pour maintenir une vitesse constante uniquement', 'Pour réduire les mouvements du volant'],
+    'Un regard mobile et régulier permet de surveiller l’ensemble de l’environnement et d’anticiper les dangers.',
+  ),
+]
+
 const lessonModules = {
   [drivingPositionModule.id]: {
     ...drivingPositionModule,
@@ -847,6 +1236,18 @@ const lessonModules = {
   [accelerationBrakingModule.id]: {
     ...accelerationBrakingModule,
     questions: accelerationBrakingQuestions,
+  },
+  [gearboxModule.id]: {
+    ...gearboxModule,
+    questions: gearboxQuestions,
+  },
+  [forwardReverseModule.id]: {
+    ...forwardReverseModule,
+    questions: forwardReverseQuestions,
+  },
+  [observationWarningModule.id]: {
+    ...observationWarningModule,
+    questions: observationWarningQuestions,
   },
 }
 
@@ -1179,16 +1580,17 @@ export default function StudentLessonsPage() {
           {activeSubcompetencies.map((item) => {
             const styles = accentStyles[item.accent]
             const lessonModule = lessonModules[item.id]
+            const qcmAvailable = Boolean(lessonModule?.questions?.length)
             const itemProgress = moduleProgressById[item.id] || { completed: false, score: null, percentage: null }
             const itemDone = item.done || itemProgress.completed
             const lessonValue = lessonModule
               ? (itemProgress.completed ? 'Validée' : 'Disponible')
               : item.video
-            const qcmValue = lessonModule && itemProgress.percentage !== null
+            const qcmValue = lessonModule && qcmAvailable && itemProgress.percentage !== null
               ? `${itemProgress.score}/${lessonModule.questions.length}`
-              : (lessonModule ? 'Disponible' : item.qcm)
+              : (lessonModule && qcmAvailable ? 'Disponible' : item.qcm)
             const lessonComplete = lessonModule ? itemProgress.completed : itemDone
-            const qcmComplete = lessonModule ? itemProgress.percentage !== null : qcmValue !== 'À faire'
+            const qcmComplete = lessonModule && qcmAvailable ? itemProgress.percentage !== null : qcmValue !== 'À faire'
 
             return (
               <article
@@ -1211,7 +1613,7 @@ export default function StudentLessonsPage() {
                       )}
                       {lessonModule && !itemProgress.completed && (
                         <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-100">
-                          Leçon + QCM disponibles
+                          {qcmAvailable ? 'Leçon + QCM disponibles' : 'Leçon disponible'}
                         </span>
                       )}
                     </div>
@@ -1224,7 +1626,12 @@ export default function StudentLessonsPage() {
                   <button className="text-left" onClick={() => openLesson(item.id)} type="button">
                     <StatusPill complete={lessonComplete} label="Leçon" value={lessonValue} />
                   </button>
-                  <button className="text-left" onClick={() => openQuiz(item.id)} type="button">
+                  <button
+                    className="text-left disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={Boolean(lessonModule) && !qcmAvailable}
+                    onClick={() => openQuiz(item.id)}
+                    type="button"
+                  >
                     <StatusPill complete={qcmComplete} label="QCM" value={qcmValue} />
                   </button>
                 </div>
@@ -1370,8 +1777,13 @@ export default function StudentLessonsPage() {
                     </div>
                   </div>
                   <div className="mt-4 grid gap-2">
-                    <button className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => setModuleMode('quiz')} type="button">
-                      Ouvrir le QCM
+                    <button
+                      className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      disabled={!currentQuestions.length}
+                      onClick={() => setModuleMode('quiz')}
+                      type="button"
+                    >
+                      {currentQuestions.length ? 'Ouvrir le QCM' : 'QCM bientôt disponible'}
                     </button>
                     <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" disabled={!hasNextModule} onClick={openNextModule} type="button">
                       Module suivant
@@ -1393,7 +1805,7 @@ export default function StudentLessonsPage() {
                       </div>
                       <div className="grid gap-5 p-5 lg:grid-cols-[1fr_320px]">
                         <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Étapes d’installation</p>
+                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résumé de leçon</p>
                           <div className="mt-4 grid gap-3">
                             {openedLesson.summary.map((item, index) => (
                               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.title}>
