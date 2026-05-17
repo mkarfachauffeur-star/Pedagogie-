@@ -839,7 +839,7 @@ export default function StudentLessonsPage() {
 
       {openedModule && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
-          <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
+          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
             <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                 <div>
@@ -879,7 +879,7 @@ export default function StudentLessonsPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" style={{ WebkitOverflowScrolling: 'touch' }}>
             {moduleMode === 'lesson' ? (
               <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
                 <div className="space-y-5">
@@ -1083,37 +1083,6 @@ export default function StudentLessonsPage() {
                       ))}
                     </div>
 
-                    <div className="sticky bottom-0 mt-5 rounded-2xl border border-white bg-white/95 p-4 shadow-xl backdrop-blur">
-                      {validated ? (
-                        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-                          <div>
-                            <p className="text-sm font-bold text-slate-500">
-                              Score : {score}/{drivingPositionQuestions.length} · Réussite : {percentage}%
-                            </p>
-                            <p className={`mt-1 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                              {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100" onClick={resetModule} type="button">
-                              Refaire le QCM
-                            </button>
-                            <button className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300" disabled={!hasNextModule} onClick={openNextModule} type="button">
-                              Module suivant
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-                          <p className="text-sm font-bold text-slate-500">
-                            Répondez aux 10 questions pour valider le module. Validation à partir de 80%.
-                          </p>
-                          <button className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none" disabled={!canValidate} onClick={validateModule} type="button">
-                            Valider le QCM
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
                   </div>
                 ) : (
@@ -1131,6 +1100,53 @@ export default function StudentLessonsPage() {
               </div>
             )}
             </div>
+            {moduleMode === 'quiz' && openedModule.id === drivingPositionModule.id && (
+              <div className="shrink-0 border-t border-white/60 bg-white/95 p-4 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5">
+                {validated ? (
+                  <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+                    <div>
+                      <p className="text-sm font-bold text-slate-500">
+                        Score : {score}/{drivingPositionQuestions.length} · Réussite : {percentage}%
+                      </p>
+                      <p className={`mt-1 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100"
+                        onClick={resetModule}
+                        type="button"
+                      >
+                        Refaire le QCM
+                      </button>
+                      <button
+                        className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        disabled={!hasNextModule}
+                        onClick={openNextModule}
+                        type="button"
+                      >
+                        Module suivant
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+                    <p className="text-sm font-bold text-slate-500">
+                      Répondez aux 10 questions pour valider le module. Validation à partir de 80%.
+                    </p>
+                    <button
+                      className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                      disabled={!canValidate}
+                      onClick={validateModule}
+                      type="button"
+                    >
+                      Valider le QCM
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
