@@ -73,27 +73,27 @@ const subcompetenciesByCompetency = {
       id: 'SC1.3',
       title: 'Tenir et tourner le volant',
       description:
-        'Maîtriser la tenue du volant, la trajectoire et les gestes adaptés en courbe ou manoeuvre.',
+        'Leçon complète sur la tenue du volant : courbe, virage, tournant serré, tirer-glisser, chevauchement et gestes interdits.',
       accent: 'amber',
-      video: '15 min',
+      video: 'Vue',
       qcm: 'À faire',
     },
     {
       id: 'SC1.4',
       title: 'Démarrer et s’arrêter',
       description:
-        'Démarrer, s’arrêter, repartir et immobiliser le véhicule en sécurité dans un trafic faible.',
+        'Leçon complète pour préparer le départ, démarrer progressivement, s’arrêter en sécurité et immobiliser le véhicule.',
       accent: 'violet',
-      video: '12 min',
+      video: 'Vue',
       qcm: 'À faire',
     },
     {
       id: 'SC1.5',
-      title: 'Doser accélération et freinage',
+      title: 'Doser l’accélération et le freinage',
       description:
-        'Utiliser les pédales avec progressivité pour obtenir une allure régulière et un arrêt maîtrisé.',
+        'Leçon complète pour gérer la progressivité de l’accélération, adapter l’allure et freiner avec précision.',
       accent: 'rose',
-      video: '14 min',
+      video: 'Disponible',
       qcm: 'À faire',
     },
     {
@@ -487,6 +487,369 @@ const drivingPositionQuestions = [
       'Une bonne installation permet une meilleure maîtrise du véhicule et réduit les risques d’erreur.',
   },
 ]
+
+const steeringWheelModule = {
+  id: 'SC1.3',
+  storageKey: 'pedagogia:lesson:steering-wheel',
+  title: 'Tenir et tourner le volant',
+  intro:
+    'Les mains doivent être placées à 9h15 ou 10h10 avec les bras légèrement fléchis. Le regard doit porter loin afin de mieux suivre la trajectoire. Le conducteur doit garder les mains sur le volant autant que possible, y compris pour utiliser les commandes comme les clignotants, les essuie-glaces et les feux.',
+  summary: [
+    {
+      title: 'Position des mains et regard',
+      description:
+        'Les mains doivent rester à 9h15 ou 10h10, avec les bras légèrement fléchis. Le regard doit porter loin afin d’anticiper et de suivre naturellement la trajectoire.',
+    },
+    {
+      title: 'Commandes à utiliser sans lâcher le volant',
+      description:
+        'Le conducteur doit garder les mains sur le volant autant que possible, y compris lorsqu’il utilise les clignotants, les essuie-glaces ou les feux.',
+    },
+    {
+      title: 'Technique 1 : la courbe',
+      description:
+        'Technique : maintien des mains. Pour une légère courbe, le conducteur garde les deux mains à leur place sur le volant et effectue de petits mouvements souples. Dans une courbe, il peut voir la sortie ou le bout de la route.',
+    },
+    {
+      title: 'Technique 2 : le virage',
+      description:
+        'Technique : tirer-glisser. Une main tire le volant pendant que l’autre glisse pour reprendre la position. Les mains ne se croisent pas. Le virage possède une visibilité plus restreinte que la courbe.',
+    },
+    {
+      title: 'Usage du tirer-glisser',
+      description:
+        'Cette technique est principalement utilisée hors agglomération et en montagne, lorsque la visibilité est plus limitée et que la trajectoire doit rester progressive.',
+    },
+    {
+      title: 'Technique 3 : le tournant serré à 90°',
+      description:
+        'Technique : chevauchement. Les mains peuvent se croiser sur un quart du volant afin d’obtenir une rotation plus importante.',
+    },
+    {
+      title: 'Usage du chevauchement',
+      description:
+        'Cette technique est principalement utilisée en agglomération, en centre-ville, dans les rues étroites et pour certaines manœuvres.',
+    },
+  ],
+  safetyAdvice: [
+    'Ne pas pousser le volant.',
+    'Ne pas mettre les mains sous le volant.',
+    'Ne pas passer les mains à l’intérieur du volant.',
+    'Ne pas tourner brusquement : les gestes doivent toujours rester souples et précis.',
+  ],
+}
+
+const steeringWheelQuestions = [
+  {
+    question: 'Quelle est la bonne position des mains sur le volant ?',
+    choices: ['6h00', '12h00', '9h15 ou 10h10', 'Une seule main sur le volant'],
+    answer: 2,
+    explanation: 'Les mains doivent être placées à 9h15 ou 10h10 pour garder une bonne maîtrise du volant.',
+  },
+  {
+    question: 'Dans une courbe, le conducteur :',
+    choices: ['Ne voit pas la sortie', 'Peut voir le bout de la route', 'Doit croiser les mains', 'Doit pousser le volant'],
+    answer: 1,
+    explanation: 'Dans une courbe, le conducteur peut voir la sortie ou le bout de la route.',
+  },
+  {
+    question: 'Quelle technique est utilisée dans une courbe ?',
+    choices: ['Chevauchement', 'Tirer-glisser', 'Maintien des mains', 'Rotation rapide'],
+    answer: 2,
+    explanation: 'Pour une légère courbe, la technique utilisée est le maintien des mains.',
+  },
+  {
+    question: 'Le tirer-glisser est principalement utilisé :',
+    choices: ['En centre-ville', 'Hors agglomération et en montagne', 'Pour stationner', 'À l’arrêt'],
+    answer: 1,
+    explanation: 'Le tirer-glisser est principalement utilisé hors agglomération et en montagne.',
+  },
+  {
+    question: 'Avec la technique du tirer-glisser :',
+    choices: ['Les mains se croisent', 'Une seule main tourne le volant', 'Les mains ne se croisent pas', 'Le volant est poussé'],
+    answer: 2,
+    explanation: 'Avec le tirer-glisser, une main tire pendant que l’autre glisse, sans croiser les mains.',
+  },
+  {
+    question: 'Le chevauchement est principalement utilisé :',
+    choices: ['Sur autoroute', 'Dans les rues étroites et en agglomération', 'Uniquement à grande vitesse', 'Dans les courbes légères'],
+    answer: 1,
+    explanation: 'Le chevauchement est surtout utilisé en agglomération, dans les rues étroites et pour certaines manoeuvres.',
+  },
+  {
+    question: 'Avec la technique du chevauchement :',
+    choices: ['Les mains peuvent se croiser', 'Le conducteur lâche le volant', 'Les bras restent tendus', 'Le volant ne tourne pas beaucoup'],
+    answer: 0,
+    explanation: 'Avec le chevauchement, les mains peuvent se croiser sur un quart du volant pour obtenir une rotation plus importante.',
+  },
+  {
+    question: 'Quelle pratique est interdite ?',
+    choices: ['Regarder loin', 'Garder les mains sur le volant', 'Pousser le volant', 'Adapter sa trajectoire'],
+    answer: 2,
+    explanation: 'Pousser le volant fait partie des pratiques interdites : les gestes doivent rester souples et précis.',
+  },
+  {
+    question: 'Pourquoi faut-il regarder loin ?',
+    choices: ['Pour voir uniquement les panneaux', 'Pour mieux suivre la trajectoire et anticiper', 'Pour éviter les rétroviseurs', 'Pour tourner plus vite'],
+    answer: 1,
+    explanation: 'Regarder loin permet de mieux suivre la trajectoire et d’anticiper les actions à venir.',
+  },
+  {
+    question: 'Lors de l’utilisation des commandes (clignotants, essuie-glaces…), le conducteur doit :',
+    choices: ['Lâcher complètement le volant', 'Garder les mains sur le volant autant que possible', 'Utiliser les deux mains sur le commodo', 'Regarder le tableau de bord longtemps'],
+    answer: 1,
+    explanation: 'Le conducteur doit garder les mains sur le volant autant que possible, même lorsqu’il utilise les commandes.',
+  },
+]
+
+const startStopModule = {
+  id: 'SC1.4',
+  storageKey: 'pedagogia:lesson:start-stop',
+  title: 'Démarrer et s’arrêter',
+  intro:
+    'Le conducteur doit adapter son démarrage selon la situation rencontrée et choisir un freinage adapté pour ralentir ou s’arrêter en sécurité.',
+  summary: [
+    {
+      title: 'Démarrage sans accélérateur',
+      description:
+        'Utilisé sur parking, en manœuvre et à très faible allure. Technique : embrayage + frein, puis lever progressivement l’embrayage jusqu’au point de patinage.',
+    },
+    {
+      title: 'Démarrage avec accélération',
+      description:
+        'Utilisé sur route, aux feux, aux stops et dans la circulation. Technique : embrayage, point de patinage, légère accélération, puis relâcher progressivement l’embrayage.',
+    },
+    {
+      title: 'Démarrage en côte',
+      description:
+        'Utilisé pour éviter le recul du véhicule. Technique : frein à main + embrayage ou frein + embrayage. Le conducteur trouve le point de patinage, accélère légèrement, puis relâche progressivement le frein et l’embrayage.',
+    },
+    {
+      title: 'Freinage progressif',
+      description:
+        'Freiner doucement au début puis augmenter progressivement la pression. Cela permet un ralentissement confortable et évite les à-coups.',
+    },
+    {
+      title: 'Freinage dégressif',
+      description:
+        'Freiner fort au début puis relâcher progressivement la pression. Cela permet un arrêt précis, plus de stabilité et plus de confort.',
+    },
+    {
+      title: 'Freinage d’urgence',
+      description:
+        'Utilisé en cas de danger immédiat. Technique : frein à fond, embrayage à fond et garder le contrôle du volant.',
+    },
+  ],
+  safetyAdvice: [
+    'Adapter le type de démarrage à la situation : parking, circulation, feu, stop ou côte.',
+    'Le point de patinage doit être trouvé progressivement pour éviter les à-coups ou le calage.',
+    'En côte, sécuriser le véhicule pour éviter tout recul.',
+    'En freinage d’urgence, freiner et débrayer à fond tout en gardant le contrôle du volant.',
+  ],
+}
+
+const startStopQuestions = [
+  {
+    question: 'Le démarrage sans accélérateur est principalement utilisé :',
+    choices: ['Sur parking et en manœuvre', 'Sur autoroute', 'En dépassement', 'À grande vitesse'],
+    answer: 0,
+    explanation: 'Le démarrage sans accélérateur est adapté aux parkings, aux manœuvres et aux très faibles allures.',
+  },
+  {
+    question: 'Lors d’un démarrage avec accélération, le conducteur doit :',
+    choices: ['Lever brutalement l’embrayage', 'Garder le frein appuyé', 'Trouver le point de patinage puis accélérer légèrement', 'Accélérer fortement immédiatement'],
+    answer: 2,
+    explanation: 'Le démarrage avec accélération se fait en trouvant le point de patinage, puis en accélérant légèrement.',
+  },
+  {
+    question: 'Le démarrage en côte permet principalement :',
+    choices: ['D’accélérer plus vite', 'D’éviter le recul du véhicule', 'De tourner plus facilement', 'D’utiliser moins les pédales'],
+    answer: 1,
+    explanation: 'Le démarrage en côte sert principalement à éviter le recul du véhicule.',
+  },
+  {
+    question: 'Lors d’un démarrage en côte, le conducteur doit trouver :',
+    choices: ['Le point mort', 'Le point de freinage', 'Le limiteur de vitesse', 'Le point de patinage'],
+    answer: 3,
+    explanation: 'Le point de patinage permet de maintenir le véhicule avant de relâcher progressivement le frein.',
+  },
+  {
+    question: 'Le freinage progressif consiste à :',
+    choices: ['Freiner doucement au début puis augmenter progressivement la pression', 'Freiner fort puis relâcher immédiatement', 'Utiliser uniquement le frein à main', 'Freiner brutalement jusqu’à l’arrêt'],
+    answer: 0,
+    explanation: 'Le freinage progressif augmente la pression progressivement pour ralentir confortablement et éviter les à-coups.',
+  },
+  {
+    question: 'Le freinage dégressif consiste à :',
+    choices: ['Freiner doucement jusqu’à l’arrêt complet', 'Utiliser uniquement l’embrayage', 'Freiner fort au début puis relâcher progressivement la pression', 'Freiner sans regarder devant'],
+    answer: 2,
+    explanation: 'Le freinage dégressif consiste à freiner fort au début, puis relâcher progressivement pour un arrêt précis et stable.',
+  },
+  {
+    question: 'Le freinage d’urgence est utilisé :',
+    choices: ['Pour économiser le carburant', 'Pour stationner', 'Dans les parkings', 'En cas de danger immédiat'],
+    answer: 3,
+    explanation: 'Le freinage d’urgence est réservé aux situations de danger immédiat.',
+  },
+  {
+    question: 'Lors d’un freinage d’urgence, le conducteur doit :',
+    choices: ['Couper le moteur', 'Utiliser uniquement le frein à main', 'Relâcher le volant', 'Appuyer à fond sur le frein et l’embrayage'],
+    answer: 3,
+    explanation: 'En freinage d’urgence, il faut freiner à fond, débrayer à fond et garder le contrôle du volant.',
+  },
+  {
+    question: 'Le démarrage avec accélération est principalement utilisé :',
+    choices: ['Véhicule moteur coupé', 'Sur route et dans la circulation', 'Uniquement en descente', 'À l’arrêt sans visibilité'],
+    answer: 1,
+    explanation: 'Le démarrage avec accélération est utilisé sur route, aux feux, aux stops et dans la circulation.',
+  },
+  {
+    question: 'Lors d’un démarrage sans accélérateur, le véhicule avance grâce :',
+    choices: ['Au frein à main', 'À la vitesse du moteur et au point de patinage', 'À une forte accélération', 'Au volant uniquement'],
+    answer: 1,
+    explanation: 'À très faible allure, le véhicule avance grâce au ralenti moteur et au point de patinage.',
+  },
+]
+
+const accelerationBrakingModule = {
+  id: 'SC1.5',
+  storageKey: 'pedagogia:lesson:acceleration-braking',
+  title: 'Doser l’accélération et le freinage',
+  intro:
+    'Le conducteur doit apprendre à doser correctement les pédales afin de conduire avec souplesse, précision et sécurité. Chaque pédale possède un rôle précis : embrayage, frein et accélérateur. Les pieds doivent être utilisés avec douceur afin d’éviter les à-coups, le calage et les freinages brusques.',
+  summary: [
+    {
+      title: 'Le rôle de l’embrayage',
+      description:
+        'L’embrayage permet de démarrer, de s’arrêter et de changer les vitesses. C’est lui qui permet au véhicule d’avancer grâce au point de patinage.',
+    },
+    {
+      title: 'Utiliser l’embrayage correctement',
+      description:
+        'L’embrayage doit être enfoncé à fond puis relâché progressivement. Le conducteur ne doit pas rester appuyé longtemps : en général, il faut appuyer, effectuer l’action, puis relâcher en environ 3 secondes maximum.',
+    },
+    {
+      title: 'Risques d’un mauvais usage de l’embrayage',
+      description:
+        'Garder le pied sur l’embrayage peut user le système, fatiguer le conducteur et provoquer une perte de contrôle du véhicule sur la vitesse.',
+    },
+    {
+      title: 'Puissance des petites vitesses',
+      description:
+        'Plus la vitesse est petite, plus elle possède de puissance moteur. La 1ère vitesse est donc la plus dangereuse si les pédales sont mal dosées.',
+    },
+    {
+      title: 'Le rôle du frein',
+      description:
+        'Le frein permet de ralentir, de contrôler l’allure et de s’arrêter. Le conducteur doit freiner progressivement afin d’éviter les à-coups et de garder le contrôle du véhicule.',
+    },
+    {
+      title: 'Le rôle de l’accélérateur',
+      description:
+        'L’accélérateur permet d’augmenter la vitesse, d’accompagner le démarrage et d’adapter l’allure. La pression doit rester douce et progressive.',
+    },
+    {
+      title: 'Risques d’une forte accélération',
+      description:
+        'Une forte accélération peut provoquer des à-coups, surprendre les autres usagers et augmenter la consommation.',
+    },
+    {
+      title: 'Le dosage des pédales',
+      description:
+        'Le conducteur doit lever doucement l’embrayage, freiner progressivement et accélérer progressivement. Les mouvements doivent rester souples, précis et progressifs.',
+    },
+  ],
+  safetyAdvice: [
+    'Regarder loin devant.',
+    'Éviter les gestes brusques.',
+    'Utiliser les pédales avec souplesse.',
+    'Anticiper les ralentissements.',
+    'Garder le contrôle du véhicule.',
+  ],
+}
+
+const accelerationBrakingQuestions = [
+  {
+    question: 'Quelle pédale permet principalement au véhicule d’avancer au démarrage ?',
+    choices: ['Le frein', 'L’accélérateur', 'L’embrayage', 'Le frein à main'],
+    answer: 2,
+    explanation: 'L’embrayage permet au véhicule d’avancer grâce au point de patinage.',
+  },
+  {
+    question: 'L’embrayage permet principalement :',
+    choices: ['D’allumer les feux', 'De démarrer, s’arrêter et changer les vitesses', 'D’augmenter uniquement la vitesse', 'De tourner le volant'],
+    answer: 1,
+    explanation: 'L’embrayage sert à démarrer, s’arrêter et changer les vitesses.',
+  },
+  {
+    question: 'Lors d’un changement de vitesse, l’embrayage doit être :',
+    choices: ['Enfoncé à fond', 'Relâché brutalement', 'Utilisé à moitié uniquement', 'Gardé appuyé plusieurs secondes'],
+    answer: 0,
+    explanation: 'Lors d’un changement de vitesse, l’embrayage doit être enfoncé à fond.',
+  },
+  {
+    question: 'Garder le pied sur l’embrayage peut :',
+    choices: ['Réduire la consommation', 'Faciliter le freinage', 'Provoquer une perte de contrôle sur la vitesse', 'Améliorer l’adhérence'],
+    answer: 2,
+    explanation: 'Garder le pied sur l’embrayage peut provoquer une perte de contrôle du véhicule sur la vitesse.',
+  },
+  {
+    question: 'Quelle vitesse possède le plus de puissance moteur ?',
+    choices: ['La 5ème vitesse', 'La marche arrière uniquement', 'La vitesse la plus élevée', 'La 1ère vitesse'],
+    answer: 3,
+    explanation: 'Plus la vitesse est petite, plus elle possède de puissance moteur : la 1ère est donc la plus puissante.',
+  },
+  {
+    question: 'Le frein permet principalement :',
+    choices: ['D’accélérer', 'De ralentir ou s’arrêter', 'De changer les vitesses', 'De tourner plus facilement'],
+    answer: 1,
+    explanation: 'Le frein permet de ralentir, contrôler l’allure et s’arrêter.',
+  },
+  {
+    question: 'Pour éviter les à-coups, le conducteur doit :',
+    choices: ['Utiliser les pédales brutalement', 'Doser les pédales progressivement', 'Garder le pied sur l’embrayage', 'Accélérer fortement'],
+    answer: 1,
+    explanation: 'Le dosage progressif des pédales évite les à-coups et améliore la maîtrise.',
+  },
+  {
+    question: 'Une forte accélération peut :',
+    choices: ['Réduire la consommation', 'Faciliter le point de patinage', 'Provoquer des à-coups', 'Stabiliser automatiquement le véhicule'],
+    answer: 2,
+    explanation: 'Une forte accélération peut provoquer des à-coups, surprendre les autres usagers et augmenter la consommation.',
+  },
+  {
+    question: 'Le conducteur doit relâcher l’embrayage :',
+    choices: ['Le plus vite possible', 'Brutalement', 'Progressivement', 'En gardant le frein à main serré'],
+    answer: 2,
+    explanation: 'L’embrayage doit être relâché progressivement pour éviter le calage et les à-coups.',
+  },
+  {
+    question: 'Pour conduire avec souplesse, les mouvements doivent être :',
+    choices: ['Rapides et brusques', 'Souples et progressifs', 'Forts et rapides', 'Courts et secs'],
+    answer: 1,
+    explanation: 'Des mouvements souples et progressifs permettent une conduite plus précise et sécurisée.',
+  },
+]
+
+const lessonModules = {
+  [drivingPositionModule.id]: {
+    ...drivingPositionModule,
+    questions: drivingPositionQuestions,
+  },
+  [steeringWheelModule.id]: {
+    ...steeringWheelModule,
+    questions: steeringWheelQuestions,
+  },
+  [startStopModule.id]: {
+    ...startStopModule,
+    questions: startStopQuestions,
+  },
+  [accelerationBrakingModule.id]: {
+    ...accelerationBrakingModule,
+    questions: accelerationBrakingQuestions,
+  },
+}
+
 const accentStyles = {
   cyan: {
     card: 'border-cyan-100 bg-cyan-50/60',
@@ -538,13 +901,13 @@ function StatusPill({ label, value, complete }) {
   )
 }
 
-function getSavedModuleProgress() {
+function getSavedModuleProgress(storageKey) {
   if (typeof window === 'undefined') {
     return { completed: false, score: null, percentage: null }
   }
 
   try {
-    const saved = window.localStorage.getItem(drivingPositionModule.storageKey)
+    const saved = window.localStorage.getItem(storageKey)
     return saved ? JSON.parse(saved) : { completed: false, score: null, percentage: null }
   } catch {
     return { completed: false, score: null, percentage: null }
@@ -577,21 +940,36 @@ export default function StudentLessonsPage() {
   const [activeCompetencyId, setActiveCompetencyId] = useState('C1')
   const [openedModuleId, setOpenedModuleId] = useState(null)
   const [moduleMode, setModuleMode] = useState('lesson')
-  const [answers, setAnswers] = useState({})
-  const [validated, setValidated] = useState(false)
-  const [moduleProgress, setModuleProgress] = useState(getSavedModuleProgress)
+  const [answersByModule, setAnswersByModule] = useState({})
+  const [validatedByModule, setValidatedByModule] = useState({})
+  const [moduleProgressById, setModuleProgressById] = useState(() =>
+    Object.fromEntries(
+      Object.values(lessonModules).map((module) => [
+        module.id,
+        getSavedModuleProgress(module.storageKey),
+      ]),
+    ),
+  )
   const activeCompetency =
     competencies.find((competency) => competency.id === activeCompetencyId) || competencies[0]
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
-  const score = drivingPositionQuestions.reduce(
-    (total, question, index) => total + (answers[index] === question.answer ? 1 : 0),
+  const openedModule = activeSubcompetencies.find((item) => item.id === openedModuleId)
+  const openedLesson = lessonModules[openedModuleId]
+  const currentQuestions = openedLesson?.questions || []
+  const currentAnswers = answersByModule[openedModuleId] || {}
+  const currentValidated = Boolean(validatedByModule[openedModuleId])
+  const currentProgress = moduleProgressById[openedModuleId] || {
+    completed: false,
+    score: null,
+    percentage: null,
+  }
+  const score = currentQuestions.reduce(
+    (total, question, index) => total + (currentAnswers[index] === question.answer ? 1 : 0),
     0,
   )
-  const percentage = Math.round((score / drivingPositionQuestions.length) * 100)
-  const moduleCompleted = moduleProgress.completed
-  const answeredCount = Object.keys(answers).length
-  const canValidate = answeredCount === drivingPositionQuestions.length
-  const openedModule = activeSubcompetencies.find((item) => item.id === openedModuleId)
+  const percentage = currentQuestions.length ? Math.round((score / currentQuestions.length) * 100) : 0
+  const answeredCount = Object.keys(currentAnswers).length
+  const canValidate = currentQuestions.length > 0 && answeredCount === currentQuestions.length
   const openedModuleIndex = activeSubcompetencies.findIndex((item) => item.id === openedModuleId)
   const hasNextModule = openedModuleIndex >= 0 && openedModuleIndex < activeSubcompetencies.length - 1
 
@@ -641,7 +1019,7 @@ export default function StudentLessonsPage() {
   }, [openedModule])
 
   const validateModule = () => {
-    if (!canValidate) return
+    if (!canValidate || !openedLesson) return
 
     const completed = percentage >= 80
     const nextProgress = {
@@ -651,14 +1029,15 @@ export default function StudentLessonsPage() {
       validatedAt: new Date().toISOString(),
     }
 
-    setValidated(true)
-    setModuleProgress(nextProgress)
-    window.localStorage.setItem(drivingPositionModule.storageKey, JSON.stringify(nextProgress))
+    setValidatedByModule((current) => ({ ...current, [openedLesson.id]: true }))
+    setModuleProgressById((current) => ({ ...current, [openedLesson.id]: nextProgress }))
+    window.localStorage.setItem(openedLesson.storageKey, JSON.stringify(nextProgress))
   }
 
   const resetModule = () => {
-    setAnswers({})
-    setValidated(false)
+    if (!openedModuleId) return
+    setAnswersByModule((current) => ({ ...current, [openedModuleId]: {} }))
+    setValidatedByModule((current) => ({ ...current, [openedModuleId]: false }))
   }
 
   return (
@@ -691,6 +1070,12 @@ export default function StudentLessonsPage() {
                 <p className="text-2xl font-extrabold">{activeCompetency.progress}%</p>
                 <p className="text-sm text-cyan-50/75">Progression {activeCompetency.id}</p>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 backdrop-blur">
+              <p className="text-sm font-bold leading-6 text-cyan-50/90">
+                Les leçons actuellement disponibles concernent les véhicules à boîte manuelle. Les modules pour boîte automatique seront ajoutés prochainement.
+              </p>
             </div>
           </div>
 
@@ -793,11 +1178,17 @@ export default function StudentLessonsPage() {
         >
           {activeSubcompetencies.map((item) => {
             const styles = accentStyles[item.accent]
-            const isDrivingPositionModule = item.id === drivingPositionModule.id
-            const itemDone = item.done || (isDrivingPositionModule && moduleCompleted)
-            const qcmValue = isDrivingPositionModule && moduleProgress.percentage !== null
-              ? `${moduleProgress.score}/${drivingPositionQuestions.length}`
-              : item.qcm
+            const lessonModule = lessonModules[item.id]
+            const itemProgress = moduleProgressById[item.id] || { completed: false, score: null, percentage: null }
+            const itemDone = item.done || itemProgress.completed
+            const lessonValue = lessonModule
+              ? (itemProgress.completed ? 'Validée' : 'Disponible')
+              : item.video
+            const qcmValue = lessonModule && itemProgress.percentage !== null
+              ? `${itemProgress.score}/${lessonModule.questions.length}`
+              : (lessonModule ? 'Disponible' : item.qcm)
+            const lessonComplete = lessonModule ? itemProgress.completed : itemDone
+            const qcmComplete = lessonModule ? itemProgress.percentage !== null : qcmValue !== 'À faire'
 
             return (
               <article
@@ -815,7 +1206,12 @@ export default function StudentLessonsPage() {
                       </span>
                       {itemDone && (
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
-                          {isDrivingPositionModule && moduleCompleted ? 'Module validé' : 'En cours'}
+                          {lessonModule && itemProgress.completed ? 'Module validé' : 'En cours'}
+                        </span>
+                      )}
+                      {lessonModule && !itemProgress.completed && (
+                        <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-100">
+                          Leçon + QCM disponibles
                         </span>
                       )}
                     </div>
@@ -826,10 +1222,10 @@ export default function StudentLessonsPage() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <button className="text-left" onClick={() => openLesson(item.id)} type="button">
-                    <StatusPill complete={itemDone} label="Leçon" value={item.video} />
+                    <StatusPill complete={lessonComplete} label="Leçon" value={lessonValue} />
                   </button>
                   <button className="text-left" onClick={() => openQuiz(item.id)} type="button">
-                    <StatusPill complete={qcmValue !== 'À faire'} label="QCM" value={qcmValue} />
+                    <StatusPill complete={qcmComplete} label="QCM" value={qcmValue} />
                   </button>
                 </div>
               </article>
@@ -888,12 +1284,10 @@ export default function StudentLessonsPage() {
                   <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
                     <p className="text-sm font-semibold text-cyan-100">Contenu de leçon</p>
                     <h3 className="mt-2 text-2xl font-black">
-                      {openedModule.id === drivingPositionModule.id ? drivingPositionModule.title : openedModule.title}
+                      {openedLesson?.title || openedModule.title}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-cyan-50/85">
-                      {openedModule.id === drivingPositionModule.id
-                        ? drivingPositionModule.intro
-                        : 'Ce module ouvre une fiche pédagogique complète avec objectifs, supports visuels et validation progressive.'}
+                      {openedLesson?.intro || 'Ce module ouvre une fiche pédagogique complète avec objectifs, supports visuels et validation progressive.'}
                     </p>
                   </section>
 
@@ -921,18 +1315,15 @@ export default function StudentLessonsPage() {
                   <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résumé de leçon</p>
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
-                      {openedModule.id === drivingPositionModule.id ? 'Installation complète avant départ' : openedModule.title}
+                      {openedLesson ? 'Résumé pédagogique complet' : openedModule.title}
                     </h3>
-                    {openedModule.id === drivingPositionModule.id && (
+                    {openedLesson && (
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Chaque réglage prépare le conducteur à voir correctement, agir sans fatigue et garder une maîtrise précise du véhicule.
+                        Chaque étape prépare le conducteur à agir avec précision, à anticiper la trajectoire et à garder une maîtrise sûre du véhicule.
                       </p>
                     )}
                     <div className="mt-4 grid gap-3">
-                      {(openedModule.id === drivingPositionModule.id
-                        ? drivingPositionModule.summary
-                        : [{ title: openedModule.title, description: openedModule.description }]
-                      ).map((item, index) => (
+                      {(openedLesson?.summary || [{ title: openedModule.title, description: openedModule.description }]).map((item, index) => (
                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.title}>
                           <div className="flex gap-3">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sm font-black text-cyan-700">
@@ -948,11 +1339,11 @@ export default function StudentLessonsPage() {
                     </div>
                   </section>
 
-                  {openedModule.id === drivingPositionModule.id && (
+                  {openedLesson && (
                     <section className="rounded-[1.75rem] border border-cyan-100 bg-cyan-50/70 p-5">
                       <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Conseils de sécurité</p>
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {drivingPositionModule.safetyAdvice.map((advice) => (
+                        {openedLesson.safetyAdvice.map((advice) => (
                           <div className="rounded-2xl border border-white bg-white/80 p-4 shadow-sm" key={advice}>
                             <p className="text-sm font-bold leading-6 text-slate-700">{advice}</p>
                           </div>
@@ -966,15 +1357,15 @@ export default function StudentLessonsPage() {
                   <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Progression</p>
                   <div className="mt-4 rounded-2xl bg-white p-4">
                     <p className="text-3xl font-black text-slate-950">
-                      {openedModule.id === drivingPositionModule.id && moduleCompleted ? '100%' : '35%'}
+                      {openedLesson && currentProgress.completed ? '100%' : '35%'}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {openedModule.id === drivingPositionModule.id && moduleCompleted ? 'Module validé' : 'Leçon ouverte'}
+                      {openedLesson && currentProgress.completed ? 'Module validé' : 'Leçon ouverte'}
                     </p>
                     <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-300"
-                        style={{ width: openedModule.id === drivingPositionModule.id && moduleCompleted ? '100%' : '35%' }}
+                        style={{ width: openedLesson && currentProgress.completed ? '100%' : '35%' }}
                       />
                     </div>
                   </div>
@@ -990,21 +1381,21 @@ export default function StudentLessonsPage() {
               </div>
             ) : (
               <div className="p-4 sm:p-5 lg:p-6">
-                {openedModule.id === drivingPositionModule.id ? (
+                {openedLesson ? (
                   <div className="space-y-5">
                     <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[var(--shadow-soft)]">
                       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white">
                         <p className="text-sm font-semibold text-cyan-100">Leçon avant QCM</p>
-                        <h3 className="mt-2 text-2xl font-black">{drivingPositionModule.title}</h3>
+                        <h3 className="mt-2 text-2xl font-black">{openedLesson.title}</h3>
                         <p className="mt-3 max-w-4xl text-sm leading-6 text-cyan-50/85">
-                          {drivingPositionModule.intro}
+                          {openedLesson.intro}
                         </p>
                       </div>
                       <div className="grid gap-5 p-5 lg:grid-cols-[1fr_320px]">
                         <div>
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Étapes d’installation</p>
                           <div className="mt-4 grid gap-3">
-                            {drivingPositionModule.summary.map((item, index) => (
+                            {openedLesson.summary.map((item, index) => (
                               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.title}>
                                 <div className="flex gap-3">
                                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sm font-black text-cyan-700">
@@ -1022,7 +1413,7 @@ export default function StudentLessonsPage() {
                         <aside className="rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-4">
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Conseils de sécurité</p>
                           <div className="mt-3 space-y-3">
-                            {drivingPositionModule.safetyAdvice.map((advice) => (
+                            {openedLesson.safetyAdvice.map((advice) => (
                               <p className="rounded-2xl border border-white bg-white/80 p-3 text-sm font-bold leading-6 text-slate-700" key={advice}>
                                 {advice}
                               </p>
@@ -1036,35 +1427,35 @@ export default function StudentLessonsPage() {
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCM professionnel</p>
-                        <h3 className="mt-2 text-2xl font-extrabold text-slate-950">Installation au poste de conduite</h3>
+                        <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
                       </div>
                       <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
-                        {answeredCount}/{drivingPositionQuestions.length} réponses
+                        {answeredCount}/{currentQuestions.length} réponses
                       </span>
                     </div>
 
                     <div className="mt-5 space-y-5">
-                      {drivingPositionQuestions.map((question, questionIndex) => (
+                      {currentQuestions.map((question, questionIndex) => (
                         <article className="rounded-2xl border border-white bg-white p-4 shadow-sm" key={question.question}>
                           <h4 className="font-extrabold text-slate-950">
                             {questionIndex + 1}. {question.question}
                           </h4>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             {question.choices.map((choice, choiceIndex) => {
-                              const checked = answers[questionIndex] === choiceIndex
-                              const status = validated && choiceIndex === question.answer
+                              const checked = currentAnswers[questionIndex] === choiceIndex
+                              const status = currentValidated && choiceIndex === question.answer
                                 ? 'correct'
-                                : validated && checked && choiceIndex !== question.answer
+                                : currentValidated && checked && choiceIndex !== question.answer
                                   ? 'wrong'
                                   : undefined
 
                               return (
                                 <ChoiceButton
                                   checked={checked}
-                                  disabled={validated}
+                                  disabled={currentValidated}
                                   key={choice}
                                   onClick={() =>
-                                    setAnswers((current) => ({ ...current, [questionIndex]: choiceIndex }))
+                                    setAnswersByModule((current) => ({ ...current, [openedModuleId]: { ...(current[openedModuleId] || {}), [questionIndex]: choiceIndex } }))
                                   }
                                   status={status}
                                 >
@@ -1073,7 +1464,7 @@ export default function StudentLessonsPage() {
                               )
                             })}
                           </div>
-                          {validated && (
+                          {currentValidated && (
                             <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 p-3 text-sm leading-6 text-slate-700">
                               <p className="font-black text-cyan-800">
                                 Correction : {question.choices[question.answer]}
@@ -1102,13 +1493,13 @@ export default function StudentLessonsPage() {
               </div>
             )}
             </div>
-            {moduleMode === 'quiz' && openedModule.id === drivingPositionModule.id && (
+            {moduleMode === 'quiz' && openedLesson && (
               <div className="shrink-0 border-t border-white/60 bg-white/95 p-4 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5">
-                {validated ? (
+                {currentValidated ? (
                   <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Score : {score}/{drivingPositionQuestions.length} · Réussite : {percentage}%
+                        Score : {score}/{currentQuestions.length} · Réussite : {percentage}%
                       </p>
                       <p className={`mt-1 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
