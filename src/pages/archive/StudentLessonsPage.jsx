@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const competencies = [
   {
@@ -615,6 +615,29 @@ export default function StudentLessonsPage() {
     setModuleMode('lesson')
   }
 
+  useEffect(() => {
+    if (!openedModule) return undefined
+
+    const scrollY = window.scrollY
+    const previousOverflow = document.body.style.overflow
+    const previousPosition = document.body.style.position
+    const previousTop = document.body.style.top
+    const previousWidth = document.body.style.width
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.position = previousPosition
+      document.body.style.top = previousTop
+      document.body.style.width = previousWidth
+      window.scrollTo(0, scrollY)
+    }
+  }, [openedModule])
+
   const validateModule = () => {
     if (!canValidate) return
 
@@ -815,9 +838,9 @@ export default function StudentLessonsPage() {
 
 
       {openedModule && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-navy-950/65 p-3 backdrop-blur-md sm:p-6">
-          <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
+          <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
+            <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                 <div>
                   <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
@@ -856,8 +879,9 @@ export default function StudentLessonsPage() {
               </div>
             </div>
 
+            <div className="flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" style={{ WebkitOverflowScrolling: 'touch' }}>
             {moduleMode === 'lesson' ? (
-              <div className="grid gap-6 p-5 lg:grid-cols-[1fr_360px] lg:p-6">
+              <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
                 <div className="space-y-5">
                   <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
                     <p className="text-sm font-semibold text-cyan-100">Contenu de leçon</p>
@@ -963,7 +987,7 @@ export default function StudentLessonsPage() {
                 </aside>
               </div>
             ) : (
-              <div className="p-5 lg:p-6">
+              <div className="p-4 sm:p-5 lg:p-6">
                 {openedModule.id === drivingPositionModule.id ? (
                   <div className="space-y-5">
                     <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[var(--shadow-soft)]">
@@ -1106,6 +1130,7 @@ export default function StudentLessonsPage() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
