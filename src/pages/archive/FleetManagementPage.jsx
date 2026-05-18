@@ -231,7 +231,6 @@ export default function FleetManagementPage({ role = 'secretary' }) {
         if (vehicle.tires !== 'OK') items.push({ vehicle, label: 'Pneus à vérifier', tone: 'rose' })
         if (vehicle.cleanliness !== 'propre') items.push({ vehicle, label: 'Lavage nécessaire', tone: 'cyan' })
         if (!isElectric(vehicle) && vehicle.averageConsumption > 9) items.push({ vehicle, label: 'Consommation anormale', tone: 'rose' })
-        if (isSoon(vehicle.insurance)) items.push({ vehicle, label: 'Assurance bientôt expirée', tone: 'amber' })
         if (isSoon(vehicle.technicalControl)) items.push({ vehicle, label: 'Contrôle technique bientôt expiré', tone: 'amber' })
         if (vehicle.availability === 'Maintenance') items.push({ vehicle, label: 'Entretien à prévoir', tone: 'rose' })
         return items
@@ -394,7 +393,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
                     </>
                   ) : (
                     <>
-                      <MiniInfo label="Carburant" value={`${vehicle.fuelLevel}%`} />
+                      <FuelLevelBar value={vehicle.fuelLevel} compact />
                       <MiniInfo label="Conso" value={`${vehicle.averageConsumption} L/100`} />
                     </>
                   )}
@@ -424,7 +423,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               </>
             ) : (
               <>
-                <Info label="Niveau carburant" value={`${selectedVehicle.fuelLevel}%`} />
+                <FuelLevelBar value={selectedVehicle.fuelLevel} />
                 <Info label="Consommation moyenne" value={`${selectedVehicle.averageConsumption} L/100`} />
                 <Info label="Huile" value={selectedVehicle.oil} />
                 <Info label="Liquide refroidissement" value={selectedVehicle.coolant} />
@@ -433,7 +432,6 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             )}
             <Info label="Autonomie" value={`${selectedVehicle.estimatedRange} km`} />
             <Info label="Contrôle technique" value={formatDate(selectedVehicle.technicalControl)} />
-            <Info label="Assurance" value={formatDate(selectedVehicle.insurance)} />
           </div>
 
           <div className="mt-5 grid gap-2">
@@ -515,7 +513,6 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               <Field label="Niveau carburant (%)" onChange={(value) => setVehicleForm((current) => ({ ...current, fuelLevel: Number(value) }))} type="number" value={String(vehicleForm.fuelLevel)} />
             )}
             <Field label="Contrôle technique" onChange={(value) => setVehicleForm((current) => ({ ...current, technicalControl: value }))} type="date" value={vehicleForm.technicalControl} />
-            <Field label="Assurance" onChange={(value) => setVehicleForm((current) => ({ ...current, insurance: value }))} type="date" value={vehicleForm.insurance} />
             <SubmitButton label="Sauvegarder la fiche" />
           </form>
         </Modal>
@@ -718,6 +715,33 @@ function MiniInfo({ label, value }) {
     <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
       <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="text-sm font-extrabold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function FuelLevelBar({ compact = false, value = 0 }) {
+  const level = Math.max(0, Math.min(100, Number(value) || 0))
+  const status =
+    level <= 20
+      ? { label: 'Critique', bar: 'from-rose-600 to-red-400', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' }
+      : level <= 40
+        ? { label: 'Faible', bar: 'from-amber-500 to-orange-400', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' }
+        : { label: 'Correct', bar: 'from-emerald-600 to-green-400', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' }
+
+  return (
+    <div className={`rounded-2xl border ${status.border} ${status.bg} ${compact ? 'px-3 py-2' : 'p-3'}`}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Carburant</p>
+        <span className={`rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black ${status.text}`}>
+          {status.label}
+        </span>
+      </div>
+      <div className={`${compact ? 'mt-2 h-2' : 'mt-3 h-3'} overflow-hidden rounded-full bg-white/80 shadow-inner`}>
+        <div
+          className={`h-full rounded-full bg-gradient-to-r ${status.bar} transition-all duration-500`}
+          style={{ width: `${level}%` }}
+        />
+      </div>
     </div>
   )
 }

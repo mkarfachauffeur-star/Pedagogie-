@@ -1,6 +1,173 @@
-import ModernPage from '../../components/ModernPage'
-import { pageConfigs } from '../../data/pageConfigs'
+import { useMemo, useState } from 'react'
+import { permitVerificationQuestions } from '../../data/permitVerificationQuestions'
+
+const categories = [
+  'Vérifications extérieures',
+  'Vérifications intérieures',
+  'Questions en lien avec la sécurité routière',
+  'Premiers secours',
+]
+
+function normalizeQuestion(value = '') {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getUniqueQuestions(questions) {
+  const seen = new Set()
+  return questions.filter((question) => {
+    const key = normalizeQuestion(question.question)
+    const answer = question.answer || ''
+    if (!key || seen.has(key) || answer === 'Réponse à vérifier avec l’enseignant.' || answer.length < 8) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function categoryTone(category) {
+  if (category === 'Vérifications extérieures') return 'cyan'
+  if (category === 'Vérifications intérieures') return 'violet'
+  if (category === 'Questions en lien avec la sécurité routière') return 'amber'
+  return 'emerald'
+}
+
+function toneClasses(tone) {
+  const tones = {
+    cyan: 'border-cyan-100 bg-cyan-50/70 text-cyan-800',
+    violet: 'border-violet-100 bg-violet-50/70 text-violet-800',
+    amber: 'border-amber-100 bg-amber-50/70 text-amber-800',
+    emerald: 'border-emerald-100 bg-emerald-50/70 text-emerald-800',
+  }
+  return tones[tone] || tones.cyan
+}
 
 export default function StudentExamsPage() {
-  return <ModernPage config={pageConfigs.studentExams} />
+  const questions = useMemo(() => getUniqueQuestions(permitVerificationQuestions), [])
+  const [activeCategory, setActiveCategory] = useState(categories[0])
+  const [search, setSearch] = useState('')
+  const [openedAnswers, setOpenedAnswers] = useState({})
+
+  const normalizedSearch = normalizeQuestion(search)
+  const filteredQuestions = useMemo(
+    () => questions.filter((question) => {
+      const searchable = normalizeQuestion(`${question.question} ${question.answer} ${question.category} ${question.source}`)
+      return question.category === activeCategory && (!normalizedSearch || searchable.includes(normalizedSearch))
+    }),
+    [activeCategory, normalizedSearch, questions],
+  )
+
+  const groupedCounts = categories.map((category) => ({
+    category,
+    count: questions.filter((question) => question.category === category).length,
+  }))
+
+  const toggleAnswer = (questionId) => {
+    setOpenedAnswers((current) => ({ ...current, [questionId]: !current[questionId] }))
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+        <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
+          <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
+            Examen élève · Banque officielle
+          </span>
+          <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">Préparation examen pratique</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-cyan-50/85">
+            Recherche intelligente et mode apprentissage uniquement : les vérifications et réponses sont séparées clairement par catégorie.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {groupedCounts.map(({ category, count }) => (
+          <article className={`rounded-[1.5rem] border p-5 shadow-[var(--shadow-soft)] ${toneClasses(categoryTone(category))}`} key={category}>
+            <p className="text-sm font-bold text-slate-500">{category}</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{count}</p>
+            <p className="mt-3 text-sm font-semibold text-slate-500">questions avec réponses</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <label className="block">
+          <span className="text-sm font-bold text-slate-700">Recherche intelligente</span>
+          <input
+            className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="feux, premiers secours, triangle, huile, frein..."
+            value={search}
+          />
+        </label>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <button
+              className={`rounded-full px-4 py-2 text-sm font-black transition ${activeCategory === category ? 'bg-navy-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'}`}
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Mode apprentissage</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">{activeCategory}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Cliquez sur une carte pour afficher la réponse officielle. Aucun QCM aléatoire n’est affiché.
+            </p>
+          </div>
+          <span className="w-fit rounded-full bg-cyan-50 px-4 py-2 text-sm font-black text-cyan-700">
+            {filteredQuestions.length} résultat{filteredQuestions.length > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {filteredQuestions.map((question, index) => {
+            const opened = Boolean(openedAnswers[question.id])
+            return (
+              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-lg" key={question.id}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
+                    {index + 1}
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200">
+                    {question.source}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-lg font-black leading-7 text-slate-950">{question.question}</h3>
+                {opened && (
+                  <div className="mt-4 rounded-2xl border border-emerald-100 bg-white p-4 text-sm font-bold leading-7 text-slate-700 shadow-sm">
+                    {question.answer}
+                  </div>
+                )}
+                <button
+                  className="mt-4 rounded-2xl bg-navy-950 px-4 py-3 text-sm font-black text-white transition hover:bg-cyan-700"
+                  onClick={() => toggleAnswer(question.id)}
+                  type="button"
+                >
+                  {opened ? 'Masquer la réponse' : 'Voir réponse'}
+                </button>
+              </article>
+            )
+          })}
+        </div>
+
+        {!filteredQuestions.length && (
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+            Aucune question ne correspond à cette recherche dans la catégorie sélectionnée.
+          </p>
+        )}
+      </section>
+    </div>
+  )
 }

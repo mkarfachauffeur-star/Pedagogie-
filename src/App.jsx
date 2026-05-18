@@ -17,6 +17,7 @@ import ManagerSettingsPage from './pages/archive/AdminSettingsPage'
 
 import StudentDashboardPage from './pages/archive/StudentDashboardPage'
 import StudentLessonsPage from './pages/archive/StudentLessonsPage'
+import StudentLexiconPage from './pages/archive/StudentLexiconPage'
 import StudentProgressPage from './pages/archive/StudentProgressPage'
 import StudentExamsPage from './pages/archive/StudentExamsPage'
 import StudentAccompaniedDrivingPage from './pages/archive/StudentAccompaniedDrivingPage'
@@ -71,6 +72,7 @@ function App() {
 
         <Route path="/student/dashboard" element={withLayout('student', StudentDashboardPage)} />
         <Route path="/student/lessons" element={withLayout('student', StudentLessonsPage)} />
+        <Route path="/student/lexicon" element={withLayout('student', StudentLexiconPage)} />
         <Route path="/student/progress" element={withLayout('student', StudentProgressPage)} />
         <Route path="/student/exams" element={withLayout('student', StudentExamsPage)} />
         <Route

@@ -83,27 +83,27 @@ const profiles = [
     eyebrow: 'Parcours conduite',
     title: 'Élève',
     description:
-      'Suivez votre progression REMC, consultez vos le\u00E7ons et g\u00E9rez vos r\u00E9servations',
+      'Suivez votre progression REMC, consultez vos leçons et gérez vos réservations',
     accent: 'from-cyan-300 via-sky-400 to-blue-500',
     glow: 'group-hover:shadow-cyan-400/25',
   },
   {
     id: 'teacher',
     href: '/teacher/dashboard',
-    eyebrow: 'P\u00E9dagogie REMC',
+    eyebrow: 'Pédagogie REMC',
     title: 'Enseignant',
     description:
-      'G\u00E9rez vos \u00E9l\u00E8ves, validez les comp\u00E9tences et organisez votre planning',
+      'Gérez vos élèves, validez les compétences et organisez votre planning',
     accent: 'from-teal-300 via-cyan-400 to-sky-500',
     glow: 'group-hover:shadow-teal-400/25',
   },
   {
     id: 'secretary',
     href: '/secretary/dashboard',
-    eyebrow: 'Gestion op\u00E9rationnelle',
+    eyebrow: 'Gestion opérationnelle',
     title: 'Secrétariat',
     description:
-      'G\u00E9rez les inscriptions, les paiements et la communication avec les \u00E9l\u00E8ves',
+      'Gérez les inscriptions, les paiements et la communication avec les élèves',
     accent: 'from-indigo-300 via-cyan-400 to-blue-500',
     glow: 'group-hover:shadow-indigo-400/25',
   },
@@ -151,7 +151,7 @@ export default function ProfileSelection() {
             </span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-base font-medium leading-7 text-cyan-50/80 sm:text-lg">
-            {'S\u00E9lectionnez votre profil pour acc\u00E9der \u00E0 l\u2019application'}
+            Sélectionnez votre profil pour accéder à l’application
           </p>
         </header>
 
@@ -204,7 +204,7 @@ export default function ProfileSelection() {
 
         <div className="mt-10 max-w-2xl rounded-[1.75rem] border border-white/15 bg-white/[0.07] px-6 py-4 text-center shadow-2xl shadow-black/25 backdrop-blur-[28px] animate-slide-up [animation-delay:160ms]">
           <p className="text-sm font-semibold text-cyan-50/85">
-            {'MODE D\u00C9MONSTRATION \u2014 Acc\u00E8s libre \u00E0 toutes les fonctionnalit\u00E9s sans authentification'}
+            MODE DÉMONSTRATION — Accès libre à toutes les fonctionnalités sans authentification
           </p>
         </div>
       </div>

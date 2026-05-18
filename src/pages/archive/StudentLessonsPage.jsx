@@ -98,7 +98,7 @@ const subcompetenciesByCompetency = {
     },
     {
       id: 'SC1.6',
-      title: 'Utiliser la boîte de vitesses',
+      title: 'Utiliser la boîte de vitesse',
       description:
         'Adapter le rapport de vitesse, gérer l’embrayage et éviter les à-coups.',
       accent: 'teal',
@@ -116,7 +116,7 @@ const subcompetenciesByCompetency = {
     },
     {
       id: 'SC1.8',
-      title: 'Regarder autour et avertir',
+      title: 'Regarder autour de soi et avertir',
       description:
         'Observer avant d’agir, contrôler les angles morts et avertir les autres usagers au bon moment.',
       accent: 'emerald',
@@ -853,76 +853,66 @@ const accelerationBrakingQuestions = [
 const gearboxModule = {
   id: 'SC1.6',
   storageKey: 'pedagogia:lesson:gearbox',
-  title: 'Utiliser la boîte de vitesses',
+  title: 'Utiliser la boîte de vitesse',
   intro:
-    'La boîte de vitesses permet d’adapter la puissance du moteur, la vitesse du véhicule et la situation de circulation. Elle fonctionne avec le moteur, le volant moteur et l’embrayage. Le volant moteur transmet la rotation du moteur à l’embrayage, puis l’embrayage transmet cette puissance à la boîte de vitesses afin d’entraîner les roues.',
+    'La boîte de vitesse permet d’adapter la vitesse du véhicule au régime moteur et à la situation de circulation. Elle se comprend avec l’embrayage et, plus indirectement, avec le volant moteur qui participe à la transmission du mouvement du moteur.',
   summary: [
     {
-      title: 'Fonctionnement de la boîte de vitesses',
+      title: 'Rôle de la boîte de vitesse',
       description:
-        'La boîte de vitesses adapte la puissance du moteur, la vitesse du véhicule et la situation de circulation. Elle fonctionne avec le moteur, le volant moteur et l’embrayage pour transmettre la puissance aux roues.',
+        'La boîte de vitesse sert à choisir un rapport adapté pour que le véhicule avance avec souplesse, sans forcer le moteur et sans perdre de maîtrise.',
     },
     {
-      title: 'Transmission de la puissance',
+      title: 'Lien avec l’embrayage',
       description:
-        'Le volant moteur transmet la rotation du moteur à l’embrayage. L’embrayage transmet ensuite cette puissance à la boîte de vitesses afin d’entraîner les roues.',
+        'L’embrayage permet de séparer momentanément le moteur de la boîte de vitesse pour changer de rapport. Il doit être utilisé à fond puis relâché progressivement.',
     },
     {
-      title: 'Utiliser les vitesses avec souplesse',
+      title: 'Lien indirect avec le volant moteur',
       description:
-        'Le conducteur doit utiliser les vitesses avec souplesse afin d’éviter les à-coups, d’éviter le calage et de garder le contrôle du véhicule.',
-    },
-    {
-      title: 'Rôle des vitesses',
-      description:
-        'Plus la vitesse est petite, plus elle possède de puissance moteur. La 1ère vitesse est la plus puissante. Les vitesses élevées possèdent moins de puissance moteur mais permettent plus de vitesse.',
-    },
-    {
-      title: 'Utiliser les petites vitesses',
-      description:
-        'Les petites vitesses sont principalement utilisées pour démarrer, en montée, à faible allure et dans les situations difficiles.',
-    },
-    {
-      title: 'Utiliser les grandes vitesses',
-      description:
-        'Les grandes vitesses sont utilisées lorsque le véhicule roule plus rapidement, pour stabiliser l’allure et pour réduire le régime moteur.',
-    },
-    {
-      title: 'Utilisation de l’embrayage',
-      description:
-        'L’embrayage permet de démarrer, de s’arrêter et de changer les vitesses. Pour changer une vitesse, il faut embrayer à fond, changer le rapport, relâcher progressivement l’embrayage puis accélérer progressivement.',
-    },
-    {
-      title: 'Gestes à éviter',
-      description:
-        'Le conducteur ne doit pas garder le pied sur l’embrayage, regarder le levier de vitesse ou garder la main sur le levier de vitesse.',
+        'Le volant moteur aide à transmettre le mouvement du moteur vers l’embrayage. Pour l’élève, l’idée importante est de comprendre que moteur, embrayage et boîte de vitesse travaillent ensemble.',
     },
     {
       title: 'Monter les rapports',
       description:
-        'Monter les vitesses permet d’augmenter progressivement l’allure, de réduire le bruit moteur et d’éviter le sur-régime. Un moteur qui hurle indique souvent un sur-régime.',
+        'Monter les rapports permet d’accompagner l’augmentation de l’allure, de stabiliser le moteur et d’éviter le sur-régime.',
     },
     {
       title: 'Descendre les vitesses',
       description:
-        'Le rétrogradage permet d’utiliser le frein moteur, de ralentir le véhicule et de récupérer de la puissance. Un moteur qui manque de puissance indique souvent un sous-régime.',
+        'Descendre les rapports, ou rétrograder, permet de retrouver de la puissance, de mieux contrôler l’allure et d’utiliser le frein moteur.',
+    },
+    {
+      title: 'Adapter vitesse et régime moteur',
+      description:
+        'Le bon rapport dépend de l’allure, du bruit moteur, du relief et de la circulation. Le conducteur doit chercher une conduite souple, sans moteur qui force ni moteur qui hurle.',
+    },
+    {
+      title: 'Éviter le sous-régime',
+      description:
+        'Le sous-régime apparaît quand le rapport est trop élevé pour l’allure : le moteur manque de puissance et le véhicule devient moins réactif.',
+    },
+    {
+      title: 'Éviter le sur-régime',
+      description:
+        'Le sur-régime apparaît quand le rapport est trop bas pour l’allure : le moteur fait trop de bruit et il faut généralement monter un rapport.',
     },
   ],
   safetyAdvice: [
-    'Regarder loin devant.',
-    'Adapter les vitesses à la situation.',
-    'Utiliser les pédales avec souplesse.',
-    'Garder les deux mains sur le volant autant que possible.',
-    'Anticiper les ralentissements.',
+    'Adapter le rapport à l’allure et à la situation.',
+    'Utiliser l’embrayage avec souplesse.',
+    'Éviter de rester le pied sur l’embrayage.',
+    'Anticiper les ralentissements pour rétrograder si nécessaire.',
+    'Écouter le moteur pour éviter sous-régime et sur-régime.',
   ],
 }
 
 const gearboxQuestions = [
   createRandomizedQuestion(
-    'Quel est le rôle principal de la boîte de vitesses ?',
+    'Quel est le rôle principal de la boîte de vitesse ?',
     'Adapter la puissance du moteur à la vitesse et à la situation de circulation',
     ['Augmenter automatiquement l’adhérence du véhicule', 'Remplacer le système de freinage', 'Stabiliser automatiquement la direction'],
-    'La boîte de vitesses sert à adapter la puissance du moteur selon la vitesse du véhicule et la situation de circulation.',
+    'La boîte de vitesse sert à adapter la puissance du moteur selon la vitesse du véhicule et la situation de circulation.',
   ),
   createRandomizedQuestion(
     'Pourquoi la 1ère vitesse possède-t-elle davantage de puissance moteur ?',
@@ -1103,7 +1093,7 @@ const forwardReverseQuestions = [
 const observationWarningModule = {
   id: 'SC1.8',
   storageKey: 'pedagogia:lesson:observation-warning',
-  title: 'Regarder autour et avertir',
+  title: 'Regarder autour de soi et avertir',
   intro:
     'Le conducteur doit observer son environnement afin d’anticiper les dangers, d’adapter sa conduite et d’informer les autres usagers de ses intentions. Observer permet d’anticiper, avertir permet d’être compris.',
   summary: [
