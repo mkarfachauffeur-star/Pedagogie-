@@ -261,7 +261,6 @@ export default function StudentLexiconPage() {
   const [activeTerm, setActiveTerm] = useState(terms[0])
   const [flipped, setFlipped] = useState({})
   const [answers, setAnswers] = useState({})
-  const [revealedSign, setRevealedSign] = useState({})
   const score = useMemo(() => quiz.reduce((total, item, index) => total + (answers[index] === item.answer ? 1 : 0), 0), [answers])
   const answered = Object.keys(answers).length
 
@@ -320,74 +319,45 @@ export default function StudentLexiconPage() {
           <p className="rounded-full bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700">{signs.length} panneaux essentiels</p>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {signs.map((sign, index) => {
-            const isRevealed = Boolean(revealedSign[sign.type])
-            return (
-              <article
-                key={sign.type}
-                lang="fr"
-                className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)]"
-              >
-                <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 opacity-[0.18]"
-                    style={{
-                      backgroundImage:
-                        'radial-gradient(circle at 18% 22%, rgba(15,23,42,0.18) 0, transparent 38%), radial-gradient(circle at 82% 78%, rgba(15,23,42,0.12) 0, transparent 45%)',
-                    }}
-                  />
-                  <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-200">{String(index + 1).padStart(2, '0')}</span>
-                  <span className={`absolute right-3 top-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${accentBadge[sign.accent]}`} style={{ letterSpacing: '0.04em' }}>{sign.category}</span>
-                  <div className="relative grid h-32 w-32 place-items-center transition duration-300 group-hover:scale-105">
-                    <SignVisual type={sign.type} size="lg" />
-                  </div>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {signs.map((sign, index) => (
+            <article
+              key={sign.type}
+              lang="fr"
+              className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)]"
+            >
+              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 opacity-[0.18]"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(circle at 18% 22%, rgba(15,23,42,0.18) 0, transparent 38%), radial-gradient(circle at 82% 78%, rgba(15,23,42,0.12) 0, transparent 45%)',
+                  }}
+                />
+                <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-200">{String(index + 1).padStart(2, '0')}</span>
+                <span className={`absolute right-3 top-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${accentBadge[sign.accent]}`} style={{ letterSpacing: '0.04em' }}>{sign.category}</span>
+                <div className="relative grid h-32 w-32 place-items-center transition duration-300 group-hover:scale-105">
+                  <SignVisual type={sign.type} size="lg" />
                 </div>
+              </div>
 
-                <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
-                  <h3
-                    className="text-left text-lg font-extrabold text-slate-950 sm:text-xl"
-                    style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.3' }}
-                  >
-                    {sign.name}
-                  </h3>
-                  <p
-                    className="text-left text-[15px] text-slate-600"
-                    style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.6', textAlign: 'left' }}
-                  >
-                    {sign.explanation}
-                  </p>
-
-                  <div className="mt-auto rounded-2xl border border-cyan-100 bg-cyan-50/60 p-3.5">
-                    <p className="text-[11px] font-black uppercase text-cyan-700" style={{ letterSpacing: '0.06em' }}>Mini question</p>
-                    <p
-                      className="mt-1 text-[15px] font-bold text-slate-900"
-                      style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.5', textAlign: 'left' }}
-                    >
-                      {sign.question}
-                    </p>
-                    {isRevealed ? (
-                      <p
-                        className="mt-2 rounded-xl bg-white px-3 py-2 text-[14px] text-slate-700 ring-1 ring-inset ring-cyan-100"
-                        style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.6', textAlign: 'left' }}
-                      >
-                        {sign.answer}
-                      </p>
-                    ) : (
-                      <button
-                        className="mt-3 inline-flex items-center gap-2 rounded-full bg-cyan-600 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-cyan-700 active:scale-[0.97]"
-                        onClick={() => setRevealedSign((current) => ({ ...current, [sign.type]: true }))}
-                        type="button"
-                      >
-                        Voir la réponse
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            )
-          })}
+              <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
+                <h3
+                  className="text-left text-lg font-extrabold text-slate-950 sm:text-xl"
+                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.3' }}
+                >
+                  {sign.name}
+                </h3>
+                <p
+                  className="text-left text-[15px] text-slate-600"
+                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.65', textAlign: 'left' }}
+                >
+                  {sign.explanation}
+                </p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
