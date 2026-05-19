@@ -91,11 +91,20 @@ const signs = [
   {
     name: 'Priorité à droite',
     type: 'priority',
-    category: 'Intersection',
+    category: 'Danger',
     accent: 'amber',
-    explanation: 'Rappelle qu’un véhicule venant de droite est prioritaire à l’intersection.',
-    question: 'À quoi sert ce panneau triangulaire jaune ?',
-    answer: 'Indiquer que la règle de la priorité à droite s’applique à la prochaine intersection.',
+    explanation: 'À une intersection sans signalisation particulière, le véhicule venant de droite est prioritaire.',
+    question: 'Qui passe en premier à une intersection sans signalisation ?',
+    answer: 'Le véhicule arrivant par la droite est prioritaire.',
+  },
+  {
+    name: 'Sens unique',
+    type: 'oneWay',
+    category: 'Indication',
+    accent: 'sky',
+    explanation: 'Indique que la circulation est autorisée uniquement dans le sens de la flèche.',
+    question: 'Que faut-il faire face à ce panneau ?',
+    answer: 'Suivre la direction indiquée par la flèche : la voie est à sens unique.',
   },
   {
     name: 'Stationnement interdit',
@@ -228,11 +237,18 @@ function SignVisual({ type, size = 'md' }) {
     case 'priority':
       return (
         <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau priorité à droite">
-          <polygon points="60,10 110,60 60,110 10,60" fill="#ffffff" />
-          <polygon points="60,18 102,60 60,102 18,60" fill="#fcd116" />
-          <rect x="56" y="42" width="8" height="36" fill="#0f172a" />
-          <rect x="42" y="56" width="36" height="8" fill="#0f172a" />
-          <rect x="56" y="56" width="22" height="8" fill="#d4101a" />
+          <polygon points="60,10 114,104 6,104" fill="#ffffff" />
+          <polygon points="60,10 114,104 6,104" fill="none" stroke="#d4101a" strokeWidth="9" strokeLinejoin="round" />
+          <line x1="42" y1="58" x2="78" y2="94" stroke="#0f172a" strokeWidth="13" strokeLinecap="square" />
+          <line x1="78" y1="58" x2="42" y2="94" stroke="#0f172a" strokeWidth="13" strokeLinecap="square" />
+        </svg>
+      )
+    case 'oneWay':
+      return (
+        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau sens unique">
+          <rect x="8" y="8" width="104" height="104" rx="8" fill="#ffffff" />
+          <rect x="12" y="12" width="96" height="96" rx="5" fill="#0a52a3" />
+          <polygon points="60,22 92,58 76,58 76,100 44,100 44,58 28,58" fill="#ffffff" />
         </svg>
       )
     case 'noParking':
@@ -316,7 +332,7 @@ export default function StudentLexiconPage() {
             <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-[1.65rem]">Les panneaux les plus rencontrés</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Une galerie visuelle pour reconnaître rapidement les panneaux essentiels et comprendre leur signification en conduite.</p>
           </div>
-          <p className="rounded-full bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700">{signs.length} panneaux essentiels</p>
+          <p className="rounded-full bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700">{signs.length} panneaux à reconnaître</p>
         </div>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
