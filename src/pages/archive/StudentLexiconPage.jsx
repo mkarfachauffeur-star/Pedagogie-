@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 const labels = {
   studentOnly: 'Élève uniquement',
   title: 'Lexique auto-école',
-  subtitle: 'Comprendre les mots souvent mal interprétés en conduite grâce à des définitions simples, des flashcards, des panneaux et un mini QCM.',
+  subtitle: 'Définitions essentielles, panneaux de signalisation et quiz QCU aléatoire pour ancrer le vocabulaire.',
 }
 
 const terms = [
@@ -127,22 +127,44 @@ const signs = [
 ]
 
 const quiz = [
-  { question: 'Que signifie débrayer ?', answer: 'Appuyer sur l’embrayage pour séparer le moteur des roues', choices: ['Accélérer fortement', 'Appuyer sur l’embrayage pour séparer le moteur des roues'] },
-  { question: 'Qu’est-ce qu’un angle mort ?', answer: 'Une zone invisible dans les rétroviseurs', choices: ['Une zone invisible dans les rétroviseurs', 'Une voie d’insertion'] },
-  { question: 'À quoi sert une voie d’insertion ?', answer: 'Entrer progressivement dans une circulation rapide', choices: ['Stationner sur le côté', 'Entrer progressivement dans une circulation rapide'] },
-  { question: 'Que veut dire rétrograder ?', answer: 'Passer à un rapport inférieur', choices: ['Passer à un rapport supérieur', 'Passer à un rapport inférieur'] },
-  { question: 'Le clignotant sert principalement à :', answer: 'Informer les autres usagers', choices: ['Obtenir automatiquement la priorité', 'Informer les autres usagers'] },
-  { question: 'Quel est ce panneau ?', visualType: 'stop', answer: 'STOP', choices: ['STOP', 'Cédez le passage'] },
-  { question: 'Quel est ce panneau ?', visualType: 'yield', answer: 'Cédez le passage', choices: ['Sens interdit', 'Cédez le passage'] },
-  { question: 'Quel est ce panneau ?', visualType: 'noEntry', answer: 'Sens interdit', choices: ['Sens interdit', 'Stationnement interdit'] },
-  { question: 'Quel est ce panneau ?', visualType: 'roundabout', answer: 'Rond-point', choices: ['Priorité à droite', 'Rond-point'] },
-  { question: 'Quel est ce panneau ?', visualType: 'speed50', answer: 'Limitation de vitesse', choices: ['Limitation de vitesse', 'Passage piéton'] },
-  { question: 'Quel est ce panneau ?', visualType: 'pedestrian', answer: 'Passage piéton', choices: ['Passage piéton', 'Feu tricolore'] },
-  { question: 'Quel est ce panneau ?', visualType: 'trafficLight', answer: 'Feu tricolore', choices: ['Rond-point', 'Feu tricolore'] },
-  { question: 'Quel est ce panneau ?', visualType: 'priority', answer: 'Priorité à droite', choices: ['Priorité à droite', 'Ralentisseur'] },
-  { question: 'Quel est ce panneau ?', visualType: 'noParking', answer: 'Stationnement interdit', choices: ['Stationnement interdit', 'Sens interdit'] },
-  { question: 'Quel est ce panneau ?', visualType: 'bump', answer: 'Ralentisseur', choices: ['Limitation de vitesse', 'Ralentisseur'] },
+  { question: 'Que signifie débrayer ?', answer: 'Appuyer sur l’embrayage pour séparer le moteur des roues', choices: ['Appuyer sur l’embrayage pour séparer le moteur des roues', 'Accélérer fortement pour passer une vitesse', 'Couper le contact du moteur', 'Tourner le volant à fond'] },
+  { question: 'Qu’est-ce qu’un angle mort ?', answer: 'Une zone invisible dans les rétroviseurs', choices: ['Une zone invisible dans les rétroviseurs', 'Une voie d’insertion sur autoroute', 'Une zone réservée aux piétons', 'Un emplacement de stationnement'] },
+  { question: 'À quoi sert une voie d’insertion ?', answer: 'Entrer progressivement dans une circulation rapide', choices: ['Entrer progressivement dans une circulation rapide', 'Stationner sur le côté de la chaussée', 'Faire demi-tour en toute sécurité', 'Doubler les véhicules lents'] },
+  { question: 'Que veut dire rétrograder ?', answer: 'Passer à un rapport inférieur', choices: ['Passer à un rapport inférieur', 'Passer à un rapport supérieur', 'Couper le contact du moteur', 'Mettre la boîte au point mort'] },
+  { question: 'Le clignotant sert principalement à :', answer: 'Informer les autres usagers de l’intention de tourner', choices: ['Informer les autres usagers de l’intention de tourner', 'Obtenir automatiquement la priorité', 'Signaler une situation d’urgence', 'Demander aux piétons de s’écarter'] },
+  { question: 'Que veut dire décélérer ?', answer: 'Réduire progressivement sa vitesse', choices: ['Réduire progressivement sa vitesse', 'Accélérer franchement', 'Maintenir une allure constante', 'Couper le moteur'] },
+  { question: 'Qu’est-ce que le frein moteur ?', answer: 'Le ralentissement naturel du véhicule quand on relâche l’accélérateur', choices: ['Le ralentissement naturel du véhicule quand on relâche l’accélérateur', 'Le frein de stationnement à main', 'Le système ABS du véhicule', 'Une pédale spécifique au moteur'] },
+  { question: 'Qu’est-ce que le point de patinage ?', answer: 'Le moment où le véhicule commence à vouloir avancer', choices: ['Le moment où le véhicule commence à vouloir avancer', 'Le moment où l’on cale le moteur', 'Le point d’arrêt du frein à main', 'Le point culminant d’un virage'] },
+  { question: 'Que désigne une intersection ?', answer: 'Un lieu où plusieurs routes se croisent', choices: ['Un lieu où plusieurs routes se croisent', 'Une portion d’autoroute', 'Une zone réservée aux bus', 'Un passage piéton signalé'] },
+  { question: 'Quel est ce panneau ?', visualType: 'stop', answer: 'STOP', choices: ['STOP', 'Cédez le passage', 'Sens interdit', 'Limitation de vitesse'] },
+  { question: 'Quel est ce panneau ?', visualType: 'yield', answer: 'Cédez le passage', choices: ['Cédez le passage', 'STOP', 'Ralentisseur', 'Priorité à droite'] },
+  { question: 'Quel est ce panneau ?', visualType: 'noEntry', answer: 'Sens interdit', choices: ['Sens interdit', 'Stationnement interdit', 'Sens unique', 'STOP'] },
+  { question: 'Quel est ce panneau ?', visualType: 'roundabout', answer: 'Rond-point', choices: ['Rond-point', 'Sens unique', 'Priorité à droite', 'Cédez le passage'] },
+  { question: 'Quel est ce panneau ?', visualType: 'speed50', answer: 'Limitation de vitesse', choices: ['Limitation de vitesse', 'Sens interdit', 'Stationnement interdit', 'Passage piéton'] },
+  { question: 'Quel est ce panneau ?', visualType: 'pedestrian', answer: 'Passage piéton', choices: ['Passage piéton', 'Sens unique', 'Feu tricolore', 'Rond-point'] },
+  { question: 'Quel est ce panneau ?', visualType: 'trafficLight', answer: 'Feu tricolore', choices: ['Feu tricolore', 'Rond-point', 'Passage piéton', 'Priorité à droite'] },
+  { question: 'Quel est ce panneau ?', visualType: 'priority', answer: 'Priorité à droite', choices: ['Priorité à droite', 'Ralentisseur', 'Cédez le passage', 'STOP'] },
+  { question: 'Quel est ce panneau ?', visualType: 'oneWay', answer: 'Sens unique', choices: ['Sens unique', 'Sens interdit', 'Passage piéton', 'Rond-point'] },
+  { question: 'Quel est ce panneau ?', visualType: 'noParking', answer: 'Stationnement interdit', choices: ['Stationnement interdit', 'Sens interdit', 'Sens unique', 'Limitation de vitesse'] },
+  { question: 'Quel est ce panneau ?', visualType: 'bump', answer: 'Ralentisseur', choices: ['Ralentisseur', 'Priorité à droite', 'Limitation de vitesse', 'Cédez le passage'] },
 ]
+
+const QUIZ_SAMPLE_SIZE = 10
+
+function shuffleArray(arr) {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+function buildSession() {
+  return shuffleArray(quiz)
+    .slice(0, Math.min(QUIZ_SAMPLE_SIZE, quiz.length))
+    .map((item) => ({ ...item, choices: shuffleArray(item.choices) }))
+}
 
 const accentBadge = {
   rose: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-100',
@@ -276,9 +298,42 @@ function SignVisual({ type, size = 'md' }) {
 export default function StudentLexiconPage() {
   const [activeTerm, setActiveTerm] = useState(terms[0])
   const [flipped, setFlipped] = useState({})
-  const [answers, setAnswers] = useState({})
-  const score = useMemo(() => quiz.reduce((total, item, index) => total + (answers[index] === item.answer ? 1 : 0), 0), [answers])
-  const answered = Object.keys(answers).length
+
+  const [session, setSession] = useState(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedChoice, setSelectedChoice] = useState(null)
+  const [score, setScore] = useState(0)
+  const [finished, setFinished] = useState(false)
+
+  const startQuiz = () => {
+    setSession(buildSession())
+    setCurrentIndex(0)
+    setSelectedChoice(null)
+    setScore(0)
+    setFinished(false)
+  }
+
+  const handleSelect = (choice) => {
+    if (selectedChoice || !session) return
+    setSelectedChoice(choice)
+    if (choice === session[currentIndex].answer) {
+      setScore((value) => value + 1)
+    }
+  }
+
+  const handleNext = () => {
+    if (!session) return
+    if (currentIndex + 1 >= session.length) {
+      setFinished(true)
+    } else {
+      setCurrentIndex((value) => value + 1)
+      setSelectedChoice(null)
+    }
+  }
+
+  const currentQuestion = session && !finished ? session[currentIndex] : null
+  const progress = session ? Math.round(((currentIndex + (selectedChoice ? 1 : 0)) / session.length) * 100) : 0
+  const percentage = session ? Math.round((score / session.length) * 100) : 0
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -294,7 +349,7 @@ export default function StudentLexiconPage() {
         <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Définitions</p>
+              <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Définitions du lexique</p>
               <h2 className="mt-1 text-2xl font-black text-slate-950">Cartes interactives</h2>
             </div>
             <p className="rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">{terms.length} mots clés</p>
@@ -328,7 +383,7 @@ export default function StudentLexiconPage() {
       <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Photos & panneaux</p>
+            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Panneaux de signalisation</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-[1.65rem]">Les panneaux les plus rencontrés</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Une galerie visuelle pour reconnaître rapidement les panneaux essentiels et comprendre leur signification en conduite.</p>
           </div>
@@ -377,51 +432,121 @@ export default function StudentLexiconPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7" lang="fr">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Mini QCM</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-950">Vérifier le vocabulaire et les panneaux</h2>
+            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Quiz aléatoire</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-[1.65rem]">Quiz QCU aléatoire</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{QUIZ_SAMPLE_SIZE} questions tirées au hasard parmi {quiz.length}. Une seule bonne réponse par question.</p>
           </div>
-          <p className="rounded-full bg-slate-50 px-4 py-2 text-sm font-black text-slate-700">Score : {score}/{quiz.length} · {answered}/{quiz.length} réponses</p>
+          {session && !finished && (
+            <p className="rounded-full bg-cyan-50 px-4 py-2 text-sm font-black text-cyan-800">Question {Math.min(currentIndex + 1, session.length)} / {session.length}</p>
+          )}
         </div>
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          {quiz.map((item, index) => (
-            <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4" key={`${item.question}-${index}`}>
-              {item.visualType && (
-                <div className="mb-4 grid place-items-center rounded-[1.25rem] bg-white p-4 shadow-inner">
-                  <SignVisual type={item.visualType} size="md" />
+
+        {!session && (
+          <div className="mt-6 grid place-items-center rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/60 px-6 py-12 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-cyan-100 text-3xl">🎯</div>
+            <h3 className="mt-5 text-xl font-black text-slate-950">Prêt pour le défi ?</h3>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">Vocabulaire auto-école et panneaux mélangés. {QUIZ_SAMPLE_SIZE} questions à choix unique, ordre et propositions aléatoires.</p>
+            <button
+              type="button"
+              onClick={startQuiz}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-600 to-sky-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-cyan-600/20 transition hover:shadow-xl hover:shadow-cyan-600/30 active:scale-[0.98]"
+            >
+              Lancer le quiz aléatoire
+            </button>
+          </div>
+        )}
+
+        {currentQuestion && (
+          <div className="mt-6">
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+            </div>
+
+            <article className="rounded-[1.75rem] border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+              {currentQuestion.visualType && (
+                <div className="mb-5 grid place-items-center rounded-[1.5rem] bg-white p-5 shadow-inner">
+                  <SignVisual type={currentQuestion.visualType} size="lg" />
                 </div>
               )}
-              <h3 className="font-black text-slate-950">{index + 1}. {item.question}</h3>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {item.choices.map((choice) => {
-                  const selected = answers[index] === choice
-                  const isCorrect = choice === item.answer
-                  const revealed = answers[index]
+              <h3
+                className="text-left text-lg font-extrabold text-slate-950 sm:text-xl"
+                style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.35' }}
+              >
+                {currentIndex + 1}. {currentQuestion.question}
+              </h3>
+
+              <div className="mt-5 grid gap-2.5">
+                {currentQuestion.choices.map((choice) => {
+                  const isSelected = selectedChoice === choice
+                  const isCorrect = choice === currentQuestion.answer
+                  const showResult = Boolean(selectedChoice)
+                  let style = 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
+                  if (showResult) {
+                    if (isCorrect) style = 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    else if (isSelected) style = 'border-rose-300 bg-rose-50 text-rose-900'
+                    else style = 'border-slate-200 bg-white text-slate-500'
+                  }
                   return (
                     <button
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
-                        selected
-                          ? isCorrect
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                            : 'border-rose-200 bg-rose-50 text-rose-800'
-                          : revealed && isCorrect
-                          ? 'border-emerald-200 bg-white text-emerald-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-200 hover:bg-cyan-50'
-                      }`}
                       key={choice}
-                      onClick={() => setAnswers((current) => ({ ...current, [index]: choice }))}
                       type="button"
+                      onClick={() => handleSelect(choice)}
+                      disabled={showResult}
+                      className={`rounded-2xl border px-4 py-3.5 text-left text-[15px] font-bold transition ${style}`}
+                      style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.45' }}
                     >
                       {choice}
                     </button>
                   )
                 })}
               </div>
+
+              {selectedChoice && (
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p
+                    className={`text-sm font-black ${
+                      selectedChoice === currentQuestion.answer ? 'text-emerald-700' : 'text-rose-700'
+                    }`}
+                  >
+                    {selectedChoice === currentQuestion.answer ? '✓ Bonne réponse' : `✗ Mauvaise réponse — la bonne réponse est : ${currentQuestion.answer}`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-600 px-5 py-2.5 text-sm font-black text-white transition hover:bg-cyan-700 active:scale-[0.98]"
+                  >
+                    {currentIndex + 1 >= session.length ? 'Voir le score' : 'Question suivante'} →
+                  </button>
+                </div>
+              )}
             </article>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {finished && session && (
+          <div className="mt-6 grid place-items-center rounded-[1.75rem] border border-slate-200 bg-gradient-to-br from-cyan-50 via-white to-sky-50 px-6 py-10 text-center">
+            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Score final</p>
+            <p className="mt-3 text-5xl font-black text-slate-950">{score} <span className="text-slate-400">/ {session.length}</span></p>
+            <p className="mt-2 text-base font-bold text-slate-600">{percentage} % de bonnes réponses</p>
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+              {percentage >= 80
+                ? 'Excellent ! Tu maîtrises bien le lexique et les panneaux.'
+                : percentage >= 50
+                  ? 'Bon début. Revois les définitions et panneaux puis recommence le quiz.'
+                  : 'Pas de panique. Relis les cartes et les panneaux puis relance le quiz pour progresser.'}
+            </p>
+            <button
+              type="button"
+              onClick={startQuiz}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-600 to-sky-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-cyan-600/20 transition hover:shadow-xl active:scale-[0.98]"
+            >
+              Recommencer un quiz aléatoire
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )
