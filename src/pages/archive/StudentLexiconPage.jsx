@@ -116,12 +116,12 @@ const signs = [
     answer: 'Oui, l’arrêt est autorisé, mais le stationnement est interdit.',
   },
   {
-    name: 'Danger / dos d’âne',
+    name: 'Ralentisseur',
     type: 'bump',
     category: 'Danger',
     accent: 'amber',
-    explanation: 'Annonce un ralentisseur ou un dos d’âne : ralentir franchement.',
-    question: 'Comment franchir un dos d’âne ?',
+    explanation: 'Annonce un ralentisseur : réduire fortement son allure avant de le franchir lentement et dans l’axe.',
+    question: 'Comment franchir un ralentisseur ?',
     answer: 'Très lentement et dans l’axe, pour éviter de heurter le bas du véhicule.',
   },
 ]
@@ -139,9 +139,9 @@ const quiz = [
   { question: 'Quel est ce panneau ?', visualType: 'speed50', answer: 'Limitation de vitesse', choices: ['Limitation de vitesse', 'Passage piéton'] },
   { question: 'Quel est ce panneau ?', visualType: 'pedestrian', answer: 'Passage piéton', choices: ['Passage piéton', 'Feu tricolore'] },
   { question: 'Quel est ce panneau ?', visualType: 'trafficLight', answer: 'Feu tricolore', choices: ['Rond-point', 'Feu tricolore'] },
-  { question: 'Quel est ce panneau ?', visualType: 'priority', answer: 'Priorité à droite', choices: ['Priorité à droite', 'Danger / dos d’âne'] },
+  { question: 'Quel est ce panneau ?', visualType: 'priority', answer: 'Priorité à droite', choices: ['Priorité à droite', 'Ralentisseur'] },
   { question: 'Quel est ce panneau ?', visualType: 'noParking', answer: 'Stationnement interdit', choices: ['Stationnement interdit', 'Sens interdit'] },
-  { question: 'Quel est ce panneau ?', visualType: 'bump', answer: 'Danger / dos d’âne', choices: ['Limitation de vitesse', 'Danger / dos d’âne'] },
+  { question: 'Quel est ce panneau ?', visualType: 'bump', answer: 'Ralentisseur', choices: ['Limitation de vitesse', 'Ralentisseur'] },
 ]
 
 const accentBadge = {
@@ -261,7 +261,7 @@ function SignVisual({ type, size = 'md' }) {
       )
     case 'bump':
       return (
-        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau dos d'âne">
+        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau ralentisseur">
           <polygon points="60,10 114,104 6,104" fill="#ffffff" />
           <polygon points="60,10 114,104 6,104" fill="none" stroke="#d4101a" strokeWidth="9" strokeLinejoin="round" />
           <path d="M22 90 C 36 70, 50 70, 60 90 C 70 70, 84 70, 98 90" fill="none" stroke="#0f172a" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
