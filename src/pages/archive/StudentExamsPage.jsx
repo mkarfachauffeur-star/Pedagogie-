@@ -37,10 +37,10 @@ function categoryTone(category) {
 
 function toneClasses(tone) {
   const tones = {
-    cyan: 'border-cyan-100 bg-cyan-50/70 text-cyan-800',
-    violet: 'border-violet-100 bg-violet-50/70 text-violet-800',
-    amber: 'border-amber-100 bg-amber-50/70 text-amber-800',
-    emerald: 'border-emerald-100 bg-emerald-50/70 text-emerald-800',
+    cyan: 'border-cyan-200/85 bg-gradient-to-br from-cyan-100/75 via-slate-50/95 to-sky-100/70 text-cyan-900 shadow-[0_8px_22px_rgba(14,116,144,0.12)]',
+    violet: 'border-violet-200/85 bg-gradient-to-br from-violet-100/75 via-slate-50/95 to-indigo-100/70 text-violet-900 shadow-[0_8px_22px_rgba(109,40,217,0.12)]',
+    amber: 'border-amber-200/85 bg-gradient-to-br from-amber-100/75 via-slate-50/95 to-orange-100/70 text-amber-900 shadow-[0_8px_22px_rgba(217,119,6,0.12)]',
+    emerald: 'border-emerald-200/85 bg-gradient-to-br from-emerald-100/75 via-slate-50/95 to-cyan-100/70 text-emerald-900 shadow-[0_8px_22px_rgba(5,150,105,0.12)]',
   }
   return tones[tone] || tones.cyan
 }
@@ -85,10 +85,15 @@ export default function StudentExamsPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {groupedCounts.map(({ category, count }) => (
-          <article className={`rounded-[1.5rem] border p-5 shadow-[var(--shadow-soft)] ${toneClasses(categoryTone(category))}`} key={category}>
-            <p className="text-sm font-bold text-slate-500">{category}</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{count}</p>
-            <p className="mt-3 text-sm font-semibold text-slate-500">questions avec réponses</p>
+          <article
+            className={`group flex min-h-[176px] flex-col rounded-[1.5rem] border p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.14)] ${toneClasses(categoryTone(category))}`}
+            key={category}
+          >
+            <p className="text-center text-sm font-semibold tracking-tight text-slate-600">{category}</p>
+            <div className="flex flex-1 items-center justify-center py-2">
+              <p className="text-center text-5xl font-black leading-none tracking-tight text-slate-950">{count}</p>
+            </div>
+            <p className="text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">questions avec reponses</p>
           </article>
         ))}
       </section>
@@ -123,7 +128,7 @@ export default function StudentExamsPage() {
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Mode apprentissage</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">{activeCategory}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Cliquez sur une carte pour afficher la réponse officielle. Aucun QCM aléatoire n’est affiché.
+              Cliquez sur une carte pour afficher la réponse officielle. Aucun QCU aléatoire n’est affiché.
             </p>
           </div>
           <span className="w-fit rounded-full bg-cyan-50 px-4 py-2 text-sm font-black text-cyan-700">

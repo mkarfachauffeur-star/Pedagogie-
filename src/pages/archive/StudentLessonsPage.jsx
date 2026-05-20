@@ -10,7 +10,7 @@ const competencies = [
     modulesStarted: 2,
     remaining: 4,
     summary:
-      'Progressez étape par étape dans un trafic faible ou nul avec des vidéos, des QCM et des objectifs clairement encadrés.',
+      'Progressez étape par étape dans un trafic faible ou nul avec des vidéos, des QCU et des objectifs clairement encadrés.',
   },
   {
     id: 'C2',
@@ -1603,7 +1603,7 @@ export default function StudentLessonsPage() {
                       )}
                       {lessonModule && !itemProgress.completed && (
                         <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-100">
-                          {qcmAvailable ? 'Leçon + QCM disponibles' : 'Leçon disponible'}
+                          {qcmAvailable ? 'Leçon + QCU disponibles' : 'Leçon disponible'}
                         </span>
                       )}
                     </div>
@@ -1622,7 +1622,7 @@ export default function StudentLessonsPage() {
                     onClick={() => openQuiz(item.id)}
                     type="button"
                   >
-                    <StatusPill complete={qcmComplete} label="QCM" value={qcmValue} />
+                    <StatusPill complete={qcmComplete} label="QCU" value={qcmValue} />
                   </button>
                 </div>
               </article>
@@ -1661,7 +1661,7 @@ export default function StudentLessonsPage() {
                     onClick={() => setModuleMode('quiz')}
                     type="button"
                   >
-                    QCM
+                    QCU
                   </button>
                   <button
                     className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
@@ -1773,7 +1773,7 @@ export default function StudentLessonsPage() {
                       onClick={() => setModuleMode('quiz')}
                       type="button"
                     >
-                      {currentQuestions.length ? 'Ouvrir le QCM' : 'QCM bientôt disponible'}
+                      {currentQuestions.length ? 'Ouvrir le QCU' : 'QCU bientôt disponible'}
                     </button>
                     <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" disabled={!hasNextModule} onClick={openNextModule} type="button">
                       Module suivant
@@ -1787,7 +1787,7 @@ export default function StudentLessonsPage() {
                   <div className="space-y-5">
                     <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[var(--shadow-soft)]">
                       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white">
-                        <p className="text-sm font-semibold text-cyan-100">Leçon avant QCM</p>
+                        <p className="text-sm font-semibold text-cyan-100">Leçon avant QCU</p>
                         <h3 className="mt-2 text-2xl font-black">{openedLesson.title}</h3>
                         <p className="mt-3 max-w-4xl text-sm leading-6 text-cyan-50/85">
                           {openedLesson.intro}
@@ -1828,7 +1828,7 @@ export default function StudentLessonsPage() {
                     <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                       <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCM professionnel</p>
+                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU professionnel</p>
                         <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
                       </div>
                       <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
@@ -1882,10 +1882,10 @@ export default function StudentLessonsPage() {
                   </div>
                 ) : (
                   <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-center">
-                    <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCM interactif</p>
-                    <h3 className="mt-2 text-2xl font-black text-slate-950">QCM en préparation</h3>
+                    <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
+                    <h3 className="mt-2 text-2xl font-black text-slate-950">QCU en préparation</h3>
                     <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-                      Cette interface est prête pour les questions du module « {openedModule.title} ». Le module d’installation contient déjà le QCM complet et validable.
+                      Cette interface est prête pour les questions du module « {openedModule.title} ». Le module d’installation contient déjà le QCU complet et validable.
                     </p>
                     <button className="mt-5 rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => setModuleMode('lesson')} type="button">
                       Retour à la leçon
@@ -1913,7 +1913,7 @@ export default function StudentLessonsPage() {
                         onClick={resetModule}
                         type="button"
                       >
-                        Refaire le QCM
+                        Refaire le QCU
                       </button>
                       <button
                         className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
@@ -1936,7 +1936,7 @@ export default function StudentLessonsPage() {
                       onClick={validateModule}
                       type="button"
                     >
-                      Valider le QCM
+                      Valider le QCU
                     </button>
                   </div>
                 )}

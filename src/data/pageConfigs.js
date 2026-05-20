@@ -9,7 +9,7 @@ const actions = {
 
 const studentRows = [
   ['Thomas Martin', 'Permis B', '65%', 'Prochaine leçon demain'],
-  ['Camille Leroy', 'Conduite accompagnée', '72%', 'QCM à valider'],
+  ['Camille Leroy', 'Conduite accompagnée', '72%', 'QCU à valider'],
   ['Lucas Bernard', 'Permis B', '48%', 'Relance planning'],
   ['Sarah Petit', 'Permis B', '81%', 'Prête examen blanc'],
 ]
@@ -42,6 +42,30 @@ const planningItems = [
     description: 'Pierre Lambert · Parking pédagogique',
     status: 'Confirmé',
     tone: 'violet',
+  },
+]
+
+const studentUpcomingLessons = [
+  {
+    time: '10:00',
+    title: 'Mardi 20/05/2026',
+    description: 'Leçon de conduite · Durée 2h',
+    status: 'À venir',
+    tone: 'cyan',
+  },
+  {
+    time: '14:00',
+    title: 'Jeudi 22/05/2026',
+    description: 'Préparation examen · Durée 2h',
+    status: 'Planifiée',
+    tone: 'amber',
+  },
+  {
+    time: '09:00',
+    title: 'Samedi 24/05/2026',
+    description: 'Rendez-vous préalable RVP1 (conduite accompagnée) · Durée 2h',
+    status: 'Planifiée',
+    tone: 'emerald',
   },
 ]
 
@@ -281,7 +305,12 @@ export const pageConfigs = {
       { label: 'Heures restantes', value: '15h', trend: 'Forfait 20h', tone: 'violet' },
     ],
     sections: [
-      { type: 'timeline', title: 'Prochaines étapes', description: 'Ce qui vous attend cette semaine.', items: planningItems.slice(0, 3) },
+      {
+        type: 'timeline',
+        title: 'Prochaines leçons',
+        description: 'Affichage simple : heure, jour, date et année.',
+        items: studentUpcomingLessons,
+      },
     ],
   },
 
@@ -295,7 +324,7 @@ export const pageConfigs = {
     metrics: [
       { label: 'C1', value: '65%', trend: 'En cours', tone: 'cyan' },
       { label: 'C2', value: '35%', trend: 'Démarré', tone: 'amber' },
-      { label: 'QCM réussis', value: '8/12', trend: 'Bon niveau', tone: 'emerald' },
+      { label: 'QCU réussis', value: '8/12', trend: 'Bon niveau', tone: 'emerald' },
       { label: 'Objectifs restants', value: '7', trend: 'Avant examen blanc', tone: 'violet' },
     ],
     sections: [
@@ -321,7 +350,7 @@ export const pageConfigs = {
       focus: { label: 'Niveau examen', value: '78%', progress: 78, caption: 'Dernier examen blanc encourageant.' },
     },
     metrics: [
-      { label: 'Code', value: '34/40', trend: 'Dernier QCM', tone: 'emerald' },
+      { label: 'Code', value: '34/40', trend: 'Dernier QCU', tone: 'emerald' },
       { label: 'Examens blancs', value: '3', trend: '2 réussis', tone: 'cyan' },
       { label: 'Points à revoir', value: '4', trend: 'Priorités', tone: 'amber' },
       { label: 'Date cible', value: 'Février', trend: 'À confirmer', tone: 'violet' },
@@ -380,16 +409,16 @@ export const pageConfigs = {
     hero: {
       eyebrow: 'Espace enseignant',
       title: 'Bonjour Jean Moniteur',
-      subtitle: 'Votre planning, vos élèves et vos priorités pédagogiques du jour.',
-      focus: { label: 'Leçons aujourd’hui', value: '6', progress: 75, caption: 'Journée chargée mais équilibrée.' },
+      subtitle: 'Votre planning simplifié jour/semaine et accès rapide terrain.',
+      focus: { label: 'Planning du jour', value: '6 créneaux', progress: 75, caption: 'Lecture claire des séances de la journée.' },
     },
     metrics: [
       { label: 'Élèves suivis', value: '24', trend: '4 prioritaires', tone: 'cyan' },
-      { label: 'Leçons semaine', value: '32', trend: 'Planifiées', tone: 'emerald' },
-      { label: 'Comptes-rendus', value: '3', trend: 'À compléter', tone: 'amber' },
+      { label: 'Planning semaine', value: '32 créneaux', trend: 'Planifiés', tone: 'emerald' },
+      { label: 'Heures semaine', value: '18h', trend: 'Réalisées', tone: 'amber' },
       { label: 'Réussite', value: '86%', trend: 'Trimestre', tone: 'violet' },
     ],
-    sections: [{ type: 'timeline', title: 'Ma journée', description: 'Leçons et actions principales.', items: planningItems }],
+    sections: [{ type: 'timeline', title: 'Planning semaine', description: 'Créneaux du jour et à venir.', items: planningItems }],
   },
 
   teacherPlanning: {

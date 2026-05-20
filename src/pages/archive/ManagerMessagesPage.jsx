@@ -2,31 +2,29 @@ import { useMemo, useState } from 'react'
 
 const contacts = [
   {
-    id: 'secretary',
-    name: 'Secrétariat',
-    role: 'Isabelle Lemoine',
+    id: 'teacher',
+    name: 'Jean Moniteur',
+    role: 'Enseignant',
     status: 'En ligne',
-    tone: 'cyan',
     messages: [
-      { from: 'contact', text: 'Bonjour, peux-tu confirmer le planning de Thomas demain ?', time: '09:12' },
-      { from: 'me', text: 'Oui, confirmé pour 10h00.', time: '09:14' },
+      { from: 'contact', text: "Je te partage le suivi des \u00e9l\u00e8ves pr\u00eats \u00e0 l'examen.", time: '09:05' },
+      { from: 'me', text: 'Parfait, merci. Je valide les prochaines pr\u00e9sentations.', time: '09:09' },
     ],
   },
   {
-    id: 'manager',
-    name: 'Gérant',
-    role: 'Direction',
-    status: 'Actif il y a 5 min',
-    tone: 'violet',
+    id: 'secretary',
+    name: 'Secr\u00e9tariat',
+    role: 'Isabelle Lemoine',
+    status: 'Actif il y a 2 min',
     messages: [
-      { from: 'contact', text: 'Peux-tu me faire un retour sur les élèves prêts examen ?', time: '08:40' },
-      { from: 'me', text: 'Oui, je t’envoie la synthèse après les leçons de ce matin.', time: '08:45' },
+      { from: 'contact', text: 'Deux dossiers sont incomplets, je te les envoie pour d\u00e9cision.', time: '08:48' },
+      { from: 'me', text: 'Bien re\u00e7u, on les traite en priorit\u00e9 ce matin.', time: '08:53' },
     ],
   },
 ]
 
-export default function TeacherMessagesPage() {
-  const [activeContactId, setActiveContactId] = useState('secretary')
+export default function ManagerMessagesPage() {
+  const [activeContactId, setActiveContactId] = useState('teacher')
   const [newMessage, setNewMessage] = useState('')
   const [chatState, setChatState] = useState(contacts)
 
@@ -62,10 +60,11 @@ export default function TeacherMessagesPage() {
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]"
           />
-          <p className="relative z-10 pd-eyebrow">Messagerie enseignant</p>
-          <h1 className="relative z-10 mt-4 pd-title-page">Échanges instantanés internes</h1>
+          <p className="relative z-10 pd-eyebrow">Messagerie g\u00e9rant</p>
+          <h1 className="relative z-10 mt-4 pd-title-page">\u00c9changes internes direction</h1>
           <p className="relative z-10 mt-3 max-w-4xl pd-subtitle">
-            Cette messagerie est dédiée aux échanges rapides avec le secrétariat et le gérant.
+            Cette messagerie est r\u00e9serv\u00e9e aux \u00e9changes avec l'enseignant et le secr\u00e9tariat.
+            Les \u00e9l\u00e8ves ne sont pas accessibles.
           </p>
         </div>
       </section>
@@ -73,7 +72,7 @@ export default function TeacherMessagesPage() {
       <div className="pd-msg-panel grid gap-0 lg:grid-cols-[320px_1fr]">
         <aside className="border-b border-white/16 bg-white/[0.1] p-4 backdrop-blur-md lg:border-b-0 lg:border-r md:p-5">
           <h2 className="pd-title-section text-lg">Contacts internes</h2>
-          <p className="mt-1 text-xs text-cyan-50/65">Un seul fil actif à la fois</p>
+          <p className="mt-1 text-xs text-cyan-50/65">Canal direction simplifi\u00e9</p>
           <div className="mt-4 grid gap-3">
             {chatState.map((contact) => (
               <button
@@ -90,7 +89,7 @@ export default function TeacherMessagesPage() {
                 </div>
                 <p className="mt-1 text-xs font-medium text-cyan-50/65">{contact.role}</p>
                 <p className="mt-2 text-xs font-medium text-cyan-200/90">
-                  {contact.status} · {contact.messages.length} messages
+                  {contact.status} - {contact.messages.length} messages
                 </p>
               </button>
             ))}
@@ -134,11 +133,11 @@ export default function TeacherMessagesPage() {
             <input
               className="pd-input-dark"
               onChange={(event) => setNewMessage(event.target.value)}
-              placeholder="Écrire un message..."
+              placeholder="\u00c9crire un message interne..."
               value={newMessage}
             />
             <button
-              className="rounded-2xl bg-gradient-to-r from-cyan-600/95 to-cyan-500/90 px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(6,182,212,0.18)] transition hover:-translate-y-0.5 hover:brightness-[1.03]"
+              className="rounded-2xl bg-gradient-to-r from-cyan-700/95 to-cyan-600/90 px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(69,98,121,0.22)] transition hover:-translate-y-0.5 hover:brightness-[1.03]"
               type="submit"
             >
               Envoyer

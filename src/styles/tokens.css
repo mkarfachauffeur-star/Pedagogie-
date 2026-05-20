@@ -15,13 +15,13 @@
   --pd-slate-700: #334155;
   --pd-slate-900: #0f172a;
 
-  --pd-primary: #0d9488;
-  --pd-primary-hover: #0f766e;
-  --pd-primary-soft: rgba(13, 148, 136, 0.12);
+  --pd-primary: #6b8fb2;
+  --pd-primary-hover: #557794;
+  --pd-primary-soft: rgba(107, 143, 178, 0.14);
   --pd-accent: #f59e0b;
   --pd-accent-soft: rgba(245, 158, 11, 0.12);
 
-  --pd-bg: #f4f7fb;
+  --pd-bg: #f3f6fa;
   --pd-surface: #ffffff;
   --pd-border: #e2e8f0;
   --pd-text: #0f172a;

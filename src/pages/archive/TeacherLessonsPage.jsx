@@ -1,6 +1,5 @@
-import ModernPage from '../../components/ModernPage'
-import { pageConfigs } from '../../data/pageConfigs'
+import { Navigate } from 'react-router-dom'
 
 export default function TeacherLessonsPage() {
-  return <ModernPage config={pageConfigs.teacherLessons} />
+  return <Navigate to="/teacher/students" replace />
 }

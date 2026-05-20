@@ -1,28 +1,16 @@
 import { useMemo, useState } from 'react'
+import { formationTypeOptions, useStudentTrackingStore } from '../../data/studentTrackingStore'
 
 export default function SecretaryInscriptionsPage() {
+  const { students, addStudent } = useStudentTrackingStore()
+  const formatDateFr = (dateString) => {
+    if (!dateString) return ''
+    const [year, month, day] = dateString.split('-')
+    if (!year || !month || !day) return dateString
+    return `${day}/${month}/${year}`
+  }
   const [activeTab, setActiveTab] = useState('list')
   const [showForm, setShowForm] = useState(false)
-  const [savedStudents, setSavedStudents] = useState([
-    {
-      id: 'PD-2026-001',
-      firstName: 'Thomas',
-      lastName: 'Martin',
-      licenseCategory: 'Permis B',
-      drivingType: 'accompagnée',
-      status: 'Validé',
-      remainingPayment: '350',
-    },
-    {
-      id: 'PD-2026-002',
-      firstName: 'Camille',
-      lastName: 'Leroy',
-      licenseCategory: 'Permis B',
-      drivingType: 'classique',
-      status: 'En cours',
-      remainingPayment: '680',
-    },
-  ])
   const [form, setForm] = useState({
     lastName: '',
     firstName: '',
@@ -33,12 +21,13 @@ export default function SecretaryInscriptionsPage() {
     neph: '',
     licenseCategory: 'Permis B',
     packageName: 'Forfait 20h',
+    formationType: '',
     registrationDate: new Date().toISOString().slice(0, 10),
     drivingType: 'classique',
     payment: '',
     remainingPayment: '',
     documents: [],
-    fileNumber: `PD-${new Date().getFullYear()}-${String(savedStudents.length + 1).padStart(3, '0')}`,
+    fileNumber: `PD-${new Date().getFullYear()}-${String(students.length + 1).padStart(3, '0')}`,
     status: 'En attente',
   })
 
@@ -51,15 +40,21 @@ export default function SecretaryInscriptionsPage() {
       'email',
       'neph',
       'packageName',
+      'formationType',
       'drivingType',
       'payment',
       'status',
     ]
 
-    return required.filter((field) => String(form[field]).trim()).length + (form.documents.length ? 1 : 0)
+    return (
+      required.filter((field) => {
+        if (field === 'formationType') return form.formationType && form.formationType !== 'Sélectionner...'
+        return String(form[field]).trim()
+      }).length + (form.documents.length ? 1 : 0)
+    )
   }, [form])
 
-  const completion = Math.round((completedFields / 11) * 100)
+  const completion = Math.round((completedFields / 12) * 100)
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -76,21 +71,21 @@ export default function SecretaryInscriptionsPage() {
 
   const saveRegistration = (event) => {
     event.preventDefault()
-    const student = {
+    if (!form.formationType || form.formationType === 'Sélectionner...') {
+      return
+    }
+    addStudent({
       id: form.fileNumber,
       firstName: form.firstName || 'Nouvel',
       lastName: form.lastName || 'Élève',
-      licenseCategory: form.licenseCategory,
-      drivingType: form.drivingType,
-      status: form.status,
-      remainingPayment: form.remainingPayment || '0',
-    }
-
-    setSavedStudents((current) => [student, ...current])
+      teacher: 'À assigner',
+      formationType: form.formationType,
+    })
     setActiveTab('list')
     setShowForm(false)
     setForm((current) => ({
       ...current,
+      formationType: '',
       lastName: '',
       firstName: '',
       birthDate: '',
@@ -101,7 +96,7 @@ export default function SecretaryInscriptionsPage() {
       payment: '',
       remainingPayment: '',
       documents: [],
-      fileNumber: `PD-${new Date().getFullYear()}-${String(savedStudents.length + 2).padStart(3, '0')}`,
+      fileNumber: `PD-${new Date().getFullYear()}-${String(students.length + 2).padStart(3, '0')}`,
       status: 'En attente',
     }))
   }
@@ -178,7 +173,7 @@ export default function SecretaryInscriptionsPage() {
             </button>
           </div>
           <div className="mt-5 grid gap-3">
-            {savedStudents.map((student) => (
+            {students.map((student) => (
               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={student.id}>
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
@@ -186,16 +181,29 @@ export default function SecretaryInscriptionsPage() {
                       {student.firstName} {student.lastName}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      {student.id} · {student.licenseCategory} · {student.drivingType}
+                      {student.id} · {student.formationType || 'Permis B traditionnel'}
                     </p>
+                    {student.aacTracking && (
+                      <p className="text-xs font-bold text-cyan-700">
+                        AAC début {formatDateFr(student.aacTracking.startDate)} · minimum {formatDateFr(student.aacTracking.minimumEndDate)}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
+                      {student.formationType || 'Permis B traditionnel'}
+                    </span>
                     <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">
-                      {student.status}
+                      REMC {student.progress?.global || 0}%
                     </span>
                     <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
-                      Reste {student.remainingPayment} €
+                      Reste {student.remainingPayment || '0'} €
                     </span>
+                    {student.aacTracking && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                        {student.aacTracking.kilometersCurrent}/{student.aacTracking.kilometersTarget} km
+                      </span>
+                    )}
                   </div>
                 </div>
               </article>
@@ -266,6 +274,7 @@ export default function SecretaryInscriptionsPage() {
                 <TextField label="Date de naissance" onChange={updateField} value={form.birthDate} name="birthDate" type="date" />
                 <TextField label="NEPH" onChange={updateField} value={form.neph} name="neph" />
                 <SelectField label="Formule" name="packageName" onChange={updateField} value={form.packageName} options={['Forfait 20h', 'Forfait 30h', 'Code + conduite', 'Conduite accompagnée', 'Conduite supervisée']} />
+                <SelectField label="Type de formation (obligatoire)" name="formationType" onChange={updateField} value={form.formationType} options={['Sélectionner...', ...formationTypeOptions]} />
                 <SelectField label="Type de conduite" name="drivingType" onChange={updateField} value={form.drivingType} options={['classique', 'accompagnée', 'supervisée']} />
               </FormSection>
 
