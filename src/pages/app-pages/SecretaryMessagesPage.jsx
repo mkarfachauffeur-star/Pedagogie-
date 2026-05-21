@@ -205,7 +205,7 @@ export default function SecretaryMessagesPage() {
                       <p className={isStudentConversationActive ? 'mt-1' : ''}>{message.text}</p>
                       {!isStudentConversationActive && (
                         <p
-                          className={`mt-2 text-[11px] font-medium ${message.from === 'me' ? 'text-cyan-100/75' : 'text-cyan-50/55'}`}
+                          className={`mt-2 text-[11px] font-medium ${message.from === 'me' ? 'text-white/75' : 'text-slate-500'}`}
                         >
                           {message.time}
                         </p>

@@ -791,31 +791,31 @@
   }
 
   .pd-msg-panel {
-    @apply overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/[0.12] shadow-[var(--shadow-card)] backdrop-blur-xl;
+    @apply overflow-hidden rounded-[1.75rem] border border-white/25 bg-gradient-to-b from-white/[0.16] to-white/[0.1] shadow-[var(--shadow-card)] backdrop-blur-xl;
   }
 
   .pd-msg-bubble-sent {
-    @apply rounded-[1.35rem] border border-cyan-300/35 bg-gradient-to-br from-cyan-700/90 to-cyan-600/85 px-4 py-3 text-sm text-white shadow-[0_8px_20px_rgba(69,98,121,0.24)];
+    @apply rounded-[1.35rem] rounded-br-md border border-[#0a84ff]/55 bg-gradient-to-b from-[#0a84ff] to-[#006ae6] px-4 py-2.5 text-sm text-white shadow-[0_10px_22px_rgba(10,132,255,0.26)];
   }
 
   .pd-msg-bubble-received {
-    @apply rounded-[1.35rem] border border-white/22 bg-white/[0.18] px-4 py-3 text-sm text-cyan-50/95 shadow-sm backdrop-blur-sm;
+    @apply rounded-[1.35rem] rounded-bl-md border border-white/45 bg-white/[0.72] px-4 py-2.5 text-sm text-slate-800 shadow-[0_8px_18px_rgba(15,23,42,0.1)] backdrop-blur-sm;
   }
 
   .pd-msg-thread-active {
-    @apply border-cyan-300/45 bg-cyan-500/18 text-white shadow-[0_0_0_1px_rgba(138,169,196,0.24),0_8px_24px_rgba(2,6,23,0.26)] ring-1 ring-cyan-300/25;
+    @apply border-[#0a84ff]/45 bg-[#0a84ff]/16 text-white shadow-[0_0_0_1px_rgba(10,132,255,0.18),0_8px_24px_rgba(2,6,23,0.24)] ring-1 ring-[#0a84ff]/25;
   }
 
   .pd-msg-thread {
-    @apply border-white/18 bg-white/[0.11] text-white/95 hover:border-white/30 hover:bg-white/[0.18];
+    @apply border-white/30 bg-white/[0.2] text-white/95 hover:border-white/45 hover:bg-white/[0.28];
   }
 
   .pd-input-dark {
-    @apply min-h-12 flex-1 rounded-2xl border border-white/20 bg-white/[0.14] px-4 text-sm font-medium text-white placeholder:text-white/55 outline-none transition focus:border-cyan-300/45 focus:ring-4 focus:ring-cyan-500/16;
+    @apply min-h-12 flex-1 rounded-full border border-white/40 bg-white/[0.82] px-4 text-sm font-medium text-slate-700 placeholder:text-slate-500 outline-none transition focus:border-[#0a84ff]/45 focus:ring-4 focus:ring-[#0a84ff]/14;
   }
 
   .pd-msg-chip {
-    @apply inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-cyan-50/85;
+    @apply inline-flex items-center rounded-full border border-white/35 bg-white/[0.3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/95;
   }
 
   .pd-msg-empty {

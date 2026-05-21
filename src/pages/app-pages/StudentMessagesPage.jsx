@@ -180,7 +180,7 @@ export default function StudentMessagesPage() {
                     </p>
                     <p className="mt-2 leading-7">{message.text}</p>
                     {!!message.documents?.length && (
-                      <ul className="mt-3 space-y-1 text-xs text-cyan-50/90">
+                      <ul className={`mt-3 space-y-1 text-xs ${mine ? 'text-white/90' : 'text-slate-600'}`}>
                         {message.documents.map((doc) => (
                           <li key={`${doc.name}-${doc.size}`}>- {doc.name} ({formatFileSize(doc.size)})</li>
                         ))}

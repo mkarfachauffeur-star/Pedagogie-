@@ -118,7 +118,7 @@ export default function ManagerMessagesPage() {
               >
                 <p>{message.text}</p>
                 <p
-                  className={`mt-2 text-[11px] font-medium ${message.from === 'me' ? 'text-cyan-100/75' : 'text-cyan-50/55'}`}
+                  className={`mt-2 text-[11px] font-medium ${message.from === 'me' ? 'text-white/75' : 'text-slate-500'}`}
                 >
                   {message.time}
                 </p>
