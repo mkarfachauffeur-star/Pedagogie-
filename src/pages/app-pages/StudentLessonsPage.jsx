@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
 
 const competencies = [
   {
@@ -333,12 +334,47 @@ function createRandomizedQuestion(question, correctChoice, wrongChoices, explana
   }
 }
 
+function shuffleArray(items) {
+  const copy = [...items]
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]]
+  }
+  return copy
+}
+
+function buildQuizSession(questions = []) {
+  return shuffleArray(questions).map((question) => {
+    const choices = shuffleArray(
+      question.choices.map((choice, index) => ({
+        choice,
+        correct: index === question.answer,
+      })),
+    )
+
+    return {
+      ...question,
+      choices: choices.map((item) => item.choice),
+      answer: choices.findIndex((item) => item.correct),
+    }
+  })
+}
+
 const drivingPositionModule = {
   id: 'SC1.2',
   storageKey: 'pedagogia:lesson:driving-position',
   title: 'S’installer au poste de conduite',
   intro:
     'Avant de démarrer, le conducteur doit correctement régler son poste de conduite afin d’assurer sa sécurité, son confort et une bonne maîtrise du véhicule.',
+  images: [
+    {
+      src: installationPosteConduiteImage,
+      alt: 'Schéma pédagogique : installation correcte au poste de conduite',
+      title: 'Installation correcte au poste de conduite',
+      caption:
+        'Repères visuels pour vérifier la position du siège, du dossier, des mains, des jambes, des pédales et des rétroviseurs.',
+    },
+  ],
   summary: [
     {
       title: 'Réglage du siège en hauteur',
@@ -1331,6 +1367,9 @@ export default function StudentLessonsPage() {
   const [activeCompetencyId, setActiveCompetencyId] = useState('C1')
   const [openedModuleId, setOpenedModuleId] = useState(null)
   const [moduleMode, setModuleMode] = useState('lesson')
+  const [openedGalleryImage, setOpenedGalleryImage] = useState(null)
+  const [quizSessionsByModule, setQuizSessionsByModule] = useState({})
+  const [quizIndexByModule, setQuizIndexByModule] = useState({})
   const [answersByModule, setAnswersByModule] = useState({})
   const [validatedByModule, setValidatedByModule] = useState({})
   const [moduleProgressById, setModuleProgressById] = useState(() =>
@@ -1346,9 +1385,13 @@ export default function StudentLessonsPage() {
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
   const openedModule = activeSubcompetencies.find((item) => item.id === openedModuleId)
   const openedLesson = lessonModules[openedModuleId]
-  const currentQuestions = openedLesson?.questions || []
+  const currentQuestions = quizSessionsByModule[openedModuleId] || openedLesson?.questions || []
   const currentAnswers = answersByModule[openedModuleId] || {}
   const currentValidated = Boolean(validatedByModule[openedModuleId])
+  const currentQuizIndex = quizIndexByModule[openedModuleId] || 0
+  const currentQuizQuestion = currentQuestions[currentQuizIndex]
+  const currentQuizAnswer = currentAnswers[currentQuizIndex]
+  const currentQuizAnswered = currentQuizAnswer !== undefined
   const currentProgress = moduleProgressById[openedModuleId] || {
     completed: false,
     score: null,
@@ -1372,10 +1415,19 @@ export default function StudentLessonsPage() {
   const openQuiz = (moduleId) => {
     setOpenedModuleId(moduleId)
     setModuleMode('quiz')
+    const lesson = lessonModules[moduleId]
+    if (lesson?.questions?.length) {
+      setQuizSessionsByModule((current) => ({
+        ...current,
+        [moduleId]: current[moduleId] || buildQuizSession(lesson.questions),
+      }))
+      setQuizIndexByModule((current) => ({ ...current, [moduleId]: current[moduleId] || 0 }))
+    }
   }
 
   const closeModule = () => {
     setOpenedModuleId(null)
+    setOpenedGalleryImage(null)
   }
 
   const openNextModule = () => {
@@ -1429,6 +1481,36 @@ export default function StudentLessonsPage() {
     if (!openedModuleId) return
     setAnswersByModule((current) => ({ ...current, [openedModuleId]: {} }))
     setValidatedByModule((current) => ({ ...current, [openedModuleId]: false }))
+    setQuizIndexByModule((current) => ({ ...current, [openedModuleId]: 0 }))
+    if (openedLesson?.questions?.length) {
+      setQuizSessionsByModule((current) => ({
+        ...current,
+        [openedModuleId]: buildQuizSession(openedLesson.questions),
+      }))
+    }
+  }
+
+  const selectQuizChoice = (choiceIndex) => {
+    if (!openedModuleId || currentQuizAnswered || currentValidated) return
+    setAnswersByModule((current) => ({
+      ...current,
+      [openedModuleId]: {
+        ...(current[openedModuleId] || {}),
+        [currentQuizIndex]: choiceIndex,
+      },
+    }))
+  }
+
+  const goToNextQuizQuestion = () => {
+    if (!openedModuleId || !currentQuizAnswered) return
+    if (currentQuizIndex + 1 >= currentQuestions.length) {
+      validateModule()
+      return
+    }
+    setQuizIndexByModule((current) => ({
+      ...current,
+      [openedModuleId]: currentQuizIndex + 1,
+    }))
   }
 
   return (
@@ -1658,7 +1740,7 @@ export default function StudentLessonsPage() {
                   </button>
                   <button
                     className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition ${moduleMode === 'quiz' ? 'bg-navy-950 text-white' : 'border border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
-                    onClick={() => setModuleMode('quiz')}
+                    onClick={() => openQuiz(openedModule.id)}
                     type="button"
                   >
                     QCU
@@ -1688,6 +1770,46 @@ export default function StudentLessonsPage() {
                     </p>
                   </section>
 
+                  {openedLesson?.images?.length && (
+                    <section className="overflow-hidden rounded-[1.75rem] border border-cyan-100 bg-white shadow-xl">
+                      <div className="border-b border-slate-100 bg-cyan-50/70 p-5">
+                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
+                          Schémas et photos du poste de conduite
+                        </p>
+                        <h3 className="mt-2 text-2xl font-black text-slate-950">
+                          Installation correcte au poste de conduite
+                        </h3>
+                      </div>
+                      <div className="grid gap-4 p-4">
+                        {openedLesson.images.map((image) => (
+                          <button
+                            className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                            key={image.src}
+                            onClick={() => setOpenedGalleryImage(image)}
+                            type="button"
+                          >
+                            <div className="aspect-[16/9] overflow-hidden bg-white">
+                              <img
+                                alt={image.alt}
+                                className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                                src={image.src}
+                              />
+                            </div>
+                            <div className="p-4">
+                              <p className="text-base font-black text-slate-950">{image.title}</p>
+                              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                                {image.caption}
+                              </p>
+                              <span className="mt-3 inline-flex rounded-full bg-navy-950 px-4 py-2 text-xs font-black text-white">
+                                Ouvrir la galerie
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
                   <section className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Support vidéo</p>
@@ -1695,15 +1817,6 @@ export default function StudentLessonsPage() {
                         <div>
                           <p className="text-4xl">▶</p>
                           <p className="mt-2 text-sm font-bold text-slate-600">Vidéo pédagogique à intégrer</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Images repères</p>
-                      <div className="mt-3 grid min-h-40 place-items-center rounded-2xl border border-dashed border-cyan-200 bg-white text-center">
-                        <div>
-                          <p className="text-4xl">▣</p>
-                          <p className="mt-2 text-sm font-bold text-slate-600">Schémas et photos du poste de conduite</p>
                         </div>
                       </div>
                     </div>
@@ -1770,7 +1883,7 @@ export default function StudentLessonsPage() {
                     <button
                       className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                       disabled={!currentQuestions.length}
-                      onClick={() => setModuleMode('quiz')}
+                      onClick={() => openQuiz(openedModule.id)}
                       type="button"
                     >
                       {currentQuestions.length ? 'Ouvrir le QCU' : 'QCU bientôt disponible'}
@@ -1826,39 +1939,58 @@ export default function StudentLessonsPage() {
                     </section>
 
                     <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
-                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU professionnel</p>
-                        <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
+                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU aléatoire</p>
+                          <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
+                          <p className="mt-2 text-sm font-semibold text-slate-500">
+                            Une seule question s’affiche à la fois. La suivante reste masquée.
+                          </p>
+                        </div>
+                        <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
+                          {Math.min(currentQuizIndex + 1, currentQuestions.length)}/{currentQuestions.length}
+                        </span>
                       </div>
-                      <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
-                        {answeredCount}/{currentQuestions.length} réponses
-                      </span>
-                    </div>
 
-                    <div className="mt-5 space-y-5">
-                      {currentQuestions.map((question, questionIndex) => (
-                        <article className="rounded-2xl border border-white bg-white p-4 shadow-sm" key={question.question}>
-                          <h4 className="font-extrabold text-slate-950">
-                            {questionIndex + 1}. {question.question}
+                      {currentValidated ? (
+                        <article className="mt-5 rounded-[1.5rem] border border-white bg-white p-5 text-center shadow-sm">
+                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résultat final</p>
+                          <p className="mt-3 text-5xl font-black text-slate-950">{percentage}%</p>
+                          <p className="mt-2 text-sm font-bold text-slate-500">
+                            Score : {score}/{currentQuestions.length}
+                          </p>
+                          <p className={`mt-4 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
+                          </p>
+                        </article>
+                      ) : currentQuizQuestion ? (
+                        <article className="mt-5 rounded-[1.5rem] border border-white bg-white p-5 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
+                              Question aléatoire {currentQuizIndex + 1}
+                            </span>
+                            <span className="text-xs font-bold text-slate-400">
+                              {answeredCount}/{currentQuestions.length} réponses
+                            </span>
+                          </div>
+                          <h4 className="mt-4 text-xl font-extrabold leading-8 text-slate-950">
+                            {currentQuizQuestion.question}
                           </h4>
-                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                            {question.choices.map((choice, choiceIndex) => {
-                              const checked = currentAnswers[questionIndex] === choiceIndex
-                              const status = currentValidated && choiceIndex === question.answer
+                          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                            {currentQuizQuestion.choices.map((choice, choiceIndex) => {
+                              const checked = currentQuizAnswer === choiceIndex
+                              const status = currentQuizAnswered && choiceIndex === currentQuizQuestion.answer
                                 ? 'correct'
-                                : currentValidated && checked && choiceIndex !== question.answer
+                                : currentQuizAnswered && checked && choiceIndex !== currentQuizQuestion.answer
                                   ? 'wrong'
                                   : undefined
 
                               return (
                                 <ChoiceButton
                                   checked={checked}
-                                  disabled={currentValidated}
+                                  disabled={currentQuizAnswered}
                                   key={choice}
-                                  onClick={() =>
-                                    setAnswersByModule((current) => ({ ...current, [openedModuleId]: { ...(current[openedModuleId] || {}), [questionIndex]: choiceIndex } }))
-                                  }
+                                  onClick={() => selectQuizChoice(choiceIndex)}
                                   status={status}
                                 >
                                   {choice}
@@ -1866,19 +1998,24 @@ export default function StudentLessonsPage() {
                               )
                             })}
                           </div>
-                          {currentValidated && (
-                            <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 p-3 text-sm leading-6 text-slate-700">
+                          {currentQuizAnswered && (
+                            <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm leading-6 text-slate-700">
                               <p className="font-black text-cyan-800">
-                                Correction : {question.choices[question.answer]}
+                                Correction : {currentQuizQuestion.choices[currentQuizQuestion.answer]}
                               </p>
-                              <p className="mt-1">{question.explanation}</p>
+                              <p className="mt-1">{currentQuizQuestion.explanation}</p>
+                              <button
+                                className="mt-4 rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+                                onClick={goToNextQuizQuestion}
+                                type="button"
+                              >
+                                {currentQuizIndex + 1 >= currentQuestions.length ? 'Voir le résultat' : 'Question suivante'}
+                              </button>
                             </div>
                           )}
                         </article>
-                      ))}
+                      ) : null}
                     </div>
-
-                  </div>
                   </div>
                 ) : (
                   <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-center">
@@ -1928,21 +2065,44 @@ export default function StudentLessonsPage() {
                 ) : (
                   <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
                     <p className="text-sm font-bold text-slate-500">
-                      Répondez aux 10 questions pour valider le module. Validation à partir de 80%.
+                      Répondez question par question. La question suivante apparaît uniquement après correction.
                     </p>
-                    <button
-                      className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-                      disabled={!canValidate}
-                      onClick={validateModule}
-                      type="button"
-                    >
-                      Valider le QCU
-                    </button>
+                    <span className="rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-extrabold text-cyan-700">
+                      Validation automatique en fin de QCU
+                    </span>
                   </div>
                 )}
               </div>
             )}
           </div>
+          {openedGalleryImage && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-navy-950/80 p-4 backdrop-blur-md">
+              <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
+                      Galerie photo
+                    </p>
+                    <h3 className="text-lg font-black text-slate-950">{openedGalleryImage.title}</h3>
+                  </div>
+                  <button
+                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                    onClick={() => setOpenedGalleryImage(null)}
+                    type="button"
+                  >
+                    Fermer
+                  </button>
+                </div>
+                <div className="min-h-0 overflow-auto bg-slate-950 p-3">
+                  <img
+                    alt={openedGalleryImage.alt}
+                    className="mx-auto max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
+                    src={openedGalleryImage.src}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
