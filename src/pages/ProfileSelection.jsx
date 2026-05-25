@@ -11,7 +11,6 @@ import {
   Download,
   GraduationCap,
   Menu,
-  MonitorSmartphone,
   Quote,
   ShieldCheck,
   Sparkles,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import StorePlatformBadges from '../components/StorePlatformBadges'
 
 const navLinks = [
   { label: 'Accueil', href: '#accueil' },
@@ -35,7 +35,6 @@ const featureCards = [
   { title: 'Planning intelligent', text: 'Organisez leçons, disponibilités et créneaux en quelques clics.', icon: CalendarDays },
   { title: 'QCU intelligents', text: 'Entraînement par compétences avec correction et suivi des résultats.', icon: GraduationCap },
   { title: 'Statistiques avancées', text: 'Pilotez votre activité avec des indicateurs clairs et actionnables.', icon: BarChart3 },
-  { title: '100% Mobile', text: 'Accessible sur téléphone, tablette et ordinateur, partout.', icon: MonitorSmartphone },
   { title: 'Sauvegarde cloud', text: 'Données sécurisées, synchronisées et disponibles en permanence.', icon: Cloud },
   { title: 'Exports & Rapports', text: 'Générez vos exports et rapports pour votre organisation interne.', icon: Download },
   { title: 'Multi-utilisateurs', text: 'Gérant, secrétariat, enseignants et élèves, chacun son espace.', icon: ShieldCheck },
@@ -51,7 +50,6 @@ const previewPoints = [
 const stats = [
   { value: '+850', label: 'Auto-écoles équipées', icon: Building2 },
   { value: '+12 000', label: 'Utilisateurs actifs', icon: Users },
-  { value: '99,9%', label: 'Disponibilité', icon: ShieldCheck },
   { value: '4,9/5', label: 'Satisfaction client', icon: Star },
 ]
 
@@ -139,6 +137,22 @@ function BrandLogo() {
   )
 }
 
+const studentDistributionDemo = [
+  { label: 'En formation', percent: 42, color: '#3b82f6' },
+  { label: 'Prêts pour l’examen', percent: 26, color: '#ef4444' },
+  { label: 'Permis obtenu', percent: 32, color: '#22d3ee' },
+]
+
+const qcuSuccessDemo = [
+  { day: 'Lun', percent: 38 },
+  { day: 'Mar', percent: 52 },
+  { day: 'Mer', percent: 47 },
+  { day: 'Jeu', percent: 61 },
+  { day: 'Ven', percent: 58 },
+  { day: 'Sam', percent: 72 },
+  { day: 'Dim', percent: 68 },
+]
+
 function DashboardPreview() {
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-3 shadow-2xl shadow-blue-950/30 backdrop-blur-xl">
@@ -157,6 +171,7 @@ function DashboardPreview() {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Tableau de bord</p>
             <p className="mt-1 text-lg font-black text-white">Auto-école Lumière</p>
+            <p className="mt-1 text-[11px] font-semibold text-slate-500">Aperçu marketing — chiffres fictifs</p>
           </div>
           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-200">En ligne</span>
         </motion.div>
@@ -186,21 +201,31 @@ function DashboardPreview() {
             transition={{ duration: 0.45, delay: 0.2 }}
           >
             <p className="text-sm font-black text-white">Réussite QCU</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-400">
+              Exemple : part de bonnes réponses aux quiz, jour par jour (démo).
+            </p>
             <motion.div
               animate={{ scaleX: 1 }}
-              className="mt-4 h-28 origin-bottom rounded-xl bg-gradient-to-t from-blue-500/20 to-transparent"
+              aria-label="Graphique démo : réussite QCU sur 7 jours"
+              className="mt-3 origin-bottom rounded-xl bg-gradient-to-t from-blue-500/20 to-transparent px-2 pb-1 pt-2"
               initial={{ scaleX: 0.85, opacity: 0.5 }}
+              role="img"
               transition={{ duration: 0.6, delay: 0.25 }}
             >
-              <div className="flex h-full items-end gap-2 px-2 pb-2">
-                {[38, 52, 47, 61, 58, 72, 68].map((height, index) => (
-                  <motion.div
-                    animate={{ height: `${height}%` }}
-                    className="flex-1 rounded-t-md bg-gradient-to-t from-blue-600 to-cyan-300"
-                    initial={{ height: 0 }}
-                    key={index}
-                    transition={{ duration: 0.5, delay: 0.3 + index * 0.04 }}
-                  />
+              <div className="flex h-24 gap-1.5 sm:gap-2">
+                {qcuSuccessDemo.map((item, index) => (
+                  <div className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1" key={item.day}>
+                    <div className="flex h-20 w-full items-end">
+                      <motion.div
+                        animate={{ height: `${item.percent}%` }}
+                        className="w-full min-h-[3px] rounded-t-md bg-gradient-to-t from-blue-600 to-cyan-300"
+                        initial={{ height: 0 }}
+                        title={`${item.day} : ${item.percent}% de bonnes réponses`}
+                        transition={{ duration: 0.5, delay: 0.3 + index * 0.04 }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{item.day}</span>
+                  </div>
                 ))}
               </div>
             </motion.div>
@@ -212,15 +237,35 @@ function DashboardPreview() {
             transition={{ duration: 0.45, delay: 0.25 }}
           >
             <p className="text-sm font-black text-white">Répartition élèves</p>
-            <div className="mt-4 flex items-center justify-center">
-              <div className="relative h-24 w-24 rounded-full bg-[conic-gradient(#3b82f6_0_42%,#ef4444_42%_68%,#22d3ee_68%_100%)]">
+            <p className="mt-1 text-[11px] leading-snug text-slate-400">
+              Exemple : où en est chaque élève dans son parcours permis.
+            </p>
+            <div className="mt-3 flex items-center gap-4">
+              <div
+                aria-hidden
+                className="relative h-20 w-20 shrink-0 rounded-full bg-[conic-gradient(#3b82f6_0_42%,#ef4444_42%_68%,#22d3ee_68%_100%)]"
+              >
                 <motion.div
                   animate={{ scale: 1, opacity: 1 }}
-                  className="absolute inset-4 rounded-full bg-slate-950"
+                  className="absolute inset-3 rounded-full bg-slate-950"
                   initial={{ scale: 0.6, opacity: 0 }}
                   transition={{ duration: 0.45, delay: 0.35 }}
                 />
               </div>
+              <ul className="min-w-0 flex-1 space-y-1.5" aria-label="Légende répartition élèves (démo)">
+                {studentDistributionDemo.map((item) => (
+                  <li className="flex items-center justify-between gap-2 text-[11px]" key={item.label}>
+                    <span className="flex min-w-0 items-center gap-1.5 font-semibold text-slate-300">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </span>
+                    <span className="shrink-0 font-black text-white">{item.percent}%</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </motion.div>
         </div>
@@ -355,7 +400,7 @@ export default function ProfileSelection() {
           </motion.h2>
           <motion.div
             {...reveal(shouldReduceMotion, 0.08)}
-            className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {stats.map((item, index) => {
               const Icon = item.icon
@@ -469,6 +514,27 @@ export default function ProfileSelection() {
                 Essayer gratuitement
               </Link>
             </div>
+          </motion.div>
+        </section>
+
+        <section
+          id="applications-mobiles"
+          className="border-t border-white/10 bg-[#07111f] py-20 sm:py-24 lg:py-28"
+        >
+          <motion.div
+            {...reveal(shouldReduceMotion)}
+            className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8"
+          >
+            <p className="inline-flex rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-200">
+              Applications mobiles
+            </p>
+            <h2 className="mt-6 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Disponible sur iOS et Android
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              Téléchargez l’application sur votre smartphone et retrouvez toute votre formation au volant.
+            </p>
+            <StorePlatformBadges className="mt-12" size="large" />
           </motion.div>
         </section>
       </main>

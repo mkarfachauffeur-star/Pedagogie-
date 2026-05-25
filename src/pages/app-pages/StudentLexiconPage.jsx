@@ -13,6 +13,18 @@ const terms = [
   { word: 'Débrayer', definition: 'Séparer le moteur des roues avec l’embrayage.', explanation: 'On débraye en appuyant à fond sur la pédale d’embrayage pour changer de vitesse ou s’arrêter.' },
   { word: 'Point de patinage', definition: 'Moment où le véhicule commence à vouloir avancer.', explanation: 'C’est le point d’équilibre entre l’embrayage et le moteur, très utile pour démarrer en douceur.' },
   { word: 'Frein moteur', definition: 'Ralentissement naturel du véhicule quand on relâche l’embrayage.', explanation: 'Le frein moteur aide à ralentir sans freiner fortement, surtout en descente ou avant un virage.' },
+  {
+    word: 'Freinage progressif',
+    definition: 'Freiner doucement au début, puis augmenter progressivement la pression.',
+    explanation:
+      'Il permet un ralentissement confortable et évite les à-coups, par exemple avant un virage, un feu ou un ralentisseur.',
+  },
+  {
+    word: 'Freinage dégressif',
+    definition: 'Freiner fort au début, puis relâcher progressivement la pression.',
+    explanation:
+      'Il favorise un arrêt précis et stable, notamment pour s’immobiliser au bon endroit sans secousse à l’arrêt.',
+  },
   { word: 'Rétrograder', definition: 'Passer à un rapport inférieur.', explanation: 'On rétrograde pour récupérer de la puissance, ralentir ou adapter l’allure.' },
   { word: 'Angle mort', definition: 'Zone invisible dans les rétroviseurs.', explanation: 'Il faut tourner la tête pour vérifier qu’aucun usager ne se trouve dans cette zone.' },
   { word: 'Trajectoire', definition: 'Chemin suivi par le véhicule.', explanation: 'La trajectoire dépend du regard, de l’allure et de la précision des gestes au volant.' },
@@ -134,6 +146,26 @@ const quiz = [
   { question: 'Le clignotant sert principalement à :', answer: 'Informer les autres usagers de l’intention de tourner', choices: ['Informer les autres usagers de l’intention de tourner', 'Obtenir automatiquement la priorité', 'Signaler une situation d’urgence', 'Demander aux piétons de s’écarter'] },
   { question: 'Que veut dire décélérer ?', answer: 'Relâcher l’accélérateur', choices: ['Relâcher l’accélérateur', 'Accélérer franchement', 'Couper le moteur', 'Maintenir une allure constante'] },
   { question: 'Qu’est-ce que le frein moteur ?', answer: 'Le ralentissement naturel du véhicule quand on relâche l’embrayage', choices: ['Le ralentissement naturel du véhicule quand on relâche l’embrayage', 'Le frein de stationnement à main', 'Le système ABS du véhicule', 'Une pédale spécifique au moteur'] },
+  {
+    question: 'Qu’est-ce que le freinage progressif ?',
+    answer: 'Freiner doucement au début puis augmenter progressivement la pression',
+    choices: [
+      'Freiner doucement au début puis augmenter progressivement la pression',
+      'Freiner fort au début puis relâcher progressivement la pression',
+      'Freiner à fond sans relâcher jusqu’à l’arrêt',
+      'Utiliser uniquement le frein à main',
+    ],
+  },
+  {
+    question: 'Qu’est-ce que le freinage dégressif ?',
+    answer: 'Freiner fort au début puis relâcher progressivement la pression',
+    choices: [
+      'Freiner fort au début puis relâcher progressivement la pression',
+      'Freiner doucement au début puis augmenter progressivement la pression',
+      'Freiner uniquement avec l’embrayage',
+      'Accélérer puis freiner brusquement',
+    ],
+  },
   { question: 'Qu’est-ce que le point de patinage ?', answer: 'Le moment où le véhicule commence à vouloir avancer', choices: ['Le moment où le véhicule commence à vouloir avancer', 'Le moment où l’on cale le moteur', 'Le point d’arrêt du frein à main', 'Le point culminant d’un virage'] },
   { question: 'Que désigne une intersection ?', answer: 'Un lieu où plusieurs routes se croisent', choices: ['Un lieu où plusieurs routes se croisent', 'Une portion d’autoroute', 'Une zone réservée aux bus', 'Un passage piéton signalé'] },
   { question: 'Quel est ce panneau ?', visualType: 'stop', answer: 'STOP', choices: ['STOP', 'Cédez le passage', 'Sens interdit', 'Limitation de vitesse'] },

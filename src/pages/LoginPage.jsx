@@ -19,6 +19,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
+import StorePlatformBadges from '../components/StorePlatformBadges'
 import { roleDestinations, roleLabels, setStoredRole } from '../utils/authSession'
 
 const roles = [
@@ -45,8 +46,8 @@ const features = [
     icon: BarChart3,
   },
   {
-    title: 'Compatible mobile',
-    description: 'Accédez partout, tout le temps',
+    title: 'Applications mobiles',
+    platforms: true,
     icon: Smartphone,
   },
 ]
@@ -214,11 +215,17 @@ export default function LoginPage() {
                     className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-sm transition hover:border-blue-400/25 hover:bg-white/[0.07]"
                     {...fadeUp(0.08 + index * 0.04)}
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-500/10 text-blue-300">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <p className="mt-3 text-sm font-black text-white">{feature.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{feature.description}</p>
+                    {!feature.platforms && (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-500/10 text-blue-300">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                    )}
+                    <p className={`text-sm font-black text-white ${feature.platforms ? '' : 'mt-3'}`}>{feature.title}</p>
+                    {feature.platforms ? (
+                      <StorePlatformBadges className="mt-3" compact />
+                    ) : (
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{feature.description}</p>
+                    )}
                   </motion.div>
                 )
               })}

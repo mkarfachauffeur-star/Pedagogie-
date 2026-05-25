@@ -3,6 +3,11 @@ import DashboardWarningIcon, { dashboardWarningLights } from '../../components/D
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
 import vehicleOrgansDiagramImage from '../../assets/lessons/elements-essentiels-vehicule.png'
 import dashboardWarningLightsImage from '../../assets/lessons/voyants-tableau-de-bord.png'
+import steeringWheelGuideImage from '../../assets/lessons/tenir-tourner-volant.png'
+import startStopGuideImage from '../../assets/lessons/demarrer-arreter.png'
+import brakingTypesGuideImage from '../../assets/lessons/types-freinage.png'
+import doseAccelerationFreinageImage from '../../assets/lessons/doser-acceleration-freinage.png'
+import gearboxGuideImage from '../../assets/lessons/utiliser-boite-vitesses.png'
 
 const competencies = [
   {
@@ -469,7 +474,7 @@ const vehicleOrgansModule = {
   ],
   safetyAdvice: [
     'Vérifiez la pression des pneus environ une fois par mois.',
-    'Contrôlez les feux et les rétroviseurs avant chaque départ.',
+    'Contrôler l’aspect général du véhicule avant de démarrer.',
     'Surveillez les témoins du tableau de bord : un témoin d’huile peut exiger un arrêt rapide et sécurisé.',
     'Remplacez les balais d’essuie-glaces usés pour conserver une bonne visibilité par temps de pluie.',
   ],
@@ -882,6 +887,20 @@ const steeringWheelModule = {
   title: 'Tenir et tourner le volant',
   intro:
     'Les mains doivent être placées à 9h15 ou 10h10 avec les bras légèrement fléchis. Le regard doit porter loin afin de mieux suivre la trajectoire. Le conducteur doit garder les mains sur le volant autant que possible, y compris pour utiliser les commandes comme les clignotants, les essuie-glaces et les feux.',
+  schemaSection: {
+    kicker: 'Repère visuel',
+    title: 'Tenir et tourner le volant',
+  },
+  images: [
+    {
+      src: steeringWheelGuideImage,
+      alt: 'Infographie : position conseillée 9h15 et positions déconseillées sur le volant',
+      title: 'Tenir et tourner le volant',
+      caption:
+        'Position conseillée à 9h15, mains détendues et regard loin devant. Positions déconseillées : mains croisées, une seule main, mains en 12h ou trop basses.',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'Position des mains et regard',
@@ -996,6 +1015,27 @@ const startStopModule = {
   title: 'Démarrer et s’arrêter',
   intro:
     'Le conducteur doit adapter son démarrage selon la situation rencontrée et choisir un freinage adapté pour ralentir ou s’arrêter en sécurité.',
+  schemaSection: {
+    kicker: 'Schémas et photos',
+  },
+  images: [
+    {
+      src: startStopGuideImage,
+      alt: 'Infographie : démarrer et s’arrêter — conseils pratiques et erreurs à éviter',
+      title: 'Démarrer et s’arrêter',
+      caption:
+        'Conseils pratiques (démarrage en douceur, arrêt sécurisé, point de patinage) et gestes à éviter (embrayage brutal, commandes forcées, freinage brutal).',
+      objectFit: 'contain',
+    },
+    {
+      src: brakingTypesGuideImage,
+      alt: 'Infographie : types de freinage progressif et dégressif',
+      title: 'Types de freinage',
+      caption:
+        'Freinage progressif : pression qui augmente progressivement. Freinage dégressif : forte pression au début puis relâchement progressif.',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'Démarrage sans accélérateur',
@@ -1105,6 +1145,19 @@ const accelerationBrakingModule = {
   title: 'Doser l’accélération et le freinage',
   intro:
     'Le conducteur doit apprendre à doser correctement les pédales afin de conduire avec souplesse, précision et sécurité. Chaque pédale possède un rôle précis : embrayage, frein et accélérateur. Les pieds doivent être utilisés avec douceur afin d’éviter les à-coups, le calage et les freinages brusques.',
+  schemaSection: {
+    kicker: 'Schémas et photos',
+  },
+  images: [
+    {
+      src: doseAccelerationFreinageImage,
+      alt: 'Infographie : doser l’accélération et le freinage — démarrages, freinages et conseils',
+      title: 'Doser l’accélération et le freinage',
+      caption:
+        'Démarrages (sans accélérateur, avec accélération, en côte), freinages (progressif, dégressif, urgence) et conseils de sécurité.',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'Le rôle de l’embrayage',
@@ -1225,6 +1278,19 @@ const gearboxModule = {
   title: 'Utiliser la boîte de vitesse',
   intro:
     'La boîte de vitesse permet d’adapter la vitesse du véhicule au régime moteur et à la situation de circulation. Elle se comprend avec l’embrayage et, plus indirectement, avec le volant moteur qui participe à la transmission du mouvement du moteur.',
+  schemaSection: {
+    kicker: 'Schémas et photos',
+  },
+  images: [
+    {
+      src: gearboxGuideImage,
+      alt: 'Infographie : utiliser la boîte de vitesses — rapports, passage des vitesses et conseils',
+      title: 'Utiliser la boîte de vitesses',
+      caption:
+        'Rôle de la boîte, schéma des rapports, passage des vitesses (débrayer, changer, embrayer), conseils pratiques et erreurs à éviter.',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'Rôle de la boîte de vitesse',
@@ -2158,9 +2224,11 @@ export default function StudentLessonsPage() {
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
                           {openedLesson.schemaSection?.kicker || 'Schémas pédagogiques'}
                         </p>
-                        <h3 className="mt-2 text-2xl font-black text-slate-950">
-                          {openedLesson.schemaSection?.title || openedLesson.images[0]?.title}
-                        </h3>
+                        {openedLesson.schemaSection?.title && (
+                          <h3 className="mt-2 text-2xl font-black text-slate-950">
+                            {openedLesson.schemaSection.title}
+                          </h3>
+                        )}
                       </div>
                       <div className="grid gap-4 p-4">
                         {openedLesson.images.map((image) => (
@@ -2170,10 +2238,12 @@ export default function StudentLessonsPage() {
                             onClick={() => setOpenedGalleryImage(image)}
                             type="button"
                           >
-                            <div className="aspect-[16/9] overflow-hidden bg-white">
+                            <div
+                              className={`overflow-hidden bg-white ${image.objectFit === 'contain' ? 'min-h-[280px] sm:min-h-[360px]' : 'aspect-[16/9]'}`}
+                            >
                               <img
                                 alt={image.alt}
-                                className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                                className={`h-full w-full transition duration-300 group-hover:scale-[1.02] ${image.objectFit === 'contain' ? 'object-contain p-3 sm:p-4' : 'object-cover'}`}
                                 src={image.src}
                               />
                             </div>
