@@ -22,7 +22,7 @@ export const NAVIGATION = {
       { href: '/student/lessons', icon: '\u{1F4DA}', label: 'Mes leçons' },
       { href: '/student/lexicon', icon: '\u{1F4D8}', label: 'Lexique auto-école' },
       { href: '/student/exams', icon: '\u{1F3AF}', label: 'Examens' },
-      { href: '/student/accompanied-driving', icon: '\u{1F697}', label: 'Conduite accompagnée' },
+      { href: '/student/accompanied-driving', icon: '\u{1F697}', label: 'Suivi accompagné' },
       { href: '/student/messages', icon: '\u{1F4AC}', label: 'Messagerie' },
     ],
   },

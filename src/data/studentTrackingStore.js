@@ -255,6 +255,29 @@ const initialStudents = [
       minimumEndDate: '2026-05-20',
       kilometersCurrent: 1250,
       kilometersTarget: 3000,
+      pedagogicalAppointments: [
+        {
+          id: 'rvp1',
+          label: 'RVP 1 — Bilan initial',
+          date: '2025-05-20',
+          status: 'Validé',
+          duration: '2 h',
+        },
+        {
+          id: 'rvp2',
+          label: 'RVP 2 — Point d’étape',
+          date: '2025-11-18',
+          status: 'À planifier',
+          duration: '2 h',
+        },
+        {
+          id: 'rvp3',
+          label: 'RVP 3 — Bilan final',
+          date: null,
+          status: 'À venir',
+          duration: '2 h',
+        },
+      ],
     },
   },
   {
@@ -272,6 +295,28 @@ const initialStudents = [
     teacher: 'Mohamed Karfa',
     remc: cloneRemc(),
     lessonHistory: [],
+    aacTracking: {
+      startDate: '2026-01-10',
+      minimumEndDate: '2026-07-10',
+      kilometersCurrent: 420,
+      kilometersTarget: 2000,
+      pedagogicalAppointments: [
+        {
+          id: 'rvp1',
+          label: 'RVP 1 — Bilan initial',
+          date: '2026-01-10',
+          status: 'Validé',
+          duration: '2 h',
+        },
+        {
+          id: 'rvp2',
+          label: 'RVP 2 — Point d’étape',
+          date: '2026-04-12',
+          status: 'À venir',
+          duration: '2 h',
+        },
+      ],
+    },
   },
   {
     firstName: 'In\u00e8s',
@@ -321,8 +366,55 @@ function mergeRemcWithTemplate(storedRemc) {
   }))
 }
 
+function isEmptyAacTracking(stored) {
+  if (!stored || typeof stored !== 'object') return true
+  const hasKm = Number(stored.kilometersCurrent) > 0
+  const hasAppointments =
+    Array.isArray(stored.pedagogicalAppointments) && stored.pedagogicalAppointments.length > 0
+  const hasStartDate = Boolean(stored.startDate)
+  return !hasKm && !hasAppointments && !hasStartDate
+}
+
+function resolveAacTracking(stored, seedStudent) {
+  const seed = seedStudent?.aacTracking
+  if (!seed && !stored) return null
+  if (isEmptyAacTracking(stored)) return seed || null
+  if (!seed) return stored
+  return {
+    ...seed,
+    ...stored,
+    startDate: stored.startDate || seed.startDate,
+    minimumEndDate: stored.minimumEndDate || seed.minimumEndDate,
+    kilometersCurrent: stored.kilometersCurrent ?? seed.kilometersCurrent,
+    kilometersTarget: stored.kilometersTarget ?? seed.kilometersTarget,
+    pedagogicalAppointments:
+      Array.isArray(stored.pedagogicalAppointments) && stored.pedagogicalAppointments.length
+        ? stored.pedagogicalAppointments
+        : seed.pedagogicalAppointments,
+  }
+}
+
+function findInitialSeed(student) {
+  const byName = initialStudents.find(
+    (seed) =>
+      seed.firstName === student.firstName &&
+      seed.lastName === student.lastName,
+  )
+  if (byName) return byName
+
+  const formation = student.formationType || ''
+  if (formation.includes('AAC')) {
+    return initialStudents.find((seed) => seed.formationType?.includes('AAC'))
+  }
+  if (formation.toLowerCase().includes('supervis')) {
+    return initialStudents.find((seed) => seed.formationType?.toLowerCase().includes('supervis'))
+  }
+  return undefined
+}
+
 function normalizeStudent(student, index = 0) {
   const base = student || {}
+  const seed = findInitialSeed(base)
   const normalizedRemc =
     Array.isArray(base.remc) && base.remc.length ? mergeRemcWithTemplate(base.remc) : cloneRemc()
   return {
@@ -334,8 +426,30 @@ function normalizeStudent(student, index = 0) {
     teacher: base.teacher || 'Non assign\u00e9',
     remc: normalizedRemc,
     lessonHistory: Array.isArray(base.lessonHistory) ? base.lessonHistory : [],
-    aacTracking: base.aacTracking || null,
+    aacTracking: resolveAacTracking(base.aacTracking, seed),
   }
+}
+
+export const demoAacTracking = initialStudents.find((student) =>
+  student.formationType?.includes('AAC'),
+)?.aacTracking
+
+export const demoSupervisedTracking = initialStudents.find((student) =>
+  student.formationType?.toLowerCase().includes('supervis'),
+)?.aacTracking
+
+export function getStudentAacTracking(student) {
+  if (!student) return null
+  const seed = findInitialSeed(student)
+  const resolved = resolveAacTracking(student.aacTracking, seed)
+  if (resolved?.kilometersCurrent && resolved?.pedagogicalAppointments?.length) return resolved
+
+  const formation = student.formationType || ''
+  if (formation.includes('AAC') && demoAacTracking) return { ...demoAacTracking, ...resolved }
+  if (formation.toLowerCase().includes('supervis') && demoSupervisedTracking) {
+    return { ...demoSupervisedTracking, ...resolved }
+  }
+  return resolved
 }
 
 function getStoredStudents() {
@@ -379,6 +493,15 @@ export function computeStudentProgress(student) {
 
 export function useStudentTrackingStore() {
   const [students, setStudents] = useState(() => getStoredStudents())
+
+  useEffect(() => {
+    const normalized = getStoredStudents()
+    setStudents((current) => {
+      const currentJson = JSON.stringify(current)
+      const normalizedJson = JSON.stringify(normalized)
+      return currentJson === normalizedJson ? current : normalized
+    })
+  }, [])
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
