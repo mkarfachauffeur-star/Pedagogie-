@@ -113,7 +113,7 @@ export default function SecretaryInscriptionsPage() {
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Inscriptions auto-école
               </h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">
+              <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
                 Créez un dossier élève depuis une vraie fenêtre formulaire et suivez les inscriptions.
               </p>
             </div>
@@ -215,7 +215,7 @@ export default function SecretaryInscriptionsPage() {
       {activeTab === 'api' && (
         <section className="rounded-[2rem] border border-white/70 bg-navy-950 p-5 text-white shadow-[var(--shadow-card)]">
           <h2 className="text-2xl font-extrabold">Structure prête pour base de données</h2>
-          <p className="mt-2 text-sm text-cyan-50/70">
+          <p className="mt-2 text-sm text-blue-100">
             Les champs sont déjà structurés en objet `studentRegistration` pour une future API.
           </p>
           <pre className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-white/10 p-4 text-xs text-cyan-50">

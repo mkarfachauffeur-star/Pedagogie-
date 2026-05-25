@@ -16,7 +16,7 @@ export default function AdminStudentsPage() {
           Gérant
         </p>
         <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Élèves et suivi formation</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-cyan-50/85">
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-50">
           Vision unifiée des élèves, type de formation et avancement REMC.
         </p>
       </section>

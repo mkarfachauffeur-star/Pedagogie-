@@ -416,9 +416,8 @@ export const pageConfigs = {
       { label: 'Élèves suivis', value: '24', trend: '4 prioritaires', tone: 'cyan' },
       { label: 'Planning semaine', value: '32 créneaux', trend: 'Planifiés', tone: 'emerald' },
       { label: 'Heures semaine', value: '18h', trend: 'Réalisées', tone: 'amber' },
-      { label: 'Réussite', value: '86%', trend: 'Trimestre', tone: 'violet' },
     ],
-    sections: [{ type: 'timeline', title: 'Planning semaine', description: 'Créneaux du jour et à venir.', items: planningItems }],
+    sections: [],
   },
 
   teacherPlanning: {

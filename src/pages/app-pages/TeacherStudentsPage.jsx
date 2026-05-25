@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStudentTrackingStore } from '../../data/studentTrackingStore'
 
 const remcStatuses = ['Non commencé', 'En cours', 'Validé']
 const lessonStatuses = ['Débuté', 'En cours', 'Terminé']
+const lessonDurations = ['45 MIN', '1h', '2H']
 
 function nowDateTime() {
   const now = new Date()
@@ -24,10 +25,11 @@ export default function TeacherStudentsPage() {
   const [teacherName, setTeacherName] = useState('Mohamed Karfa')
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
   const [skillsPanelOpen, setSkillsPanelOpen] = useState(false)
+  const [expandedCompetencyCode, setExpandedCompetencyCode] = useState(null)
   const [newLesson, setNewLesson] = useState({
     date: '',
     time: '',
-    duration: '2h',
+    duration: '2H',
     observations: '',
     status: 'Débuté',
   })
@@ -37,12 +39,20 @@ export default function TeacherStudentsPage() {
     [selectedStudentId, students],
   )
 
+  useEffect(() => {
+    setExpandedCompetencyCode(null)
+  }, [selectedStudentId])
+
+  const toggleCompetency = (code) => {
+    setExpandedCompetencyCode((current) => (current === code ? null : code))
+  }
+
   const openLesson = () => {
     const { date, time } = nowDateTime()
     setNewLesson({
       date,
       time,
-      duration: '2h',
+      duration: '2H',
       observations: '',
       status: 'Débuté',
     })
@@ -75,7 +85,7 @@ export default function TeacherStudentsPage() {
           Mes élèves
         </p>
         <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Suivi REMC et leçons terrain</h1>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-cyan-50/85">
+        <p className="mt-3 max-w-4xl text-sm leading-7 text-blue-50">
           Cliquez un élève, ouvrez une leçon, cochez les compétences et ajoutez vos observations en quelques secondes.
         </p>
       </section>
@@ -195,20 +205,37 @@ export default function TeacherStudentsPage() {
                   />
                 </label>
                 <label className="text-sm font-bold text-slate-700">
-                  Date d’ouverture automatique
-                  <input className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm" value={newLesson.date} disabled />
+                  Date d’ouverture
+                  <input
+                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                    type="date"
+                    required
+                    value={newLesson.date}
+                    onChange={(event) => setNewLesson((current) => ({ ...current, date: event.target.value }))}
+                  />
                 </label>
                 <label className="text-sm font-bold text-slate-700">
-                  Heure d’ouverture automatique
-                  <input className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm" value={newLesson.time} disabled />
+                  Heure d’ouverture
+                  <input
+                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                    type="time"
+                    value={newLesson.time}
+                    onChange={(event) => setNewLesson((current) => ({ ...current, time: event.target.value }))}
+                  />
                 </label>
                 <label className="text-sm font-bold text-slate-700">
                   Durée
-                  <input
-                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none"
+                  <select
+                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                     value={newLesson.duration}
                     onChange={(event) => setNewLesson((current) => ({ ...current, duration: event.target.value }))}
-                  />
+                  >
+                    {lessonDurations.map((duration) => (
+                      <option key={duration} value={duration}>
+                        {duration}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="text-sm font-bold text-slate-700">
                   État
@@ -248,45 +275,102 @@ export default function TeacherStudentsPage() {
           {skillsPanelOpen && (
             <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
               <h2 className="text-2xl font-extrabold text-slate-900">Compétences et sous-compétences REMC</h2>
-              <div className="mt-4 grid gap-4">
-                {selectedStudent.remc.map((competency) => (
-                  <article key={competency.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        {competency.code} · {competency.title}
-                      </h3>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">
-                        {selectedStudent.progress.byCompetency[competency.code]}%
-                      </span>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
-                        style={{ width: `${selectedStudent.progress.byCompetency[competency.code]}%` }}
-                      />
-                    </div>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      {competency.items.map((item) => (
-                        <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                          <p className="text-sm font-bold text-slate-700">{item.label}</p>
-                          <select
-                            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
-                            value={item.status}
-                            onChange={(event) =>
-                              updateRemcStatus(selectedStudent.id, competency.code, item.id, event.target.value)
-                            }
-                          >
-                            {remcStatuses.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
+              <p className="mt-2 text-sm text-slate-500">
+                Cliquez une compétence pour afficher ou masquer ses sous-compétences.
+              </p>
+              <div className="mt-4 grid gap-3">
+                {selectedStudent.remc.map((competency) => {
+                  const isExpanded = expandedCompetencyCode === competency.code
+                  const progress = selectedStudent.progress.byCompetency[competency.code]
+
+                  return (
+                    <article
+                      key={competency.code}
+                      className={`overflow-hidden rounded-2xl border transition-colors ${
+                        isExpanded
+                          ? 'border-cyan-200 bg-cyan-50/60 shadow-sm'
+                          : 'border-slate-200 bg-slate-50 hover:border-cyan-100'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleCompetency(competency.code)}
+                        aria-expanded={isExpanded}
+                        className="flex w-full items-start justify-between gap-3 p-4 text-left"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg font-extrabold text-slate-900">
+                            {competency.code} · {competency.title}
+                          </h3>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">
+                            {competency.items.length} sous-compétences
+                          </p>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </article>
-                ))}
+                        <div className="flex shrink-0 items-center gap-2 pt-1">
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">
+                            {progress}%
+                          </span>
+                          <span
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm text-slate-500 transition-transform duration-300 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                            aria-hidden="true"
+                          >
+                            ▾
+                          </span>
+                        </div>
+                      </button>
+
+                      <div
+                        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                        }`}
+                      >
+                        <div className="overflow-hidden">
+                          <div className="grid gap-3 border-t border-cyan-100 px-4 pb-4 pt-3 md:grid-cols-2">
+                            {competency.items.map((item) => (
+                              <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                                <p className="text-sm font-bold text-slate-700">
+                                  {item.code ? (
+                                    <>
+                                      <span className="text-cyan-700">{item.code}</span> · {item.label}
+                                    </>
+                                  ) : (
+                                    item.label
+                                  )}
+                                </p>
+                                <select
+                                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                                  value={item.status}
+                                  onChange={(event) =>
+                                    updateRemcStatus(
+                                      selectedStudent.id,
+                                      competency.code,
+                                      item.id,
+                                      event.target.value,
+                                    )
+                                  }
+                                >
+                                  {remcStatuses.map((status) => (
+                                    <option key={status} value={status}>
+                                      {status}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
             </section>
           )}

@@ -55,7 +55,7 @@ export default function ManagerMessagesPage() {
   return (
     <div className="pd-page">
       <section className="pd-card overflow-hidden p-0">
-        <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-[#10304f] via-[#133a5d] to-[#1a4870] p-6 text-white md:p-8">
+        <div className="pd-hero-banner">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]"
@@ -70,9 +70,9 @@ export default function ManagerMessagesPage() {
       </section>
 
       <div className="pd-msg-panel grid gap-0 lg:grid-cols-[320px_1fr]">
-        <aside className="border-b border-white/16 bg-white/[0.1] p-4 backdrop-blur-md lg:border-b-0 lg:border-r md:p-5">
-          <h2 className="pd-title-section text-lg">Contacts internes</h2>
-          <p className="mt-1 text-xs text-cyan-50/65">Canal direction simplifi\u00e9</p>
+        <aside className="pd-msg-sidebar">
+          <h2 className="pd-msg-sidebar-title">Contacts internes</h2>
+          <p className="pd-msg-sidebar-muted mt-1">Canal direction simplifi\u00e9</p>
           <div className="mt-4 grid gap-3">
             {chatState.map((contact) => (
               <button
@@ -84,10 +84,10 @@ export default function ManagerMessagesPage() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-white">{contact.name}</p>
+                  <p className="font-semibold text-slate-900">{contact.name}</p>
                   <span className="pd-msg-chip">Interne</span>
                 </div>
-                <p className="mt-1 text-xs font-medium text-cyan-50/65">{contact.role}</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">{contact.role}</p>
                 <p className="mt-2 text-xs font-medium text-cyan-200/90">
                   {contact.status} - {contact.messages.length} messages
                 </p>
@@ -96,11 +96,11 @@ export default function ManagerMessagesPage() {
           </div>
         </aside>
 
-        <section className="flex flex-col bg-white/[0.08] p-5 md:p-6">
+        <section className="flex flex-col bg-slate-50/80 p-5 md:p-6">
           <div className="flex items-center justify-between gap-3 border-b border-white/16 pb-4">
             <div>
               <h2 className="pd-title-section text-xl">{activeContact.name}</h2>
-              <p className="text-sm text-cyan-50/70">{activeContact.role}</p>
+              <p className="text-sm text-slate-600">{activeContact.role}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="pd-msg-chip">Interne</span>
@@ -137,7 +137,7 @@ export default function ManagerMessagesPage() {
               value={newMessage}
             />
             <button
-              className="rounded-2xl bg-gradient-to-r from-cyan-700/95 to-cyan-600/90 px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(69,98,121,0.22)] transition hover:-translate-y-0.5 hover:brightness-[1.03]"
+              className="rounded-2xl bg-gradient-to-r from-cyan-700/95 to-cyan-600/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_20px_rgba(69,98,121,0.22)] transition hover:-translate-y-0.5 hover:brightness-[1.03]"
               type="submit"
             >
               Envoyer

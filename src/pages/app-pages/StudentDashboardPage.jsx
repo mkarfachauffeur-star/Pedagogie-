@@ -55,33 +55,28 @@ export default function StudentDashboardPage() {
     return <div className="rounded-3xl border border-slate-200 bg-white p-6">Aucun élève disponible.</div>
   }
 
-  const isAac = student.formationType?.includes('AAC')
   const remcValidated = student.progress.global === 100
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
-        <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-          Espace élève
-        </p>
-        <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">
-          Bonjour {student.firstName} {student.lastName}
-        </h1>
-        <p className="mt-3 text-sm leading-7 text-cyan-50/85">
-          Formation : {student.formationType} · Progression REMC : {student.progress.global}%
-        </p>
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[var(--shadow-soft)] md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.06),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(239,68,68,0.04),transparent_35%)]" />
+        <div className="relative">
+          <span className="pd-eyebrow">Espace élève</span>
+          <h1 className="pd-title-page mt-4">
+            Bonjour {student.firstName} {student.lastName}
+          </h1>
+          <p className="pd-subtitle mt-3">
+            Formation : {student.formationType} · Progression REMC : {student.progress.global}%
+          </p>
+        </div>
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-        <h2 className="text-2xl font-extrabold text-slate-900">Prochaines leçons</h2>
-        <p className="mt-1 text-sm text-slate-500">
+      <section className="pd-card">
+        <h2 className="pd-title-section">Prochaines leçons</h2>
+        <p className="mt-1 text-sm text-slate-600">
           Affichage simple : heure, jour, date/année et durée.
         </p>
-        {!isAac && (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
-            RVP non affiché : réservé à la conduite accompagnée (AAC).
-          </p>
-        )}
         {!remcValidated && (
           <p className="mt-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-700">
             Préparation examen non disponible : toutes les compétences doivent être validées par l’enseignant.

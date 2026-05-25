@@ -25,7 +25,7 @@ export default function TeacherResourcesPage() {
           REMC & Conseils enseignants
         </p>
         <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Base pédagogique terrain</h1>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-cyan-50/85">
+        <p className="mt-3 max-w-4xl text-sm leading-7 text-blue-50">
           Compétences et sous-compétences REMC accessibles rapidement sur mobile, tablette et ordinateur.
         </p>
       </section>

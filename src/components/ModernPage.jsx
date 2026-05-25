@@ -1,39 +1,40 @@
+import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 
 const toneStyles = {
   cyan: {
-    card: 'border-cyan-100 bg-cyan-50/70',
-    badge: 'bg-cyan-100 text-cyan-700 ring-cyan-200',
-    dot: 'bg-cyan-500',
-    progress: 'from-cyan-600 to-cyan-400',
+    card: 'border-blue-100 bg-white',
+    badge: 'bg-blue-50 text-blue-700 ring-blue-100',
+    dot: 'bg-blue-500',
+    progress: 'from-blue-600 to-cyan-400',
   },
   navy: {
-    card: 'border-slate-200 bg-slate-50',
-    badge: 'bg-navy-900 text-white ring-navy-800',
-    dot: 'bg-navy-700',
-    progress: 'from-navy-900 to-cyan-600',
+    card: 'border-slate-200 bg-white',
+    badge: 'bg-slate-100 text-slate-800 ring-slate-200',
+    dot: 'bg-slate-600',
+    progress: 'from-slate-700 to-blue-600',
   },
   emerald: {
-    card: 'border-emerald-100 bg-emerald-50/70',
-    badge: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+    card: 'border-emerald-100 bg-white',
+    badge: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
     dot: 'bg-emerald-500',
     progress: 'from-emerald-600 to-emerald-400',
   },
   amber: {
-    card: 'border-amber-100 bg-amber-50/70',
-    badge: 'bg-amber-100 text-amber-700 ring-amber-200',
+    card: 'border-amber-100 bg-white',
+    badge: 'bg-amber-50 text-amber-700 ring-amber-100',
     dot: 'bg-amber-500',
     progress: 'from-amber-500 to-orange-400',
   },
   rose: {
-    card: 'border-rose-100 bg-rose-50/70',
-    badge: 'bg-rose-100 text-rose-700 ring-rose-200',
+    card: 'border-rose-100 bg-white',
+    badge: 'bg-rose-50 text-rose-700 ring-rose-100',
     dot: 'bg-rose-500',
     progress: 'from-rose-500 to-pink-400',
   },
   violet: {
-    card: 'border-violet-100 bg-violet-50/70',
-    badge: 'bg-violet-100 text-violet-700 ring-violet-200',
+    card: 'border-violet-100 bg-white',
+    badge: 'bg-violet-50 text-violet-700 ring-violet-100',
     dot: 'bg-violet-500',
     progress: 'from-violet-500 to-indigo-400',
   },
@@ -48,8 +49,8 @@ function ActionButton({ children, variant = 'primary', onClick }) {
     <button
       className={
         variant === 'secondary'
-          ? 'rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15'
-          : 'rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-extrabold text-navy-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300'
+          ? 'pd-btn-secondary'
+          : 'pd-btn-primary'
       }
       type="button"
       onClick={onClick}
@@ -63,30 +64,33 @@ function ProgressBar({ value = 0, tone = 'cyan' }) {
   const styles = getTone(tone)
 
   return (
-    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
-      <div
+    <motion.div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+      <motion.div
+        animate={{ width: `${value}%` }}
         className={`h-full rounded-full bg-gradient-to-r ${styles.progress}`}
-        style={{ width: `${value}%` }}
+        initial={{ width: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
       />
-    </div>
+    </motion.div>
   )
 }
 
 function Hero({ hero, onAction }) {
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
-      <div className="grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_auto] md:p-8">
+    <motion.section
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[var(--shadow-soft)]"
+      initial={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.45 }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.06),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(236,72,153,0.05),transparent_35%)]" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/50 to-transparent" />
+      <div className="relative grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
         <div>
-          {hero.eyebrow && (
-            <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-              {hero.eyebrow}
-            </span>
-          )}
-          <h1 className="mt-5 max-w-4xl text-3xl font-extrabold tracking-tight sm:text-4xl">
-            {hero.title}
-          </h1>
+          {hero.eyebrow && <span className="pd-eyebrow">{hero.eyebrow}</span>}
+          <h1 className="pd-title-page mt-5 max-w-4xl">{hero.title}</h1>
           {hero.subtitle && (
-            <p className="mt-4 max-w-3xl text-base leading-7 text-cyan-50/85">{hero.subtitle}</p>
+            <p className="pd-subtitle mt-4 max-w-3xl">{hero.subtitle}</p>
           )}
           {hero.actions?.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-3">
@@ -104,17 +108,17 @@ function Hero({ hero, onAction }) {
         </div>
 
         {hero.focus && (
-          <aside className="min-w-64 rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          <aside className="min-w-64 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               {hero.focus.label}
             </p>
-            <p className="mt-1 text-5xl font-black text-cyan-600">{hero.focus.value}</p>
+            <p className="mt-1 text-5xl font-black text-blue-600">{hero.focus.value}</p>
             {hero.focus.progress != null && <ProgressBar value={hero.focus.progress} />}
             <p className="mt-4 text-sm leading-6 text-slate-500">{hero.focus.caption}</p>
           </aside>
         )}
       </div>
-    </section>
+    </motion.section>
   )
 }
 
@@ -123,15 +127,17 @@ function Metrics({ metrics = [], activeDetail, onSelect }) {
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {metrics.map((metric) => {
+      {metrics.map((metric, index) => {
         const styles = getTone(metric.tone)
         const active = activeDetail?.id === `metric-${metric.label}`
 
         return (
-          <button
-            className={`rounded-[1.5rem] border bg-white p-5 text-left shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card)] focus:outline-none focus:ring-4 focus:ring-cyan-200 ${styles.card} ${
-              active ? 'ring-4 ring-cyan-200' : ''
+          <motion.button
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-[1.5rem] border p-5 text-left shadow-[var(--shadow-soft)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${styles.card} ${
+              active ? 'ring-4 ring-blue-500/25' : ''
             }`}
+            initial={{ opacity: 0, y: 10 }}
             key={`${metric.label}-${metric.value}`}
             onClick={() =>
               onSelect({
@@ -146,19 +152,20 @@ function Metrics({ metrics = [], activeDetail, onSelect }) {
                 ],
               })
             }
+            transition={{ duration: 0.4, delay: index * 0.05 }}
             type="button"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-slate-500">{metric.label}</p>
-                <p className="mt-2 text-3xl font-black text-slate-950">{metric.value}</p>
+                <p className="text-sm font-semibold text-slate-600">{metric.label}</p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{metric.value}</p>
               </div>
               <span className={`mt-1 h-3 w-3 rounded-full ${styles.dot}`} />
             </div>
             {metric.trend && (
               <p className="mt-4 text-sm font-semibold text-slate-500">{metric.trend}</p>
             )}
-          </button>
+          </motion.button>
         )
       })}
     </section>
@@ -170,16 +177,17 @@ function CardSection({ section, activeDetail, onSelect }) {
     <section>
       <SectionHeader section={section} />
       <div className={`grid gap-4 ${section.columns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
-        {section.items.map((item) => {
+        {section.items.map((item, index) => {
           const styles = getTone(item.tone)
-
           const active = activeDetail?.id === `${section.title}-${item.title}`
 
           return (
-            <button
-              className={`rounded-[1.5rem] border bg-white p-5 text-left shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card)] focus:outline-none focus:ring-4 focus:ring-cyan-200 ${styles.card} ${
-                active ? 'ring-4 ring-cyan-200' : ''
+            <motion.button
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-[1.5rem] border p-5 text-left shadow-[var(--shadow-soft)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${styles.card} ${
+                active ? 'ring-4 ring-blue-500/25' : ''
               }`}
+              initial={{ opacity: 0, y: 10 }}
               key={`${item.badge || item.title}-${item.title}`}
               onClick={() =>
                 onSelect({
@@ -192,25 +200,24 @@ function CardSection({ section, activeDetail, onSelect }) {
                   meta: item.meta,
                 })
               }
+              transition={{ duration: 0.4, delay: index * 0.04 }}
               type="button"
             >
               <div className="flex items-start gap-4">
-                <span className={`mt-1 h-3 w-3 rounded-full ${styles.dot}`} />
+                <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${styles.dot}`} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <motion.div className="flex flex-wrap items-center gap-2">
                     {item.badge && (
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${styles.badge}`}
-                      >
+                      <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${styles.badge}`}>
                         {item.badge}
                       </span>
                     )}
                     {item.status && (
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
                         {item.status}
                       </span>
                     )}
-                  </div>
+                  </motion.div>
                   <h3 className="mt-3 text-lg font-extrabold text-slate-900">{item.title}</h3>
                   {item.description && (
                     <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -222,10 +229,10 @@ function CardSection({ section, activeDetail, onSelect }) {
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {item.meta.map((meta) => (
                     <div
-                      className="rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm"
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
                       key={`${item.title}-${meta.label}`}
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         {meta.label}
                       </p>
                       <p className="text-sm font-bold text-slate-800">{meta.value}</p>
@@ -233,7 +240,7 @@ function CardSection({ section, activeDetail, onSelect }) {
                   ))}
                 </div>
               )}
-            </button>
+            </motion.button>
           )
         })}
       </div>
@@ -244,31 +251,27 @@ function CardSection({ section, activeDetail, onSelect }) {
 function TableSection({ section, activeDetail, onSelect }) {
   return (
     <section className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[var(--shadow-soft)]">
-      <div className="border-b border-slate-100 p-5">
+      <motion.div className="border-b border-slate-200 p-5">
         <SectionHeader section={section} compact />
-      </div>
+      </motion.div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <table className="pd-table">
+          <thead>
             <tr>
               {section.columns.map((column) => (
-                <th className="px-5 py-4 font-bold" key={column}>
-                  {column}
-                </th>
+                <th key={column}>{column}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {section.rows.map((row, index) => (
               <tr
-                className={`transition hover:bg-cyan-50/50 ${
-                  activeDetail?.id === `${section.title}-${row[0]}` ? 'bg-cyan-50' : ''
-                }`}
+                className={activeDetail?.id === `${section.title}-${row[0]}` ? 'bg-blue-500/10' : ''}
                 key={`${row[0]}-${index}`}
               >
                 <td className="p-0" colSpan={section.columns.length}>
                   <button
-                    className="grid w-full grid-cols-2 text-left transition focus:outline-none focus:ring-4 focus:ring-inset focus:ring-cyan-200 sm:grid-cols-4"
+                    className="grid w-full grid-cols-2 text-left transition focus:outline-none focus:ring-4 focus:ring-inset focus:ring-blue-500/20 sm:grid-cols-4"
                     onClick={() =>
                       onSelect({
                         id: `${section.title}-${row[0]}`,
@@ -310,16 +313,17 @@ function TimelineSection({ section, activeDetail, onSelect }) {
     <section>
       <SectionHeader section={section} />
       <div className="grid gap-3">
-        {section.items.map((item) => {
+        {section.items.map((item, index) => {
           const styles = getTone(item.tone)
-
           const active = activeDetail?.id === `${section.title}-${item.time}-${item.title}`
 
           return (
-            <button
-              className={`flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 text-left shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-[var(--shadow-card)] focus:outline-none focus:ring-4 focus:ring-cyan-200 sm:flex-row sm:items-center ${
-                active ? 'border-cyan-300 ring-4 ring-cyan-100' : ''
+            <motion.button
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 text-left shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[var(--shadow-card)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 sm:flex-row sm:items-center ${
+                active ? 'border-blue-300 ring-4 ring-blue-500/15' : ''
               }`}
+              initial={{ opacity: 0, y: 8 }}
               key={`${item.time}-${item.title}`}
               onClick={() =>
                 onSelect({
@@ -334,6 +338,7 @@ function TimelineSection({ section, activeDetail, onSelect }) {
                   ],
                 })
               }
+              transition={{ duration: 0.35, delay: index * 0.04 }}
               type="button"
             >
               <div className={`rounded-2xl px-4 py-3 text-center ring-1 ${styles.badge}`}>
@@ -341,14 +346,14 @@ function TimelineSection({ section, activeDetail, onSelect }) {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-extrabold text-slate-900">{item.title}</h3>
-                <p className="text-sm text-slate-500">{item.description}</p>
+                <p className="text-sm text-slate-600">{item.description}</p>
               </div>
               {item.status && (
-                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                <span className="w-fit rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
                   {item.status}
                 </span>
               )}
-            </button>
+            </motion.button>
           )
         })}
       </div>
@@ -360,14 +365,10 @@ function SectionHeader({ section, compact = false }) {
   return (
     <div className={compact ? '' : 'mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end'}>
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-900">{section.title}</h2>
-        {section.description && <p className="mt-1 text-sm text-slate-500">{section.description}</p>}
+        <h2 className="pd-title-section">{section.title}</h2>
+        {section.description && <p className="mt-1 text-sm text-slate-600">{section.description}</p>}
       </div>
-      {section.badge && (
-        <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm">
-          {section.badge}
-        </span>
-      )}
+      {section.badge && <span className="pd-badge">{section.badge}</span>}
     </div>
   )
 }
@@ -390,22 +391,23 @@ function DetailPanel({ detail, onClose }) {
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] animate-slide-up">
+    <motion.section
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)]"
+      initial={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.35 }}
+    >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${styles.badge}`}>
             {detail.subtitle || 'Détail'}
           </span>
-          <h2 className="mt-3 text-2xl font-extrabold text-slate-950">{detail.title}</h2>
+          <h2 className="mt-3 text-2xl font-extrabold text-slate-900">{detail.title}</h2>
           {detail.description && (
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{detail.description}</p>
           )}
         </div>
-        <button
-          className="w-fit rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
-          onClick={onClose}
-          type="button"
-        >
+        <button className="pd-btn-ghost" onClick={onClose} type="button">
           Fermer
         </button>
       </div>
@@ -415,17 +417,17 @@ function DetailPanel({ detail, onClose }) {
       {detail.meta?.length > 0 && (
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {detail.meta.map((meta) => (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={meta.label}>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{meta.label}</p>
+            <motion.div className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={meta.label}>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{meta.label}</p>
               <p className="mt-1 text-sm font-extrabold text-slate-900">{meta.value}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
 
       {isAction && (
         <form
-          className="mt-5 rounded-[1.5rem] border border-cyan-100 bg-cyan-50/60 p-4"
+          className="mt-5 rounded-[1.5rem] border border-blue-200 bg-blue-50 p-4"
           onSubmit={(event) => {
             event.preventDefault()
             setActionForm((current) => ({ ...current, saved: true }))
@@ -435,7 +437,7 @@ function DetailPanel({ detail, onClose }) {
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Responsable</span>
               <input
-                className="mt-2 min-h-11 w-full rounded-2xl border border-cyan-100 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                className="pd-input mt-2"
                 onChange={(event) => updateActionForm('responsible', event.target.value)}
                 placeholder="Nom du collaborateur"
                 value={actionForm.responsible}
@@ -444,7 +446,7 @@ function DetailPanel({ detail, onClose }) {
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Échéance</span>
               <input
-                className="mt-2 min-h-11 w-full rounded-2xl border border-cyan-100 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                className="pd-input mt-2"
                 onChange={(event) => updateActionForm('dueDate', event.target.value)}
                 type="date"
                 value={actionForm.dueDate}
@@ -453,7 +455,7 @@ function DetailPanel({ detail, onClose }) {
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Priorité</span>
               <select
-                className="mt-2 min-h-11 w-full rounded-2xl border border-cyan-100 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                className="pd-input mt-2"
                 onChange={(event) => updateActionForm('priority', event.target.value)}
                 value={actionForm.priority}
               >
@@ -465,7 +467,7 @@ function DetailPanel({ detail, onClose }) {
             <label className="block md:col-span-3">
               <span className="text-sm font-bold text-slate-700">Note administrative</span>
               <textarea
-                className="mt-2 min-h-24 w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                className="pd-input mt-2 min-h-24 py-3"
                 onChange={(event) => updateActionForm('note', event.target.value)}
                 placeholder="Ajoutez une consigne, une relance ou un commentaire..."
                 value={actionForm.note}
@@ -473,21 +475,18 @@ function DetailPanel({ detail, onClose }) {
             </label>
           </div>
           <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <p className="text-sm font-semibold text-cyan-800">
+            <p className="text-sm font-semibold text-blue-700">
               {actionForm.saved
                 ? 'Action enregistrée en démo, prête à être branchée sur une API.'
-                : 'Remplissez les champs puis validez laction.'}
+                : "Remplissez les champs puis validez l'action."}
             </p>
-            <button
-              className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-cyan-700"
-              type="submit"
-            >
-              Valider laction
+            <button className="pd-btn-primary" type="submit">
+              Valider l'action
             </button>
           </div>
         </form>
       )}
-    </section>
+    </motion.section>
   )
 }
 

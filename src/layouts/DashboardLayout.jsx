@@ -1,5 +1,7 @@
+import { Bell, ChevronLeft, LogOut, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import BrandLogo from '../components/BrandLogo'
 import { NAVIGATION } from '../config/navigation'
 import { clearStoredRole } from '../utils/authSession'
 
@@ -34,10 +36,11 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   }, [sidebarOpen])
 
   if (fullWidth) {
-    return <div className="full-width-page min-h-screen w-full bg-[#030b18]">{children}</div>
+    return <div className="full-width-page min-h-screen w-full bg-[#f0f7ff]">{children}</div>
   }
 
   const closeSidebar = () => setSidebarOpen(false)
+  const activeItem = config.items.find((item) => location.pathname === item.href)
 
   return (
     <div className="pd-shell relative flex min-h-screen">
@@ -45,76 +48,63 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
         <button
           type="button"
           aria-label="Fermer le menu"
-          className="fixed inset-0 z-[70] bg-[#071a2f]/45 backdrop-blur-sm transition-opacity lg:hidden"
+          className="fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-sm transition-opacity lg:hidden"
           onClick={closeSidebar}
         />
       )}
 
       <aside
-        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] w-[270px] shrink-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[270px]'}
-          border-r border-white/18 bg-[#0a223c]/70 text-white shadow-[var(--shadow-sidebar)] backdrop-blur-2xl
+        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] shrink-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'} w-[280px]
+          border-r border-blue-100/90 bg-white text-slate-800 shadow-[var(--shadow-sidebar)]
           transition-all duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <button
           aria-label={sidebarCollapsed ? 'Déplier le menu' : 'Replier le menu'}
-          className="absolute -right-4 top-8 z-[90] hidden h-9 w-9 items-center justify-center rounded-full border border-white/22 bg-white/16 text-base font-bold text-cyan-100 shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-cyan-300/45 hover:bg-white/20 lg:flex"
+          className="absolute -right-4 top-8 z-[90] hidden h-8 w-8 items-center justify-center rounded-full border border-blue-100 bg-white text-slate-500 shadow-md transition hover:border-blue-300 hover:text-blue-600 lg:flex"
           onClick={() => setSidebarCollapsed((current) => !current)}
           title={sidebarCollapsed ? 'Déplier le menu' : 'Replier le menu'}
           type="button"
         >
-          {sidebarCollapsed ? '›' : '‹'}
+          <ChevronLeft className={`h-4 w-4 transition ${sidebarCollapsed ? 'rotate-180' : ''}`} />
         </button>
 
-        <div
-          className="flex min-h-screen flex-col overflow-y-auto [-webkit-overflow-scrolling:touch]"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
+        <div className="flex min-h-screen flex-col">
           <div
-            className={`flex items-center border-b border-white/16 px-5 py-6 transition-all duration-300 ${sidebarCollapsed ? 'lg:justify-center lg:px-3' : 'gap-3'}`}
+            className={`border-b border-blue-50 px-5 py-5 transition-all duration-300 ${sidebarCollapsed ? 'lg:flex lg:justify-center lg:px-3' : ''}`}
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/[0.16] text-xl shadow-sm backdrop-blur-sm">
-              {'\u{1F697}'}
-            </div>
-            <div
-              className={`min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
-            >
-              <p className="bg-gradient-to-r from-cyan-300 via-cyan-200 to-blue-400 bg-clip-text text-[11px] font-bold uppercase tracking-[0.14em] text-transparent">
-                PEDAGOGIA DRIVE
+            <Link aria-label="PEDAGOGIA DRIVE" onClick={closeSidebar} to="/">
+              <BrandLogo animated={false} compact={sidebarCollapsed} idPrefix={`sidebar-${role}`} variant="light" />
+            </Link>
+            {!sidebarCollapsed && (
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                Espace professionnel
               </p>
-              <p className="mt-0.5 text-xs font-medium text-cyan-50/70">Espace professionnel</p>
-            </div>
-            <button
-              aria-label="Fermer le menu"
-              className="ml-auto inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.14] px-3 text-sm font-semibold text-cyan-50 transition hover:bg-white/[0.2] lg:hidden"
-              onClick={closeSidebar}
-              type="button"
-            >
-              <span className="text-lg leading-none">←</span>
-              Fermer
-            </button>
+            )}
           </div>
 
           {config.user && (
             <div
-              className={`mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-white/20 bg-white/[0.14] p-3.5 shadow-sm backdrop-blur-md transition-all duration-300 ${sidebarCollapsed ? 'lg:mx-3 lg:justify-center lg:px-2' : ''}`}
+              className={`mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-blue-100/80 bg-blue-50/70 p-3 transition-all duration-300 ${sidebarCollapsed ? 'lg:mx-3 lg:justify-center lg:px-2' : ''}`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-cyan-600 text-lg text-white shadow-sm">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-lg text-white shadow-sm">
                 {config.user.avatar}
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
               </div>
               <div
                 className={`min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
               >
-                <p className="truncate text-sm font-semibold text-white">{config.user.name}</p>
-                {config.user.role && <p className="text-xs text-cyan-50/65">{config.user.role}</p>}
+                <p className="truncate text-sm font-semibold text-slate-900">{config.user.name}</p>
+                {config.user.role && (
+                  <p className="text-xs text-slate-500">{config.user.role}</p>
+                )}
               </div>
             </div>
           )}
 
           <nav
-            className={`flex-1 space-y-1 overflow-y-auto px-3 py-5 [-webkit-overflow-scrolling:touch] ${sidebarCollapsed ? 'lg:px-2' : ''}`}
-            style={{ WebkitOverflowScrolling: 'touch' }}
+            className={`flex-1 space-y-1 overflow-y-auto px-3 py-4 ${sidebarCollapsed ? 'lg:px-2' : ''}`}
+            aria-label="Navigation principale"
           >
             {config.items.map((item) => {
               const active = location.pathname === item.href
@@ -124,14 +114,17 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                   title={item.label}
                   to={item.href}
                   onClick={closeSidebar}
-                  className={`group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
                     active
-                      ? 'border border-cyan-300/35 bg-white/[0.2] text-white shadow-[0_0_20px_rgba(56,189,248,0.12)]'
-                      : 'border border-transparent text-cyan-50/85 hover:border-white/20 hover:bg-white/[0.16] hover:text-white'
+                      ? 'border border-blue-200 bg-blue-50 text-blue-700 shadow-sm shadow-blue-500/10'
+                      : 'border border-transparent text-slate-600 hover:border-blue-100 hover:bg-blue-50/80 hover:text-slate-900'
                   }`}
                 >
+                  {active && (
+                    <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-400" />
+                  )}
                   <span
-                    className={`pd-nav-icon ${active ? 'border-cyan-300/35 bg-cyan-500/15' : 'group-hover:border-white/18 group-hover:bg-white/[0.08]'}`}
+                    className={`pd-nav-icon ${active ? 'border-blue-200 bg-blue-50 text-blue-600' : 'group-hover:border-blue-200 group-hover:bg-white'}`}
                   >
                     {item.icon}
                   </span>
@@ -145,17 +138,17 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             })}
           </nav>
 
-          <div className={`border-t border-white/10 p-4 transition-all duration-300 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+          <div className={`border-t border-blue-50 p-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
             <button
               type="button"
               onClick={() => {
                 clearStoredRole()
                 navigate('/login')
               }}
-            className={`flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/18 bg-white/[0.12] px-4 py-2.5 text-sm font-medium text-cyan-50/90 shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-white/25 hover:bg-white/[0.18] hover:text-white ${sidebarCollapsed ? 'lg:px-2' : ''}`}
-              title="Choisir un profil"
+              className={`flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${sidebarCollapsed ? 'lg:px-2' : ''}`}
+              title="Changer de profil"
             >
-              <span className="text-base leading-none">{'\u{1F519}'}</span>
+              <LogOut className="h-4 w-4 shrink-0" />
               <span
                 className={`truncate transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
               >
@@ -167,23 +160,48 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/16 bg-[#0a223c]/68 px-4 py-3.5 backdrop-blur-xl lg:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/[0.14] px-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:border-cyan-300/35 hover:bg-white/[0.2]"
-            aria-label="Ouvrir le menu"
-          >
-            <span className="text-lg leading-none">→</span>
-            Menu
-          </button>
-          <span className="bg-gradient-to-r from-cyan-300 via-cyan-200 to-blue-400 bg-clip-text text-[11px] font-bold uppercase tracking-[0.14em] text-transparent">
-            PEDAGOGIA DRIVE
-          </span>
-          <div className="w-10" />
+        <header className="pd-topbar">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 lg:hidden"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                {activeItem?.label || 'Tableau de bord'}
+              </p>
+              <p className="text-sm font-semibold text-slate-900">
+                {config.user?.name || 'PEDAGOGIA DRIVE'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                3
+              </span>
+            </button>
+            {config.user && (
+              <div className="hidden items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
+                <span className="text-lg">{config.user.avatar}</span>
+                <span className="text-sm font-medium text-slate-700">{config.user.name}</span>
+              </div>
+            )}
+          </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden p-5 md:p-7 lg:p-9 animate-fade-in">{children}</main>
+        <main className="pd-main flex-1 overflow-x-hidden p-4 animate-fade-in md:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   )

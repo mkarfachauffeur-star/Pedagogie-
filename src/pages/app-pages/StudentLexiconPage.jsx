@@ -341,7 +341,7 @@ export default function StudentLexiconPage() {
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">{labels.studentOnly}</span>
           <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">{labels.title}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-cyan-50/85">{labels.subtitle}</p>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-blue-50">{labels.subtitle}</p>
         </div>
       </section>
 

@@ -87,7 +87,7 @@ export default function StudentMessagesPage() {
   return (
     <div className="pd-page">
       <section className="pd-card overflow-hidden p-0">
-        <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-[#10304f] via-[#133a5d] to-[#1a4870] p-6 text-white md:p-8">
+        <div className="pd-hero-banner">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]"
@@ -98,7 +98,7 @@ export default function StudentMessagesPage() {
           <h1 className="relative z-10 mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
             Contact secrétariat
           </h1>
-          <p className="relative z-10 mt-3 max-w-3xl text-base leading-7 text-slate-200/90">
+          <p className="pd-hero-lead relative z-10 mt-3 max-w-3xl text-base leading-7">
             Cette messagerie élève est dédiée uniquement au secrétariat pour envoyer des documents
             et suivre votre dossier administratif.
           </p>
@@ -106,30 +106,30 @@ export default function StudentMessagesPage() {
       </section>
 
       <section className="pd-msg-panel grid min-h-[680px] lg:grid-cols-[320px_1fr]">
-        <aside className="border-b border-white/16 bg-white/[0.1] p-4 backdrop-blur-md lg:border-b-0 lg:border-r md:p-5">
-          <h2 className="pd-title-section text-lg">Canal disponible</h2>
-          <p className="mt-1 text-xs text-cyan-50/65">Conversation unique avec le secrétariat</p>
-          <button className="mt-4 w-full rounded-2xl border border-cyan-300/35 bg-white/[0.18] p-4 text-left shadow-[0_0_20px_rgba(56,189,248,0.12)]">
+        <aside className="pd-msg-sidebar">
+          <h2 className="pd-msg-sidebar-title">Canal disponible</h2>
+          <p className="pd-msg-sidebar-muted mt-1">Conversation unique avec le secrétariat</p>
+          <button className="pd-msg-contact-active mt-4">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-semibold text-white">{conversation.name}</p>
+              <p className="font-semibold text-slate-900">{conversation.name}</p>
               <span className="pd-msg-chip">Actif</span>
             </div>
-            <p className="mt-1 text-xs font-medium text-cyan-50/70">{conversation.role}</p>
-            <p className="mt-2 text-xs font-medium text-cyan-100/90">{conversation.subject}</p>
+            <p className="mt-1 text-xs font-medium text-slate-600">{conversation.role}</p>
+            <p className="mt-2 text-xs font-medium text-slate-600">{conversation.subject}</p>
           </button>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="pd-stat-pill p-3">
-              <p className="text-2xl font-semibold text-white">{conversation.messages.length}</p>
-              <p className="text-xs font-medium text-cyan-50/65">Messages</p>
+              <p className="text-2xl font-semibold text-slate-900">{conversation.messages.length}</p>
+              <p className="text-xs font-medium text-slate-500">Messages</p>
             </div>
             <div className="pd-stat-pill p-3">
-              <p className="text-2xl font-semibold text-cyan-200">{totalDocuments}</p>
-              <p className="text-xs font-medium text-cyan-50/65">Envois docs</p>
+              <p className="text-2xl font-semibold text-blue-600">{totalDocuments}</p>
+              <p className="text-xs font-medium text-slate-500">Envois docs</p>
             </div>
           </div>
 
-          <label className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-white/18 bg-white/[0.14] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.2]">
+          <label className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50">
             Ajouter un document
             <input className="hidden" multiple onChange={handleFiles} type="file" />
           </label>
@@ -138,14 +138,14 @@ export default function StudentMessagesPage() {
             <div className="mt-3 space-y-2">
               {pendingFiles.map((file) => (
                 <div
-                  className="flex items-center justify-between gap-2 rounded-xl border border-white/12 bg-white/[0.08] px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
                   key={file.id}
                 >
-                  <span className="truncate text-cyan-50/90">
+                  <span className="truncate text-slate-700">
                     {file.name} · {formatFileSize(file.size)}
                   </span>
                   <button
-                    className="rounded-lg px-2 py-0.5 text-cyan-100/90 hover:bg-white/15"
+                    className="rounded-lg px-2 py-0.5 text-slate-500 hover:bg-slate-100"
                     onClick={() => removePendingFile(file.id)}
                     type="button"
                   >
@@ -157,13 +157,13 @@ export default function StudentMessagesPage() {
           )}
         </aside>
 
-        <div className="flex min-h-0 flex-col bg-white/[0.08]">
-          <header className="border-b border-white/16 bg-white/[0.12] p-5 backdrop-blur-xl">
+        <div className="pd-msg-chat-body">
+          <header className="pd-msg-chat-header">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-white">{conversation.name}</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{conversation.name}</h2>
               <span className="pd-msg-chip">Secrétariat</span>
             </div>
-            <p className="text-sm text-cyan-50/70">Envoi de documents et suivi administratif</p>
+            <p className="text-sm text-slate-600">Envoi de documents et suivi administratif</p>
           </header>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6">
@@ -192,7 +192,7 @@ export default function StudentMessagesPage() {
             })}
           </div>
 
-          <footer className="border-t border-white/16 bg-white/[0.12] p-4 backdrop-blur-xl">
+          <footer className="pd-msg-chat-footer">
             <div className="flex flex-col gap-3 sm:flex-row">
               <input
                 className="pd-input-dark"
@@ -204,7 +204,7 @@ export default function StudentMessagesPage() {
                 value={draft}
               />
               <button
-                className="rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-[1.03]"
+                className="rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-600 px-5 py-3 text-sm font-semibold text-slate-900 shadow-md transition hover:-translate-y-0.5 hover:brightness-[1.03]"
                 onClick={sendMessage}
                 type="button"
               >

@@ -117,13 +117,13 @@ export default function SecretaryDocumentsPage() {
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Enregistrement et liaison documentaire
               </h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">
+              <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
                 Associez chaque document à un élève existant ou à un nouvel élève non encore
                 inscrit.
               </p>
             </div>
             <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4 backdrop-blur-xl">
-              <p className="text-sm font-bold text-cyan-50/70">Documents suivis</p>
+              <p className="text-sm font-bold text-blue-100">Documents suivis</p>
               <p className="mt-1 text-4xl font-black">{documents.length}</p>
             </div>
           </div>

@@ -16,53 +16,220 @@ const statusScore = {
   'Valid\u00e9': 1,
 }
 
+const legacyRemcItemIds = {
+  'c1-installation': 'c1b',
+  'c1-volant': 'c1c',
+  'c1-demarrage': 'c1d',
+  'c1-commandes': 'c1a',
+  'c1-arret': 'c1e',
+  'c2-priorites': 'c2d',
+  'c2-observation': 'c2a',
+  'c2-allure': 'c2c',
+  'c2-insertion': 'c3e',
+  'c2-position': 'c2b',
+  'c3-communication': 'c3d',
+  'c3-angle-mort': 'c3a',
+  'c3-depassement': 'c3b',
+  'c3-partage': 'c3d',
+  'c3-distance': 'c3a',
+  'c4-autonomie': 'c4a',
+  'c4-eco': 'c4g',
+  'c4-securite': 'c4c',
+  'c4-stress': 'c4c',
+  'c4-bilan': 'c4a',
+}
+
 const remcTemplate = [
   {
     code: 'C1',
-    title: 'Ma\u00eetriser le v\u00e9hicule',
+    title: 'Ma\u00eetriser le maniement du v\u00e9hicule dans un trafic faible ou nul',
     items: [
-      { id: 'c1-installation', label: 'Installation au poste de conduite', status: 'En cours' },
-      { id: 'c1-volant', label: 'Tenir et tourner le volant', status: 'En cours' },
       {
-        id: 'c1-demarrage',
-        label: 'D\u00e9marrer et s\u2019arr\u00eater',
+        id: 'c1a',
+        code: 'C1a',
+        label:
+          'Conna\u00eetre les principaux organes et commandes du v\u00e9hicule, effectuer des v\u00e9rifications int\u00e9rieures et ext\u00e9rieures',
         status: 'Non commenc\u00e9',
       },
-      { id: 'c1-commandes', label: 'Utiliser les commandes principales', status: 'Non commenc\u00e9' },
-      { id: 'c1-arret', label: 'Arr\u00eat de pr\u00e9cision', status: 'Non commenc\u00e9' },
+      {
+        id: 'c1b',
+        code: 'C1b',
+        label: 'Entrer, s\u2019installer au poste de conduite et en sortir',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c1c',
+        code: 'C1c',
+        label: 'Tenir, tourner le volant et maintenir la trajectoire',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c1d', code: 'C1d', label: 'D\u00e9marrer et s\u2019arr\u00eater', status: 'Non commenc\u00e9' },
+      {
+        id: 'c1e',
+        code: 'C1e',
+        label: 'Doser l\u2019acc\u00e9l\u00e9ration et le freinage \u00e0 diverses allures',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c1f', code: 'C1f', label: 'Utiliser la bo\u00eete de vitesses', status: 'Non commenc\u00e9' },
+      {
+        id: 'c1g',
+        code: 'C1g',
+        label:
+          'Diriger la voiture en avant en ligne droite et en courbe en adaptant allure et trajectoire',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c1h', code: 'C1h', label: 'Regarder autour de soi et avertir', status: 'Non commenc\u00e9' },
+      {
+        id: 'c1i',
+        code: 'C1i',
+        label: 'Effectuer une marche ar\u00e8re et un demi-tour en s\u00e9curit\u00e9',
+        status: 'Non commenc\u00e9',
+      },
     ],
   },
   {
     code: 'C2',
-    title: 'Appr\u00e9hender la route',
+    title: 'Appr\u00e9hender la route et circuler dans des conditions normales',
     items: [
-      { id: 'c2-priorites', label: 'Priorit\u00e9s et intersections', status: 'Non commenc\u00e9' },
-      { id: 'c2-observation', label: 'Observation et anticipation', status: 'Non commenc\u00e9' },
-      { id: 'c2-allure', label: 'Adapter l\u2019allure', status: 'Non commenc\u00e9' },
-      { id: 'c2-insertion', label: 'S\u2019ins\u00e9rer et changer de direction', status: 'Non commenc\u00e9' },
-      { id: 'c2-position', label: 'Placement du v\u00e9hicule sur la chauss\u00e9e', status: 'Non commenc\u00e9' },
+      {
+        id: 'c2a',
+        code: 'C2a',
+        label: 'Rechercher la signalisation, les indices utiles et en tenir compte',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c2b',
+        code: 'C2b',
+        label: 'Positionner le v\u00e9hicule sur la chauss\u00e9e et choisir la voie de circulation',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c2c', code: 'C2c', label: 'Adapter l\u2019allure aux situations', status: 'Non commenc\u00e9' },
+      {
+        id: 'c2d',
+        code: 'C2d',
+        label: 'D\u00e9tecter, identifier et franchir les intersections suivant le r\u00e9gime de priorit\u00e9',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c2e',
+        code: 'C2e',
+        label: 'Tourner \u00e0 droite et \u00e0 gauche en agglom\u00e9ration',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c2f',
+        code: 'C2f',
+        label: 'Franchir les ronds-points et les carrefours \u00e0 sens giratoire',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c2g',
+        code: 'C2g',
+        label: 'S\u2019arr\u00eater et stationner en \u00e9pi, en bataille et en cr\u00e9neau',
+        status: 'Non commenc\u00e9',
+      },
     ],
   },
   {
     code: 'C3',
-    title: 'Partager la route avec les autres usagers',
+    title: 'Circuler dans des conditions difficiles et partager la route avec les autres usagers',
     items: [
-      { id: 'c3-communication', label: 'Communiquer avec les autres usagers', status: 'Non commenc\u00e9' },
-      { id: 'c3-angle-mort', label: 'Contr\u00f4ler angles morts et zones de risque', status: 'Non commenc\u00e9' },
-      { id: 'c3-depassement', label: 'D\u00e9passements et croisements', status: 'Non commenc\u00e9' },
-      { id: 'c3-partage', label: 'Partager la route avec usagers vuln\u00e9rables', status: 'Non commenc\u00e9' },
-      { id: 'c3-distance', label: 'Garder les distances de s\u00e9curit\u00e9', status: 'Non commenc\u00e9' },
+      {
+        id: 'c3a',
+        code: 'C3a',
+        label: '\u00c9valuer et maintenir les distances de s\u00e9curit\u00e9',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c3b', code: 'C3b', label: 'Croiser, d\u00e9passer, \u00eatre d\u00e9pass\u00e9', status: 'Non commenc\u00e9' },
+      {
+        id: 'c3c',
+        code: 'C3c',
+        label: 'Passer des virages et conduire en d\u00e9clivit\u00e9',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3d',
+        code: 'C3d',
+        label:
+          'Conna\u00eetre les caract\u00e9ristiques des autres usagers et savoir se comporter \u00e0 leur \u00e9gard avec respect et courtoisie',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3e',
+        code: 'C3e',
+        label: 'S\u2019ins\u00e9rer, circuler et sortir d\u2019une voie rapide',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3f',
+        code: 'C3f',
+        label: 'Conduire dans une file de v\u00e9hicules et dans une circulation dense',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3g',
+        code: 'C3g',
+        label:
+          'Conna\u00eetre les r\u00e8gles relatives \u00e0 la circulation inter-files des motocycles et savoir en tenir compte',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3h',
+        code: 'C3h',
+        label: 'Conduire quand l\u2019adh\u00e9rence et la visibilit\u00e9 sont r\u00e9duites',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c3i',
+        code: 'C3i',
+        label: 'Conduire \u00e0 l\u2019abord et dans la travers\u00e9e d\u2019ouvrages routiers (tunnels, ponts)',
+        status: 'Non commenc\u00e9',
+      },
     ],
   },
   {
     code: 'C4',
-    title: 'Pratiquer une conduite autonome et \u00e9conomique',
+    title: 'Pratiquer une conduite autonome, s\u00fbre et \u00e9conomique',
     items: [
-      { id: 'c4-autonomie', label: 'Pr\u00e9parer un trajet autonome', status: 'Non commenc\u00e9' },
-      { id: 'c4-eco', label: 'Adopter une conduite \u00e9co-responsable', status: 'Non commenc\u00e9' },
-      { id: 'c4-securite', label: 'Pr\u00e9venir les situations \u00e0 risque', status: 'Non commenc\u00e9' },
-      { id: 'c4-stress', label: 'G\u00e9rer le stress et la fatigue', status: 'Non commenc\u00e9' },
-      { id: 'c4-bilan', label: 'Faire un bilan de fin de trajet', status: 'Non commenc\u00e9' },
+      {
+        id: 'c4a',
+        code: 'C4a',
+        label: 'Suivre un itin\u00e9raire de mani\u00e8re autonome',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c4b',
+        code: 'C4b',
+        label: 'Pr\u00e9parer et effectuer un voyage longue distance en autonomie',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c4c',
+        code: 'C4c',
+        label:
+          'Conna\u00eetre les principaux facteurs de risque au volant et les recommandations \u00e0 appliquer',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c4d',
+        code: 'C4d',
+        label: 'Conna\u00eetre les comportements \u00e0 adopter en cas d\u2019accident : prot\u00e9ger, alerter, secourir',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c4e',
+        code: 'C4e',
+        label:
+          'Faire l\u2019exp\u00e9rience des aides \u00e0 la conduite du v\u00e9hicule (r\u00e9gulateur, limiteur de vitesse, ABS, aides \u00e0 la navigation)',
+        status: 'Non commenc\u00e9',
+      },
+      {
+        id: 'c4f',
+        code: 'C4f',
+        label: 'Avoir des notions sur l\u2019entretien, le d\u00e9pannage et les situations d\u2019urgence',
+        status: 'Non commenc\u00e9',
+      },
+      { id: 'c4g', code: 'C4g', label: 'Pratiquer l\u2019\u00e9coconduite', status: 'Non commenc\u00e9' },
     ],
   },
 ]
@@ -73,7 +240,7 @@ const initialStudents = [
     lastName: 'Martin',
     formationType: 'Permis B \u00b7 Bo\u00eete manuelle',
     teacher: 'Mohamed Karfa',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
   },
   {
@@ -81,7 +248,7 @@ const initialStudents = [
     lastName: 'Leroy',
     formationType: 'AAC',
     teacher: 'Marie Dupont',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
     aacTracking: {
       startDate: '2025-05-20',
@@ -95,7 +262,7 @@ const initialStudents = [
     lastName: 'Faure',
     formationType: 'Permis B \u00b7 Bo\u00eete automatique',
     teacher: 'Mohamed Karfa',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
   },
   {
@@ -103,7 +270,7 @@ const initialStudents = [
     lastName: 'Roux',
     formationType: 'Conduite supervis\u00e9e',
     teacher: 'Mohamed Karfa',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
   },
   {
@@ -111,7 +278,7 @@ const initialStudents = [
     lastName: 'Meyer',
     formationType: 'Permis B \u00b7 Bo\u00eete manuelle',
     teacher: 'Marie Dupont',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
   },
   {
@@ -119,7 +286,7 @@ const initialStudents = [
     lastName: 'Bernard',
     formationType: 'Permis B \u00b7 Bo\u00eete automatique',
     teacher: 'Mohamed Karfa',
-    remc: remcTemplate,
+    remc: cloneRemc(),
     lessonHistory: [],
   },
 ]
@@ -131,18 +298,33 @@ function cloneRemc() {
   }))
 }
 
+function normalizeRemcStatus(status) {
+  return status === 'D\u00e9but\u00e9' ? 'Non commenc\u00e9' : status
+}
+
+function mergeRemcWithTemplate(storedRemc) {
+  const storedStatuses = new Map()
+
+  ;(storedRemc || []).forEach((competency) => {
+    ;(competency.items || []).forEach((item) => {
+      const normalizedId = legacyRemcItemIds[item.id] || item.id
+      storedStatuses.set(normalizedId, normalizeRemcStatus(item.status))
+    })
+  })
+
+  return remcTemplate.map((competency) => ({
+    ...competency,
+    items: competency.items.map((item) => ({
+      ...item,
+      status: storedStatuses.get(item.id) || item.status,
+    })),
+  }))
+}
+
 function normalizeStudent(student, index = 0) {
   const base = student || {}
   const normalizedRemc =
-    Array.isArray(base.remc) && base.remc.length
-      ? base.remc.map((competency) => ({
-          ...competency,
-          items: (competency.items || []).map((item) => ({
-            ...item,
-            status: item.status === 'D\u00e9but\u00e9' ? 'Non commenc\u00e9' : item.status,
-          })),
-        }))
-      : cloneRemc()
+    Array.isArray(base.remc) && base.remc.length ? mergeRemcWithTemplate(base.remc) : cloneRemc()
   return {
     ...base,
     id: base.id || `PD-${new Date().getFullYear()}-${String(index + 1).padStart(3, '0')}`,

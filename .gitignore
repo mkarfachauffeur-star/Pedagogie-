@@ -23,3 +23,5 @@ extracted/
 *.njsproj
 *.sln
 *.sw?
+.vercel
+scripts/.pydeps

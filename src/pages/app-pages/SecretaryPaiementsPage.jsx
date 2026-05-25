@@ -71,7 +71,7 @@ export default function SecretaryPaiementsPage() {
           <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Gestion des encaissements</h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">
+              <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
                 Encaissements, restes à payer, relances et fiches financières élève.
               </p>
             </div>

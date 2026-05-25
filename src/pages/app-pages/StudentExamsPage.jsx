@@ -77,7 +77,7 @@ export default function StudentExamsPage() {
             Examen élève · Banque officielle
           </span>
           <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">Préparation examen pratique</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-cyan-50/85">
+          <p className="mt-4 max-w-3xl text-base leading-7 text-blue-50">
             Recherche intelligente et mode apprentissage uniquement : les vérifications et réponses sont séparées clairement par catégorie.
           </p>
         </div>

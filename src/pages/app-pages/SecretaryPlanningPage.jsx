@@ -193,7 +193,7 @@ export default function SecretaryPlanningPage() {
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Calendrier global auto-école
               </h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">
+              <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
                 Vue centralisée des élèves, enseignants, véhicules, créneaux et disponibilités.
               </p>
             </div>

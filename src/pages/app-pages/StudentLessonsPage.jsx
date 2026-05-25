@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
+import vehicleOrgansDiagramImage from '../../assets/lessons/elements-essentiels-vehicule.png'
+import dashboardWarningLightsImage from '../../assets/lessons/voyants-tableau-de-bord.png'
 
 const competencies = [
   {
@@ -56,9 +59,8 @@ const subcompetenciesByCompetency = {
       description:
         'Identifier les commandes, témoins, organes de sécurité et éléments indispensables avant de prendre la route.',
       accent: 'cyan',
-      video: 'Vue',
-      qcm: '8/10',
-      done: true,
+      video: 'Leçon',
+      qcm: 'À faire',
     },
     {
       id: 'SC1.2',
@@ -315,7 +317,7 @@ const subcompetenciesByCompetency = {
   ],
 }
 
-function createRandomizedQuestion(question, correctChoice, wrongChoices, explanation) {
+function createRandomizedQuestion(question, correctChoice, wrongChoices, explanation, iconType) {
   const choices = [correctChoice, ...wrongChoices].map((choice, index) => ({
     choice,
     correct: index === 0,
@@ -331,6 +333,7 @@ function createRandomizedQuestion(question, correctChoice, wrongChoices, explana
     choices: choices.map((item) => item.choice),
     answer: choices.findIndex((item) => item.correct),
     explanation,
+    ...(iconType ? { iconType } : {}),
   }
 }
 
@@ -360,12 +363,342 @@ function buildQuizSession(questions = []) {
   })
 }
 
+const VEHICLE_ORGANS_QUIZ_SIZE = 10
+
+function getLessonQuestionPool(lesson) {
+  if (!lesson) return []
+  return lesson.questionPool ?? lesson.questions ?? []
+}
+
+function getExpectedQuizCount(lesson) {
+  const pool = getLessonQuestionPool(lesson)
+  if (!pool.length) return 0
+  return lesson?.quizSize ? Math.min(lesson.quizSize, pool.length) : pool.length
+}
+
+function createQuizSessionForLesson(lesson) {
+  const pool = getLessonQuestionPool(lesson)
+  if (!pool.length) return []
+
+  const sample = lesson?.quizSize
+    ? shuffleArray(pool).slice(0, Math.min(lesson.quizSize, pool.length))
+    : pool
+
+  return buildQuizSession(sample)
+}
+
+function resolveQuizSession(lesson, existingSession) {
+  const expectedCount = getExpectedQuizCount(lesson)
+  if (!expectedCount) return []
+  if (existingSession?.length === expectedCount) return existingSession
+  return createQuizSessionForLesson(lesson)
+}
+
+const vehicleOrgansModule = {
+  id: 'SC1.1',
+  storageKey: 'pedagogia:lesson:vehicle-organs',
+  title: 'Connaître les principaux organes du véhicule',
+  intro:
+    'Identifier les commandes, témoins, organes de sécurité et éléments indispensables avant de prendre la route.',
+  schemaSection: {
+    kicker: 'Schéma pédagogique du véhicule',
+    title: 'Les éléments essentiels du véhicule',
+  },
+  summaryIntro:
+    'Chaque point du schéma vous aide à repérer les commandes, les organes de sécurité et les vérifications indispensables avant de prendre la route.',
+  images: [
+    {
+      src: vehicleOrgansDiagramImage,
+      alt: 'Schéma pédagogique : les éléments essentiels du véhicule',
+      title: 'Les éléments essentiels du véhicule',
+      caption:
+        'Commandes, éléments extérieurs, témoins du tableau de bord, vérifications avant départ et visibilité : repères visuels avant de prendre la route.',
+    },
+  ],
+  summary: [
+    {
+      title: 'Le volant',
+      description:
+        'Le volant permet de diriger le véhicule et de maintenir sa trajectoire. Un mauvais maintien peut diminuer la précision de conduite, augmenter le temps de réaction et provoquer une mauvaise maîtrise du véhicule.',
+    },
+    {
+      title: 'L’embrayage',
+      description:
+        'L’embrayage permet l’arrêt du véhicule sans caler, le démarrage progressif, le changement de vitesse et la participation au frein moteur. Une mauvaise utilisation peut provoquer des à-coups, une usure prématurée ou un calage.',
+    },
+    {
+      title: 'Le frein',
+      description:
+        'Le frein permet de ralentir, d’immobiliser le véhicule et d’adapter son allure aux situations. Le conducteur doit doser son freinage pour garder le contrôle du véhicule.',
+    },
+    {
+      title: 'L’accélérateur',
+      description:
+        'L’accélérateur permet d’augmenter la vitesse en adaptant le régime moteur. Une accélération brutale peut augmenter la consommation, diminuer l’adhérence et rendre la conduite moins souple.',
+    },
+    {
+      title: 'Les pneus',
+      description:
+        'Les pneus assurent l’adhérence, la stabilité, le freinage et la tenue de route. Il est conseillé de vérifier la pression une fois par mois, l’usure et l’état général avant un long trajet. Des pneus usés augmentent fortement les distances de freinage.',
+    },
+    {
+      title: 'Les rétroviseurs',
+      description:
+        'Les rétroviseurs permettent de surveiller l’environnement arrière, d’anticiper les dangers et de sécuriser les changements de direction. Ils doivent être correctement réglés avant le départ.',
+    },
+    {
+      title: 'Les feux du véhicule',
+      description:
+        'Les feux de croisement éclairent sans éblouir. Les feux de route améliorent la visibilité la nuit hors agglomération lorsqu’aucun usager n’est gêné. Les clignotants indiquent un changement de direction.',
+    },
+    {
+      title: 'Les témoins du tableau de bord',
+      description:
+        'Le témoin de pression d’huile peut signaler un risque grave pour le moteur et imposer un arrêt rapide. Le témoin batterie signale un problème du système de charge. Le témoin moteur indique un dysfonctionnement du moteur ou du système antipollution.',
+    },
+    {
+      title: 'Les essuie-glaces',
+      description:
+        'Les essuie-glaces permettent de conserver une bonne visibilité en cas de pluie ou de projection. Des balais usés réduisent fortement la visibilité.',
+    },
+    {
+      title: 'Vérifications avant de prendre la route',
+      description:
+        'Avant un trajet, il est recommandé de vérifier l’état des pneus, les feux, les niveaux, les rétroviseurs et les documents du véhicule. Ces vérifications participent à la sécurité de tous les usagers.',
+    },
+  ],
+  safetyAdvice: [
+    'Vérifiez la pression des pneus environ une fois par mois.',
+    'Contrôlez les feux et les rétroviseurs avant chaque départ.',
+    'Surveillez les témoins du tableau de bord : un témoin d’huile peut exiger un arrêt rapide et sécurisé.',
+    'Remplacez les balais d’essuie-glaces usés pour conserver une bonne visibilité par temps de pluie.',
+  ],
+  dashboardSection: {
+    kicker: 'Tableau de bord',
+    title: 'Voyants importants du tableau de bord',
+    intro:
+      'Les couleurs orientent la conduite : rouge = danger immédiat, orange = contrôle à prévoir, bleu/vert = information. Retenez la signification de chaque témoin avant l’examen pratique.',
+    image: {
+      src: dashboardWarningLightsImage,
+      alt: 'Infographie : 10 voyants importants du tableau de bord',
+      caption:
+        'Dix témoins essentiels à reconnaître : pression d’huile, batterie, moteur, freinage, pneus, ceinture, feux, ABS et température.',
+    },
+    lights: dashboardWarningLights,
+  },
+}
+
+const vehicleOrgansDashboardQuestions = [
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Signale un manque de pression d’huile moteur.',
+    [
+      'Indique qu’il est temps de réaliser la vidange périodique du moteur.',
+      'Signale une température d’huile moteur trop élevée.',
+      'Indique un niveau insuffisant de liquide lave-glace.',
+    ],
+    'Un manque de pression d’huile peut endommager gravement le moteur : arrêt sécurisé dès que possible.',
+    'oil-pressure',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique un problème du système de charge ou de la batterie.',
+    [
+      'Signale l’activation du mode économie d’énergie du véhicule.',
+      'Indique que les bougies de préchauffage sont en fonctionnement.',
+      'Signale une défaillance isolée du démarreur, sans lien avec la charge.',
+    ],
+    'Ce témoin concerne l’alternateur, la batterie ou le circuit de charge.',
+    'battery',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Signale un dysfonctionnement moteur ou du système antipollution.',
+    [
+      'Indique que le niveau de carburant est passé en réserve.',
+      'Signale une surchauffe immédiate des pistons du moteur.',
+      'Indique que le moteur fonctionne en mode « Sport ».',
+    ],
+    'Le voyant moteur peut concerner l’injection, l’allumage ou le système antipollution.',
+    'engine',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique que le frein de stationnement est activé ou qu’un problème de freinage est détecté.',
+    [
+      'Signale que les plaquettes de frein viennent d’être remplacées.',
+      'Indique l’activation de l’aide au démarrage en côte.',
+      'Signale une usure excessive des pneus arrière uniquement.',
+    ],
+    'Vérifiez le frein à main et l’état du circuit de freinage si le témoin reste allumé en roulant.',
+    'parking-brake',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique une pression insuffisante dans un ou plusieurs pneus.',
+    [
+      'Signale qu’il faut équiper le véhicule de pneus hiver.',
+      'Indique un risque de verglas sur la chaussée.',
+      'Signale que les roues ne sont pas correctement alignées.',
+    ],
+    'Une pression insuffisante réduit l’adhérence et allonge les distances de freinage.',
+    'tire-pressure',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique qu’une des ceintures de sécurité n’est pas bouclée',
+    [
+      'Signale un dysfonctionnement de l’airbag passager avant.',
+      'Indique que le passager n’a pas mis sa ceinture de sécurité',
+      'Indique que le dossier du siège n’est pas verrouillé en position conduite.',
+    ],
+    'La ceinture doit être bouclée avant tout départ.',
+    'seatbelt',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique que les feux de route sont allumés.',
+    [
+      'Indique l’activation des feux de brouillard arrière.',
+      'Signale que seuls les feux de position sont en service.',
+      'Indique que les feux de croisement sont en mode automatique.',
+    ],
+    'Les feux de route améliorent la visibilité loin, mais peuvent éblouir : à couper face aux usagers.',
+    'high-beam',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique l’activation des feux de croisement.',
+    [
+      'Indique l’activation des feux de jour uniquement.',
+      'Signale que les feux de route sont en mode automatique permanent.',
+      'Indique que les feux de stationnement sont seuls allumés.',
+    ],
+    'Les feux de croisement éclairent la route sans éblouir les autres usagers.',
+    'low-beam',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Signale un défaut du système antiblocage des roues.',
+    [
+      'Indique que le freinage d’urgence automatique vient de s’activer.',
+      'Signale une usure avancée des disques de frein avant.',
+      'Indique que le véhicule va nécessairement déraper au prochain freinage.',
+    ],
+    'Sans ABS, le freinage reste possible mais le blocage des roues n’est plus évité.',
+    'abs',
+  ),
+  createRandomizedQuestion(
+    'Quelle est la signification de ce témoin ?',
+    'Indique une surchauffe du moteur.',
+    [
+      'Signale que le chauffage de l’habitacle est réglé au maximum.',
+      'Indique que le liquide lave-glace a atteint une température élevée.',
+      'Signale que le moteur a atteint sa température idéale de fonctionnement.',
+    ],
+    'Une surchauffe impose un arrêt sécurisé pour protéger le moteur.',
+    'engine-temperature',
+  ),
+]
+
+const vehicleOrgansQuestions = [
+  {
+    question: 'Quel élément permet principalement d’immobiliser le véhicule en sécurité ?',
+    choices: [
+      'Le système de freinage',
+      'Le dispositif de transmission secondaire',
+      'Le système de ventilation moteur',
+    ],
+    answer: 0,
+    explanation: 'Le frein permet de ralentir et d’immobiliser le véhicule en sécurité.',
+  },
+  {
+    question: 'Quel équipement permet au conducteur d’adapter précisément la trajectoire du véhicule ?',
+    choices: [
+      'Le volant',
+      'Le limiteur de vitesse',
+      'Avoir un bon regard',
+    ],
+    answer: 0,
+    explanation: 'Le volant permet de diriger le véhicule et de maintenir sa trajectoire.',
+  },
+  {
+    question: 'Quels sont les principaux rôles de l’embrayage ?',
+    choices: [
+      'Permettre l’arrêt, le démarrage, le changement de vitesse et participer au frein moteur',
+      'Réguler automatiquement le régime moteur et corriger la trajectoire du véhicule',
+      'Maintenir la pression hydraulique du système de freinage',
+    ],
+    answer: 0,
+    explanation:
+      'L’embrayage permet l’arrêt sans caler, le démarrage progressif, le changement de vitesse et participe au frein moteur.',
+  },
+  {
+    question: 'À quelle fréquence est-il conseillé de vérifier la pression des pneus ?',
+    choices: [
+      'Tous les 10 000 km uniquement',
+      'Une fois par mois',
+      'Seulement avant un contrôle technique',
+    ],
+    answer: 1,
+    explanation: 'Il est conseillé de vérifier la pression des pneus environ une fois par mois.',
+  },
+  {
+    question: 'Quel équipement permet d’avertir les autres usagers d’un changement de direction ?',
+    choices: [
+      'Les feux de position',
+      'Les clignotants',
+      'Les feux diurnes automatiques',
+      'L’avertisseur sonore',
+    ],
+    answer: 1,
+    explanation:
+      'Les clignotants permettent d’indiquer un changement de direction. L’avertisseur sonore est réservé au danger immédiat.',
+  },
+  {
+    question: 'Pourquoi l’état des pneus est-il essentiel pour la sécurité ?',
+    choices: [
+      'Ils garantissent l’adhérence, la stabilité et l’efficacité du freinage',
+      'Ils compensent automatiquement les défauts de suspension du véhicule',
+      'Ils permettent uniquement d’économiser du carburant',
+    ],
+    answer: 0,
+    explanation: 'Les pneus assurent l’adhérence, la stabilité, le freinage et la tenue de route.',
+  },
+  {
+    question: 'Quel équipement permet au conducteur de contrôler l’environnement arrière du véhicule ?',
+    choices: [
+      'Les rétroviseurs',
+      'Les angles morts',
+      'Le correcteur électronique de trajectoire',
+    ],
+    answer: 0,
+    explanation: 'Les rétroviseurs permettent de surveiller l’environnement arrière et d’anticiper les dangers.',
+  },
+  {
+    question: 'Quel équipement est indispensable pour conserver une bonne visibilité sous la pluie ?',
+    choices: [
+      'Les essuie-glaces',
+      'Les feux de route',
+      'Le système antiblocage des roues',
+    ],
+    answer: 0,
+    explanation: 'Les essuie-glaces permettent de conserver une bonne visibilité en cas de pluie.',
+  },
+]
+
 const drivingPositionModule = {
   id: 'SC1.2',
   storageKey: 'pedagogia:lesson:driving-position',
   title: 'S’installer au poste de conduite',
   intro:
     'Avant de démarrer, le conducteur doit correctement régler son poste de conduite afin d’assurer sa sécurité, son confort et une bonne maîtrise du véhicule.',
+  schemaSection: {
+    kicker: 'Schémas et photos du poste de conduite',
+    title: 'Installation correcte au poste de conduite',
+  },
+  summaryIntro:
+    'Chaque étape prépare le conducteur à agir avec précision, à anticiper la trajectoire et à garder une maîtrise sûre du véhicule.',
   images: [
     {
       src: installationPosteConduiteImage,
@@ -1247,6 +1580,11 @@ const observationWarningQuestions = [
 ]
 
 const lessonModules = {
+  [vehicleOrgansModule.id]: {
+    ...vehicleOrgansModule,
+    questionPool: [...vehicleOrgansDashboardQuestions, ...vehicleOrgansQuestions],
+    quizSize: VEHICLE_ORGANS_QUIZ_SIZE,
+  },
   [drivingPositionModule.id]: {
     ...drivingPositionModule,
     questions: drivingPositionQuestions,
@@ -1353,7 +1691,9 @@ function ChoiceButton({ checked, children, disabled, onClick, status }) {
 
   return (
     <button
-      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${statusClass}`}
+      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition duration-200 active:scale-[0.97] motion-safe:animate-none ${statusClass} ${
+        !disabled && !status ? 'hover:shadow-md' : ''
+      }`}
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -1361,6 +1701,12 @@ function ChoiceButton({ checked, children, disabled, onClick, status }) {
       {children}
     </button>
   )
+}
+
+const severityBadge = {
+  danger: 'bg-rose-100 text-rose-800 ring-rose-200',
+  warning: 'bg-amber-100 text-amber-800 ring-amber-200',
+  info: 'bg-sky-100 text-sky-800 ring-sky-200',
 }
 
 export default function StudentLessonsPage() {
@@ -1385,7 +1731,10 @@ export default function StudentLessonsPage() {
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
   const openedModule = activeSubcompetencies.find((item) => item.id === openedModuleId)
   const openedLesson = lessonModules[openedModuleId]
-  const currentQuestions = quizSessionsByModule[openedModuleId] || openedLesson?.questions || []
+  const lessonQuestionPool = getLessonQuestionPool(openedLesson)
+  const expectedQuizCount = getExpectedQuizCount(openedLesson)
+  const currentQuestions = quizSessionsByModule[openedModuleId] || []
+  const quizDisplayTotal = currentQuestions.length || expectedQuizCount
   const currentAnswers = answersByModule[openedModuleId] || {}
   const currentValidated = Boolean(validatedByModule[openedModuleId])
   const currentQuizIndex = quizIndexByModule[openedModuleId] || 0
@@ -1416,13 +1765,26 @@ export default function StudentLessonsPage() {
     setOpenedModuleId(moduleId)
     setModuleMode('quiz')
     const lesson = lessonModules[moduleId]
-    if (lesson?.questions?.length) {
-      setQuizSessionsByModule((current) => ({
-        ...current,
-        [moduleId]: current[moduleId] || buildQuizSession(lesson.questions),
-      }))
-      setQuizIndexByModule((current) => ({ ...current, [moduleId]: current[moduleId] || 0 }))
-    }
+    if (!getLessonQuestionPool(lesson).length) return
+
+    setQuizSessionsByModule((current) => {
+      const previous = current[moduleId]
+      const session = resolveQuizSession(lesson, previous)
+      const sessionRenewed = session !== previous
+
+      if (sessionRenewed) {
+        setQuizIndexByModule((indexes) => ({ ...indexes, [moduleId]: 0 }))
+        setAnswersByModule((answers) => ({ ...answers, [moduleId]: {} }))
+        setValidatedByModule((validated) => ({ ...validated, [moduleId]: false }))
+      }
+
+      return { ...current, [moduleId]: session }
+    })
+
+    setQuizIndexByModule((current) => ({
+      ...current,
+      [moduleId]: current[moduleId] ?? 0,
+    }))
   }
 
   const closeModule = () => {
@@ -1435,6 +1797,24 @@ export default function StudentLessonsPage() {
     setOpenedModuleId(activeSubcompetencies[openedModuleIndex + 1].id)
     setModuleMode('lesson')
   }
+
+  useEffect(() => {
+    if (!openedModuleId) return
+    const lesson = lessonModules[openedModuleId]
+    const expected = getExpectedQuizCount(lesson)
+    if (!expected) return
+
+    setQuizSessionsByModule((current) => {
+      const previous = current[openedModuleId]
+      if (previous?.length === expected) return current
+
+      setQuizIndexByModule((indexes) => ({ ...indexes, [openedModuleId]: 0 }))
+      setAnswersByModule((answers) => ({ ...answers, [openedModuleId]: {} }))
+      setValidatedByModule((validated) => ({ ...validated, [openedModuleId]: false }))
+
+      return { ...current, [openedModuleId]: createQuizSessionForLesson(lesson) }
+    })
+  }, [openedModuleId])
 
   useEffect(() => {
     if (!openedModule) return undefined
@@ -1482,10 +1862,10 @@ export default function StudentLessonsPage() {
     setAnswersByModule((current) => ({ ...current, [openedModuleId]: {} }))
     setValidatedByModule((current) => ({ ...current, [openedModuleId]: false }))
     setQuizIndexByModule((current) => ({ ...current, [openedModuleId]: 0 }))
-    if (openedLesson?.questions?.length) {
+    if (getLessonQuestionPool(openedLesson).length) {
       setQuizSessionsByModule((current) => ({
         ...current,
-        [openedModuleId]: buildQuizSession(openedLesson.questions),
+        [openedModuleId]: createQuizSessionForLesson(openedLesson),
       }))
     }
   }
@@ -1594,7 +1974,7 @@ export default function StudentLessonsPage() {
               className={`group relative min-h-44 w-full overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-cyan-300/30 ${
                 isActive
                   ? 'border-cyan-300/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 text-white shadow-2xl shadow-cyan-950/20'
-                  : 'border-white/60 bg-white/70 shadow-[var(--shadow-soft)] backdrop-blur-xl hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-cyan-50/80 hover:shadow-xl'
+                  : 'border-slate-200 bg-white shadow-[var(--shadow-soft)] hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-md'
               }`}
               key={competency.id}
               onClick={() => setActiveCompetencyId(competency.id)}
@@ -1615,7 +1995,7 @@ export default function StudentLessonsPage() {
               <h3 className={`mt-4 font-extrabold ${isActive ? 'text-white' : 'text-slate-900'}`}>
                 {competency.title}
               </h3>
-              <p className={`mt-2 text-sm leading-5 ${isActive ? 'text-cyan-50/80' : 'text-slate-500'}`}>
+              <p className={`mt-2 text-sm leading-5 ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>
                 {competency.description}
               </p>
               <div className={`mt-4 h-1.5 overflow-hidden rounded-full ${isActive ? 'bg-white/15' : 'bg-slate-100'}`}>
@@ -1652,14 +2032,16 @@ export default function StudentLessonsPage() {
           {activeSubcompetencies.map((item) => {
             const styles = accentStyles[item.accent]
             const lessonModule = lessonModules[item.id]
-            const qcmAvailable = Boolean(lessonModule?.questions?.length)
+            const lessonPool = getLessonQuestionPool(lessonModule)
+            const qcmAvailable = lessonPool.length > 0
+            const qcmTotal = getExpectedQuizCount(lessonModule) || lessonPool.length
             const itemProgress = moduleProgressById[item.id] || { completed: false, score: null, percentage: null }
             const itemDone = item.done || itemProgress.completed
             const lessonValue = lessonModule
               ? (itemProgress.completed ? 'Validée' : 'Disponible')
               : item.video
             const qcmValue = lessonModule && qcmAvailable && itemProgress.percentage !== null
-              ? `${itemProgress.score}/${lessonModule.questions.length}`
+              ? `${itemProgress.score}/${qcmTotal}`
               : (lessonModule && qcmAvailable ? 'Disponible' : item.qcm)
             const lessonComplete = lessonModule ? itemProgress.completed : itemDone
             const qcmComplete = lessonModule && qcmAvailable ? itemProgress.percentage !== null : qcmValue !== 'À faire'
@@ -1770,14 +2152,14 @@ export default function StudentLessonsPage() {
                     </p>
                   </section>
 
-                  {openedLesson?.images?.length && (
+                  {openedLesson?.images?.length > 0 && (
                     <section className="overflow-hidden rounded-[1.75rem] border border-cyan-100 bg-white shadow-xl">
                       <div className="border-b border-slate-100 bg-cyan-50/70 p-5">
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
-                          Schémas et photos du poste de conduite
+                          {openedLesson.schemaSection?.kicker || 'Schémas pédagogiques'}
                         </p>
                         <h3 className="mt-2 text-2xl font-black text-slate-950">
-                          Installation correcte au poste de conduite
+                          {openedLesson.schemaSection?.title || openedLesson.images[0]?.title}
                         </h3>
                       </div>
                       <div className="grid gap-4 p-4">
@@ -1810,6 +2192,81 @@ export default function StudentLessonsPage() {
                     </section>
                   )}
 
+                  {openedLesson?.dashboardSection && (
+                    <section className="rounded-[1.75rem] border border-amber-100 bg-white shadow-xl">
+                      <div className="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-cyan-50/80 p-5">
+                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
+                          {openedLesson.dashboardSection.kicker}
+                        </p>
+                        <h3 className="mt-2 text-2xl font-black text-slate-950">
+                          {openedLesson.dashboardSection.title}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {openedLesson.dashboardSection.intro}
+                        </p>
+                      </div>
+                      <button
+                        className="group block w-full text-left"
+                        onClick={() =>
+                          setOpenedGalleryImage({
+                            src: openedLesson.dashboardSection.image.src,
+                            alt: openedLesson.dashboardSection.image.alt,
+                            title: openedLesson.dashboardSection.title,
+                            caption: openedLesson.dashboardSection.image.caption,
+                          })
+                        }
+                        type="button"
+                      >
+                        <div className="aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10]">
+                          <img
+                            alt={openedLesson.dashboardSection.image.alt}
+                            className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-[1.01]"
+                            src={openedLesson.dashboardSection.image.src}
+                          />
+                        </div>
+                        <p className="border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-500">
+                          {openedLesson.dashboardSection.image.caption}
+                        </p>
+                      </button>
+                      <div className="grid gap-3 p-4 sm:grid-cols-2">
+                        {openedLesson.dashboardSection.lights.map((light) => (
+                          <article
+                            className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition hover:border-cyan-200 hover:bg-white"
+                            key={light.id}
+                          >
+                            <DashboardWarningIcon alt={light.title} type={light.id} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-black text-slate-400">{light.number}.</span>
+                                <h4 className="font-extrabold text-slate-950">{light.title}</h4>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ring-1 ${severityBadge[light.severity]}`}
+                                >
+                                  {light.severity === 'danger'
+                                    ? 'Danger'
+                                    : light.severity === 'warning'
+                                      ? 'Contrôle'
+                                      : 'Info'}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">{light.description}</p>
+                              <p className="mt-2 text-xs font-bold leading-5 text-cyan-800">{light.action}</p>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                      <div className="border-t border-slate-100 bg-cyan-50/50 p-4">
+                        <button
+                          className="w-full rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 active:scale-[0.98]"
+                          onClick={() => openQuiz(openedModule.id)}
+                          type="button"
+                        >
+                          Lancer le QCU voyants du tableau de bord
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
                   <section className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Support vidéo</p>
@@ -1827,9 +2284,9 @@ export default function StudentLessonsPage() {
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
                       {openedLesson ? 'Résumé pédagogique complet' : openedModule.title}
                     </h3>
-                    {openedLesson && (
+                    {openedLesson?.summaryIntro && (
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Chaque étape prépare le conducteur à agir avec précision, à anticiper la trajectoire et à garder une maîtrise sûre du véhicule.
+                        {openedLesson.summaryIntro}
                       </p>
                     )}
                     <div className="mt-4 grid gap-3">
@@ -1882,11 +2339,11 @@ export default function StudentLessonsPage() {
                   <div className="mt-4 grid gap-2">
                     <button
                       className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      disabled={!currentQuestions.length}
+                      disabled={!lessonQuestionPool.length}
                       onClick={() => openQuiz(openedModule.id)}
                       type="button"
                     >
-                      {currentQuestions.length ? 'Ouvrir le QCU' : 'QCU bientôt disponible'}
+                      {lessonQuestionPool.length ? 'Ouvrir le QCU' : 'QCU bientôt disponible'}
                     </button>
                     <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" disabled={!hasNextModule} onClick={openNextModule} type="button">
                       Module suivant
@@ -1941,14 +2398,15 @@ export default function StudentLessonsPage() {
                     <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
                       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU aléatoire</p>
+                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
                           <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
                           <p className="mt-2 text-sm font-semibold text-slate-500">
-                            Une seule question s’affiche à la fois. La suivante reste masquée.
+                            {VEHICLE_ORGANS_QUIZ_SIZE} questions tirées au hasard : voyants du tableau de bord et organes du cours, mélangés. Correction immédiate, score final et validation à 80 %.
                           </p>
                         </div>
                         <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
-                          {Math.min(currentQuizIndex + 1, currentQuestions.length)}/{currentQuestions.length}
+                          {Math.min(currentQuizIndex + 1, quizDisplayTotal)}/{quizDisplayTotal}
+                          {openedLesson?.quizSize ? ' · aléatoire' : ''}
                         </span>
                       </div>
 
@@ -1957,7 +2415,7 @@ export default function StudentLessonsPage() {
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résultat final</p>
                           <p className="mt-3 text-5xl font-black text-slate-950">{percentage}%</p>
                           <p className="mt-2 text-sm font-bold text-slate-500">
-                            Score : {score}/{currentQuestions.length}
+                            Score : {score}/{quizDisplayTotal}
                           </p>
                           <p className={`mt-4 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
@@ -1967,16 +2425,32 @@ export default function StudentLessonsPage() {
                         <article className="mt-5 rounded-[1.5rem] border border-white bg-white p-5 shadow-sm">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
-                              Question aléatoire {currentQuizIndex + 1}
+                              {currentQuizQuestion.iconType ? 'Témoin tableau de bord' : 'Question organes'}{' '}
+                              {currentQuizIndex + 1}
                             </span>
                             <span className="text-xs font-bold text-slate-400">
-                              {answeredCount}/{currentQuestions.length} réponses
+                              {answeredCount}/{quizDisplayTotal} réponses
                             </span>
                           </div>
+                          {currentQuizQuestion.iconType && (
+                            <div className="mt-5 flex flex-col items-center rounded-[1.5rem] bg-gradient-to-br from-slate-50 to-white p-6 shadow-inner">
+                              <DashboardWarningIcon
+                                pulse={!currentQuizAnswered}
+                                type={currentQuizQuestion.iconType}
+                              />
+                              <p className="mt-3 text-center text-sm font-bold text-slate-500">
+                                Identifiez la signification de ce témoin
+                              </p>
+                            </div>
+                          )}
                           <h4 className="mt-4 text-xl font-extrabold leading-8 text-slate-950">
                             {currentQuizQuestion.question}
                           </h4>
-                          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                          <div
+                            className={`mt-5 grid gap-2 ${
+                              currentQuizQuestion.choices.length > 3 ? 'sm:grid-cols-2' : 'sm:grid-cols-2'
+                            }`}
+                          >
                             {currentQuizQuestion.choices.map((choice, choiceIndex) => {
                               const checked = currentQuizAnswer === choiceIndex
                               const status = currentQuizAnswered && choiceIndex === currentQuizQuestion.answer
@@ -2038,7 +2512,7 @@ export default function StudentLessonsPage() {
                   <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Score : {score}/{currentQuestions.length} · Réussite : {percentage}%
+                        Score : {score}/{quizDisplayTotal} · Réussite : {percentage}%
                       </p>
                       <p className={`mt-1 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
