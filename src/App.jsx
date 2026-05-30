@@ -31,7 +31,6 @@ import TeacherDashboardPage from './pages/app-pages/TeacherDashboardPage'
 import TeacherPlanningPage from './pages/app-pages/TeacherPlanningPage'
 import TeacherStudentsPage from './pages/app-pages/TeacherStudentsPage'
 import TeacherLessonsPage from './pages/app-pages/TeacherLessonsPage'
-import TeacherResourcesPage from './pages/app-pages/TeacherResourcesPage'
 import TeacherVehiclesPage from './pages/app-pages/TeacherVehiclesPage'
 import TeacherMessagesPage from './pages/app-pages/TeacherMessagesPage'
 import TeacherProfilePage from './pages/app-pages/TeacherProfilePage'
@@ -115,7 +114,6 @@ function App() {
         <Route path="/teacher/planning" element={withProtectedLayout('teacher', TeacherPlanningPage)} />
         <Route path="/teacher/students" element={withProtectedLayout('teacher', TeacherStudentsPage)} />
         <Route path="/teacher/lessons" element={withProtectedLayout('teacher', TeacherLessonsPage)} />
-        <Route path="/teacher/resources" element={withProtectedLayout('teacher', TeacherResourcesPage)} />
         <Route path="/teacher/vehicles" element={withProtectedLayout('teacher', TeacherVehiclesPage)} />
         <Route path="/teacher/messages" element={withProtectedLayout('teacher', TeacherMessagesPage)} />
         <Route path="/teacher/profile" element={withProtectedLayout('teacher', TeacherProfilePage)} />

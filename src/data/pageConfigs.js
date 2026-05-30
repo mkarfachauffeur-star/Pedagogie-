@@ -480,34 +480,6 @@ export const pageConfigs = {
     ],
   },
 
-  teacherResources: {
-    hero: {
-      eyebrow: 'Ressources pédagogiques',
-      title: 'Guide REMC et supports d’enseignement',
-      subtitle: 'Accédez aux compétences, manoeuvres et conseils pédagogiques dans une interface lisible.',
-      focus: { label: 'Supports disponibles', value: '36', progress: 90, caption: 'Bibliothèque structurée par compétence.' },
-    },
-    metrics: [
-      { label: 'Compétences REMC', value: '4', trend: 'Référentiel complet', tone: 'cyan' },
-      { label: 'Manoeuvres', value: '9', trend: 'Fiches pratiques', tone: 'emerald' },
-      { label: 'Conseils', value: '18', trend: 'Pédagogie', tone: 'violet' },
-      { label: 'Mises à jour', value: '3', trend: 'Ce mois-ci', tone: 'amber' },
-    ],
-    sections: [
-      {
-        title: 'Compétences REMC',
-        description: 'Une lecture claire des axes d’apprentissage.',
-        columns: 2,
-        items: [
-          { badge: 'C1', title: 'Maîtriser le véhicule', description: 'Trafic faible ou nul, commandes et trajectoire.', tone: 'cyan' },
-          { badge: 'C2', title: 'Appréhender la route', description: 'Observer, prévoir, choisir son allure.', tone: 'amber' },
-          { badge: 'C3', title: 'Partager la route', description: 'Communication, sécurité et cohabitation.', tone: 'violet' },
-          { badge: 'C4', title: 'Autonomie', description: 'Conduite responsable, économique et citoyenne.', tone: 'emerald' },
-        ],
-      },
-    ],
-  },
-
   teacherProfile: {
     hero: {
       eyebrow: 'Profil',

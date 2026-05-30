@@ -84,12 +84,6 @@
     "css": "lessons.BDLCPTdK.css"
   },
   {
-    "route": "/teacher/resources",
-    "component": "EnseignantResourcesPage",
-    "role": "teacher",
-    "css": "resources.DXQi68dr.css"
-  },
-  {
     "route": "/teacher/profile",
     "component": "EnseignantProfilePage",
     "role": "teacher",

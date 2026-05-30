@@ -32,7 +32,6 @@ export const NAVIGATION = {
       { href: '/teacher/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/teacher/planning', icon: '\u{1F4C5}', label: 'Mon planning' },
       { href: '/teacher/students', icon: '\u{1F465}', label: 'Mes élèves' },
-      { href: '/teacher/resources', icon: '\u{1F4D6}', label: 'REMC & Conseils enseignants' },
       { href: '/teacher/messages', icon: '\u{1F4AC}', label: 'Messagerie' },
     ],
   },
