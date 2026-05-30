@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
 
 const DAY_SCHEDULES = {
   Lundi: { start: '9h', end: '17h', lunchStart: '12h', lunchEnd: '13h' },
@@ -9,82 +10,7 @@ const DAY_SCHEDULES = {
   Samedi: { start: '9h', end: '13h', lunchStart: null, lunchEnd: null },
 }
 
-const weeklyPlans = [
-  {
-    id: 'week-21',
-    label: 'Semaine du 20 au 26 mai 2026',
-    slots: [
-      { id: 'slot-1', day: 'Lundi', date: '2026-05-20', time: '09:00', duration: 2, student: 'Thomas Martin', permit: 'Permis B · Boîte manuelle', status: 'Terminé' },
-      { id: 'slot-2', day: 'Lundi', date: '2026-05-20', time: '11:00', duration: 1, student: 'Nora Faure', permit: 'Permis B · Boîte automatique', status: 'Terminé' },
-      { id: 'slot-3', day: 'Lundi', date: '2026-05-20', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-4', day: 'Lundi', date: '2026-05-20', time: '13:00', duration: 2, student: 'Camille Leroy', permit: 'Conduite accompagnée (AAC)', status: 'Terminé' },
-      { id: 'slot-5', day: 'Lundi', date: '2026-05-20', time: '15:00', duration: 2, student: 'Inès Meyer', permit: 'Permis B · Boîte manuelle', status: 'Terminé' },
-
-      { id: 'slot-6', day: 'Mardi', date: '2026-05-21', time: '09:00', duration: 2, student: 'Yanis Roux', permit: 'Conduite supervisée', status: 'Terminé' },
-      { id: 'slot-7', day: 'Mardi', date: '2026-05-21', time: '11:00', duration: 1, student: 'Lucas Bernard', permit: 'Permis B · Boîte manuelle', status: 'En cours' },
-      { id: 'slot-8', day: 'Mardi', date: '2026-05-21', time: '12:30', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-9', day: 'Mardi', date: '2026-05-21', time: '13:30', duration: 2, student: 'Sarah Petit', permit: 'Permis B · Examen blanc', status: 'À venir' },
-      { id: 'slot-10', day: 'Mardi', date: '2026-05-21', time: '15:30', duration: 2, student: 'Mehdi Benali', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-10b', day: 'Mardi', date: '2026-05-21', time: '17:30', duration: 1, student: 'Thomas Martin', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-
-      { id: 'slot-11', day: 'Mercredi', date: '2026-05-22', time: '10:00', duration: 2, student: 'Sofia Moreau', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-12', day: 'Mercredi', date: '2026-05-22', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-14', day: 'Mercredi', date: '2026-05-22', time: '13:00', duration: 2, student: 'Lina Bernard', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-15', day: 'Mercredi', date: '2026-05-22', time: '15:00', duration: 2, student: 'Camille Leroy', permit: 'Conduite accompagnée (AAC)', status: 'À venir' },
-
-      { id: 'slot-16', day: 'Jeudi', date: '2026-05-23', time: '09:00', duration: 2, student: 'Inès Meyer', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-17', day: 'Jeudi', date: '2026-05-23', time: '11:00', duration: 1, student: 'Nora Faure', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-18', day: 'Jeudi', date: '2026-05-23', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-19', day: 'Jeudi', date: '2026-05-23', time: '13:00', duration: 2, student: 'Yanis Roux', permit: 'Conduite supervisée', status: 'À venir' },
-      { id: 'slot-20', day: 'Jeudi', date: '2026-05-23', time: '15:30', duration: 2, student: 'Lucas Bernard', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-
-      { id: 'slot-21', day: 'Vendredi', date: '2026-05-24', time: '09:00', duration: 2, student: 'Sarah Petit', permit: 'Permis B · Examen blanc', status: 'À venir' },
-      { id: 'slot-22', day: 'Vendredi', date: '2026-05-24', time: '11:00', duration: 1, student: 'Mehdi Benali', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-23', day: 'Vendredi', date: '2026-05-24', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-24', day: 'Vendredi', date: '2026-05-24', time: '13:00', duration: 2, student: 'Sofia Moreau', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-
-      { id: 'slot-26', day: 'Samedi', date: '2026-05-25', time: '09:00', duration: 2, student: 'Lina Bernard', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-27', day: 'Samedi', date: '2026-05-25', time: '11:00', duration: 2, student: 'Camille Leroy', permit: 'Conduite accompagnée (AAC)', status: 'À venir' },
-    ],
-  },
-  {
-    id: 'week-22',
-    label: 'Semaine du 27 mai au 2 juin 2026',
-    slots: [
-      { id: 'slot-30', day: 'Lundi', date: '2026-05-27', time: '09:00', duration: 2, student: 'Lucas Bernard', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-31', day: 'Lundi', date: '2026-05-27', time: '11:00', duration: 1, student: 'Nora Faure', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-32', day: 'Lundi', date: '2026-05-27', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-33', day: 'Lundi', date: '2026-05-27', time: '13:00', duration: 2, student: 'Thomas Martin', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-34', day: 'Lundi', date: '2026-05-27', time: '15:00', duration: 2, student: 'Yanis Roux', permit: 'Conduite supervisée', status: 'À venir' },
-
-      { id: 'slot-35', day: 'Mardi', date: '2026-05-28', time: '09:00', duration: 2, student: 'Sarah Petit', permit: 'Permis B · Examen blanc', status: 'À venir' },
-      { id: 'slot-36', day: 'Mardi', date: '2026-05-28', time: '11:00', duration: 1, student: 'Mehdi Benali', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-37', day: 'Mardi', date: '2026-05-28', time: '12:30', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-38', day: 'Mardi', date: '2026-05-28', time: '13:30', duration: 2, student: 'Camille Leroy', permit: 'Conduite accompagnée (AAC)', status: 'À venir' },
-      { id: 'slot-39', day: 'Mardi', date: '2026-05-28', time: '15:30', duration: 2, student: 'Sofia Moreau', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-39b', day: 'Mardi', date: '2026-05-28', time: '17:30', duration: 1, student: 'Inès Meyer', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-
-      { id: 'slot-40', day: 'Mercredi', date: '2026-05-29', time: '10:00', duration: 2, student: 'Lina Bernard', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-42', day: 'Mercredi', date: '2026-05-29', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-43', day: 'Mercredi', date: '2026-05-29', time: '13:00', duration: 2, student: 'Lucas Bernard', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-44', day: 'Mercredi', date: '2026-05-29', time: '15:00', duration: 2, student: 'Thomas Martin', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-
-      { id: 'slot-45', day: 'Jeudi', date: '2026-05-30', time: '09:00', duration: 2, student: 'Nora Faure', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-      { id: 'slot-46', day: 'Jeudi', date: '2026-05-30', time: '11:00', duration: 1, student: 'Yanis Roux', permit: 'Conduite supervisée', status: 'À venir' },
-      { id: 'slot-47', day: 'Jeudi', date: '2026-05-30', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-48', day: 'Jeudi', date: '2026-05-30', time: '13:00', duration: 2, student: 'Sarah Petit', permit: 'Permis B · Examen blanc', status: 'À venir' },
-      { id: 'slot-49', day: 'Jeudi', date: '2026-05-30', time: '15:30', duration: 2, student: 'Mehdi Benali', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-
-      { id: 'slot-50', day: 'Vendredi', date: '2026-05-31', time: '09:00', duration: 2, student: 'Camille Leroy', permit: 'Conduite accompagnée (AAC)', status: 'À venir' },
-      { id: 'slot-51', day: 'Vendredi', date: '2026-05-31', time: '11:00', duration: 1, student: 'Sofia Moreau', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-52', day: 'Vendredi', date: '2026-05-31', time: '12:00', duration: 0, type: 'break', label: 'Pause déjeuner (1h)', status: 'Pause' },
-      { id: 'slot-53', day: 'Vendredi', date: '2026-05-31', time: '13:00', duration: 2, student: 'Lina Bernard', permit: 'Permis B · Boîte automatique', status: 'À venir' },
-
-      { id: 'slot-55', day: 'Samedi', date: '2026-06-01', time: '09:00', duration: 2, student: 'Thomas Martin', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-      { id: 'slot-56', day: 'Samedi', date: '2026-06-01', time: '11:00', duration: 2, student: 'Lucas Bernard', permit: 'Permis B · Boîte manuelle', status: 'À venir' },
-    ],
-  },
-]
+const weeklyPlans = []
 
 function getTeachingHours(slots) {
   return slots.filter((slot) => slot.type !== 'break').reduce((sum, slot) => sum + slot.duration, 0)
@@ -186,7 +112,7 @@ export default function TeacherPlanningPage() {
   const [selectedDay, setSelectedDay] = useState('Lundi')
 
   const activeWeek = weeklyPlans[weekIndex]
-  const activeSlots = activeWeek.slots
+  const activeSlots = activeWeek?.slots ?? []
 
   const weeklyTeachingHours = getTeachingHours(activeSlots)
   const slotsToDisplay =
@@ -217,7 +143,7 @@ export default function TeacherPlanningPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900">Timeline des horaires</h2>
-            <p className="mt-1 text-sm font-semibold text-cyan-700">{activeWeek.label}</p>
+            <p className="mt-1 text-sm font-semibold text-cyan-700">{activeWeek?.label}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -267,7 +193,13 @@ export default function TeacherPlanningPage() {
         </div>
 
         <div className="mt-5 flex flex-col gap-6">
-          {period === 'semaine' ? (
+          {slotsToDisplay.length === 0 ? (
+            <EmptyState
+              title="Aucune leçon programmée"
+              message="Aucune leçon programmée pour le moment."
+              icon="📅"
+            />
+          ) : period === 'semaine' ? (
             groupedDays.map((dayGroup, index) => (
               <section key={dayGroup.day} className="flex flex-col gap-3">
                 <div

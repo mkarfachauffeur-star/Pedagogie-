@@ -1,5 +1,17 @@
 import { useMemo, useState } from 'react'
 import { formationTypeOptions, useStudentTrackingStore } from '../../data/studentTrackingStore'
+import EmptyState from '../../components/ui/EmptyState'
+
+// Normalise un nom/prénom pour l'intégrer au numéro de dossier
+// (majuscules, sans accents ni caractères spéciaux).
+function formatNamePart(value = '') {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 export default function SecretaryInscriptionsPage() {
   const { students, addStudent } = useStudentTrackingStore()
@@ -9,13 +21,16 @@ export default function SecretaryInscriptionsPage() {
     if (!year || !month || !day) return dateString
     return `${day}/${month}/${year}`
   }
-  const [activeTab, setActiveTab] = useState('list')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     lastName: '',
     firstName: '',
     birthDate: '',
-    address: '',
+    birthPlace: '',
+    streetNumber: '',
+    street: '',
+    postalCode: '',
+    city: '',
     phone: '',
     email: '',
     neph: '',
@@ -24,37 +39,52 @@ export default function SecretaryInscriptionsPage() {
     formationType: '',
     registrationDate: new Date().toISOString().slice(0, 10),
     drivingType: 'classique',
+    codeStatus: 'Non obtenu',
     payment: '',
     remainingPayment: '',
     documents: [],
-    fileNumber: `PD-${new Date().getFullYear()}-${String(students.length + 1).padStart(3, '0')}`,
     status: 'En attente',
   })
 
+  // Numéro de dossier généré automatiquement : PD-AAAA-NNN-NOM-PRENOM.
+  const generatedFileNumber = useMemo(() => {
+    const sequence = String(students.length + 1).padStart(3, '0')
+    const base = `PD-${new Date().getFullYear()}-${sequence}`
+    return [base, formatNamePart(form.lastName), formatNamePart(form.firstName)]
+      .filter(Boolean)
+      .join('-')
+  }, [students.length, form.lastName, form.firstName])
+
+  // Seuls les champs réellement saisis par le secrétariat comptent dans la
+  // complétion. Les valeurs pré-remplies par défaut (formule, type de conduite,
+  // statut) ne sont PAS comptées : un dossier vierge reste donc à 0 %.
   const completedFields = useMemo(() => {
     const required = [
       'lastName',
       'firstName',
       'birthDate',
+      'birthPlace',
       'phone',
       'email',
+      'streetNumber',
+      'street',
+      'postalCode',
+      'city',
       'neph',
-      'packageName',
       'formationType',
-      'drivingType',
       'payment',
-      'status',
     ]
 
     return (
       required.filter((field) => {
         if (field === 'formationType') return form.formationType && form.formationType !== 'Sélectionner...'
-        return String(form[field]).trim()
+        return String(form[field] ?? '').trim()
       }).length + (form.documents.length ? 1 : 0)
     )
   }, [form])
 
-  const completion = Math.round((completedFields / 12) * 100)
+  const totalFields = 14
+  const completion = Math.round((completedFields / totalFields) * 100)
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -75,13 +105,13 @@ export default function SecretaryInscriptionsPage() {
       return
     }
     addStudent({
-      id: form.fileNumber,
+      id: generatedFileNumber,
       firstName: form.firstName || 'Nouvel',
       lastName: form.lastName || 'Élève',
       teacher: 'À assigner',
       formationType: form.formationType,
+      codeStatus: form.codeStatus,
     })
-    setActiveTab('list')
     setShowForm(false)
     setForm((current) => ({
       ...current,
@@ -89,14 +119,18 @@ export default function SecretaryInscriptionsPage() {
       lastName: '',
       firstName: '',
       birthDate: '',
-      address: '',
+      birthPlace: '',
+      streetNumber: '',
+      street: '',
+      postalCode: '',
+      city: '',
       phone: '',
       email: '',
       neph: '',
+      codeStatus: 'Non obtenu',
       payment: '',
       remainingPayment: '',
       documents: [],
-      fileNumber: `PD-${new Date().getFullYear()}-${String(students.length + 2).padStart(3, '0')}`,
       status: 'En attente',
     }))
   }
@@ -128,35 +162,7 @@ export default function SecretaryInscriptionsPage() {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-3">
-        {[
-          ['list', 'Dossiers enregistrés'],
-          ['api', 'Préparation base de données'],
-        ].map(([id, label]) => (
-          <button
-            className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition ${
-              activeTab === id
-                ? 'bg-navy-950 text-white shadow-lg'
-                : 'border border-slate-200 bg-white text-slate-600 hover:bg-cyan-50'
-            }`}
-            key={id}
-            onClick={() => setActiveTab(id)}
-            type="button"
-          >
-            {label}
-          </button>
-        ))}
-        <button
-          className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100"
-          onClick={() => setShowForm(true)}
-          type="button"
-        >
-          Ouvrir le formulaire d’inscription
-        </button>
-      </div>
-
-      {activeTab === 'list' && (
-        <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <h2 className="text-2xl font-extrabold text-slate-950">Dossiers enregistrés</h2>
@@ -164,15 +170,11 @@ export default function SecretaryInscriptionsPage() {
                 Chaque inscription enregistrée apparaît immédiatement ici.
               </p>
             </div>
-            <button
-              className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
-              onClick={() => setShowForm(true)}
-              type="button"
-            >
-              Nouvelle inscription
-            </button>
           </div>
           <div className="mt-5 grid gap-3">
+            {students.length === 0 && (
+              <EmptyState title="Aucun dossier disponible" message="Aucun dossier disponible pour le moment. Créez une nouvelle inscription pour commencer." icon="🗂️" />
+            )}
             {students.map((student) => (
               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={student.id}>
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -196,6 +198,15 @@ export default function SecretaryInscriptionsPage() {
                     <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">
                       REMC {student.progress?.global || 0}%
                     </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-black ${
+                        student.codeStatus === 'Obtenu'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      Code {student.codeStatus === 'Obtenu' ? 'obtenu' : 'non obtenu'}
+                    </span>
                     <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
                       Reste {student.remainingPayment || '0'} €
                     </span>
@@ -210,19 +221,6 @@ export default function SecretaryInscriptionsPage() {
             ))}
           </div>
         </section>
-      )}
-
-      {activeTab === 'api' && (
-        <section className="rounded-[2rem] border border-white/70 bg-navy-950 p-5 text-white shadow-[var(--shadow-card)]">
-          <h2 className="text-2xl font-extrabold">Structure prête pour base de données</h2>
-          <p className="mt-2 text-sm text-blue-100">
-            Les champs sont déjà structurés en objet `studentRegistration` pour une future API.
-          </p>
-          <pre className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-white/10 p-4 text-xs text-cyan-50">
-            {JSON.stringify({ studentRegistration: form }, null, 2)}
-          </pre>
-        </section>
-      )}
 
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
@@ -272,21 +270,27 @@ export default function SecretaryInscriptionsPage() {
                 <TextField label="Téléphone" onChange={updateField} value={form.phone} name="phone" type="tel" />
                 <TextField label="Courriel" onChange={updateField} value={form.email} name="email" type="email" />
                 <TextField label="Date de naissance" onChange={updateField} value={form.birthDate} name="birthDate" type="date" />
+                <TextField label="Lieu de naissance" onChange={updateField} value={form.birthPlace} name="birthPlace" />
+                <TextField label="N° de rue" onChange={updateField} value={form.streetNumber} name="streetNumber" />
+                <TextField label="Rue / voie" onChange={updateField} value={form.street} name="street" className="md:col-span-1 xl:col-span-3" />
+                <TextField label="Code postal" onChange={updateField} value={form.postalCode} name="postalCode" />
+                <TextField label="Commune" onChange={updateField} value={form.city} name="city" className="md:col-span-1 xl:col-span-3" />
                 <TextField label="NEPH" onChange={updateField} value={form.neph} name="neph" />
                 <SelectField label="Formule" name="packageName" onChange={updateField} value={form.packageName} options={['Forfait 20h', 'Forfait 30h', 'Code + conduite', 'Conduite accompagnée', 'Conduite supervisée']} />
                 <SelectField label="Type de formation (obligatoire)" name="formationType" onChange={updateField} value={form.formationType} options={['Sélectionner...', ...formationTypeOptions]} />
                 <SelectField label="Type de conduite" name="drivingType" onChange={updateField} value={form.drivingType} options={['classique', 'accompagnée', 'supervisée']} />
+                <SelectField label="Code de la route" name="codeStatus" onChange={updateField} value={form.codeStatus} options={['Non obtenu', 'Obtenu']} />
               </FormSection>
 
               <FormSection title="Informations administratives">
                 <TextField label="Paiement encaissé (€)" onChange={updateField} value={form.payment} name="payment" type="number" />
                 <TextField label="Reste à payer (€)" onChange={updateField} value={form.remainingPayment} name="remainingPayment" type="number" />
-                <TextField label="Numéro dossier" onChange={updateField} value={form.fileNumber} name="fileNumber" />
+                <TextField label="Numéro dossier" value={generatedFileNumber} name="fileNumber" readOnly hint="Généré automatiquement : nom, prénom et numéro de dossier." />
                 <SelectField label="Statut du dossier" name="status" onChange={updateField} value={form.status} options={['En attente', 'En cours', 'Validé', 'Pièces manquantes', 'Archivé']} />
                 <div className="md:col-span-2 xl:col-span-4">
                   <p className="mb-3 text-sm font-bold text-slate-700">Documents fournis</p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {['Pièce identité', 'Justificatif domicile', 'ASSR/JDC', 'Photo signature'].map((documentName) => (
+                    {['Pièce d’identité recto/verso', 'Justificatif domicile (-3 mois)', 'ASSR/JDC', 'E-photo', 'Contrat auto-école retourné signé', 'Résultat ETG (code de la route)'].map((documentName) => (
                       <button
                         className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
                           form.documents.includes(documentName)
@@ -307,13 +311,6 @@ export default function SecretaryInscriptionsPage() {
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:bg-slate-50"
-                onClick={() => setActiveTab('api')}
-                type="button"
-              >
-                Voir payload futur API
-              </button>
               <button
                 className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700"
                 type="submit"
@@ -337,16 +334,20 @@ function FormSection({ title, children }) {
   )
 }
 
-function TextField({ className = '', label, name, onChange, type = 'text', value }) {
+function TextField({ className = '', label, name, onChange, type = 'text', value, readOnly = false, hint }) {
   return (
     <label className={`block ${className}`}>
       <span className="text-sm font-bold text-slate-700">{label}</span>
       <input
-        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-        onChange={(event) => onChange(name, event.target.value)}
+        className={`mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-medium outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 ${
+          readOnly ? 'cursor-not-allowed bg-slate-50 text-slate-500' : 'bg-white text-slate-800'
+        }`}
+        onChange={(event) => onChange?.(name, event.target.value)}
+        readOnly={readOnly}
         type={type}
         value={value}
       />
+      {hint && <span className="mt-1 block text-xs font-medium text-slate-400">{hint}</span>}
     </label>
   )
 }

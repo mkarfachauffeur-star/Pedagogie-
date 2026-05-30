@@ -2,19 +2,14 @@ import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   BarChart3,
-  Building2,
   CalendarDays,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Cloud,
   Download,
   GraduationCap,
   Menu,
-  Quote,
   ShieldCheck,
   Sparkles,
-  Star,
   Users,
   X,
 } from 'lucide-react'
@@ -44,30 +39,6 @@ const previewPoints = [
   'Accès rapide aux fonctionnalités clés',
   'Notifications et alertes intelligentes',
   'Données sécurisées et synchronisées',
-]
-
-const stats = [
-  { value: '+850', label: 'Auto-écoles équipées', icon: Building2 },
-  { value: '+12 000', label: 'Utilisateurs actifs', icon: Users },
-  { value: '4,9/5', label: 'Satisfaction client', icon: Star },
-]
-
-const testimonials = [
-  {
-    quote: 'PEDAGOGIA DRIVE a transformé notre organisation. Le suivi élèves et le planning sont devenus beaucoup plus simples au quotidien.',
-    name: 'Auto-École Conduite Plus',
-    city: 'Lyon',
-  },
-  {
-    quote: 'Une interface moderne, claire et efficace. Nos enseignants gagnent un temps précieux sur le terrain et en secrétariat.',
-    name: 'Permis & Co',
-    city: 'Marseille',
-  },
-  {
-    quote: 'Nos élèves adorent les QCU et le lexique. La préparation à l’examen est nettement plus structurée qu’avant.',
-    name: 'École de Conduite Horizon',
-    city: 'Paris',
-  },
 ]
 
 const footerLinks = {
@@ -136,22 +107,6 @@ function BrandLogo() {
   )
 }
 
-const studentDistributionDemo = [
-  { label: 'En formation', percent: 42, color: '#3b82f6' },
-  { label: 'Prêts pour l’examen', percent: 26, color: '#ef4444' },
-  { label: 'Permis obtenu', percent: 32, color: '#22d3ee' },
-]
-
-const qcuSuccessDemo = [
-  { day: 'Lun', percent: 38 },
-  { day: 'Mar', percent: 52 },
-  { day: 'Mer', percent: 47 },
-  { day: 'Jeu', percent: 61 },
-  { day: 'Ven', percent: 58 },
-  { day: 'Sam', percent: 72 },
-  { day: 'Dim', percent: 68 },
-]
-
 function DashboardPreview() {
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-3 shadow-2xl shadow-blue-950/30 backdrop-blur-xl">
@@ -169,16 +124,16 @@ function DashboardPreview() {
         >
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Tableau de bord</p>
-            <p className="mt-1 text-lg font-black text-white">Auto-école Lumière</p>
-            <p className="mt-1 text-[11px] font-semibold text-slate-500">Aperçu marketing — chiffres fictifs</p>
+            <p className="mt-1 text-lg font-black text-white">Votre auto-école</p>
+            <p className="mt-1 text-[11px] font-semibold text-slate-500">Aperçu de l’interface</p>
           </div>
           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-200">En ligne</span>
         </motion.div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {[
-            ['248', 'Élèves actifs'],
-            ['18', 'Leçons aujourd’hui'],
-            ['78%', 'Taux de réussite'],
+            ['—', 'Élèves actifs'],
+            ['—', 'Leçons aujourd’hui'],
+            ['—', 'Taux de réussite'],
           ].map(([value, label], index) => (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
@@ -201,33 +156,12 @@ function DashboardPreview() {
           >
             <p className="text-sm font-black text-white">Réussite QCU</p>
             <p className="mt-1 text-[11px] leading-snug text-slate-400">
-              Exemple : part de bonnes réponses aux quiz, jour par jour (démo).
+              Part de bonnes réponses aux quiz, jour par jour.
             </p>
-            <motion.div
-              animate={{ scaleX: 1 }}
-              aria-label="Graphique démo : réussite QCU sur 7 jours"
-              className="mt-3 origin-bottom rounded-xl bg-gradient-to-t from-blue-500/20 to-transparent px-2 pb-1 pt-2"
-              initial={{ scaleX: 0.85, opacity: 0.5 }}
-              role="img"
-              transition={{ duration: 0.6, delay: 0.25 }}
-            >
-              <div className="flex h-24 gap-1.5 sm:gap-2">
-                {qcuSuccessDemo.map((item, index) => (
-                  <div className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1" key={item.day}>
-                    <div className="flex h-20 w-full items-end">
-                      <motion.div
-                        animate={{ height: `${item.percent}%` }}
-                        className="w-full min-h-[3px] rounded-t-md bg-gradient-to-t from-blue-600 to-cyan-300"
-                        initial={{ height: 0 }}
-                        title={`${item.day} : ${item.percent}% de bonnes réponses`}
-                        transition={{ duration: 0.5, delay: 0.3 + index * 0.04 }}
-                      />
-                    </div>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{item.day}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            <div className="mt-3 flex h-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 text-center">
+              <p className="text-sm font-bold text-slate-300">Aucune donnée disponible</p>
+              <p className="text-[11px] font-medium text-slate-500">Les statistiques s’afficheront avec vos données.</p>
+            </div>
           </motion.div>
           <motion.div
             animate={{ opacity: 1, y: 0 }}
@@ -237,34 +171,11 @@ function DashboardPreview() {
           >
             <p className="text-sm font-black text-white">Répartition élèves</p>
             <p className="mt-1 text-[11px] leading-snug text-slate-400">
-              Exemple : où en est chaque élève dans son parcours permis.
+              Où en est chaque élève dans son parcours permis.
             </p>
-            <div className="mt-3 flex items-center gap-4">
-              <div
-                aria-hidden
-                className="relative h-20 w-20 shrink-0 rounded-full bg-[conic-gradient(#3b82f6_0_42%,#ef4444_42%_68%,#22d3ee_68%_100%)]"
-              >
-                <motion.div
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute inset-3 rounded-full bg-slate-950"
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  transition={{ duration: 0.45, delay: 0.35 }}
-                />
-              </div>
-              <ul className="min-w-0 flex-1 space-y-1.5" aria-label="Légende répartition élèves (démo)">
-                {studentDistributionDemo.map((item) => (
-                  <li className="flex items-center justify-between gap-2 text-[11px]" key={item.label}>
-                    <span className="flex min-w-0 items-center gap-1.5 font-semibold text-slate-300">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="truncate">{item.label}</span>
-                    </span>
-                    <span className="shrink-0 font-black text-white">{item.percent}%</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-3 flex h-[5.5rem] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 text-center">
+              <p className="text-sm font-bold text-slate-300">Aucune donnée disponible</p>
+              <p className="text-[11px] font-medium text-slate-500">La répartition s’affichera avec vos élèves.</p>
             </div>
           </motion.div>
         </div>
@@ -276,8 +187,6 @@ function DashboardPreview() {
 export default function ProfileSelection() {
   const shouldReduceMotion = useReducedMotion()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [testimonialIndex, setTestimonialIndex] = useState(0)
-
   return (
     <div className="min-h-screen overflow-x-clip bg-[#030712] text-white">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(37,99,235,0.18),transparent_30%),radial-gradient(circle_at_78%_16%,rgba(220,38,38,0.12),transparent_32%),linear-gradient(135deg,#020617_0%,#071426_56%,#0c1020_100%)]" />
@@ -397,29 +306,15 @@ export default function ProfileSelection() {
           <motion.h2 {...reveal(shouldReduceMotion)} className="text-center text-2xl font-black text-white sm:text-3xl">
             Une plateforme qui fait la différence.
           </motion.h2>
-          <motion.div
-            {...reveal(shouldReduceMotion, 0.08)}
-            className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {stats.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <motion.article
-                  animate={{ opacity: 1, y: 0 }}
-                  className="glass-card-lg text-center"
-                  initial={{ opacity: 0, y: 12 }}
-                  key={item.label}
-                  transition={{ duration: 0.45, delay: index * 0.06 }}
-                  whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-                >
-                  <motion.div className="mx-auto inline-flex rounded-xl border border-blue-400/25 bg-blue-500/10 p-2.5 text-blue-300">
-                    <Icon className="h-5 w-5" />
-                  </motion.div>
-                  <p className="mt-4 text-3xl font-black text-white">{item.value}</p>
-                  <p className="mt-2 text-sm text-slate-400">{item.label}</p>
-                </motion.article>
-              )
-            })}
+          <motion.div {...reveal(shouldReduceMotion, 0.08)} className="mt-10">
+            <div className="glass-card-lg mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
+              <span className="inline-flex rounded-xl border border-blue-400/25 bg-blue-500/10 p-2.5 text-blue-300">
+                <BarChart3 className="h-5 w-5" />
+              </span>
+              <p className="text-base font-bold text-white">
+                Les statistiques seront disponibles après le lancement officiel.
+              </p>
+            </div>
           </motion.div>
         </section>
 
@@ -431,56 +326,14 @@ export default function ProfileSelection() {
               </p>
               <h2 className="mt-5 text-3xl font-black text-white sm:text-4xl">Ce que disent nos clients</h2>
             </motion.div>
-            <div className="relative mt-10">
-              <div className="grid gap-4 lg:grid-cols-3">
-                {testimonials.map((item, index) => (
-                  <motion.article
-                    {...reveal(shouldReduceMotion, index * 0.05)}
-                    className="glass-card-lg relative overflow-hidden"
-                    key={item.name}
-                  >
-                    <motion.div
-                      animate={{ opacity: 1, scale: 1 }}
-                      className={`absolute inset-x-0 top-0 h-px ${index % 2 === 0 ? 'bg-gradient-to-r from-transparent via-blue-400 to-transparent' : 'bg-gradient-to-r from-transparent via-red-400 to-transparent'}`}
-                      initial={{ opacity: 0, scaleX: 0.6 }}
-                      transition={{ duration: 0.45, delay: 0.1 + index * 0.05 }}
-                    />
-                    <Quote className="h-8 w-8 text-blue-400/80" />
-                    <p className="mt-4 text-sm leading-7 text-slate-200">{item.quote}</p>
-                    <div className="mt-6 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-red-500 text-xs font-black">
-                        {item.name.charAt(0)}
-                      </div>
-                      <motion.div animate={{ opacity: 1, x: 0 }} initial={{ opacity: 0, x: -4 }}>
-                        <p className="text-sm font-black text-white">{item.name}</p>
-                        <p className="text-xs text-slate-400">{item.city}</p>
-                      </motion.div>
-                    </div>
-                  </motion.article>
-                ))}
+            <motion.div {...reveal(shouldReduceMotion, 0.08)} className="mt-10">
+              <div className="glass-card-lg mx-auto max-w-2xl text-center">
+                <p className="text-base font-bold text-white">Témoignages bientôt disponibles.</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Les retours de nos auto-écoles partenaires seront publiés après le lancement officiel.
+                </p>
               </div>
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  className="rounded-full border border-white/15 p-2 text-slate-300 transition hover:bg-white/10"
-                  onClick={() => setTestimonialIndex((value) => (value === 0 ? testimonials.length - 1 : value - 1))}
-                  type="button"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <div className="flex gap-2">
-                  {testimonials.map((_, index) => (
-                    <span className={`h-2 w-2 rounded-full ${index === testimonialIndex ? 'bg-blue-400' : 'bg-white/25'}`} key={index} />
-                  ))}
-                </div>
-                <button
-                  className="rounded-full border border-white/15 p-2 text-slate-300 transition hover:bg-white/10"
-                  onClick={() => setTestimonialIndex((value) => (value === testimonials.length - 1 ? 0 : value + 1))}
-                  type="button"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 

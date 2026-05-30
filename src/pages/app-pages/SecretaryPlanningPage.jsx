@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
 
-const teachers = ['Tous', 'Jean Moniteur', 'Sofia Bernard', 'Karim Lefevre']
-const vehicles = ['Tous', 'Clio 208-AAC', 'Peugeot 208-B', 'Zoé boîte auto']
+const teachers = ['Tous']
+const vehicles = ['Tous']
 const categories = ['Toutes', 'Permis B', 'AAC', 'Supervisée', 'Boîte auto', 'Examen']
-const students = ['Thomas Martin', 'Camille Leroy', 'Lucas Bernard', 'Nadia Roux', 'Sarah Petit']
+const students = []
 
 const statusStyles = {
   confirmé: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -11,65 +12,16 @@ const statusStyles = {
   'en attente': 'border-amber-200 bg-amber-50 text-amber-800',
 }
 
-const initialSlots = [
-  {
-    id: 1,
-    date: '2026-05-18',
-    start: '08:00',
-    end: '09:00',
-    student: 'Thomas Martin',
-    teacher: 'Jean Moniteur',
-    vehicle: 'Clio 208-AAC',
-    category: 'AAC',
-    status: 'confirmé',
-    type: 'Conduite',
-  },
-  {
-    id: 2,
-    date: '2026-05-18',
-    start: '10:30',
-    end: '12:00',
-    student: 'Camille Leroy',
-    teacher: 'Sofia Bernard',
-    vehicle: 'Peugeot 208-B',
-    category: 'Permis B',
-    status: 'en attente',
-    type: 'Évaluation',
-  },
-  {
-    id: 3,
-    date: '2026-05-19',
-    start: '14:00',
-    end: '15:00',
-    student: 'Lucas Bernard',
-    teacher: 'Karim Lefevre',
-    vehicle: 'Zoé boîte auto',
-    category: 'Boîte auto',
-    status: 'confirmé',
-    type: 'Conduite',
-  },
-  {
-    id: 4,
-    date: '2026-05-21',
-    start: '09:00',
-    end: '11:00',
-    student: 'Nadia Roux',
-    teacher: 'Jean Moniteur',
-    vehicle: 'Peugeot 208-B',
-    category: 'Examen',
-    status: 'annulé',
-    type: 'Examen blanc',
-  },
-]
+const initialSlots = []
 
 const emptyForm = {
   date: '2026-05-18',
   start: '09:00',
   end: '10:00',
   duration: '60',
-  student: 'Thomas Martin',
-  teacher: 'Jean Moniteur',
-  vehicle: 'Clio 208-AAC',
+  student: '',
+  teacher: '',
+  vehicle: '',
   category: 'Permis B',
   status: 'en attente',
   type: 'Conduite',
@@ -113,7 +65,7 @@ export default function SecretaryPlanningPage() {
 
   const openCreateForm = () => {
     setEditingId(null)
-    setForm({ ...emptyForm, date: toDateKey(currentDate), student: students[0] })
+    setForm({ ...emptyForm, date: toDateKey(currentDate), student: students[0] || '' })
     setShowForm(true)
   }
 
@@ -315,7 +267,7 @@ export default function SecretaryPlanningPage() {
                       <button
                         className="w-full rounded-2xl border border-dashed border-cyan-200 bg-cyan-50/50 p-4 text-sm font-bold text-cyan-700 transition hover:bg-cyan-50"
                         onClick={() => {
-                          setForm({ ...emptyForm, date: view === 'année' ? `${day.key}-01` : day, student: students[0] })
+                          setForm({ ...emptyForm, date: view === 'année' ? `${day.key}-01` : day, student: students[0] || '' })
                           setEditingId(null)
                           setShowForm(true)
                         }}
@@ -449,11 +401,20 @@ function ResourceList({ items, title }) {
     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
       <h3 className="font-extrabold text-slate-950">{title}</h3>
       <div className="mt-3 space-y-2">
-        {items.map((item) => (
-          <button className="w-full rounded-2xl bg-white px-3 py-2 text-left text-sm font-bold text-slate-700 shadow-sm transition hover:bg-cyan-50" key={item} type="button">
-            {item}
-          </button>
-        ))}
+        {items.length === 0 ? (
+          <EmptyState
+            title="Aucune donnée"
+            message="Aucune donnée disponible pour le moment."
+            icon="📭"
+            className="bg-white"
+          />
+        ) : (
+          items.map((item) => (
+            <button className="w-full rounded-2xl bg-white px-3 py-2 text-left text-sm font-bold text-slate-700 shadow-sm transition hover:bg-cyan-50" key={item} type="button">
+              {item}
+            </button>
+          ))
+        )}
       </div>
     </div>
   )

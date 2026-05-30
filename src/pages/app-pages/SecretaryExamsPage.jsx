@@ -1,24 +1,66 @@
 import { useMemo, useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
+import WeekdayDatePicker from '../../components/ui/WeekdayDatePicker'
 
-const initialExams = [
-  { id: 1, student: 'Nadia Roux', type: 'Permis B', date: '2026-05-22', hour: '08:30', teacher: 'Jean Moniteur', center: 'Centre Nord', status: 'Confirmé' },
-  { id: 2, student: 'Camille Leroy', type: 'Code', date: '2026-05-24', hour: '10:00', teacher: 'Sofia Bernard', center: 'La Poste', status: 'À confirmer' },
-  { id: 3, student: 'Lucas Bernard', type: 'Boîte auto', date: '2026-05-28', hour: '14:00', teacher: 'Karim Lefevre', center: 'Centre Sud', status: 'Dossier incomplet' },
+const initialExams = []
+
+// Créneaux horaires disponibles : 8h → 16h par tranches de 30 min,
+// pause déjeuner 12h-13h exclue. (Avant 8h et après 16h non proposés.)
+const TIME_SLOTS = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
 ]
+
+// Les dimanches ne sont pas sélectionnables (lundi au samedi uniquement).
+function isSunday(value) {
+  if (!value) return false
+  return new Date(`${value}T12:00:00`).getDay() === 0
+}
 
 export default function SecretaryExamsPage() {
   const [exams, setExams] = useState(initialExams)
   const [selectedId, setSelectedId] = useState(1)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({
     student: '',
     type: 'Permis B',
     date: '2026-05-30',
     hour: '09:00',
-    teacher: 'Jean Moniteur',
-    center: 'Centre Nord',
+    teacher: '',
+    center: '',
     status: 'À confirmer',
   })
+
+  const handleDateChange = (value) => setForm((current) => ({ ...current, date: value }))
+
+  const dateInvalid = !form.date || isSunday(form.date)
+
+  const openCreate = () => {
+    setEditingId(null)
+    setForm({ student: '', type: 'Permis B', date: '2026-05-30', hour: '09:00', teacher: '', center: '', status: 'À confirmer' })
+    setShowForm(true)
+  }
+
+  const openEdit = (exam) => {
+    setEditingId(exam.id)
+    setSelectedId(exam.id)
+    setForm({
+      student: exam.student,
+      type: exam.type,
+      date: exam.date,
+      hour: exam.hour,
+      teacher: exam.teacher,
+      center: exam.center,
+      status: exam.status,
+    })
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+  }
 
   const selectedExam = exams.find((exam) => exam.id === selectedId) || exams[0]
   const stats = useMemo(
@@ -32,10 +74,16 @@ export default function SecretaryExamsPage() {
 
   const saveExam = (event) => {
     event.preventDefault()
-    const nextExam = { ...form, id: Date.now() }
-    setExams((current) => [nextExam, ...current])
-    setSelectedId(nextExam.id)
-    setShowForm(false)
+    if (dateInvalid) return
+    if (editingId) {
+      setExams((current) => current.map((exam) => (exam.id === editingId ? { ...exam, ...form } : exam)))
+      setSelectedId(editingId)
+    } else {
+      const nextExam = { ...form, id: Date.now() }
+      setExams((current) => [nextExam, ...current])
+      setSelectedId(nextExam.id)
+    }
+    closeForm()
   }
 
   const updateStatus = (examId, status) => {
@@ -61,7 +109,7 @@ export default function SecretaryExamsPage() {
                 Réservations, centres, enseignants référents, statuts et dossiers incomplets.
               </p>
             </div>
-            <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={() => setShowForm(true)} type="button">
+            <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={openCreate} type="button">
               + Planifier un examen
             </button>
           </div>
@@ -78,17 +126,21 @@ export default function SecretaryExamsPage() {
         <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-2xl font-extrabold text-slate-950">Sessions à venir</h2>
           <div className="mt-5 grid gap-3">
-            {exams.map((exam) => (
-              <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-slate-50'}`} key={exam.id} onClick={() => setSelectedId(exam.id)} type="button">
-                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                  <div>
-                    <h3 className="font-extrabold text-slate-950">{exam.student}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{exam.type} · {exam.date} à {exam.hour} · {exam.center}</p>
+            {exams.length === 0 ? (
+              <EmptyState title="Aucun résultat disponible" message="Aucun résultat disponible pour le moment." icon="🎫" />
+            ) : (
+              exams.map((exam) => (
+                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-slate-50'}`} key={exam.id} onClick={() => openEdit(exam)} type="button">
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                    <div>
+                      <h3 className="font-extrabold text-slate-950">{exam.student}</h3>
+                      <p className="mt-1 text-sm text-slate-500">{exam.type} · {exam.date} à {exam.hour} · {exam.center}</p>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{exam.status}</span>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{exam.status}</span>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -125,22 +177,28 @@ export default function SecretaryExamsPage() {
           <form className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl" onSubmit={saveExam}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Nouvelle session</p>
-                <h2 className="mt-1 text-2xl font-extrabold text-slate-950">Planifier un examen</h2>
+                <p className="text-xs font-black uppercase tracking-wide text-cyan-700">{editingId ? 'Modification' : 'Nouvelle session'}</p>
+                <h2 className="mt-1 text-2xl font-extrabold text-slate-950">{editingId ? 'Modifier l\u2019examen' : 'Planifier un examen'}</h2>
               </div>
-              <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={() => setShowForm(false)} type="button">Fermer</button>
+              <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={closeForm} type="button">Fermer</button>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <Field label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} value={form.student} />
               <Select label="Type" onChange={(value) => setForm((current) => ({ ...current, type: value }))} options={['Code', 'Permis B', 'AAC', 'Boîte auto', 'Examen blanc']} value={form.type} />
-              <Field label="Date" onChange={(value) => setForm((current) => ({ ...current, date: value }))} type="date" value={form.date} />
-              <Field label="Heure" onChange={(value) => setForm((current) => ({ ...current, hour: value }))} type="time" value={form.hour} />
+              <WeekdayDatePicker label="Date (lundi au samedi)" value={form.date} onChange={handleDateChange} />
+              <Select label="Heure" onChange={(value) => setForm((current) => ({ ...current, hour: value }))} options={TIME_SLOTS} value={form.hour} />
               <Field label="Enseignant référent" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} value={form.teacher} />
-              <Field label="Centre" onChange={(value) => setForm((current) => ({ ...current, center: value }))} value={form.center} />
+              <Field label="Centre d'examen" onChange={(value) => setForm((current) => ({ ...current, center: value }))} value={form.center} />
               <Select label="Statut" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['Confirmé', 'À confirmer', 'Dossier incomplet']} value={form.status} />
             </div>
             <div className="mt-5 flex justify-end">
-              <button className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700" type="submit">Enregistrer</button>
+              <button
+                className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                type="submit"
+                disabled={dateInvalid}
+              >
+                {editingId ? 'Enregistrer les modifications' : 'Enregistrer'}
+              </button>
             </div>
           </form>
         </div>

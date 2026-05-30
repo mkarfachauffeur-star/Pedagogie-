@@ -1,4 +1,5 @@
 import { useStudentTrackingStore } from '../../data/studentTrackingStore'
+import EmptyState from '../../components/ui/EmptyState'
 
 export default function AdminStudentsPage() {
   const { students } = useStudentTrackingStore()
@@ -22,6 +23,9 @@ export default function AdminStudentsPage() {
       </section>
 
       <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+        {students.length === 0 ? (
+          <EmptyState title="Aucun élève enregistré" message="Aucun élève enregistré pour le moment." icon="🎓" />
+        ) : (
         <div className="grid gap-3">
           {students.map((student) => (
             <article key={student.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -57,6 +61,7 @@ export default function AdminStudentsPage() {
             </article>
           ))}
         </div>
+        )}
       </section>
     </div>
   )

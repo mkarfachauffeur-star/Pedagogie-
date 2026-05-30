@@ -1,146 +1,13 @@
 import { useMemo, useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
 
-const initialVehicles = [
-  {
-    id: 'clio-aac',
-    brand: 'Renault',
-    model: 'Clio V',
-    energy: 'essence',
-    plate: 'AA-245-BB',
-    mileage: 48230,
-    generalState: 'Bon',
-    interiorState: 'Propre',
-    exteriorState: 'Micro-rayures',
-    cleanliness: 'à nettoyer',
-    fuelLevel: 28,
-    averageConsumption: 5.9,
-    estimatedRange: 210,
-    tires: 'À vérifier',
-    oil: 'OK',
-    coolant: 'OK',
-    adblue: 'Non concerné',
-    technicalControl: '2026-07-10',
-    insurance: '2026-06-18',
-    availability: 'Disponible',
-    monthlyKm: 1420,
-  },
-  {
-    id: 'peugeot-b',
-    brand: 'Peugeot',
-    model: '208',
-    energy: 'essence',
-    plate: 'CD-672-EF',
-    mileage: 36310,
-    generalState: 'Très bon',
-    interiorState: 'Propre',
-    exteriorState: 'Bon',
-    cleanliness: 'propre',
-    fuelLevel: 64,
-    averageConsumption: 6.4,
-    estimatedRange: 430,
-    tires: 'OK',
-    oil: 'OK',
-    coolant: 'À surveiller',
-    adblue: 'OK',
-    technicalControl: '2027-02-12',
-    insurance: '2026-11-04',
-    availability: 'En leçon',
-    monthlyKm: 1860,
-  },
-  {
-    id: 'zoe-auto',
-    brand: 'Renault',
-    model: 'Zoé boîte auto',
-    energy: 'électrique',
-    plate: 'GH-908-JK',
-    mileage: 29140,
-    generalState: 'Bon',
-    interiorState: 'À aspirer',
-    exteriorState: 'Impact pare-chocs',
-    cleanliness: 'urgent lavage',
-    batteryLevel: 42,
-    chargingStatus: 'À recharger ce soir',
-    averageConsumption: 0,
-    estimatedRange: 155,
-    tires: 'OK',
-    oil: 'électrique',
-    coolant: 'OK',
-    adblue: 'Non concerné',
-    technicalControl: '2026-05-28',
-    insurance: '2026-05-30',
-    availability: 'Maintenance',
-    monthlyKm: 980,
-  },
-]
+const initialVehicles = []
 
-const initialFuelLogs = [
-  {
-    id: 1,
-    vehicleId: 'clio-aac',
-    teacher: 'Jean Moniteur',
-    date: '2026-05-02',
-    mileage: 47420,
-    fuelType: 'SP95',
-    liters: 38,
-    price: 72.2,
-    station: 'Total Access',
-    observations: 'Plein complet avant semaine AAC.',
-    ticketPhoto: 'ticket-total-0502.jpg',
-    kmDelta: 640,
-  },
-  {
-    id: 2,
-    vehicleId: 'peugeot-b',
-    teacher: 'Sofia Bernard',
-    date: '2026-05-08',
-    mileage: 35820,
-    fuelType: 'SP95',
-    liters: 42,
-    price: 79.8,
-    station: 'Carrefour Market',
-    observations: 'RAS.',
-    ticketPhoto: 'ticket-carrefour-0508.jpg',
-    kmDelta: 705,
-  },
-  {
-    id: 3,
-    vehicleId: 'zoe-auto',
-    teacher: 'Karim Lefevre',
-    date: '2026-05-10',
-    mileage: 28850,
-    fuelType: 'Recharge électrique',
-    liters: 0,
-    kwh: 32,
-    price: 18.4,
-    station: 'Borne mairie',
-    observations: 'Recharge rapide.',
-    ticketPhoto: 'borne-mairie-0510.jpg',
-    kmDelta: 280,
-  },
-]
+const initialFuelLogs = []
 
-const initialMaintenanceLogs = [
-  {
-    id: 1,
-    vehicleId: 'zoe-auto',
-    type: 'Dégâts signalés',
-    date: '2026-05-09',
-    reporter: 'Karim Lefevre',
-    observations: 'Impact pare-chocs avant droit.',
-    photo: 'degat-zoe-parechoc.jpg',
-  },
-  {
-    id: 2,
-    vehicleId: 'clio-aac',
-    type: 'Contrôle pneus',
-    date: '2026-05-12',
-    reporter: 'Jean Moniteur',
-    observations: 'Pression faite, témoin avant à surveiller.',
-    photo: '',
-  },
-]
+const initialMaintenanceLogs = []
 
-const teachers = ['Jean Moniteur', 'Sofia Bernard', 'Karim Lefevre', 'Isabelle Lemoine']
+const teachers = []
 const fuelTypes = ['SP95', 'SP98', 'Diesel', 'Recharge électrique', 'Hybride']
 const maintenanceTypes = [
   'Lavage intérieur',
@@ -153,8 +20,8 @@ const maintenanceTypes = [
 ]
 
 const emptyFuelForm = {
-  vehicleId: 'clio-aac',
-  teacher: 'Jean Moniteur',
+  vehicleId: '',
+  teacher: '',
   date: new Date().toISOString().slice(0, 10),
   mileage: '',
   fuelType: 'SP95',
@@ -167,10 +34,10 @@ const emptyFuelForm = {
 }
 
 const emptyMaintenanceForm = {
-  vehicleId: 'clio-aac',
+  vehicleId: '',
   type: 'Lavage extérieur',
   date: new Date().toISOString().slice(0, 10),
-  reporter: 'Jean Moniteur',
+  reporter: '',
   observations: '',
   photo: '',
 }
@@ -179,11 +46,11 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   const [vehicles, setVehicles] = useState(initialVehicles)
   const [fuelLogs, setFuelLogs] = useState(initialFuelLogs)
   const [maintenanceLogs, setMaintenanceLogs] = useState(initialMaintenanceLogs)
-  const [selectedVehicleId, setSelectedVehicleId] = useState(initialVehicles[0].id)
+  const [selectedVehicleId, setSelectedVehicleId] = useState('')
   const [modal, setModal] = useState(null)
   const [fuelForm, setFuelForm] = useState(emptyFuelForm)
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenanceForm)
-  const [vehicleForm, setVehicleForm] = useState(initialVehicles[0])
+  const [vehicleForm, setVehicleForm] = useState(null)
 
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) || vehicles[0]
 
@@ -222,40 +89,25 @@ export default function FleetManagementPage({ role = 'secretary' }) {
     }
   }, [fuelLogs, vehicles])
 
-  const alerts = useMemo(
-    () =>
-      vehicles.flatMap((vehicle) => {
-        const items = []
-        if (!isElectric(vehicle) && vehicle.fuelLevel < 30) items.push({ vehicle, label: 'Carburant faible', tone: 'amber' })
-        if (isElectric(vehicle) && vehicle.batteryLevel < 30) items.push({ vehicle, label: 'Batterie faible', tone: 'amber' })
-        if (vehicle.tires !== 'OK') items.push({ vehicle, label: 'Pneus à vérifier', tone: 'rose' })
-        if (vehicle.cleanliness !== 'propre') items.push({ vehicle, label: 'Lavage nécessaire', tone: 'cyan' })
-        if (!isElectric(vehicle) && vehicle.averageConsumption > 9) items.push({ vehicle, label: 'Consommation anormale', tone: 'rose' })
-        if (isSoon(vehicle.technicalControl)) items.push({ vehicle, label: 'Contrôle technique bientôt expiré', tone: 'amber' })
-        if (vehicle.availability === 'Maintenance') items.push({ vehicle, label: 'Entretien à prévoir', tone: 'rose' })
-        return items
-      }),
-    [vehicles],
-  )
-
-  const selectedFuelLogs = fuelLogs.filter((log) => log.vehicleId === selectedVehicle.id)
-  const selectedMaintenanceLogs = maintenanceLogs.filter((log) => log.vehicleId === selectedVehicle.id)
+  const selectedFuelLogs = fuelLogs.filter((log) => log.vehicleId === selectedVehicle?.id)
+  const selectedMaintenanceLogs = maintenanceLogs.filter((log) => log.vehicleId === selectedVehicle?.id)
   const fuelFormVehicle = vehicles.find((vehicle) => vehicle.id === fuelForm.vehicleId) || selectedVehicle
   const fuelFormIsElectric = isElectric(fuelFormVehicle)
 
   const openVehicleModal = () => {
+    if (!selectedVehicle) return
     setVehicleForm(selectedVehicle)
     setModal('vehicle')
   }
 
-  const openFuelModal = (vehicleId = selectedVehicle.id) => {
+  const openFuelModal = (vehicleId = selectedVehicle?.id) => {
     const vehicle = vehicles.find((item) => item.id === vehicleId) || selectedVehicle
-    setFuelForm({ ...emptyFuelForm, vehicleId: vehicle.id, mileage: String(vehicle.mileage) })
+    setFuelForm({ ...emptyFuelForm, vehicleId: vehicle?.id ?? '', mileage: vehicle ? String(vehicle.mileage) : '' })
     setModal('fuel')
   }
 
-  const openMaintenanceModal = (vehicleId = selectedVehicle.id) => {
-    setMaintenanceForm({ ...emptyMaintenanceForm, vehicleId })
+  const openMaintenanceModal = (vehicleId = selectedVehicle?.id) => {
+    setMaintenanceForm({ ...emptyMaintenanceForm, vehicleId: vehicleId ?? '' })
     setModal('maintenance')
   }
 
@@ -365,6 +217,14 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             </button>
           </div>
 
+          {!vehicles.length ? (
+            <EmptyState
+              className="mt-5"
+              title="Aucun véhicule enregistré"
+              message="Aucun véhicule enregistré pour le moment. Ajoutez un véhicule pour suivre votre flotte."
+              icon="🚗"
+            />
+          ) : (
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             {vehicles.map((vehicle) => (
               <button
@@ -402,10 +262,20 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               </button>
             ))}
           </div>
+          )}
         </div>
 
         <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche véhicule</p>
+          {!selectedVehicle ? (
+            <EmptyState
+              className="mt-4"
+              title="Aucun véhicule sélectionné"
+              message="Ajoutez un véhicule pour afficher sa fiche détaillée."
+              icon="🚗"
+            />
+          ) : (
+          <>
           <h2 className="mt-2 text-2xl font-extrabold text-slate-950">
             {selectedVehicle.brand} {selectedVehicle.model}
           </h2>
@@ -442,12 +312,13 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               Ajouter entretien / dégât
             </button>
           </div>
+          </>
+          )}
         </aside>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <section>
         <HistoryPanel fuelLogs={selectedFuelLogs} maintenanceLogs={selectedMaintenanceLogs} selectedVehicle={selectedVehicle} vehicles={vehicles} />
-        <AlertsPanel alerts={alerts} onSelectVehicle={setSelectedVehicleId} />
       </section>
 
       <ManagerStats stats={stats} vehicles={vehicles} fuelLogs={fuelLogs} />
@@ -494,7 +365,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
         </Modal>
       )}
 
-      {modal === 'vehicle' && (
+      {modal === 'vehicle' && vehicleForm && (
         <Modal title="Modifier la fiche véhicule" onClose={() => setModal(null)}>
           <form className="grid gap-4 md:grid-cols-2" onSubmit={saveVehicle}>
             <Field label="Marque" onChange={(value) => setVehicleForm((current) => ({ ...current, brand: value }))} value={vehicleForm.brand} />
@@ -577,7 +448,7 @@ function HistoryPanel({ fuelLogs, maintenanceLogs, selectedVehicle, vehicles }) 
                 </p>
               </article>
             ))}
-            {!fuelLogs.length && <EmptyState label={electric ? 'Aucune recharge enregistrée pour ce véhicule.' : 'Aucun plein enregistré pour ce véhicule.'} />}
+            {!fuelLogs.length && <InlineNotice label={electric ? 'Aucune recharge enregistrée pour ce véhicule.' : 'Aucun plein enregistré pour ce véhicule.'} />}
           </div>
         </div>
 
@@ -596,7 +467,7 @@ function HistoryPanel({ fuelLogs, maintenanceLogs, selectedVehicle, vehicles }) 
                 <p className="mt-2 text-sm text-slate-600">{log.observations}</p>
               </article>
             ))}
-            {!maintenanceLogs.length && <EmptyState label="Aucune intervention enregistrée." />}
+            {!maintenanceLogs.length && <InlineNotice label="Aucune intervention enregistrée." />}
           </div>
         </div>
       </div>
@@ -604,31 +475,6 @@ function HistoryPanel({ fuelLogs, maintenanceLogs, selectedVehicle, vehicles }) 
         Flotte suivie : {vehicles.map((vehicle) => vehicle.plate).join(', ')}
       </p>
     </section>
-  )
-}
-
-function AlertsPanel({ alerts, onSelectVehicle }) {
-  return (
-    <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-extrabold text-slate-950">Alertes automatiques</h2>
-        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-700">{alerts.length}</span>
-      </div>
-      <div className="mt-5 space-y-3">
-        {alerts.map((alert) => (
-          <button
-            className={`w-full rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${alert.tone === 'rose' ? 'border-rose-100 bg-rose-50' : alert.tone === 'amber' ? 'border-amber-100 bg-amber-50' : 'border-cyan-100 bg-cyan-50'}`}
-            key={`${alert.vehicle.id}-${alert.label}`}
-            onClick={() => onSelectVehicle(alert.vehicle.id)}
-            type="button"
-          >
-            <p className="font-black text-slate-950">{alert.label}</p>
-            <p className="mt-1 text-sm text-slate-600">{alert.vehicle.brand} {alert.vehicle.model} · {alert.vehicle.plate}</p>
-          </button>
-        ))}
-        {!alerts.length && <EmptyState label="Aucune alerte active." />}
-      </div>
-    </aside>
   )
 }
 
@@ -646,8 +492,8 @@ function ManagerStats({ fuelLogs, stats, vehicles }) {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <Info label="Véhicule le plus utilisé" value={`${stats.mostUsed.brand} ${stats.mostUsed.model} · ${stats.mostUsed.monthlyKm} km`} />
-        <Info label="Consomme le plus" value={`${stats.highestConsumption.brand} ${stats.highestConsumption.model} · ${stats.highestConsumption.averageConsumption} L/100`} />
+        <Info label="Véhicule le plus utilisé" value={stats.mostUsed ? `${stats.mostUsed.brand} ${stats.mostUsed.model} · ${stats.mostUsed.monthlyKm} km` : '—'} />
+        <Info label="Consomme le plus" value={stats.highestConsumption ? `${stats.highestConsumption.brand} ${stats.highestConsumption.model} · ${stats.highestConsumption.averageConsumption} L/100` : '—'} />
         <Info label="Historique flotte" value={`${vehicles.reduce((sum, vehicle) => sum + vehicle.mileage, 0).toLocaleString('fr-FR')} km cumulés`} />
       </div>
 
@@ -806,19 +652,12 @@ function SubmitButton({ label }) {
   )
 }
 
-function EmptyState({ label }) {
+function InlineNotice({ label }) {
   return <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">{label}</p>
 }
 
 function formatDate(value) {
   return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`))
-}
-
-function isSoon(value) {
-  const date = new Date(`${value}T12:00:00`)
-  const today = new Date('2026-05-17T12:00:00')
-  const diff = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  return diff >= 0 && diff <= 45
 }
 
 function isElectric(vehicle) {

@@ -1,150 +1,171 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
+import { useAuth } from '../../context/AuthContext'
+import { useConversations } from '../../hooks/useConversations'
+import { useConversationMessages } from '../../hooks/useConversationMessages'
+import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../../services/messaging'
+import { listInternalContacts } from '../../services/directory'
+import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
 
-const contacts = [
-  {
-    id: 'teacher',
-    name: 'Jean Moniteur',
-    role: 'Enseignant',
-    status: 'En ligne',
-    messages: [
-      { from: 'contact', text: "Je te partage le suivi des \u00e9l\u00e8ves pr\u00eats \u00e0 l'examen.", time: '09:05' },
-      { from: 'me', text: 'Parfait, merci. Je valide les prochaines pr\u00e9sentations.', time: '09:09' },
-    ],
-  },
-  {
-    id: 'secretary',
-    name: 'Secr\u00e9tariat',
-    role: 'Isabelle Lemoine',
-    status: 'Actif il y a 2 min',
-    messages: [
-      { from: 'contact', text: 'Deux dossiers sont incomplets, je te les envoie pour d\u00e9cision.', time: '08:48' },
-      { from: 'me', text: 'Bien re\u00e7u, on les traite en priorit\u00e9 ce matin.', time: '08:53' },
-    ],
-  },
-]
+const formatTime = (iso) => {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return ''
+  }
+}
 
 export default function ManagerMessagesPage() {
-  const [activeContactId, setActiveContactId] = useState('teacher')
-  const [newMessage, setNewMessage] = useState('')
-  const [chatState, setChatState] = useState(contacts)
+  const { profileId, organizationId } = useAuth()
+  const { conversations, refresh } = useConversations()
 
-  const activeContact = useMemo(
-    () => chatState.find((contact) => contact.id === activeContactId) || chatState[0],
-    [activeContactId, chatState],
+  const [activeId, setActiveId] = useState(null)
+  const [newMessage, setNewMessage] = useState('')
+  const [files, setFiles] = useState([])
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [contacts, setContacts] = useState([])
+
+  const messages = useConversationMessages(activeId)
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeId) || null,
+    [conversations, activeId],
   )
 
-  const sendMessage = (event) => {
+  useEffect(() => {
+    if (!pickerOpen) return undefined
+    let active = true
+    listInternalContacts(profileId).then((rows) => {
+      if (active) setContacts(rows)
+    })
+    return () => {
+      active = false
+    }
+  }, [pickerOpen, profileId])
+
+  const startConversation = async (otherProfileId) => {
+    if (!profileId || !organizationId) return
+    try {
+      const { id } = await findOrCreateDirectConversation({
+        organizationId,
+        kind: 'internal',
+        createdBy: profileId,
+        otherProfileId,
+      })
+      await refresh()
+      setActiveId(id)
+      setPickerOpen(false)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleSend = async (event) => {
     event.preventDefault()
-    if (!newMessage.trim()) return
-    setChatState((current) =>
-      current.map((contact) =>
-        contact.id === activeContact.id
-          ? {
-              ...contact,
-              messages: [
-                ...contact.messages,
-                { from: 'me', text: newMessage.trim(), time: new Date().toTimeString().slice(0, 5) },
-              ],
-            }
-          : contact,
-      ),
-    )
+    const body = newMessage.trim()
+    if ((!body && !files.length) || !activeId || !profileId) return
+    const toSend = files
     setNewMessage('')
+    setFiles([])
+    try {
+      await sendMessageWithAttachments({ conversationId: activeId, organizationId, senderId: profileId, body, files: toSend })
+    } catch {
+      // ignore
+    }
+    refresh()
   }
 
   return (
     <div className="pd-page">
       <section className="pd-card overflow-hidden p-0">
         <div className="pd-hero-banner">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]"
-          />
-          <p className="relative z-10 pd-eyebrow">Messagerie g\u00e9rant</p>
-          <h1 className="relative z-10 mt-4 pd-title-page">\u00c9changes internes direction</h1>
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]" />
+          <p className="relative z-10 pd-eyebrow">Messagerie gérant</p>
+          <h1 className="relative z-10 mt-4 pd-title-page">Échanges internes direction</h1>
           <p className="relative z-10 mt-3 max-w-4xl pd-subtitle">
-            Cette messagerie est r\u00e9serv\u00e9e aux \u00e9changes avec l'enseignant et le secr\u00e9tariat.
-            Les \u00e9l\u00e8ves ne sont pas accessibles.
+            Messagerie réservée aux échanges avec les enseignants et le secrétariat, en temps réel.
           </p>
         </div>
       </section>
 
-      <div className="pd-msg-panel grid gap-0 lg:grid-cols-[320px_1fr]">
-        <aside className="pd-msg-sidebar">
-          <h2 className="pd-msg-sidebar-title">Contacts internes</h2>
-          <p className="pd-msg-sidebar-muted mt-1">Canal direction simplifi\u00e9</p>
-          <div className="mt-4 grid gap-3">
-            {chatState.map((contact) => (
-              <button
-                key={contact.id}
-                type="button"
-                onClick={() => setActiveContactId(contact.id)}
-                className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
-                  activeContact.id === contact.id ? 'pd-msg-thread-active' : 'pd-msg-thread hover:-translate-y-0.5'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-slate-900">{contact.name}</p>
-                  <span className="pd-msg-chip">Interne</span>
+      {!profileId ? (
+        <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte pour accéder à la messagerie." icon="💬" />
+      ) : (
+        <div className="pd-msg-panel grid gap-0 lg:grid-cols-[320px_1fr]">
+          <aside className="pd-msg-sidebar">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="pd-msg-sidebar-title">Contacts internes</h2>
+              <button type="button" onClick={() => setPickerOpen((v) => !v)} className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-100 transition hover:bg-cyan-500/20">+ Nouvelle</button>
+            </div>
+
+            {pickerOpen && (
+              <div className="mt-3 grid gap-2 rounded-2xl border border-white/15 bg-white/5 p-3">
+                {contacts.length === 0 && <p className="text-xs text-slate-300">Aucun contact.</p>}
+                {contacts.map((c) => (
+                  <button key={c.id} type="button" onClick={() => startConversation(c.id)} className="pd-msg-thread rounded-xl px-3 py-2 text-left text-xs">
+                    <span className="font-semibold text-slate-100">{c.full_name || 'Sans nom'}</span>
+                    <span className="ml-1 text-cyan-200/80">· {c.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-3">
+              {conversations.length === 0 ? (
+                <EmptyState title="Aucune conversation" message="Aucune conversation pour le moment." icon="💬" />
+              ) : (
+                conversations.map((item) => (
+                  <button key={item.id} type="button" onClick={() => setActiveId(item.id)} className={`rounded-2xl border p-4 text-left transition-all duration-200 ${activeId === item.id ? 'pd-msg-thread-active' : 'pd-msg-thread hover:-translate-y-0.5'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-slate-900">{item.title}</p>
+                      <span className="pd-msg-chip">Interne</span>
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-cyan-200/90">{item.unread ? 'Nouveau message' : formatTime(item.lastMessageAt)}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </aside>
+
+          <section className="flex flex-col bg-slate-50/80 p-5 md:p-6">
+            {activeConversation ? (
+              <>
+                <div className="flex items-center justify-between gap-3 border-b border-white/16 pb-4">
+                  <div>
+                    <h2 className="pd-title-section text-xl">{activeConversation.title}</h2>
+                    <p className="text-sm text-slate-600">Conversation interne</p>
+                  </div>
+                  <button type="button" onClick={() => setActiveId(null)} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-cyan-50 transition hover:bg-white/20">Fermer</button>
                 </div>
-                <p className="mt-1 text-xs font-medium text-slate-500">{contact.role}</p>
-                <p className="mt-2 text-xs font-medium text-cyan-200/90">
-                  {contact.status} - {contact.messages.length} messages
-                </p>
-              </button>
-            ))}
-          </div>
-        </aside>
 
-        <section className="flex flex-col bg-slate-50/80 p-5 md:p-6">
-          <div className="flex items-center justify-between gap-3 border-b border-white/16 pb-4">
-            <div>
-              <h2 className="pd-title-section text-xl">{activeContact.name}</h2>
-              <p className="text-sm text-slate-600">{activeContact.role}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="pd-msg-chip">Interne</span>
-              <span className="rounded-full border border-cyan-300/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                {activeContact.status}
-              </span>
-            </div>
-          </div>
+                <div className="mt-4 grid max-h-[420px] gap-3 overflow-y-auto pr-1">
+                  {messages.length === 0 && <p className="text-sm text-slate-500">Aucun message. Démarrez la conversation.</p>}
+                  {messages.map((message) => (
+                    <article key={message.id} className={`max-w-[85%] ${message.mine ? 'ml-auto pd-msg-bubble-sent' : 'pd-msg-bubble-received'}`}>
+                      <p>{message.body}</p>
+                      <AttachmentList attachments={message.attachments} />
+                      <p className={`mt-2 text-[11px] font-medium ${message.mine ? 'text-white/75' : 'text-slate-500'}`}>
+                        {formatTime(message.created_at)}{message.mine && message.status ? ` · ${message.status}` : ''}
+                      </p>
+                    </article>
+                  ))}
+                </div>
 
-          <div className="mt-4 grid max-h-[420px] gap-3 overflow-y-auto pr-1">
-            {activeContact.messages.map((message, index) => (
-              <article
-                key={`${message.time}-${index}`}
-                className={`max-w-[85%] ${message.from === 'me' ? 'ml-auto pd-msg-bubble-sent' : 'pd-msg-bubble-received'}`}
-              >
-                <p>{message.text}</p>
-                <p
-                  className={`mt-2 text-[11px] font-medium ${message.from === 'me' ? 'text-white/75' : 'text-slate-500'}`}
-                >
-                  {message.time}
-                </p>
-              </article>
-            ))}
-          </div>
-
-          <form
-            className="mt-4 flex flex-col gap-3 border-t border-white/16 pt-4 sm:flex-row"
-            onSubmit={sendMessage}
-          >
-            <input
-              className="pd-input-dark"
-              onChange={(event) => setNewMessage(event.target.value)}
-              placeholder="\u00c9crire un message interne..."
-              value={newMessage}
-            />
-            <button
-              className="rounded-2xl bg-gradient-to-r from-cyan-700/95 to-cyan-600/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_20px_rgba(69,98,121,0.22)] transition hover:-translate-y-0.5 hover:brightness-[1.03]"
-              type="submit"
-            >
-              Envoyer
-            </button>
-          </form>
-        </section>
-      </div>
+                <form className="mt-4 border-t border-white/16 pt-4" onSubmit={handleSend}>
+                  <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} />
+                    <input className="pd-input-dark" onChange={(event) => setNewMessage(event.target.value)} placeholder="Écrire un message interne…" value={newMessage} />
+                    <button className="rounded-2xl bg-gradient-to-r from-cyan-700/95 to-cyan-600/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_20px_rgba(69,98,121,0.22)] transition hover:-translate-y-0.5 hover:brightness-[1.03]" type="submit">Envoyer</button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <EmptyState title="Aucune conversation" message="Sélectionnez une conversation ou démarrez-en une nouvelle." icon="💬" />
+            )}
+          </section>
+        </div>
+      )}
     </div>
   )
 }

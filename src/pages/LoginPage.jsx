@@ -22,7 +22,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
-import { roleDestinations, roleLabels, setStoredRole } from '../utils/authSession'
+import { roleDestinations, roleLabels } from '../utils/authSession'
+import { useAuth } from '../context/AuthContext'
 
 const roles = [
   { id: 'student', label: 'Élève', icon: GraduationCap },
@@ -131,7 +132,10 @@ function LoginBackground() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { signInWithRole, signInWithPassword } = useAuth()
   const shouldReduceMotion = useReducedMotion()
+  const [authError, setAuthError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('student')
@@ -161,19 +165,33 @@ export default function LoginPage() {
   const canSubmit = useMemo(() => Boolean(role), [role])
   const selectedRole = roles.find((item) => item.id === role)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!canSubmit) return
+    setAuthError('')
     if (rememberMe && email) {
       window.localStorage.setItem('pedagogia-drive-login-email', email)
     }
-    setStoredRole(role)
-    navigate(roleDestinations[role], { replace: true })
+    // Connexion réelle Supabase si email + mot de passe sont renseignés.
+    if (email && password) {
+      setSubmitting(true)
+      const { error, role: realRole } = await signInWithPassword(email, password)
+      setSubmitting(false)
+      if (error) {
+        setAuthError('E-mail ou mot de passe incorrect.')
+        return
+      }
+      navigate(roleDestinations[realRole] || '/', { replace: true })
+      return
+    }
+    // Sinon : accès démo par rôle (transitoire, conservé pour les tests).
+    if (!canSubmit) return
+    const destination = signInWithRole(role)
+    if (destination) navigate(destination, { replace: true })
   }
 
   const handleQuickAccess = (selectedRoleId) => {
-    setStoredRole(selectedRoleId)
-    navigate(roleDestinations[selectedRoleId], { replace: true })
+    const destination = signInWithRole(selectedRoleId)
+    if (destination) navigate(destination, { replace: true })
   }
 
   const fadeUp = (delay = 0) =>
@@ -373,9 +391,15 @@ export default function LoginPage() {
                     </div>
                   )}
 
+                  {authError && (
+                    <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">
+                      {authError}
+                    </p>
+                  )}
+
                   <button
                     type="submit"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || submitting}
                     className="group mt-1 flex w-full overflow-hidden rounded-xl shadow-lg shadow-blue-900/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     <span className="flex flex-1 items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">

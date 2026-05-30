@@ -1,11 +1,10 @@
-import { Suspense, lazy, useEffect } from 'react'
-import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ProfileSelection from './pages/ProfileSelection'
 import LoginPage from './pages/LoginPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
-import { initDemoMode } from './utils/demoMode'
-import { getStoredRole } from './utils/authSession'
+import ProtectedRoute from './components/ProtectedRoute'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
 import ManagerStudentsPage from './pages/app-pages/AdminStudentsPage'
@@ -44,14 +43,6 @@ import SecretaryDocumentsPage from './pages/app-pages/SecretaryDocumentsPage'
 import SecretaryExamsPage from './pages/app-pages/SecretaryExamsPage'
 import SecretaryMessagesPage from './pages/app-pages/SecretaryMessagesPage'
 
-function ProtectedRoute({ role, children }) {
-  const currentRole = getStoredRole()
-  if (currentRole !== role) {
-    return <Navigate to="/login" replace />
-  }
-  return children
-}
-
 function withProtectedLayout(role, Page, fullWidth = false) {
   return (
     <ProtectedRoute role={role}>
@@ -63,10 +54,6 @@ function withProtectedLayout(role, Page, fullWidth = false) {
 }
 
 function App() {
-  useEffect(() => {
-    initDemoMode()
-  }, [])
-
   return (
     <BrowserRouter>
       <Routes>

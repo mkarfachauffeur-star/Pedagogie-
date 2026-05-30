@@ -1,51 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useMemo } from 'react'
 import PageShell from '../../components/ui/PageShell'
+import EmptyState from '../../components/ui/EmptyState'
 import { useStudentTrackingStore } from '../../data/studentTrackingStore'
-
-function buildUpcomingLessons(student) {
-  const lessons = [
-    {
-      time: '10:00',
-      dateLabel: 'Mardi 20/05/2026',
-      type: 'Leçon de conduite',
-      duration: '2h',
-      status: 'À venir',
-    },
-    {
-      time: '14:00',
-      dateLabel: 'Jeudi 22/05/2026',
-      type: 'Leçon de conduite',
-      duration: '2h',
-      status: 'Planifiée',
-    },
-  ]
-
-  const isAac = student.formationType?.includes('AAC')
-  const remcValidated = student.progress.global === 100
-
-  if (isAac) {
-    lessons.push({
-      time: '09:00',
-      dateLabel: 'Samedi 24/05/2026',
-      type: 'Rendez-vous pédagogique RVP 1',
-      duration: '2h',
-      status: 'Planifié',
-    })
-  }
-
-  if (remcValidated) {
-    lessons.push({
-      time: '16:00',
-      dateLabel: 'Lundi 26/05/2026',
-      type: 'Préparation examen',
-      duration: '2h',
-      status: 'Autorisée',
-    })
-  }
-
-  return lessons
-}
 
 const quickLinks = [
   { href: '/student/lessons', label: 'Mes leçons', desc: 'Modules REMC et QCU' },
@@ -58,12 +14,19 @@ export default function StudentDashboardPage() {
   const { students } = useStudentTrackingStore()
   const student = students[0]
 
-  const lessons = useMemo(() => (student ? buildUpcomingLessons(student) : []), [student])
+  // Les séances à venir proviendront des données réelles (planning Supabase).
+  const lessons = []
 
   if (!student) {
     return (
       <PageShell>
-        <div className="pd-section-card pd-section-card-body">Aucun élève disponible.</div>
+        <section className="pd-section-card pd-section-card-body">
+          <EmptyState
+            title="Aucune donnée disponible"
+            message="Aucune donnée disponible pour le moment. Votre espace s’activera dès l’ajout de votre dossier élève."
+            icon="🎓"
+          />
+        </section>
       </PageShell>
     )
   }
@@ -153,6 +116,9 @@ export default function StudentDashboardPage() {
         )}
 
         <div className="mt-5 grid gap-3">
+          {lessons.length === 0 && (
+            <EmptyState title="Aucune leçon programmée" message="Aucune leçon programmée pour le moment." icon="📅" />
+          )}
           {lessons.map((lesson) => (
             <article
               className="card-muted flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"

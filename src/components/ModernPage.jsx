@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import EmptyState from './ui/EmptyState'
 const toneStyles = {
   cyan: {
     card: 'border-blue-100 bg-white',
@@ -186,6 +187,15 @@ function Metrics({ metrics = [], activeDetail, onSelect }) {
 }
 
 function CardSection({ section, activeDetail, onSelect }) {
+  if (!section.items?.length) {
+    return (
+      <section>
+        <SectionHeader section={section} />
+        <EmptyState title={section.emptyTitle} message={section.emptyMessage} />
+      </section>
+    )
+  }
+
   return (
     <section>
       <SectionHeader section={section} />
@@ -267,6 +277,11 @@ function TableSection({ section, activeDetail, onSelect }) {
       <motion.div className="border-b border-slate-200 p-5">
         <SectionHeader section={section} compact />
       </motion.div>
+      {!section.rows?.length ? (
+        <div className="p-5">
+          <EmptyState title={section.emptyTitle} message={section.emptyMessage} />
+        </div>
+      ) : (
       <div className="overflow-x-auto">
         <table className="pd-table">
           <thead>
@@ -317,11 +332,21 @@ function TableSection({ section, activeDetail, onSelect }) {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   )
 }
 
 function TimelineSection({ section, activeDetail, onSelect }) {
+  if (!section.items?.length) {
+    return (
+      <section>
+        <SectionHeader section={section} />
+        <EmptyState title={section.emptyTitle} message={section.emptyMessage} />
+      </section>
+    )
+  }
+
   return (
     <section>
       <SectionHeader section={section} />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getStudentAacTracking, useStudentTrackingStore } from '../../data/studentTrackingStore'
+import EmptyState from '../../components/ui/EmptyState'
 
 const FAMILY_OBJECTIVES_KEY = 'pedagogia:aac-family-objectives'
 
@@ -144,8 +145,12 @@ export default function StudentAccompaniedDrivingPage() {
 
   if (!student) {
     return (
-      <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/70 bg-white p-8 shadow-[var(--shadow-card)]">
-        Aucun élève disponible.
+      <div className="mx-auto w-full max-w-7xl">
+        <EmptyState
+          title="Aucune donnée disponible"
+          message="Aucune donnée disponible pour le moment. Le suivi s’activera dès l’ajout de votre dossier de conduite accompagnée."
+          icon="🚗"
+        />
       </div>
     )
   }

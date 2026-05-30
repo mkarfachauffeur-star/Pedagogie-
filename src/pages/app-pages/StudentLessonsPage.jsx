@@ -17,9 +17,9 @@ const competencies = [
     number: '1',
     title: 'Maîtriser le véhicule',
     description: 'Maniement du véhicule dans un trafic faible ou nul',
-    progress: 65,
-    modulesStarted: 2,
-    remaining: 4,
+    progress: 0,
+    modulesStarted: 0,
+    remaining: 8,
     summary:
       'Progressez étape par étape dans un trafic faible ou nul avec des vidéos, des QCU et des objectifs clairement encadrés.',
   },
@@ -28,9 +28,9 @@ const competencies = [
     number: '2',
     title: 'Appréhender la route',
     description: 'Observer, anticiper et adapter son allure',
-    progress: 38,
-    modulesStarted: 1,
-    remaining: 5,
+    progress: 0,
+    modulesStarted: 0,
+    remaining: 6,
     summary:
       'Travaillez l’observation, l’anticipation et l’adaptation de votre allure en environnement réel.',
   },
@@ -39,9 +39,9 @@ const competencies = [
     number: '3',
     title: 'Partager la route',
     description: 'Interagir avec les autres usagers en sécurité',
-    progress: 24,
-    modulesStarted: 1,
-    remaining: 5,
+    progress: 0,
+    modulesStarted: 0,
+    remaining: 7,
     summary:
       'Renforcez votre communication, vos contrôles et votre capacité à circuler avec les autres usagers.',
   },
@@ -50,9 +50,9 @@ const competencies = [
     number: '4',
     title: 'Devenir autonome',
     description: 'Conduire de manière responsable et indépendante',
-    progress: 12,
+    progress: 0,
     modulesStarted: 0,
-    remaining: 6,
+    remaining: 7,
     summary:
       'Préparez une conduite autonome, responsable, économique et adaptée aux situations complexes.',
   },
@@ -75,9 +75,8 @@ const subcompetenciesByCompetency = {
       description:
         'Régler siège, dossier, appuie-tête, rétroviseurs et ceinture pour conduire en sécurité.',
       accent: 'emerald',
-      video: 'Vue',
+      video: 'Leçon',
       qcm: 'À faire',
-      done: true,
     },
     {
       id: 'SC1.3',
@@ -141,9 +140,8 @@ const subcompetenciesByCompetency = {
       description:
         'Repérer panneaux, marquages, feux, comportements des usagers et indices annonçant un danger.',
       accent: 'cyan',
-      video: 'Vue',
-      qcm: '7/10',
-      done: true,
+      video: 'Leçon',
+      qcm: 'À faire',
     },
     {
       id: 'SC2.2',
@@ -198,9 +196,8 @@ const subcompetenciesByCompetency = {
       description:
         'Apprécier les écarts, temps d’approche et marges de sécurité avec les autres usagers.',
       accent: 'cyan',
-      video: 'Vue',
+      video: 'Leçon',
       qcm: 'À faire',
-      done: true,
     },
     {
       id: 'SC3.2',
@@ -1807,6 +1804,7 @@ export default function StudentLessonsPage() {
   const activeCompetency =
     competencies.find((competency) => competency.id === activeCompetencyId) || competencies[0]
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
+  const competencyHasContent = activeSubcompetencies.some((item) => Boolean(lessonModules[item.id]))
   const openedModule = activeSubcompetencies.find((item) => item.id === openedModuleId)
   const openedLesson = lessonModules[openedModuleId]
   const lessonQuestionPool = getLessonQuestionPool(openedLesson)
@@ -2099,10 +2097,54 @@ export default function StudentLessonsPage() {
             </p>
           </div>
           <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm">
-            {activeCompetency.remaining} modules à terminer
+            {competencyHasContent ? `${activeCompetency.remaining} modules à terminer` : 'En cours de développement'}
           </span>
         </div>
 
+        {!competencyHasContent ? (
+          <div
+            key={activeCompetency.id}
+            className="animate-slide-up overflow-hidden rounded-[2rem] border border-cyan-100 bg-white shadow-[var(--shadow-card)]"
+          >
+            <div className="flex flex-col items-center gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 px-6 py-12 text-center text-white sm:px-10 sm:py-16">
+              <span className="grid h-20 w-20 animate-pulse place-items-center rounded-3xl border border-cyan-300/30 bg-cyan-300/15 text-cyan-100 shadow-xl backdrop-blur">
+                <svg aria-hidden="true" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a1.5 1.5 0 0 0 2.1 2.1l6-6a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.1-2.1 2.5-2.5z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <div>
+                <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-xs font-black uppercase tracking-wide text-cyan-100">
+                  Compétence {activeCompetency.number}
+                </span>
+                <h3 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Bientôt disponible</h3>
+                <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-7 text-cyan-50/85 sm:text-base">
+                  Cette sous-compétence est actuellement en cours de développement. Les cours détaillés,
+                  schémas pédagogiques, vidéos et QCU seront ajoutés progressivement afin de garantir un
+                  contenu complet et de qualité.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: 'Cours détaillés', icon: '📘' },
+                { label: 'Schémas pédagogiques', icon: '📐' },
+                { label: 'Vidéos pédagogiques', icon: '🎬' },
+                { label: 'QCU interactifs', icon: '✅' },
+              ].map((feature) => (
+                <div
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3"
+                  key={feature.label}
+                >
+                  <span className="text-2xl">{feature.icon}</span>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">{feature.label}</p>
+                    <p className="text-xs font-semibold text-slate-400">À venir</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
         <div
           key={activeCompetency.id}
           className="grid gap-4 animate-slide-up lg:grid-cols-2"
@@ -2171,6 +2213,7 @@ export default function StudentLessonsPage() {
             )
           })}
         </div>
+        )}
       </section>
 
 
@@ -2351,13 +2394,21 @@ export default function StudentLessonsPage() {
                     </section>
                   )}
 
-                  <section className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                  <section className="grid gap-3">
+                    <div className="overflow-hidden rounded-[1.5rem] border border-cyan-100 bg-white p-5 shadow-sm">
                       <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Support vidéo</p>
-                      <div className="mt-3 grid min-h-40 place-items-center rounded-2xl border border-dashed border-cyan-200 bg-white text-center">
+                      <div className="mt-3 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-cyan-200 bg-gradient-to-br from-cyan-50/80 via-white to-white px-5 py-9 text-center">
+                        <span className="grid h-16 w-16 animate-pulse place-items-center rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30">
+                          <svg aria-hidden="true" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M10 9l5 3-5 3V9z" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
                         <div>
-                          <p className="text-4xl">▶</p>
-                          <p className="mt-2 text-sm font-bold text-slate-600">Vidéo pédagogique à intégrer</p>
+                          <p className="text-lg font-black text-slate-900">Bientôt disponible</p>
+                          <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
+                            Les vidéos pédagogiques de cette sous-compétence seront ajoutées prochainement.
+                          </p>
                         </div>
                       </div>
                     </div>

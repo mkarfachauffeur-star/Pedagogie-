@@ -1,6 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'pedagogia-drive-student-tracking'
+// Clé versionnée : invalide automatiquement les anciennes données de
+// démonstration encore stockées dans le navigateur (élèves fictifs, etc.).
+const LEGACY_STORAGE_KEYS = ['pedagogia-drive-student-tracking']
+const STORAGE_KEY = 'pedagogia-drive-student-tracking-v2'
+
+if (typeof window !== 'undefined') {
+  LEGACY_STORAGE_KEYS.forEach((key) => {
+    try {
+      window.localStorage.removeItem(key)
+    } catch {
+      // ignore
+    }
+  })
+}
 
 export const formationTypeOptions = [
   'Permis B traditionnel',
@@ -234,107 +247,9 @@ const remcTemplate = [
   },
 ]
 
-const initialStudents = [
-  {
-    firstName: 'Thomas',
-    lastName: 'Martin',
-    formationType: 'Permis B \u00b7 Bo\u00eete manuelle',
-    teacher: 'Mohamed Karfa',
-    remc: cloneRemc(),
-    lessonHistory: [],
-  },
-  {
-    firstName: 'Camille',
-    lastName: 'Leroy',
-    formationType: 'AAC',
-    teacher: 'Marie Dupont',
-    remc: cloneRemc(),
-    lessonHistory: [],
-    aacTracking: {
-      startDate: '2025-05-20',
-      minimumEndDate: '2026-05-20',
-      kilometersCurrent: 1250,
-      kilometersTarget: 3000,
-      pedagogicalAppointments: [
-        {
-          id: 'rvp1',
-          label: 'RVP 1 — Bilan initial',
-          date: '2025-05-20',
-          status: 'Validé',
-          duration: '2 h',
-        },
-        {
-          id: 'rvp2',
-          label: 'RVP 2 — Point d’étape',
-          date: '2025-11-18',
-          status: 'À planifier',
-          duration: '2 h',
-        },
-        {
-          id: 'rvp3',
-          label: 'RVP 3 — Bilan final',
-          date: null,
-          status: 'À venir',
-          duration: '2 h',
-        },
-      ],
-    },
-  },
-  {
-    firstName: 'Nora',
-    lastName: 'Faure',
-    formationType: 'Permis B \u00b7 Bo\u00eete automatique',
-    teacher: 'Mohamed Karfa',
-    remc: cloneRemc(),
-    lessonHistory: [],
-  },
-  {
-    firstName: 'Yanis',
-    lastName: 'Roux',
-    formationType: 'Conduite supervis\u00e9e',
-    teacher: 'Mohamed Karfa',
-    remc: cloneRemc(),
-    lessonHistory: [],
-    aacTracking: {
-      startDate: '2026-01-10',
-      minimumEndDate: '2026-07-10',
-      kilometersCurrent: 420,
-      kilometersTarget: 2000,
-      pedagogicalAppointments: [
-        {
-          id: 'rvp1',
-          label: 'RVP 1 — Bilan initial',
-          date: '2026-01-10',
-          status: 'Validé',
-          duration: '2 h',
-        },
-        {
-          id: 'rvp2',
-          label: 'RVP 2 — Point d’étape',
-          date: '2026-04-12',
-          status: 'À venir',
-          duration: '2 h',
-        },
-      ],
-    },
-  },
-  {
-    firstName: 'In\u00e8s',
-    lastName: 'Meyer',
-    formationType: 'Permis B \u00b7 Bo\u00eete manuelle',
-    teacher: 'Marie Dupont',
-    remc: cloneRemc(),
-    lessonHistory: [],
-  },
-  {
-    firstName: 'Lina',
-    lastName: 'Bernard',
-    formationType: 'Permis B \u00b7 Bo\u00eete automatique',
-    teacher: 'Mohamed Karfa',
-    remc: cloneRemc(),
-    lessonHistory: [],
-  },
-]
+// Aucune donnée fictive : la liste des élèves est désormais alimentée
+// uniquement par les données réelles (ajout manuel ou Supabase).
+const initialStudents = []
 
 function cloneRemc() {
   return remcTemplate.map((competency) => ({
@@ -583,6 +498,7 @@ export function useStudentTrackingStore() {
         lastName: payload.lastName || '\u00c9l\u00e8ve',
         teacher: payload.teacher || 'Non assign\u00e9',
         formationType: payload.formationType || 'Permis B traditionnel',
+        codeStatus: payload.codeStatus || 'Non obtenu',
         remc: cloneRemc(),
         lessonHistory: [],
       },

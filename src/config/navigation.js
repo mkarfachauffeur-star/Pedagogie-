@@ -27,7 +27,7 @@ export const NAVIGATION = {
     ],
   },
   teacher: {
-    user: { avatar: '\u{1F468}\u200D\u{1F3EB}', name: 'Jean Moniteur', role: 'Enseignant' },
+    user: { avatar: '\u{1F468}\u200D\u{1F3EB}', name: 'Enseignant', role: 'Enseignant' },
     items: [
       { href: '/teacher/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/teacher/planning', icon: '\u{1F4C5}', label: 'Mon planning' },
@@ -36,7 +36,7 @@ export const NAVIGATION = {
     ],
   },
   secretary: {
-    user: { avatar: '\u{1F469}\u200D\u{1F4BC}', name: 'Isabelle Lemoine', role: 'Secrétariat' },
+    user: { avatar: '\u{1F469}\u200D\u{1F4BC}', name: 'Secrétariat', role: 'Secrétariat' },
     items: [
       { href: '/secretary/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/secretary/inscriptions', icon: '\u{1F4DD}', label: 'Inscriptions' },

@@ -3,14 +3,24 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import { NAVIGATION } from '../config/navigation'
-import { clearStoredRole } from '../utils/authSession'
+import { useAuth } from '../context/AuthContext'
+import { useUnreadCount } from '../hooks/useUnreadCount'
 
 export default function DashboardLayout({ role, children, fullWidth = false }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { signOut } = useAuth()
   const config = NAVIGATION[role]
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Le badge n'apparaît que lorsqu'il y a réellement des messages non lus
+  // (compteur Supabase temps réel ; 0 tant qu'aucune session réelle).
+  const notificationCount = useUnreadCount()
+
+  // Chaque changement de page repart du haut (évite d'atterrir en bas sur les longues pages).
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   useEffect(() => {
     if (!sidebarOpen) return undefined
@@ -141,9 +151,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           <div className={`border-t border-blue-50 p-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
             <button
               type="button"
-              onClick={() => {
-                clearStoredRole()
-                navigate('/login')
+              onClick={async () => {
+                await signOut()
+                navigate('/login', { replace: true })
               }}
               className={`flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${sidebarCollapsed ? 'lg:px-2' : ''}`}
               title="Changer de profil"
@@ -186,9 +196,11 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                3
-              </span>
+              {notificationCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {notificationCount}
+                </span>
+              )}
             </button>
             {config.user && (
               <div className="hidden items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
