@@ -75,7 +75,7 @@ export default function TeacherStudentsPage() {
   }
 
   if (!selectedStudent) {
-    return <div className="rounded-3xl border border-slate-200 bg-white p-6">Aucun élève disponible.</div>
+    return <div className="card-surface">Aucun élève disponible.</div>
   }
 
   return (
@@ -91,7 +91,7 @@ export default function TeacherStudentsPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <aside className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[var(--shadow-soft)]">
+        <aside className="card-panel">
           <h2 className="text-lg font-extrabold text-slate-900">Liste élèves</h2>
           <div className="mt-4 grid gap-3">
             {students.map((student) => (
@@ -102,10 +102,10 @@ export default function TeacherStudentsPage() {
                   setSelectedStudentId(student.id)
                   setLessonFormOpen(false)
                 }}
-                className={`rounded-2xl border p-4 text-left transition ${
+                className={`card-list-item ${
                   selectedStudent.id === student.id
                     ? 'border-cyan-300 bg-cyan-50 ring-2 ring-cyan-100'
-                    : 'border-slate-200 bg-slate-50 hover:border-cyan-200'
+                    : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:shadow-sm'
                 }`}
               >
                 <p className="font-extrabold text-slate-900">
@@ -130,7 +130,7 @@ export default function TeacherStudentsPage() {
         </aside>
 
         <main className="grid gap-6">
-          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="card-panel-lg">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold text-slate-900">
@@ -163,7 +163,7 @@ export default function TeacherStudentsPage() {
               </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="card-muted mt-4">
               <label className="text-sm font-bold text-slate-700">
                 Sélectionner un élève
                 <select
@@ -273,7 +273,7 @@ export default function TeacherStudentsPage() {
           </section>
 
           {skillsPanelOpen && (
-            <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <section className="card-panel-lg">
               <h2 className="text-2xl font-extrabold text-slate-900">Compétences et sous-compétences REMC</h2>
               <p className="mt-2 text-sm text-slate-500">
                 Cliquez une compétence pour afficher ou masquer ses sous-compétences.
@@ -375,11 +375,11 @@ export default function TeacherStudentsPage() {
             </section>
           )}
 
-          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="card-panel-lg">
             <h2 className="text-2xl font-extrabold text-slate-900">Historique des leçons</h2>
             <div className="mt-4 grid gap-3">
               {(selectedStudent.lessonHistory || []).map((lesson) => (
-                <article key={lesson.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <article key={lesson.id} className="card-muted">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-extrabold text-slate-900">
                       Leçon du {lesson.date || 'date non renseignée'} · {lesson.time || '--:--'}

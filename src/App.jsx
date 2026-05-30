@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import ProfileSelection from './pages/ProfileSelection'
 import LoginPage from './pages/LoginPage'
 import DashboardLayout from './layouts/DashboardLayout'
+import LoadingSpinner from './components/ui/LoadingSpinner'
 import { initDemoMode } from './utils/demoMode'
 import { getStoredRole } from './utils/authSession'
 
@@ -19,7 +20,7 @@ import ManagerSettingsPage from './pages/app-pages/AdminSettingsPage'
 import ManagerMessagesPage from './pages/app-pages/ManagerMessagesPage'
 
 import StudentDashboardPage from './pages/app-pages/StudentDashboardPage'
-import StudentLessonsPage from './pages/app-pages/StudentLessonsPage'
+const StudentLessonsPage = lazy(() => import('./pages/app-pages/StudentLessonsPage'))
 import StudentLexiconPage from './pages/app-pages/StudentLexiconPage'
 import StudentProgressPage from './pages/app-pages/StudentProgressPage'
 import StudentExamsPage from './pages/app-pages/StudentExamsPage'
@@ -86,7 +87,18 @@ function App() {
         <Route path="/manager/settings" element={withProtectedLayout('manager', ManagerSettingsPage)} />
 
         <Route path="/student/dashboard" element={withProtectedLayout('student', StudentDashboardPage)} />
-        <Route path="/student/lessons" element={withProtectedLayout('student', StudentLessonsPage)} />
+        <Route
+          path="/student/lessons"
+          element={
+            <ProtectedRoute role="student">
+              <DashboardLayout role="student">
+                <Suspense fallback={<LoadingSpinner label="Chargement des leçons…" />}>
+                  <StudentLessonsPage />
+                </Suspense>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/student/lexicon" element={withProtectedLayout('student', StudentLexiconPage)} />
         <Route path="/student/progress" element={withProtectedLayout('student', StudentProgressPage)} />
         <Route path="/student/exams" element={withProtectedLayout('student', StudentExamsPage)} />

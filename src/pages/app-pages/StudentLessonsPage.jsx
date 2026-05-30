@@ -1,5 +1,7 @@
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
+import LessonImage from '../../components/ui/LessonImage'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
 import vehicleOrgansDiagramImage from '../../assets/lessons/elements-essentiels-vehicule.png'
 import dashboardWarningLightsImage from '../../assets/lessons/voyants-tableau-de-bord.png'
@@ -379,6 +381,14 @@ function getExpectedQuizCount(lesson) {
   const pool = getLessonQuestionPool(lesson)
   if (!pool.length) return 0
   return lesson?.quizSize ? Math.min(lesson.quizSize, pool.length) : pool.length
+}
+
+function getQuizIntro(lesson, displayTotal) {
+  if (!lesson || !displayTotal) {
+    return 'QCU interactif avec correction immédiate et validation à 80 %.'
+  }
+  const randomNote = lesson.quizSize ? ' · tirage aléatoire' : ''
+  return `${displayTotal} question${displayTotal > 1 ? 's' : ''} sur « ${lesson.title} ». Correction immédiate, score final et validation à 80 %${randomNote}.`
 }
 
 function createQuizSessionForLesson(lesson) {
@@ -1716,7 +1726,7 @@ const accentStyles = {
 
 function StatusPill({ label, value, complete }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+    <div className="card-inner flex items-center gap-3">
       <span
         className={`grid h-8 w-8 place-items-center rounded-xl text-sm font-bold ${
           complete ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-500'
@@ -1757,14 +1767,16 @@ function ChoiceButton({ checked, children, disabled, onClick, status }) {
 
   return (
     <button
-      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition duration-200 active:scale-[0.97] motion-safe:animate-none ${statusClass} ${
+      className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition duration-200 active:scale-[0.97] ${statusClass} ${
         !disabled && !status ? 'hover:shadow-md' : ''
       }`}
       disabled={disabled}
       onClick={onClick}
       type="button"
     >
-      {children}
+      {status === 'correct' && <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-600" />}
+      {status === 'wrong' && <XCircle aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-600" />}
+      <span>{children}</span>
     </button>
   )
 }
@@ -2025,7 +2037,7 @@ export default function StudentLessonsPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[var(--shadow-soft)] md:p-5">
+      <section className="card-panel md:p-5">
         <div className="mb-4 flex flex-col gap-1">
           <h2 className="text-xl font-extrabold text-slate-900">Parcours de compétences</h2>
           <p className="text-sm text-slate-500">Les étapes principales restent visibles et structurées.</p>
@@ -2114,7 +2126,7 @@ export default function StudentLessonsPage() {
 
             return (
               <article
-                className={`rounded-[1.5rem] border bg-white p-5 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] ${styles.card}`}
+                className={`card-tile border ${styles.card}`}
                 key={item.id}
               >
                 <button className="flex w-full items-start gap-4 text-left" onClick={() => openLesson(item.id)} type="button">
@@ -2241,9 +2253,10 @@ export default function StudentLessonsPage() {
                             <div
                               className={`overflow-hidden bg-white ${image.objectFit === 'contain' ? 'min-h-[280px] sm:min-h-[360px]' : 'aspect-[16/9]'}`}
                             >
-                              <img
+                              <LessonImage
                                 alt={image.alt}
                                 className={`h-full w-full transition duration-300 group-hover:scale-[1.02] ${image.objectFit === 'contain' ? 'object-contain p-3 sm:p-4' : 'object-cover'}`}
+                                objectFit={image.objectFit === 'contain' ? 'contain' : 'cover'}
                                 src={image.src}
                               />
                             </div>
@@ -2288,9 +2301,10 @@ export default function StudentLessonsPage() {
                         type="button"
                       >
                         <div className="aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10]">
-                          <img
+                          <LessonImage
                             alt={openedLesson.dashboardSection.image.alt}
                             className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-[1.01]"
+                            objectFit="contain"
                             src={openedLesson.dashboardSection.image.src}
                           />
                         </div>
@@ -2471,7 +2485,7 @@ export default function StudentLessonsPage() {
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
                           <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
                           <p className="mt-2 text-sm font-semibold text-slate-500">
-                            {VEHICLE_ORGANS_QUIZ_SIZE} questions tirées au hasard : voyants du tableau de bord et organes du cours, mélangés. Correction immédiate, score final et validation à 80 %.
+                            {getQuizIntro(openedLesson, quizDisplayTotal)}
                           </p>
                         </div>
                         <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
@@ -2480,12 +2494,29 @@ export default function StudentLessonsPage() {
                         </span>
                       </div>
 
+                      {!currentValidated && currentQuestions.length > 0 && (
+                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
+                            style={{
+                              width: `${Math.round(((currentQuizIndex + (currentQuizAnswered ? 1 : 0)) / currentQuestions.length) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+
                       {currentValidated ? (
                         <article className="mt-5 rounded-[1.5rem] border border-white bg-white p-5 text-center shadow-sm">
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résultat final</p>
                           <p className="mt-3 text-5xl font-black text-slate-950">{percentage}%</p>
+                          <div className="mx-auto mt-4 h-3 max-w-xs overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${percentage >= 80 ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
                           <p className="mt-2 text-sm font-bold text-slate-500">
-                            Score : {score}/{quizDisplayTotal}
+                            Score : {score}/{quizDisplayTotal} · Seuil de validation : 80 %
                           </p>
                           <p className={`mt-4 text-2xl font-black ${percentage >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {percentage >= 80 ? 'Module validé' : 'Module à retravailler'}
@@ -2543,11 +2574,22 @@ export default function StudentLessonsPage() {
                             })}
                           </div>
                           {currentQuizAnswered && (
-                            <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm leading-6 text-slate-700">
-                              <p className="font-black text-cyan-800">
+                            <div
+                              className={`mt-4 rounded-2xl border p-4 text-sm leading-6 ${
+                                currentQuizAnswer === currentQuizQuestion.answer
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
+                                  : 'border-rose-200 bg-rose-50 text-rose-950'
+                              }`}
+                            >
+                              <p className="font-black">
+                                {currentQuizAnswer === currentQuizQuestion.answer
+                                  ? 'Bonne réponse'
+                                  : 'Réponse incorrecte'}
+                              </p>
+                              <p className="mt-2 font-black text-slate-800">
                                 Correction : {currentQuizQuestion.choices[currentQuizQuestion.answer]}
                               </p>
-                              <p className="mt-1">{currentQuizQuestion.explanation}</p>
+                              <p className="mt-1 text-slate-700">{currentQuizQuestion.explanation}</p>
                               <button
                                 className="mt-4 rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
                                 onClick={goToNextQuizQuestion}
@@ -2638,9 +2680,10 @@ export default function StudentLessonsPage() {
                   </button>
                 </div>
                 <div className="min-h-0 overflow-auto bg-slate-950 p-3">
-                  <img
+                  <LessonImage
                     alt={openedGalleryImage.alt}
                     className="mx-auto max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
+                    objectFit="contain"
                     src={openedGalleryImage.src}
                   />
                 </div>

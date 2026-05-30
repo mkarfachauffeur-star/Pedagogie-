@@ -26,7 +26,6 @@ const navLinks = [
   { label: 'Accueil', href: '#accueil' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
   { label: 'Démonstration', href: '#demonstration' },
-  { label: 'Tarifs', href: '#contact' },
   { label: 'Contact', href: '#contact' },
 ]
 
@@ -347,7 +346,7 @@ export default function ProfileSelection() {
                 <motion.article
                   {...reveal(shouldReduceMotion, index * 0.03)}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                  className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5 shadow-lg shadow-black/20 backdrop-blur transition"
+                  className="glass-card relative overflow-hidden p-5 shadow-lg shadow-black/20"
                   key={item.title}
                 >
                   <div className={`absolute inset-x-0 top-0 h-px ${index % 2 === 0 ? 'bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_16px_rgba(59,130,246,0.55)]' : 'bg-gradient-to-r from-transparent via-red-400 to-transparent shadow-[0_0_16px_rgba(239,68,68,0.55)]'}`} />
@@ -407,7 +406,7 @@ export default function ProfileSelection() {
               return (
                 <motion.article
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-6 text-center"
+                  className="glass-card-lg text-center"
                   initial={{ opacity: 0, y: 12 }}
                   key={item.label}
                   transition={{ duration: 0.45, delay: index * 0.06 }}
@@ -437,7 +436,7 @@ export default function ProfileSelection() {
                 {testimonials.map((item, index) => (
                   <motion.article
                     {...reveal(shouldReduceMotion, index * 0.05)}
-                    className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-6"
+                    className="glass-card-lg relative overflow-hidden"
                     key={item.name}
                   >
                     <motion.div

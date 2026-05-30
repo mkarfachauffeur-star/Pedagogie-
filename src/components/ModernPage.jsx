@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-
 const toneStyles = {
   cyan: {
     card: 'border-blue-100 bg-white',
@@ -79,18 +78,23 @@ function Hero({ hero, onAction }) {
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[var(--shadow-soft)]"
+      className="pd-section-card overflow-hidden"
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.45 }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.06),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(236,72,153,0.05),transparent_35%)]" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/50 to-transparent" />
-      <div className="relative grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
-        <div>
-          {hero.eyebrow && <span className="pd-eyebrow">{hero.eyebrow}</span>}
-          <h1 className="pd-title-page mt-5 max-w-4xl">{hero.title}</h1>
+      <div className="relative grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_auto] md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(239,68,68,0.18),transparent_42%),radial-gradient(circle_at_10%_90%,rgba(59,130,246,0.14),transparent_38%)]" />
+        <div className="relative">
+          {hero.eyebrow && (
+            <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
+              {hero.eyebrow}
+            </span>
+          )}
+          <h1 className="mt-5 max-w-4xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            {hero.title}
+          </h1>
           {hero.subtitle && (
-            <p className="pd-subtitle mt-4 max-w-3xl">{hero.subtitle}</p>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">{hero.subtitle}</p>
           )}
           {hero.actions?.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-3">
@@ -108,13 +112,22 @@ function Hero({ hero, onAction }) {
         </div>
 
         {hero.focus && (
-          <aside className="min-w-64 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <aside className="relative min-w-64 rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               {hero.focus.label}
             </p>
-            <p className="mt-1 text-5xl font-black text-blue-600">{hero.focus.value}</p>
-            {hero.focus.progress != null && <ProgressBar value={hero.focus.progress} />}
-            <p className="mt-4 text-sm leading-6 text-slate-500">{hero.focus.caption}</p>
+            <p className="mt-1 text-5xl font-black text-cyan-600">{hero.focus.value}</p>
+            {hero.focus.progress != null && (
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+                <motion.div
+                  animate={{ width: `${hero.focus.progress}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400"
+                  initial={{ width: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                />
+              </div>
+            )}
+            <p className="mt-3 text-sm leading-6 text-slate-500">{hero.focus.caption}</p>
           </aside>
         )}
       </div>
@@ -134,7 +147,7 @@ function Metrics({ metrics = [], activeDetail, onSelect }) {
         return (
           <motion.button
             animate={{ opacity: 1, y: 0 }}
-            className={`rounded-[1.5rem] border p-5 text-left shadow-[var(--shadow-soft)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${styles.card} ${
+            className={`card-tile text-left backdrop-blur-md ${styles.card} ${
               active ? 'ring-4 ring-blue-500/25' : ''
             }`}
             initial={{ opacity: 0, y: 10 }}
@@ -184,7 +197,7 @@ function CardSection({ section, activeDetail, onSelect }) {
           return (
             <motion.button
               animate={{ opacity: 1, y: 0 }}
-              className={`rounded-[1.5rem] border p-5 text-left shadow-[var(--shadow-soft)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${styles.card} ${
+              className={`card-tile text-left backdrop-blur-md ${styles.card} ${
                 active ? 'ring-4 ring-blue-500/25' : ''
               }`}
               initial={{ opacity: 0, y: 10 }}

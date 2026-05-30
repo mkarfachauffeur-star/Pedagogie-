@@ -69,7 +69,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           <ChevronLeft className={`h-4 w-4 transition ${sidebarCollapsed ? 'rotate-180' : ''}`} />
         </button>
 
-        <div className="flex min-h-screen flex-col">
+        <div className="flex h-full min-h-0 flex-col">
           <div
             className={`border-b border-blue-50 px-5 py-5 transition-all duration-300 ${sidebarCollapsed ? 'lg:flex lg:justify-center lg:px-3' : ''}`}
           >
@@ -199,8 +199,10 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           </div>
         </header>
 
-        <main className="pd-main flex-1 overflow-x-hidden p-4 animate-fade-in md:p-6 lg:p-8">
-          {children}
+        <main className="pd-main flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8">
+          <div className="page-shell" key={location.pathname}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

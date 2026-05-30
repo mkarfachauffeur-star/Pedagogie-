@@ -3,9 +3,11 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  BookOpen,
   Briefcase,
-  ChevronDown,
   ClipboardList,
+  Eye,
+  EyeOff,
   GraduationCap,
   LockKeyhole,
   Mail,
@@ -29,7 +31,7 @@ const roles = [
   { id: 'manager', label: 'Gérant', icon: Shield },
 ]
 
-const features = [
+const featureHighlights = [
   {
     title: 'QCU intelligents',
     description: 'Des milliers de questions mises à jour régulièrement',
@@ -46,9 +48,9 @@ const features = [
     icon: BarChart3,
   },
   {
-    title: 'Applications mobiles',
-    platforms: true,
-    icon: Smartphone,
+    title: 'Livret numérique',
+    description: 'Votre REMC, vos leçons et vos validations — tout suit votre progression en temps réel',
+    icon: BookOpen,
   },
 ]
 
@@ -133,6 +135,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('student')
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
+  const [forgotOpen, setForgotOpen] = useState(false)
+
+  useEffect(() => {
+    const savedEmail = window.localStorage.getItem('pedagogia-drive-login-email')
+    if (savedEmail) setEmail(savedEmail)
+  }, [])
 
   useEffect(() => {
     const previousBodyBg = document.body.style.backgroundColor
@@ -154,6 +164,9 @@ export default function LoginPage() {
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!canSubmit) return
+    if (rememberMe && email) {
+      window.localStorage.setItem('pedagogia-drive-login-email', email)
+    }
     setStoredRole(role)
     navigate(roleDestinations[role], { replace: true })
   }
@@ -190,14 +203,11 @@ export default function LoginPage() {
               Accès privé sécurisé
             </p>
 
-            <p className="mt-8 text-xs font-black uppercase tracking-[0.2em] text-blue-400">
-              PEDAGOGIA DRIVE
-            </p>
-            <h1 className="mt-3 max-w-lg text-4xl font-black leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]">
+            <h1 className="mt-8 max-w-lg text-4xl font-black leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]">
               Bienvenue sur{' '}
               <span className="block sm:inline">
                 PEDAGOGIA{' '}
-                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-red-500 bg-clip-text text-transparent">
                   DRIVE
                 </span>
               </span>
@@ -207,33 +217,23 @@ export default function LoginPage() {
             </p>
 
             <div className="mt-10 grid gap-3 sm:grid-cols-2">
-              {features.map((feature, index) => {
+              {featureHighlights.map((feature, index) => {
                 const Icon = feature.icon
                 return (
                   <motion.div
                     key={feature.title}
-                    className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-sm transition hover:border-blue-400/25 hover:bg-white/[0.07]"
+                    className="glass-card"
                     {...fadeUp(0.08 + index * 0.04)}
                   >
-                    {!feature.platforms && (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-500/10 text-blue-300">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    )}
-                    <p className={`text-sm font-black text-white ${feature.platforms ? '' : 'mt-3'}`}>{feature.title}</p>
-                    {feature.platforms ? (
-                      <StorePlatformBadges className="mt-3" compact />
-                    ) : (
-                      <p className="mt-1 text-xs leading-5 text-slate-500">{feature.description}</p>
-                    )}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-500/10 text-blue-300">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="mt-3 text-sm font-black text-white">{feature.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{feature.description}</p>
                   </motion.div>
                 )
               })}
             </div>
-
-            <p className="mt-10 hidden text-xs text-slate-600 lg:block">
-              © 2024 Pedagogia Drive. Tous droits réservés.
-            </p>
           </motion.div>
 
           {/* Colonne droite — carte connexion */}
@@ -273,6 +273,33 @@ export default function LoginPage() {
                 </div>
 
                 <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+                  <div>
+                    <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                      Connexion par profil
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {roles.map((item) => {
+                        const Icon = item.icon
+                        const active = role === item.id
+                        return (
+                          <button
+                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
+                              active
+                                ? 'border-blue-400/50 bg-blue-500/15 text-white shadow-inner shadow-blue-900/20'
+                                : 'border-white/10 bg-[#0a1220] text-slate-300 hover:border-blue-400/30 hover:text-white'
+                            }`}
+                            key={item.id}
+                            onClick={() => setRole(item.id)}
+                            type="button"
+                          >
+                            <Icon className={`h-3.5 w-3.5 ${active ? 'text-blue-300' : 'text-blue-400'}`} />
+                            {item.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   <label className="block text-sm font-bold text-slate-200">
                     E-mail
                     <span className="mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#070d18] px-4 py-3">
@@ -292,33 +319,59 @@ export default function LoginPage() {
                     <span className="mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#070d18] px-4 py-3">
                       <LockKeyhole className="h-4 w-4 shrink-0 text-blue-400" />
                       <input
-                        type="password"
+                        autoComplete="current-password"
+                        type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         placeholder="••••••••"
                         className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-600"
                       />
+                      <button
+                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                        className="shrink-0 text-slate-500 transition hover:text-slate-300"
+                        onClick={() => setShowPassword((current) => !current)}
+                        type="button"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </span>
                   </label>
 
-                  <label className="block text-sm font-bold text-slate-200">
-                    Rôle utilisateur
-                    <span className="relative mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#070d18] px-4 py-3">
-                      <UserRound className="h-4 w-4 shrink-0 text-blue-400" />
-                      <select
-                        value={role}
-                        onChange={(event) => setRole(event.target.value)}
-                        className="w-full appearance-none bg-transparent pr-6 text-sm font-medium text-white outline-none"
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-slate-400">
+                      <input
+                        checked={rememberMe}
+                        className="h-4 w-4 rounded border-white/20 bg-[#070d18] text-blue-500"
+                        onChange={(event) => setRememberMe(event.target.checked)}
+                        type="checkbox"
+                      />
+                      Se souvenir de moi
+                    </label>
+                    <button
+                      className="font-semibold text-blue-400 transition hover:text-blue-300"
+                      onClick={() => setForgotOpen(true)}
+                      type="button"
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+
+                  {forgotOpen && (
+                    <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 p-4 text-sm leading-6 text-slate-300">
+                      <p className="font-bold text-white">Réinitialisation du mot de passe</p>
+                      <p className="mt-2">
+                        Contactez le secrétariat de votre auto-école pour obtenir un nouvel accès. En
+                        démo, utilisez l&apos;accès rapide ci-dessus.
+                      </p>
+                      <button
+                        className="mt-3 text-xs font-bold text-blue-300 underline"
+                        onClick={() => setForgotOpen(false)}
+                        type="button"
                       >
-                        {roles.map((item) => (
-                          <option key={item.id} value={item.id} className="bg-[#0a1628] text-white">
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-4 h-4 w-4 text-slate-500" />
-                    </span>
-                  </label>
+                        Fermer
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -355,9 +408,24 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        <p className="relative z-10 mt-8 text-center text-xs text-slate-600 lg:hidden">
-          © 2024 Pedagogia Drive. Tous droits réservés.
-        </p>
+        <motion.footer
+          className="relative z-10 mt-auto border-t border-white/10 pt-8 sm:pt-10"
+          {...fadeUp(0.2)}
+        >
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+              <Smartphone className="h-4 w-4 text-blue-400" />
+              Applications mobiles
+            </p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+              Téléchargez PEDAGOGIA DRIVE sur votre smartphone pour réviser et suivre votre formation où que vous soyez.
+            </p>
+            <StorePlatformBadges className="mt-5" size="large" />
+            <p className="mt-8 text-xs text-slate-600">
+              © 2024 Pedagogia Drive. Tous droits réservés.
+            </p>
+          </div>
+        </motion.footer>
       </div>
     </div>
   )
