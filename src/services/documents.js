@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { subscribePostgresChanges } from './realtime'
 
 export const DOCUMENT_CATEGORIES = [
   'Pièce d’identité',
@@ -104,12 +105,14 @@ export async function uploadStudentDocument({ organizationId, studentId, type, s
 }
 
 // Temps réel sur les documents : déclenche onChange à chaque évènement.
-export function subscribeToDocuments(onChange) {
-  const channel = supabase
-    .channel('documents-stream')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => onChange?.())
-    .subscribe()
-  return () => {
-    supabase.removeChannel(channel)
-  }
+export function subscribeToDocuments(onChange, scope = 'page') {
+  return subscribePostgresChanges({
+    topicBase: `documents-stream:${scope}`,
+    listeners: [
+      {
+        config: { event: '*', schema: 'public', table: 'documents' },
+        callback: onChange,
+      },
+    ],
+  })
 }

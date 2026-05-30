@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getUnreadCount, subscribeToNotifications } from '../services/notifications'
+import { subscribeToConversationList } from '../services/messaging'
 
 // Compteur de messages non lus du profil courant, synchronisé en temps réel.
 // Retourne 0 tant qu'aucune session réelle n'est active (mode transitoire).
@@ -17,10 +18,17 @@ export function useUnreadCount() {
       })
     }
     refresh()
-    const unsubscribe = profileId ? subscribeToNotifications(profileId, refresh) : () => {}
+    if (!profileId) {
+      return () => {
+        active = false
+      }
+    }
+    const unsubNotifications = subscribeToNotifications(profileId, refresh, 'badge')
+    const unsubList = subscribeToConversationList(profileId, refresh)
     return () => {
       active = false
-      unsubscribe()
+      unsubNotifications()
+      unsubList()
     }
   }, [profileId])
 

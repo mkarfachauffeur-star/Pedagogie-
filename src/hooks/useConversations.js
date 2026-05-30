@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { listConversations } from '../services/messaging'
+import { listConversations, subscribeToConversationList } from '../services/messaging'
 import { subscribeToNotifications } from '../services/notifications'
 
 // Liste des conversations du profil courant, rafraîchie en temps réel à chaque
@@ -16,8 +16,13 @@ export function useConversations() {
 
   useEffect(() => {
     refresh()
-    const unsubscribe = profileId ? subscribeToNotifications(profileId, refresh) : () => {}
-    return () => unsubscribe()
+    if (!profileId) return undefined
+    const unsubNotifications = subscribeToNotifications(profileId, refresh, 'conversations')
+    const unsubList = subscribeToConversationList(profileId, refresh)
+    return () => {
+      unsubNotifications()
+      unsubList()
+    }
   }, [profileId, refresh])
 
   return { conversations, refresh, profileId }

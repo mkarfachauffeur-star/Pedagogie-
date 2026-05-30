@@ -52,6 +52,25 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   const closeSidebar = () => setSidebarOpen(false)
   const activeItem = config.items.find((item) => location.pathname === item.href)
 
+  const isMessagesNavItem = (href) => href.endsWith('/messages')
+
+  const renderUnreadBadge = (compact = false) => {
+    if (notificationCount <= 0) return null
+    const label = notificationCount > 99 ? '99+' : notificationCount
+    return (
+      <span
+        aria-label={`${notificationCount} message${notificationCount > 1 ? 's' : ''} non lu${notificationCount > 1 ? 's' : ''}`}
+        className={`flex shrink-0 items-center justify-center rounded-full bg-red-500 font-bold text-white ${
+          compact
+            ? 'absolute -right-1 -top-1 h-4 min-w-4 px-0.5 text-[10px]'
+            : 'ml-auto h-5 min-w-5 px-1.5 text-[11px] leading-none'
+        }`}
+      >
+        {label}
+      </span>
+    )
+  }
+
   return (
     <div className="pd-shell relative flex min-h-screen">
       {sidebarOpen && (
@@ -118,6 +137,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           >
             {config.items.map((item) => {
               const active = location.pathname === item.href
+              const showMessagesBadge = isMessagesNavItem(item.href)
               return (
                 <Link
                   key={item.href}
@@ -134,15 +154,21 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                     <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-400" />
                   )}
                   <span
-                    className={`pd-nav-icon ${active ? 'border-blue-200 bg-blue-50 text-blue-600' : 'group-hover:border-blue-200 group-hover:bg-white'}`}
+                    className={`pd-nav-icon relative ${active ? 'border-blue-200 bg-blue-50 text-blue-600' : 'group-hover:border-blue-200 group-hover:bg-white'}`}
                   >
                     {item.icon}
+                    {showMessagesBadge && sidebarCollapsed && (
+                      <span className="hidden lg:block">{renderUnreadBadge(true)}</span>
+                    )}
                   </span>
                   <span
                     className={`truncate transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
                   >
                     {item.label}
                   </span>
+                  {showMessagesBadge && (
+                    <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{renderUnreadBadge()}</span>
+                  )}
                 </Link>
               )
             })}

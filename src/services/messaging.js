@@ -1,5 +1,22 @@
 import { supabase } from '../lib/supabase'
 import { listAttachmentsForMessages, uploadAttachment } from './attachments'
+import { listStudentSecretaryContacts } from './directory'
+import { subscribePostgresChanges } from './realtime'
+
+function logDbError(prefix, error) {
+  if (!error) return
+  console.error(prefix, {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    hint: error.hint,
+  })
+}
+
+function newId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
 
 // Service de messagerie — accès aux tables Supabase (conversations, messages,
 // participants, accusés de lecture). Toutes les fonctions dégradent proprement
@@ -9,6 +26,15 @@ import { listAttachmentsForMessages, uploadAttachment } from './attachments'
 export async function listConversations(profileId) {
   if (!profileId) return []
   try {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('role, organization_id')
+      .eq('id', profileId)
+      .maybeSingle()
+    if (prof?.role === 'student' && prof.organization_id) {
+      await ensureStudentSecretaryConversation({ profileId, organizationId: prof.organization_id })
+    }
+
     const { data: parts, error: partsError } = await supabase
       .from('conversation_participants')
       .select('conversation_id, last_read_at')
@@ -44,7 +70,8 @@ export async function listConversations(profileId) {
         }
       })
       .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0))
-  } catch {
+  } catch (error) {
+    console.error('[messaging] listConversations', error)
     return []
   }
 }
@@ -92,13 +119,22 @@ export async function listMessagesWithReads(conversationId, profileId) {
 }
 
 export async function sendMessage({ conversationId, organizationId, senderId, body }) {
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({ conversation_id: conversationId, organization_id: organizationId, sender_id: senderId, body })
-    .select()
-    .single()
+  const messageId = newId()
+  const { error } = await supabase.from('messages').insert({
+    id: messageId,
+    conversation_id: conversationId,
+    organization_id: organizationId,
+    sender_id: senderId,
+    body,
+  })
   if (error) throw error
-  return data
+  return {
+    id: messageId,
+    conversation_id: conversationId,
+    organization_id: organizationId,
+    sender_id: senderId,
+    body,
+  }
 }
 
 // Envoie un message avec d'éventuelles pièces jointes (Storage + table).
@@ -108,10 +144,9 @@ export async function sendMessageWithAttachments({ conversationId, organizationI
   const message = await sendMessage({ conversationId, organizationId, senderId, body: text })
   for (const file of files) {
     try {
-      // upload séquentiel pour conserver l'ordre et limiter la charge
       await uploadAttachment({ conversationId, messageId: message.id, file })
-    } catch {
-      // une pièce jointe en échec ne bloque pas le message
+    } catch (error) {
+      logDbError('[messaging] uploadAttachment', error)
     }
   }
   return message
@@ -137,28 +172,66 @@ export async function findOrCreateDirectConversation({
         .select('conversation_id')
         .eq('profile_id', otherProfileId)
         .in('conversation_id', ids)
-      if (shared && shared.length) return { id: shared[0].conversation_id, reused: true }
+      if (shared && shared.length) {
+        return { id: shared[0].conversation_id, reused: true }
+      }
     }
   } catch {
-    // on tente la création
+    // recherche existante optionnelle
   }
 
-  const { data: conversation, error } = await supabase
-    .from('conversations')
-    .insert({ organization_id: organizationId, kind, subject, created_by: createdBy })
-    .select()
-    .single()
-  if (error) throw error
+  const conversationId = newId()
+  const { error: convError } = await supabase.from('conversations').insert({
+    id: conversationId,
+    organization_id: organizationId,
+    kind,
+    subject,
+    created_by: createdBy,
+  })
+  if (convError) {
+    logDbError('[messaging] insert conversation', convError)
+    throw convError
+  }
 
-  const { error: participantsError } = await supabase
-    .from('conversation_participants')
-    .insert([
-      { conversation_id: conversation.id, profile_id: createdBy },
-      { conversation_id: conversation.id, profile_id: otherProfileId },
-    ])
-  if (participantsError) throw participantsError
+  const { error: selfError } = await supabase.from('conversation_participants').insert({
+    conversation_id: conversationId,
+    profile_id: createdBy,
+  })
+  if (selfError) {
+    logDbError('[messaging] insert participant (creator)', selfError)
+    throw selfError
+  }
 
-  return { id: conversation.id, reused: false }
+  const { error: otherError } = await supabase.from('conversation_participants').insert({
+    conversation_id: conversationId,
+    profile_id: otherProfileId,
+  })
+  if (otherError) {
+    logDbError('[messaging] insert participant (contact)', otherError)
+    throw otherError
+  }
+
+  return { id: conversationId, reused: false }
+}
+
+// Provisionne la conversation élève ↔ secrétariat (idempotent).
+export async function ensureStudentSecretaryConversation({ profileId, organizationId }) {
+  if (!profileId || !organizationId) return null
+  const contacts = await listStudentSecretaryContacts(profileId)
+  const secretary = contacts[0]
+  if (!secretary?.id) return null
+  try {
+    return await findOrCreateDirectConversation({
+      organizationId,
+      kind: 'student',
+      createdBy: profileId,
+      otherProfileId: secretary.id,
+      subject: secretary.full_name || 'Secrétariat',
+    })
+  } catch (error) {
+    logDbError('[messaging] ensureStudentSecretaryConversation', error)
+    return null
+  }
 }
 
 // Marque la conversation comme lue pour le profil courant (pointeur + accusés).
@@ -198,29 +271,73 @@ export async function markConversationRead(conversationId, profileId) {
   }
 }
 
+// Rafraîchit la liste des conversations (nouvelle conv, dernier message).
+export function subscribeToConversationList(profileId, onChange) {
+  if (!profileId) return () => {}
+  return subscribePostgresChanges({
+    topicBase: `conv-list:${profileId}`,
+    listeners: [
+      {
+        config: {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `profile_id=eq.${profileId}`,
+        },
+        callback: onChange,
+      },
+      {
+        config: {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+        },
+        callback: onChange,
+      },
+      {
+        config: {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        callback: onChange,
+      },
+      {
+        config: {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_attachments',
+        },
+        callback: onChange,
+      },
+    ],
+  })
+}
+
 // Abonnement temps réel d'une conversation : nouveaux messages ET accusés de
 // lecture. Déclenche `onChange` à chaque évènement. Retourne un cleanup.
 export function subscribeToConversation(conversationId, onChange) {
   if (!conversationId) return () => {}
-  const channel = supabase
-    .channel(`conversation:${conversationId}`)
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
-      () => onChange?.(),
-    )
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'message_reads' },
-      () => onChange?.(),
-    )
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'message_attachments' },
-      () => onChange?.(),
-    )
-    .subscribe()
-  return () => {
-    supabase.removeChannel(channel)
-  }
+  return subscribePostgresChanges({
+    topicBase: `conversation:${conversationId}`,
+    listeners: [
+      {
+        config: {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        callback: onChange,
+      },
+      {
+        config: { event: '*', schema: 'public', table: 'message_reads' },
+        callback: onChange,
+      },
+      {
+        config: { event: 'INSERT', schema: 'public', table: 'message_attachments' },
+        callback: onChange,
+      },
+    ],
+  })
 }

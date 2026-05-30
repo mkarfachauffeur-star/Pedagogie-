@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { subscribePostgresChanges } from './realtime'
 
 // Service de notifications (badge cloche + compteur non-lus).
 // Dégrade proprement (0 / no-op) tant que la base n'est pas en place.
@@ -32,17 +33,21 @@ export async function markAllNotificationsRead(profileId) {
 }
 
 // Abonnement temps réel aux notifications personnelles. Renvoie un cleanup.
-export function subscribeToNotifications(profileId, onChange) {
+// scope : suffixe logique pour éviter deux hooks sur le même topic Realtime.
+export function subscribeToNotifications(profileId, onChange, scope = 'default') {
   if (!profileId) return () => {}
-  const channel = supabase
-    .channel(`notifications:${profileId}`)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'notifications', filter: `profile_id=eq.${profileId}` },
-      () => onChange?.(),
-    )
-    .subscribe()
-  return () => {
-    supabase.removeChannel(channel)
-  }
+  return subscribePostgresChanges({
+    topicBase: `notifications:${profileId}:${scope}`,
+    listeners: [
+      {
+        config: {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `profile_id=eq.${profileId}`,
+        },
+        callback: onChange,
+      },
+    ],
+  })
 }

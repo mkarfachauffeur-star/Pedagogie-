@@ -30,6 +30,28 @@ export async function getStudentIdByProfile(profileId) {
   }
 }
 
+// Secrétariat de l'auto-école de l'élève (même organisation).
+export async function listStudentSecretaryContacts(profileId) {
+  if (!profileId) return []
+  try {
+    const { data: me } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', profileId)
+      .maybeSingle()
+    if (!me?.organization_id) return []
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('role', 'secretary')
+      .eq('organization_id', me.organization_id)
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
 // Contacts autorisés pour un ÉLÈVE : secrétariat + enseignant(s) référent(s).
 export async function listStudentAllowedContacts(profileId) {
   if (!profileId) return []

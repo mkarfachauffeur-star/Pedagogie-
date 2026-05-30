@@ -11,19 +11,27 @@ export async function uploadAttachment({ conversationId, messageId, file }) {
     .upload(path, file, { upsert: false, contentType: file.type || undefined })
   if (upError) throw upError
 
-  const { data, error } = await supabase
-    .from('message_attachments')
-    .insert({
-      message_id: messageId,
-      storage_path: path,
-      file_name: file.name,
-      mime_type: file.type || null,
-      size_bytes: file.size || null,
-    })
-    .select()
-    .single()
+  const attachmentId =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  const { error } = await supabase.from('message_attachments').insert({
+    id: attachmentId,
+    message_id: messageId,
+    storage_path: path,
+    file_name: file.name,
+    mime_type: file.type || null,
+    size_bytes: file.size || null,
+  })
   if (error) throw error
-  return data
+  return {
+    id: attachmentId,
+    message_id: messageId,
+    storage_path: path,
+    file_name: file.name,
+    mime_type: file.type || null,
+    size_bytes: file.size || null,
+  }
 }
 
 // Récupère les pièces jointes des messages + URL signées (bucket privé).
