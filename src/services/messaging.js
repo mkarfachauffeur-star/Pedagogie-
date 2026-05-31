@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { listAttachmentsForMessages, uploadAttachment } from './attachments'
 import { listStudentSecretaryContacts } from './directory'
 import { subscribePostgresChanges } from './realtime'
+import { contactDisplayName } from '../utils/messagingLabels'
 
 function logDbError(prefix, error) {
   if (!error) return
@@ -65,7 +66,7 @@ export async function listConversations(profileId) {
           lastMessageAt: c.last_message_at,
           participants,
           others,
-          title: others.map((p) => p.full_name).join(', ') || c.subject || 'Conversation',
+          title: others.map((p) => contactDisplayName(p.full_name, p.role)).join(', ') || c.subject || 'Conversation',
           unread,
         }
       })

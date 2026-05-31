@@ -6,6 +6,7 @@ import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../../services/messaging'
 import { listInternalContacts } from '../../services/directory'
 import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
+import { contactDisplayName, roleLabel } from '../../utils/messagingLabels'
 
 const formatTime = (iso) => {
   if (!iso) return ''
@@ -99,12 +100,12 @@ export default function ManagerMessagesPage() {
             </div>
 
             {pickerOpen && (
-              <div className="mt-3 grid gap-2 rounded-2xl border border-white/15 bg-white/5 p-3">
-                {contacts.length === 0 && <p className="text-xs text-slate-300">Aucun contact.</p>}
+              <div className="pd-msg-picker mt-3">
+                {contacts.length === 0 && <p className="text-xs text-slate-500">Aucun contact.</p>}
                 {contacts.map((c) => (
                   <button key={c.id} type="button" onClick={() => startConversation(c.id)} className="pd-msg-thread rounded-xl px-3 py-2 text-left text-xs">
-                    <span className="font-semibold text-slate-100">{c.full_name || 'Sans nom'}</span>
-                    <span className="pd-msg-meta-muted ml-1">· {c.role}</span>
+                    <span className="pd-msg-contact-name">{contactDisplayName(c.full_name, c.role)}</span>
+                    <span className="pd-msg-meta-muted ml-1">· {roleLabel(c.role)}</span>
                   </button>
                 ))}
               </div>
@@ -130,12 +131,12 @@ export default function ManagerMessagesPage() {
           <section className="flex flex-col bg-slate-50/80 p-5 md:p-6">
             {activeConversation ? (
               <>
-                <div className="flex items-center justify-between gap-3 border-b border-white/16 pb-4">
+                <div className="pd-msg-chat-divider flex items-center justify-between gap-3">
                   <div>
                     <h2 className="pd-title-section text-xl">{activeConversation.title}</h2>
                     <p className="text-sm text-slate-600">Conversation interne</p>
                   </div>
-                  <button type="button" onClick={() => setActiveId(null)} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-cyan-50 transition hover:bg-white/20">Fermer</button>
+                  <button type="button" onClick={() => setActiveId(null)} className="pd-msg-close-btn">Fermer</button>
                 </div>
 
                 <div className="mt-4 grid max-h-[420px] gap-3 overflow-y-auto pr-1">
@@ -151,7 +152,7 @@ export default function ManagerMessagesPage() {
                   ))}
                 </div>
 
-                <form className="mt-4 border-t border-white/16 pt-4" onSubmit={handleSend}>
+                <form className="mt-4 border-t border-slate-200 pt-4" onSubmit={handleSend}>
                   <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} />
