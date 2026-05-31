@@ -10,7 +10,7 @@ export default function AdminDashboardPage() {
 
   const actionHandlers = {
     'Ajouter un élève': () => setAddStudentOpen(true),
-    Exporter: () => {},
+    Exporter: () => navigate('/manager/exports'),
   }
 
   return (

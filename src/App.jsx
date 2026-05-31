@@ -17,6 +17,7 @@ import ManagerPaymentsPage from './pages/app-pages/AdminPaymentsPage'
 import ManagerStatisticsPage from './pages/app-pages/AdminStatisticsPage'
 import ManagerSettingsPage from './pages/app-pages/AdminSettingsPage'
 import ManagerMessagesPage from './pages/app-pages/ManagerMessagesPage'
+import ManagerExportsPage from './pages/app-pages/ManagerExportsPage'
 
 import StudentDashboardPage from './pages/app-pages/StudentDashboardPage'
 const StudentLessonsPage = lazy(() => import('./pages/app-pages/StudentLessonsPage'))
@@ -68,6 +69,7 @@ function App() {
         <Route path="/manager/vehicles" element={withProtectedLayout('manager', ManagerVehiclesPage)} />
         <Route path="/manager/contracts" element={withProtectedLayout('manager', ManagerContractsPage)} />
         <Route path="/manager/payments" element={withProtectedLayout('manager', ManagerPaymentsPage)} />
+        <Route path="/manager/exports" element={withProtectedLayout('manager', ManagerExportsPage)} />
         <Route path="/manager/messages" element={withProtectedLayout('manager', ManagerMessagesPage)} />
         <Route path="/manager/statistics" element={withProtectedLayout('manager', ManagerStatisticsPage)} />
         <Route path="/manager/settings" element={withProtectedLayout('manager', ManagerSettingsPage)} />

@@ -10,6 +10,7 @@ export const NAVIGATION = {
       { href: '/manager/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
       { href: '/manager/contracts', icon: '\u{1F4C4}', label: 'Contrats' },
       { href: '/manager/payments', icon: '\u{1F4B0}', label: 'Paiements' },
+      { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports' },
       { href: '/manager/messages', icon: '\u{1F4AC}', label: 'Messages' },
       { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Statistiques' },
       { href: '/manager/settings', icon: '\u2699\uFE0F', label: 'Paramètres' },
