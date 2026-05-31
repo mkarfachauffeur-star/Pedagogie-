@@ -559,7 +559,7 @@ function renderSection(section, activeDetail, onSelect) {
   )
 }
 
-export default function ModernPage({ config }) {
+export default function ModernPage({ config, actionHandlers = {} }) {
   const firstDetail = useMemo(() => {
     const firstSection = config.sections?.[0]
     const firstItem = firstSection?.items?.[0]
@@ -577,6 +577,11 @@ export default function ModernPage({ config }) {
   const [activeDetail, setActiveDetail] = useState(firstDetail)
 
   const handleAction = (action) => {
+    const handler = actionHandlers[action.label]
+    if (handler) {
+      handler(action)
+      return
+    }
     setActiveDetail({
       id: `action-${action.label}`,
       title: action.label,
