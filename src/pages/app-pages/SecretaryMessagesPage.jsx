@@ -160,7 +160,7 @@ export default function SecretaryMessagesPage() {
               <button
                 type="button"
                 onClick={() => setPickerOpen((v) => !v)}
-                className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-100 transition hover:bg-cyan-500/20"
+                className="pd-msg-btn-accent"
               >
                 + Nouvelle
               </button>
@@ -191,7 +191,7 @@ export default function SecretaryMessagesPage() {
                     {internalContacts.map((c) => (
                       <button key={c.id} type="button" onClick={() => startConversation(c.id, 'internal', null)} className="pd-msg-thread rounded-xl px-3 py-2 text-left text-xs">
                         <span className="font-semibold text-slate-100">{c.full_name || 'Sans nom'}</span>
-                        <span className="ml-1 text-cyan-200/80">· {c.role}</span>
+                        <span className="pd-msg-meta-muted ml-1">· {c.role}</span>
                       </button>
                     ))}
                   </div>
@@ -208,7 +208,7 @@ export default function SecretaryMessagesPage() {
                       {studentResults.map((s) => (
                         <button key={s.studentId} type="button" onClick={() => startConversation(s.profileId, 'student', s.name)} className="pd-msg-thread rounded-xl px-3 py-2 text-left text-xs">
                           <span className="font-semibold text-slate-100">{s.name}</span>
-                          {s.fileNumber && <span className="ml-1 text-cyan-200/80">· {s.fileNumber}</span>}
+                          {s.fileNumber && <span className="pd-msg-meta-muted ml-1">· {s.fileNumber}</span>}
                         </button>
                       ))}
                     </div>
@@ -232,7 +232,7 @@ export default function SecretaryMessagesPage() {
                       <p className="font-semibold text-slate-900">{item.title}</p>
                       <span className="pd-msg-chip">{item.kind === 'student' ? 'Élève' : 'Interne'}</span>
                     </div>
-                    <p className="mt-2 text-xs font-medium text-cyan-200/90">
+                    <p className="pd-msg-meta mt-2">
                       {item.unread ? 'Nouveau message' : formatTime(item.lastMessageAt)}
                     </p>
                   </button>

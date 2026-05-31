@@ -182,13 +182,14 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                 navigate('/login', { replace: true })
               }}
               className={`flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${sidebarCollapsed ? 'lg:px-2' : ''}`}
-              title="Changer de profil"
+              title="Déconnexion"
+              aria-label="Déconnexion"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               <span
                 className={`truncate transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
               >
-                Changer de profil
+                Déconnexion
               </span>
             </button>
           </div>

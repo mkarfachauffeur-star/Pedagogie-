@@ -148,7 +148,7 @@ export default function StudentMessagesPage() {
                     <p className="font-semibold text-slate-900">{item.title || 'Secrétariat'}</p>
                     <span className="pd-msg-chip">{item.unread ? 'Nouveau' : 'Actif'}</span>
                   </div>
-                  <p className="mt-2 text-xs font-medium text-cyan-200/90">{formatTime(item.lastMessageAt)}</p>
+                  <p className="pd-msg-meta mt-2">{formatTime(item.lastMessageAt)}</p>
                 </button>
               ))}
             </div>

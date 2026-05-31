@@ -1048,6 +1048,22 @@
     @apply border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/50;
   }
 
+  .pd-msg-btn-accent {
+    @apply rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition hover:border-cyan-400 hover:bg-cyan-100 hover:text-cyan-900;
+  }
+
+  .pd-msg-btn-attach {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-2xl border border-cyan-300 bg-cyan-50 px-3 py-2 text-cyan-800 transition hover:bg-cyan-100;
+  }
+
+  .pd-msg-meta {
+    @apply text-xs font-medium text-slate-500;
+  }
+
+  .pd-msg-meta-muted {
+    @apply text-slate-400;
+  }
+
   .pd-msg-empty {
     @apply flex h-full min-h-[420px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-6 text-center text-sm font-medium text-slate-500;
   }
