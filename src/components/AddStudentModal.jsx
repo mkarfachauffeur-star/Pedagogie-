@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
-import { createStudent, listOrganizationTeachers, PACKAGE_OPTIONS } from '../services/students'
+import { createStudent, listOrganizationTeachers } from '../services/students'
+import { listPricingPackages } from '../services/pricing'
+import { useAuth } from '../context/AuthContext'
 
 const EMPTY_FORM = {
   lastName: '',
@@ -8,8 +10,10 @@ const EMPTY_FORM = {
   email: '',
   phone: '',
   birthDate: '',
-  address: '',
-  packageName: PACKAGE_OPTIONS[0],
+  streetNumber: '',
+  street: '',
+  packageId: '',
+  extraHours: '',
   teacherId: '',
 }
 
@@ -30,9 +34,11 @@ const inputClass =
   'mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 export default function AddStudentModal({ open, onClose, onCreated }) {
+  const { canWrite } = useAuth()
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [teachers, setTeachers] = useState([])
+  const [packages, setPackages] = useState([])
   const [busy, setBusy] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -40,7 +46,11 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
   useEffect(() => {
     if (!open) return undefined
     let active = true
-    listOrganizationTeachers().then((rows) => active && setTeachers(rows))
+    Promise.all([listOrganizationTeachers(), listPricingPackages(true)]).then(([rows, pkgRes]) => {
+      if (!active) return
+      setTeachers(rows)
+      setPackages(pkgRes.packages || [])
+    })
     return () => {
       active = false
     }
@@ -75,6 +85,9 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       next.email = 'Adresse e-mail invalide.'
     }
+    if (form.extraHours !== '' && (Number.isNaN(Number(form.extraHours)) || Number(form.extraHours) < 0)) {
+      next.extraHours = 'Saisissez un nombre d’heures valide (0 ou plus).'
+    }
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -84,14 +97,16 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
     if (!validate()) return
     setBusy(true)
     setSubmitError(null)
-    const { error, student, tempPassword, email, fullName } = await createStudent({
+    const { error, student, email, fullName, message } = await createStudent({
       first_name: form.firstName.trim(),
       last_name: form.lastName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim() || null,
       birth_date: form.birthDate || null,
-      address: form.address.trim() || null,
-      package_name: form.packageName || null,
+      street_number: form.streetNumber.trim() || null,
+      street: form.street.trim() || null,
+      package_id: form.packageId || null,
+      extra_hours: form.extraHours === '' ? 0 : Math.max(0, Math.floor(Number(form.extraHours) || 0)),
       teacher_id: form.teacherId || null,
     })
     setBusy(false)
@@ -99,7 +114,7 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
       setSubmitError(error.message || 'Création impossible.')
       return
     }
-    setSuccess({ student, tempPassword, email, fullName })
+    setSuccess({ student, email, fullName, message })
     onCreated?.(student)
   }
 
@@ -131,13 +146,14 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
               <p className="text-sm font-bold text-emerald-800">Élève créé avec succès</p>
               <ul className="mt-3 space-y-2 text-sm text-emerald-900">
                 <li><span className="font-semibold">Nom :</span> {success.fullName}</li>
-                <li><span className="font-semibold">E-mail :</span> {success.email}</li>
-                <li><span className="font-semibold">Mot de passe temporaire :</span> <code className="rounded bg-white px-2 py-0.5 font-mono text-xs">{success.tempPassword}</code></li>
+                <li><span className="font-semibold">E-mail (identifiant) :</span> {success.email}</li>
                 {success.student?.file_number && (
                   <li><span className="font-semibold">N° dossier :</span> {success.student.file_number}</li>
                 )}
               </ul>
-              <p className="mt-3 text-xs text-emerald-700">Communiquez ces identifiants à l’élève. Il pourra se connecter et accéder à la messagerie.</p>
+              <p className="mt-3 text-xs text-emerald-700">
+                {success.message || 'Un e-mail d\'activation a été envoyé. L\'élève définira son mot de passe via le lien reçu.'}
+              </p>
             </div>
             <div className="flex justify-end">
               <button type="button" onClick={handleClose} className="pd-btn-primary">Fermer</button>
@@ -161,18 +177,47 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
               <Field label="Date de naissance">
                 <input className={inputClass} type="date" value={form.birthDate} onChange={(e) => update('birthDate', e.target.value)} />
               </Field>
-              <Field label="Formule choisie">
-                <select className={inputClass} value={form.packageName} onChange={(e) => update('packageName', e.target.value)}>
-                  {PACKAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>{option}</option>
+              <Field label="Formule">
+                <select className={inputClass} value={form.packageId} onChange={(e) => update('packageId', e.target.value)}>
+                  <option value="">— Sélectionner —</option>
+                  {packages.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>{pkg.name}</option>
                   ))}
                 </select>
               </Field>
+              <Field label="Heures supplémentaires" error={errors.extraHours}>
+                <input
+                  className={inputClass}
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.extraHours}
+                  onChange={(e) => update('extraHours', e.target.value)}
+                  placeholder="0"
+                />
+              </Field>
             </div>
 
-            <Field label="Adresse">
-              <input className={inputClass} value={form.address} onChange={(e) => update('address', e.target.value)} placeholder="Numéro, rue, code postal, ville" autoComplete="street-address" />
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="N° de rue">
+                <input
+                  className={inputClass}
+                  value={form.streetNumber}
+                  onChange={(e) => update('streetNumber', e.target.value)}
+                  placeholder="Ex. 12"
+                  autoComplete="off"
+                />
+              </Field>
+              <Field label="Rue / voie">
+                <input
+                  className={inputClass}
+                  value={form.street}
+                  onChange={(e) => update('street', e.target.value)}
+                  placeholder="Ex. avenue de la République"
+                  autoComplete="street-address"
+                />
+              </Field>
+            </div>
 
             <Field label="Enseignant référent (optionnel)">
               <select className={inputClass} value={form.teacherId} onChange={(e) => update('teacherId', e.target.value)}>
@@ -189,7 +234,7 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
 
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={handleClose} className="pd-btn-secondary" disabled={busy}>Annuler</button>
-              <button type="submit" className="pd-btn-primary" disabled={busy}>
+              <button type="submit" className="pd-btn-primary" disabled={busy || !canWrite}>
                 {busy ? 'Création…' : 'Créer l’élève'}
               </button>
             </div>

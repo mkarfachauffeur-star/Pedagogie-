@@ -10,6 +10,8 @@ export const NAVIGATION = {
       { href: '/manager/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
       { href: '/manager/contracts', icon: '\u{1F4C4}', label: 'Contrats' },
       { href: '/manager/payments', icon: '\u{1F4B0}', label: 'Paiements' },
+      { href: '/manager/packages', icon: '\u{1F4B8}', label: 'Formules & tarifs' },
+      { href: '/manager/regulatory-export', icon: '\u{1F4CB}', label: 'Export réglementaire' },
       { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports' },
       { href: '/manager/messages', icon: '\u{1F4AC}', label: 'Messages' },
       { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Statistiques' },
@@ -34,6 +36,7 @@ export const NAVIGATION = {
       { href: '/teacher/planning', icon: '\u{1F4C5}', label: 'Mon planning' },
       { href: '/teacher/students', icon: '\u{1F465}', label: 'Mes élèves' },
       { href: '/teacher/messages', icon: '\u{1F4AC}', label: 'Messagerie' },
+      { href: '/teacher/finance', icon: '\u{1F4B8}', label: 'Finances' },
     ],
   },
   secretary: {

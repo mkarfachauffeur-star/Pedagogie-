@@ -25,6 +25,7 @@ export async function listStudents() {
         birth_date,
         street,
         package_name,
+        extra_hours,
         formation_type,
         status,
         registration_date,
@@ -67,8 +68,9 @@ export async function createStudent(payload) {
   return {
     error: null,
     student: data.student,
-    tempPassword: data.temp_password,
     email: data.email,
     fullName: data.full_name,
+    message: data.message,
+    invited: data.invited,
   }
 }

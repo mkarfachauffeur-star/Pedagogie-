@@ -1,5 +1,4 @@
-// PEDAGOGIA DRIVE — Edge Function : create-student
-// Crée un compte élève (Auth + profile + dossier students + affectation optionnelle).
+// PEDAGOGIA DRIVE — Création élève par invitation e-mail
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS = {
@@ -22,15 +21,6 @@ function formatNamePart(value = '') {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-}
-
-function generateTempPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  let pwd = ''
-  for (let i = 0; i < 10; i += 1) {
-    pwd += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return `${pwd}!9`
 }
 
 async function generateFileNumber(
@@ -63,6 +53,33 @@ async function generateFileNumber(
   return `${base}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
 }
 
+async function canCreateStudent(admin: ReturnType<typeof createClient>, orgId: string) {
+  const { data: org } = await admin.from('organizations').select('status').eq('id', orgId).single()
+  if (!org || ['suspended', 'cancelled'].includes(org.status)) return { ok: false, reason: 'Organisation en lecture seule.' }
+
+  const { data: sub } = await admin
+    .from('subscriptions')
+    .select('status, trial_ends_at, plan:plan_id(max_students)')
+    .eq('organization_id', orgId)
+    .single()
+
+  if (sub?.status && ['suspended', 'expired', 'cancelled'].includes(sub.status)) {
+    return { ok: false, reason: 'Abonnement inactif.' }
+  }
+  if (org.status === 'trial' && sub?.trial_ends_at && new Date(sub.trial_ends_at) < new Date()) {
+    return { ok: false, reason: 'Essai gratuit expiré.' }
+  }
+
+  const maxStudents = (sub?.plan as { max_students?: number })?.max_students
+  if (maxStudents != null) {
+    const { count } = await admin.from('students').select('id', { count: 'exact', head: true }).eq('organization_id', orgId)
+    if ((count || 0) >= maxStudents) {
+      return { ok: false, reason: `Limite de ${maxStudents} élèves atteinte pendant l'essai.` }
+    }
+  }
+  return { ok: true }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
@@ -86,9 +103,13 @@ Deno.serve(async (req) => {
       .eq('id', caller.id)
       .maybeSingle()
 
-    if (!callerProfile || callerProfile.role !== 'manager') {
-      return json({ error: 'Action réservée au gérant' }, 403)
+    if (!callerProfile || !['manager', 'secretary'].includes(callerProfile.role)) {
+      return json({ error: 'Action réservée au gérant ou au secrétariat' }, 403)
     }
+
+    const orgId = callerProfile.organization_id
+    const gate = await canCreateStudent(admin, orgId)
+    if (!gate.ok) return json({ error: gate.reason }, 403)
 
     const body = await req.json()
     const firstName = String(body.first_name || '').trim()
@@ -96,48 +117,43 @@ Deno.serve(async (req) => {
     const email = String(body.email || '').trim().toLowerCase()
     const phone = String(body.phone || '').trim()
     const birthDate = body.birth_date ? String(body.birth_date) : null
-    const address = String(body.address || '').trim()
-    const packageName = String(body.package_name || '').trim()
+    const streetNumber = String(body.street_number || '').trim()
+    const street = String(body.street || '').trim()
+    const packageId = body.package_id ? String(body.package_id) : null
     const teacherId = body.teacher_id ? String(body.teacher_id) : null
+    const extraHours = Math.max(0, Math.floor(Number(body.extra_hours) || 0))
 
     if (!firstName || !lastName || !email) {
       return json({ error: 'Nom, prénom et e-mail sont obligatoires.' }, 400)
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json({ error: 'Adresse e-mail invalide.' }, 400)
-    }
 
-    const orgId = callerProfile.organization_id
     const fullName = `${firstName} ${lastName}`.trim()
-    const tempPassword = generateTempPassword()
 
-    const { data: authData, error: authError } = await admin.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        organization_id: orgId,
-        role: 'student',
-        full_name: fullName,
-      },
+    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: { organization_id: orgId, role: 'student', full_name: fullName },
     })
 
-    if (authError) {
-      const message = authError.message?.includes('already')
+    if (inviteError) {
+      const message = inviteError.message?.includes('already')
         ? 'Un compte existe déjà avec cet e-mail.'
-        : authError.message
+        : inviteError.message
       return json({ error: message }, 400)
     }
 
-    const userId = authData.user?.id
-    if (!userId) return json({ error: 'Création du compte impossible.' }, 500)
+    const userId = inviteData.user?.id
+    if (!userId) return json({ error: 'Invitation impossible.' }, 500)
 
-    await admin
-      .from('profiles')
-      .update({ full_name: fullName, email, phone: phone || null })
-      .eq('id', userId)
+    await admin.from('profiles').update({ full_name: fullName, phone: phone || null }).eq('id', userId)
 
     const fileNumber = await generateFileNumber(admin, orgId, lastName, firstName)
+
+    let packageName: string | null = null
+    let pkg: Record<string, unknown> | null = null
+    if (packageId) {
+      const { data } = await admin.from('pricing_packages').select('*').eq('id', packageId).eq('organization_id', orgId).maybeSingle()
+      pkg = data
+      packageName = data?.name || null
+    }
 
     const { data: student, error: studentError } = await admin
       .from('students')
@@ -150,13 +166,14 @@ Deno.serve(async (req) => {
         email,
         phone: phone || null,
         birth_date: birthDate || null,
-        street: address || null,
-        package_name: packageName || null,
+        street_number: streetNumber || null,
+        street: street || null,
+        package_id: packageId,
+        package_name: packageName,
+        extra_hours: extraHours,
         status: 'En attente',
       })
-      .select(
-        'id, file_number, first_name, last_name, email, phone, birth_date, package_name, status, registration_date',
-      )
+      .select('id, file_number, first_name, last_name, email, status')
       .single()
 
     if (studentError) {
@@ -164,29 +181,37 @@ Deno.serve(async (req) => {
       return json({ error: studentError.message }, 400)
     }
 
-    if (teacherId) {
-      const { data: teacher } = await admin
-        .from('teachers')
-        .select('profile_id')
-        .eq('profile_id', teacherId)
-        .eq('organization_id', orgId)
-        .maybeSingle()
+    if (pkg) {
+      const examTtc = pkg.exam_presentation_included ? Number(pkg.exam_presentation_ttc || 0) : 0
+      const extraAmount = extraHours * Number(pkg.extra_hour_price_ttc || 0)
+      await admin.from('contracts').insert({
+        organization_id: orgId,
+        student_id: student.id,
+        package_id: packageId,
+        package_price_ttc: Number(pkg.price_ttc || 0),
+        admin_fee_ttc: Number(pkg.admin_fee_ttc || 0),
+        exam_presentation_ttc: examTtc,
+        extra_hours: extraHours,
+        extra_hours_amount_ttc: extraAmount,
+        signed_at: new Date().toISOString().slice(0, 10),
+      })
+    }
 
-      if (teacher?.profile_id) {
-        await admin.from('student_assignments').insert({
-          student_id: student.id,
-          teacher_id: teacherId,
-          is_referent: true,
-        })
-      }
+    if (teacherId) {
+      await admin.from('student_assignments').insert({
+        student_id: student.id,
+        teacher_id: teacherId,
+        is_referent: true,
+      })
     }
 
     return json({
       ok: true,
       student,
-      temp_password: tempPassword,
       email,
       full_name: fullName,
+      invited: true,
+      message: 'Invitation envoyée par e-mail. L\'élève pourra définir son mot de passe via le lien reçu.',
     })
   } catch (err) {
     return json({ error: String(err?.message || err) }, 500)

@@ -6,8 +6,10 @@ import {
   roleDestinations,
   setStoredRole,
 } from '../utils/authSession'
+import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
+import { checkIsSuperAdmin } from '../services/platform'
 
-export const VALID_ROLES = Object.keys(roleDestinations)
+export const VALID_ROLES = [...Object.keys(roleDestinations), 'super_admin']
 
 const AuthContext = createContext(null)
 
@@ -17,29 +19,65 @@ function resolveRoleFromUser(user) {
   return VALID_ROLES.includes(candidate) ? candidate : null
 }
 
+function computeCanWrite(organization, subscription) {
+  if (!organization) return false
+  if (['suspended', 'cancelled'].includes(organization.status)) return false
+  if (subscription?.status && ['suspended', 'expired', 'cancelled'].includes(subscription.status)) return false
+  if (organization.status === 'trial' && subscription?.trial_ends_at) {
+    if (new Date(subscription.trial_ends_at) < new Date()) return false
+  }
+  return true
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [organization, setOrganization] = useState(null)
+  const [subscription, setSubscription] = useState(null)
+  const [studentCount, setStudentCount] = useState(0)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [supabaseRole, setSupabaseRole] = useState(null)
-  // Accès transitoire par rôle (avant l'activation des comptes Supabase).
-  // Sera retiré lors de la bascule finale, une fois les comptes provisionnés.
   const [localRole, setLocalRole] = useState(() => getStoredRole())
   const [loading, setLoading] = useState(true)
 
-  // Récupère le profil métier (role, organisation) lié à la session.
   const loadProfile = useCallback(async (userId) => {
     if (!userId) {
       setProfile(null)
+      setOrganization(null)
+      setSubscription(null)
+      setStudentCount(0)
+      setIsSuperAdmin(false)
       return
     }
     try {
+      const superAdmin = await checkIsSuperAdmin(userId)
+      setIsSuperAdmin(superAdmin)
+
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, avatar_emoji')
+        .select('id, organization_id, role, full_name, avatar_emoji, email, is_active')
         .eq('id', userId)
         .maybeSingle()
       if (error) throw error
       setProfile(data ?? null)
+
+      if (superAdmin) {
+        setOrganization(null)
+        setSubscription(null)
+        setStudentCount(0)
+        return
+      }
+
+      if (data?.organization_id) {
+        const [orgRes, subRes, countRes] = await Promise.all([
+          fetchOrganization(),
+          fetchSubscription(),
+          fetchStudentCount(),
+        ])
+        setOrganization(orgRes.organization)
+        setSubscription(subRes.subscription)
+        setStudentCount(countRes.count)
+      }
     } catch {
       setProfile(null)
     }
@@ -47,7 +85,6 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true
-
     supabase.auth
       .getSession()
       .then(async ({ data }) => {
@@ -56,9 +93,6 @@ export function AuthProvider({ children }) {
         setSession(nextSession)
         setSupabaseRole(resolveRoleFromUser(nextSession?.user))
         await loadProfile(nextSession?.user?.id)
-      })
-      .catch(() => {
-        if (active) setSession(null)
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -85,28 +119,31 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('storage', handleStorage)
   }, [])
 
-  // Connexion réelle (email + mot de passe). Le rôle est déduit du profil.
   const signInWithPassword = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error, role: null }
     let nextRole = null
     try {
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user?.id)
-        .maybeSingle()
-      nextRole = prof?.role ?? null
+      const superAdmin = await checkIsSuperAdmin(data.user?.id)
+      if (superAdmin) nextRole = 'super_admin'
+      else {
+        const { data: prof } = await supabase.from('profiles').select('role, is_active').eq('id', data.user?.id).maybeSingle()
+        if (prof && prof.is_active === false) {
+          await supabase.auth.signOut()
+          return { error: new Error('Compte désactivé.'), role: null }
+        }
+        nextRole = prof?.role ?? null
+      }
     } catch {
-      // profil non disponible : on continue avec un rôle nul
+      // ignore
     }
     await loadProfile(data.user?.id)
+    if (nextRole !== 'super_admin') await logLoginAudit()
     return { error: null, role: nextRole }
   }, [loadProfile])
 
-  // Accès transitoire par rôle (à retirer après provisioning des comptes).
   const signInWithRole = useCallback((role) => {
-    if (!VALID_ROLES.includes(role)) return null
+    if (!roleDestinations[role]) return null
     setStoredRole(role)
     setLocalRole(role)
     return roleDestinations[role]
@@ -118,15 +155,22 @@ export function AuthProvider({ children }) {
     try {
       await supabase.auth.signOut()
     } catch {
-      // Pas de session Supabase active : on ignore.
+      // ignore
     }
     setSession(null)
     setSupabaseRole(null)
     setProfile(null)
+    setOrganization(null)
+    setSubscription(null)
+    setIsSuperAdmin(false)
   }, [])
 
-  const role = profile?.role || supabaseRole || localRole
-  const isAuthenticated = Boolean(session) || Boolean(localRole)
+  const role = isSuperAdmin ? 'super_admin' : (profile?.role || supabaseRole || localRole)
+  const isTrial = organization?.status === 'trial'
+  const canWrite = useMemo(
+    () => computeCanWrite(organization, subscription),
+    [organization, subscription],
+  )
 
   const value = useMemo(
     () => ({
@@ -135,14 +179,21 @@ export function AuthProvider({ children }) {
       profile,
       profileId: profile?.id ?? session?.user?.id ?? null,
       organizationId: profile?.organization_id ?? null,
+      organization,
+      subscription,
+      studentCount,
+      isSuperAdmin,
+      canWrite,
+      isTrial,
       role,
-      isAuthenticated,
+      isAuthenticated: Boolean(session) || Boolean(localRole),
       loading,
       signInWithPassword,
       signInWithRole,
       signOut,
+      refreshOrg: loadProfile,
     }),
-    [session, profile, role, isAuthenticated, loading, signInWithPassword, signInWithRole, signOut],
+    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, localRole, loading, signInWithPassword, signInWithRole, signOut, loadProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -2,6 +2,7 @@ import { Bell, ChevronLeft, LogOut, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
+import OrgStatusBanner from '../components/OrgStatusBanner'
 import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
 import { useUnreadCount } from '../hooks/useUnreadCount'
@@ -239,6 +240,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
         </header>
 
         <main className="pd-main flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8">
+          <OrgStatusBanner />
           <div className="page-shell" key={location.pathname}>
             {children}
           </div>

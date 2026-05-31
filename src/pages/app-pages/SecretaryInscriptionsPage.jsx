@@ -36,6 +36,7 @@ export default function SecretaryInscriptionsPage() {
     neph: '',
     licenseCategory: 'Permis B',
     packageName: 'Forfait 20h',
+    extraHours: '',
     formationType: '',
     registrationDate: new Date().toISOString().slice(0, 10),
     drivingType: 'classique',
@@ -277,6 +278,7 @@ export default function SecretaryInscriptionsPage() {
                 <TextField label="Commune" onChange={updateField} value={form.city} name="city" className="md:col-span-1 xl:col-span-3" />
                 <TextField label="NEPH" onChange={updateField} value={form.neph} name="neph" />
                 <SelectField label="Formule" name="packageName" onChange={updateField} value={form.packageName} options={['Forfait 20h', 'Forfait 30h', 'Code + conduite', 'Conduite accompagnée', 'Conduite supervisée']} />
+                <TextField label="Heures supplémentaires" onChange={updateField} value={form.extraHours} name="extraHours" type="number" hint="Saisie manuelle au-delà du forfait." />
                 <SelectField label="Type de formation (obligatoire)" name="formationType" onChange={updateField} value={form.formationType} options={['Sélectionner...', ...formationTypeOptions]} />
                 <SelectField label="Type de conduite" name="drivingType" onChange={updateField} value={form.drivingType} options={['classique', 'accompagnée', 'supervisée']} />
                 <SelectField label="Code de la route" name="codeStatus" onChange={updateField} value={form.codeStatus} options={['Non obtenu', 'Obtenu']} />

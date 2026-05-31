@@ -5,6 +5,7 @@ export const roleDestinations = {
   teacher: '/teacher/dashboard',
   secretary: '/secretary/dashboard',
   manager: '/manager/dashboard',
+  super_admin: '/platform/dashboard',
 }
 
 export const roleLabels = {
@@ -12,6 +13,7 @@ export const roleLabels = {
   teacher: 'Enseignant',
   secretary: 'Secrétariat',
   manager: 'Gérant',
+  super_admin: 'Super Admin',
 }
 
 export function getStoredRole() {

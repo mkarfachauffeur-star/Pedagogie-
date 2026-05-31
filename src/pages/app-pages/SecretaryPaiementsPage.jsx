@@ -1,22 +1,26 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
-import { useStudentTrackingStore } from '../../data/studentTrackingStore'
+import { useAuth } from '../../context/AuthContext'
+import { listStudents } from '../../services/students'
 import {
+  EXPENSE_CATEGORIES,
   PAYMENT_METHODS,
   PAYMENT_NATURES,
-  usePaymentsStore,
-} from '../../data/encaissementsStore'
+  contractsMap,
+  createExpense,
+  createPayment,
+  fetchFinancialData,
+  formatDateFr,
+  formatEur,
+  getStudentSummary,
+  listVehicles,
+  studentLabel,
+  todayIso,
+  upsertContract,
+  vehicleLabel,
+} from '../../services/finance'
 
-const todayIso = () => new Date().toISOString().slice(0, 10)
-const formatEur = (value) => `${Number(value || 0).toLocaleString('fr-FR')} €`
-const formatDateFr = (value) => {
-  if (!value) return '—'
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  return `${day}/${month}/${year}`
-}
-
-const emptyForm = {
+const emptyPaymentForm = {
   studentId: '',
   nature: PAYMENT_NATURES[0],
   amount: '',
@@ -26,78 +30,183 @@ const emptyForm = {
   contractTotal: '',
 }
 
+const emptyExpenseForm = {
+  category: EXPENSE_CATEGORIES[0],
+  amount: '',
+  date: todayIso(),
+  vehicleId: '',
+  comment: '',
+}
+
 export default function SecretaryPaiementsPage() {
-  const { students } = useStudentTrackingStore()
-  const { encaissements, addEncaissement, getStudentSummary, getStudentEncaissements } = usePaymentsStore()
-
+  const { profileId, organizationId } = useAuth()
+  const [tab, setTab] = useState('payments')
+  const [students, setStudents] = useState([])
+  const [payments, setPayments] = useState([])
+  const [expenses, setExpenses] = useState([])
+  const [contractTotals, setContractTotals] = useState({})
+  const [vehicles, setVehicles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [selectedStudentId, setSelectedStudentId] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(emptyForm)
+  const [modal, setModal] = useState(null)
+  const [paymentForm, setPaymentForm] = useState(emptyPaymentForm)
+  const [expenseForm, setExpenseForm] = useState(emptyExpenseForm)
+  const [saving, setSaving] = useState(false)
 
-  const studentName = (student) => (student ? `${student.firstName} ${student.lastName}` : '')
+  const refresh = useCallback(async () => {
+    if (!profileId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setLoadError(null)
+    const [studentsRes, financeRes, vehiclesRes] = await Promise.all([
+      listStudents(),
+      fetchFinancialData(),
+      listVehicles(),
+    ])
+    if (studentsRes.error || financeRes.error) {
+      setLoadError('Impossible de charger les données financières.')
+    }
+    setStudents(studentsRes.students || [])
+    setPayments(financeRes.payments)
+    setExpenses(financeRes.expenses)
+    setContractTotals(contractsMap(financeRes.contracts))
+    setVehicles(vehiclesRes.vehicles || [])
+    setLoading(false)
+  }, [profileId])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const totals = useMemo(() => {
-    const paid = encaissements.reduce((sum, item) => sum + Number(item.amount || 0), 0)
-    const remaining = students.reduce((sum, student) => sum + getStudentSummary(student.id).remaining, 0)
-    return { paid, remaining, count: encaissements.length }
-  }, [encaissements, students, getStudentSummary])
+    const paid = payments.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    const spent = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    const remaining = students.reduce(
+      (sum, student) => sum + getStudentSummary(student.id, payments, contractTotals).remaining,
+      0,
+    )
+    return { paid, spent, remaining, net: paid - spent, paymentCount: payments.length, expenseCount: expenses.length }
+  }, [payments, expenses, students, contractTotals])
 
-  const selectedStudent = students.find((student) => student.id === selectedStudentId) || students[0] || null
-  const selectedSummary = selectedStudent ? getStudentSummary(selectedStudent.id) : { contractTotal: 0, paid: 0, remaining: 0 }
-  const selectedHistory = selectedStudent ? getStudentEncaissements(selectedStudent.id) : []
+  const selectedStudent = students.find((s) => s.id === selectedStudentId) || students[0] || null
+  const selectedSummary = selectedStudent
+    ? getStudentSummary(selectedStudent.id, payments, contractTotals)
+    : { contractTotal: 0, paid: 0, remaining: 0 }
+  const selectedHistory = selectedStudent
+    ? payments.filter((item) => item.student_id === selectedStudent.id)
+    : []
 
-  // Récapitulatif automatique du formulaire (calcul en direct).
-  const formSummary = useMemo(() => {
-    const base = form.studentId ? getStudentSummary(form.studentId) : { contractTotal: 0, paid: 0 }
-    const contractTotal = form.contractTotal !== '' ? Number(form.contractTotal) || 0 : base.contractTotal
+  const paymentFormSummary = useMemo(() => {
+    const base = paymentForm.studentId
+      ? getStudentSummary(paymentForm.studentId, payments, contractTotals)
+      : { contractTotal: 0, paid: 0 }
+    const contractTotal =
+      paymentForm.contractTotal !== ''
+        ? Number(paymentForm.contractTotal) || 0
+        : base.contractTotal
     const alreadyPaid = base.paid
     const remainingBefore = Math.max(contractTotal - alreadyPaid, 0)
-    const remainingAfter = Math.max(contractTotal - alreadyPaid - Number(form.amount || 0), 0)
+    const remainingAfter = Math.max(contractTotal - alreadyPaid - Number(paymentForm.amount || 0), 0)
     return { contractTotal, alreadyPaid, remainingBefore, remainingAfter }
-  }, [form.studentId, form.contractTotal, form.amount, getStudentSummary])
+  }, [paymentForm, payments, contractTotals])
 
-  const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }))
-
-  const openForm = () => {
+  const openPaymentForm = () => {
     const presetId = selectedStudent?.id || ''
-    const presetContract = presetId ? getStudentSummary(presetId).contractTotal : 0
-    setForm({
-      ...emptyForm,
+    const presetContract = presetId ? getStudentSummary(presetId, payments, contractTotals).contractTotal : 0
+    setPaymentForm({
+      ...emptyPaymentForm,
       date: todayIso(),
       studentId: presetId,
       contractTotal: presetContract ? String(presetContract) : '',
     })
-    setShowForm(true)
+    setModal('payment')
+  }
+
+  const openExpenseForm = () => {
+    setExpenseForm({ ...emptyExpenseForm, date: todayIso() })
+    setModal('expense')
   }
 
   const handleSelectStudentInForm = (studentId) => {
-    const summary = studentId ? getStudentSummary(studentId) : { contractTotal: 0 }
-    setForm((current) => ({
+    const summary = studentId ? getStudentSummary(studentId, payments, contractTotals) : { contractTotal: 0 }
+    setPaymentForm((current) => ({
       ...current,
       studentId,
       contractTotal: summary.contractTotal ? String(summary.contractTotal) : '',
     }))
   }
 
-  const canSubmit = Boolean(form.studentId) && Number(form.amount) > 0 && Boolean(form.date) && Boolean(form.method)
+  const canSubmitPayment =
+    Boolean(paymentForm.studentId) &&
+    Number(paymentForm.amount) > 0 &&
+    Boolean(paymentForm.date) &&
+    Boolean(paymentForm.method)
 
-  const saveEncaissement = (event) => {
+  const canSubmitExpense =
+    Number(expenseForm.amount) > 0 && Boolean(expenseForm.date) && Boolean(expenseForm.category)
+
+  const savePayment = async (event) => {
     event.preventDefault()
-    if (!canSubmit) return
-    const student = students.find((item) => item.id === form.studentId)
-    addEncaissement({
-      studentId: form.studentId,
-      studentName: studentName(student),
-      amount: form.amount,
-      date: form.date,
-      method: form.method,
-      nature: form.nature,
-      comment: form.comment,
-      contractTotal: form.contractTotal,
+    if (!canSubmitPayment || !organizationId || saving) return
+    setSaving(true)
+    if (paymentForm.contractTotal !== '') {
+      await upsertContract({
+        organizationId,
+        studentId: paymentForm.studentId,
+        contractTotal: paymentForm.contractTotal,
+      })
+    }
+    const { error } = await createPayment({
+      organizationId,
+      studentId: paymentForm.studentId,
+      amount: paymentForm.amount,
+      paidAt: paymentForm.date,
+      method: paymentForm.method,
+      nature: paymentForm.nature,
+      comment: paymentForm.comment,
+      createdBy: profileId,
     })
-    setSelectedStudentId(form.studentId)
-    setShowForm(false)
-    setForm(emptyForm)
+    setSaving(false)
+    if (error) {
+      setLoadError('Enregistrement de l\u2019encaissement impossible.')
+      return
+    }
+    setSelectedStudentId(paymentForm.studentId)
+    setModal(null)
+    setPaymentForm(emptyPaymentForm)
+    refresh()
+  }
+
+  const saveExpense = async (event) => {
+    event.preventDefault()
+    if (!canSubmitExpense || !organizationId || saving) return
+    setSaving(true)
+    const { error } = await createExpense({
+      organizationId,
+      category: expenseForm.category,
+      amount: expenseForm.amount,
+      spentAt: expenseForm.date,
+      vehicleId: expenseForm.vehicleId || null,
+      comment: expenseForm.comment,
+      createdBy: profileId,
+    })
+    setSaving(false)
+    if (error) {
+      setLoadError('Enregistrement de la dépense impossible.')
+      return
+    }
+    setModal(null)
+    setExpenseForm(emptyExpenseForm)
+    refresh()
+  }
+
+  if (!profileId) {
+    return (
+      <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte secrétariat." icon="💳" />
+    )
   }
 
   return (
@@ -105,173 +214,247 @@ export default function SecretaryPaiementsPage() {
       <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-            Paiements
+            Finances
           </span>
           <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Gestion des encaissements</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Encaissements & dépenses</h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
-                Encaissements rattachés aux dossiers élèves, restes à payer et historique financier.
+                Entrées d&apos;argent (inscriptions, forfaits, code…) et sorties (carburant, frais…) centralisées pour le gérant.
               </p>
             </div>
-            <button
-              className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={openForm}
-              type="button"
-              disabled={students.length === 0}
-            >
-              + Nouvel encaissement
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={openPaymentForm}
+                type="button"
+                disabled={students.length === 0}
+              >
+                + Encaissement
+              </button>
+              <button
+                className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-white/20"
+                onClick={openExpenseForm}
+                type="button"
+              >
+                + Dépense
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      {loadError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          {loadError}
+        </div>
+      )}
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Total encaissé" value={formatEur(totals.paid)} />
-        <Kpi label="Reste à payer" value={formatEur(totals.remaining)} tone="amber" />
-        <Kpi label="Encaissements enregistrés" value={totals.count} />
+        <Kpi label="Total dépenses" value={formatEur(totals.spent)} tone="rose" />
+        <Kpi label="Solde net" value={formatEur(totals.net)} tone={totals.net >= 0 ? 'cyan' : 'rose'} />
+        <Kpi label="Reste à payer (élèves)" value={formatEur(totals.remaining)} tone="amber" />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
-          <h2 className="text-2xl font-extrabold text-slate-950">Dossiers financiers</h2>
-          <div className="mt-5 grid gap-3">
-            {students.length === 0 && (
-              <EmptyState
-                title="Aucun dossier élève"
-                message="Créez d'abord une inscription pour pouvoir enregistrer un encaissement."
-                icon="💳"
-              />
-            )}
-            {students.map((student) => {
-              const summary = getStudentSummary(student.id)
-              const progress = summary.contractTotal > 0
-                ? Math.min(100, Math.round((summary.paid / summary.contractTotal) * 100))
-                : 0
-              const status = summary.contractTotal === 0
-                ? 'À configurer'
-                : summary.remaining === 0
-                  ? 'Soldé'
-                  : 'Partiel'
-              return (
-                <button
-                  className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedStudent?.id === student.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-slate-50'}`}
-                  key={student.id}
-                  onClick={() => setSelectedStudentId(student.id)}
-                  type="button"
-                >
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div>
-                      <h3 className="font-extrabold text-slate-950">{studentName(student)}</h3>
-                      <p className="mt-1 text-sm text-slate-500">{student.formationType || 'Formation'} · {student.id}</p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{status}</span>
-                  </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
-                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-300" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="mt-2 text-sm font-bold text-slate-600">{formatEur(summary.paid)} / {formatEur(summary.contractTotal)}</p>
-                </button>
-              )
-            })}
-          </div>
-        </div>
+      <div className="flex gap-2">
+        <TabButton active={tab === 'payments'} onClick={() => setTab('payments')}>
+          Encaissements ({totals.paymentCount})
+        </TabButton>
+        <TabButton active={tab === 'expenses'} onClick={() => setTab('expenses')}>
+          Dépenses ({totals.expenseCount})
+        </TabButton>
+      </div>
 
-        {selectedStudent && (
-          <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
-            <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche financière</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{studentName(selectedStudent)}</h2>
-            <p className="mt-2 text-sm text-slate-500">{selectedStudent.formationType || 'Formation'}</p>
+      {loading ? (
+        <p className="text-sm font-medium text-slate-500">Chargement…</p>
+      ) : tab === 'payments' ? (
+        <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
+          <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+            <h2 className="text-2xl font-extrabold text-slate-950">Dossiers financiers</h2>
             <div className="mt-5 grid gap-3">
-              <Info label="Montant du contrat" value={formatEur(selectedSummary.contractTotal)} />
-              <Info label="Déjà encaissé" value={formatEur(selectedSummary.paid)} />
-              <Info label="Reste à payer" value={formatEur(selectedSummary.remaining)} />
-            </div>
-
-            <div className="mt-6">
-              <p className="text-sm font-black text-slate-700">Historique des encaissements</p>
-              <div className="mt-3 grid gap-2">
-                {selectedHistory.length === 0 && <InlineNotice label="Aucun encaissement enregistré." />}
-                {selectedHistory.map((item) => (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3" key={item.id}>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-black text-slate-950">{formatEur(item.amount)}</p>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{item.method}</span>
+              {students.length === 0 && (
+                <EmptyState
+                  title="Aucun dossier élève"
+                  message="Créez d'abord une inscription pour enregistrer un encaissement."
+                  icon="💳"
+                />
+              )}
+              {students.map((student) => {
+                const summary = getStudentSummary(student.id, payments, contractTotals)
+                const progress =
+                  summary.contractTotal > 0
+                    ? Math.min(100, Math.round((summary.paid / summary.contractTotal) * 100))
+                    : 0
+                const status =
+                  summary.contractTotal === 0
+                    ? 'À configurer'
+                    : summary.remaining === 0
+                      ? 'Soldé'
+                      : 'Partiel'
+                return (
+                  <button
+                    className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedStudent?.id === student.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-slate-50'}`}
+                    key={student.id}
+                    onClick={() => setSelectedStudentId(student.id)}
+                    type="button"
+                  >
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                      <div>
+                        <h3 className="font-extrabold text-slate-950">{studentLabel(student)}</h3>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {student.formation_type || student.package_name || 'Formation'} · {student.file_number || student.id.slice(0, 8)}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{status}</span>
                     </div>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">
-                      {formatDateFr(item.paidAt)} · {item.nature}
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-300" style={{ width: `${progress}%` }} />
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-600">
+                      {formatEur(summary.paid)} / {formatEur(summary.contractTotal)}
                     </p>
-                    {item.comment && <p className="mt-1 text-xs text-slate-500">{item.comment}</p>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {selectedStudent && (
+            <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+              <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche financière</p>
+              <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{studentLabel(selectedStudent)}</h2>
+              <div className="mt-5 grid gap-3">
+                <Info label="Montant du contrat" value={formatEur(selectedSummary.contractTotal)} />
+                <Info label="Déjà encaissé" value={formatEur(selectedSummary.paid)} />
+                <Info label="Reste à payer" value={formatEur(selectedSummary.remaining)} />
+              </div>
+              <div className="mt-6">
+                <p className="text-sm font-black text-slate-700">Historique</p>
+                <div className="mt-3 grid gap-2">
+                  {selectedHistory.length === 0 && <InlineNotice label="Aucun encaissement enregistré." />}
+                  {selectedHistory.map((item) => (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3" key={item.id}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black text-slate-950">{formatEur(item.amount)}</p>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{item.method}</span>
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        {formatDateFr(item.paid_at)} · {item.nature}
+                      </p>
+                      {item.comment && <p className="mt-1 text-xs text-slate-500">{item.comment}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          )}
+        </section>
+      ) : (
+        <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+          <h2 className="text-2xl font-extrabold text-slate-950">Historique des dépenses</h2>
+          <div className="mt-5 grid gap-3">
+            {expenses.length === 0 && (
+              <EmptyState title="Aucune dépense" message="Enregistrez carburant, code de la route, frais divers…" icon="📤" />
+            )}
+            {expenses.map((item) => (
+              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.id}>
+                <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                  <div>
+                    <p className="font-extrabold text-slate-950">{item.category}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {formatDateFr(item.spent_at)}
+                      {vehicleLabel(item.vehicles) ? ` · ${vehicleLabel(item.vehicles)}` : ''}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </div>
-          </aside>
-        )}
-      </section>
+                  <p className="text-xl font-black text-rose-600">− {formatEur(item.amount)}</p>
+                </div>
+                {item.comment && <p className="mt-2 text-sm text-slate-500">{item.comment}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
-          <form className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl" onSubmit={saveEncaissement}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Encaissement</p>
-                <h2 className="mt-1 text-2xl font-extrabold text-slate-950">Nouvel encaissement</h2>
-              </div>
-              <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={() => setShowForm(false)} type="button">Fermer</button>
-            </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+      {modal === 'payment' && (
+        <FinanceModal title="Nouvel encaissement" onClose={() => setModal(null)}>
+          <form onSubmit={savePayment}>
+            <div className="grid gap-4 md:grid-cols-2">
               <label className="block md:col-span-2">
                 <span className="text-sm font-bold text-slate-700">Élève (dossier) *</span>
                 <select
-                  className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                  onChange={(event) => handleSelectStudentInForm(event.target.value)}
-                  value={form.studentId}
+                  className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                  onChange={(e) => handleSelectStudentInForm(e.target.value)}
+                  value={paymentForm.studentId}
                 >
                   <option value="">Sélectionner un dossier élève…</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
-                      {studentName(student)} · {student.id}
+                      {studentLabel(student)} · {student.file_number || student.id.slice(0, 8)}
                     </option>
                   ))}
                 </select>
               </label>
-
-              <Select label="Nature du paiement *" onChange={(value) => updateForm('nature', value)} options={PAYMENT_NATURES} value={form.nature} />
-              <Select label="Mode de paiement *" onChange={(value) => updateForm('method', value)} options={PAYMENT_METHODS} value={form.method} />
-              <Field label="Montant encaissé (€) *" onChange={(value) => updateForm('amount', value)} type="number" value={form.amount} />
-              <Field label="Date d'encaissement *" onChange={(value) => updateForm('date', value)} type="date" value={form.date} />
-              <Field label="Montant du contrat (€)" onChange={(value) => updateForm('contractTotal', value)} type="number" value={form.contractTotal} />
-              <Textarea label="Commentaire (optionnel)" onChange={(value) => updateForm('comment', value)} value={form.comment} />
+              <Select label="Nature *" options={PAYMENT_NATURES} value={paymentForm.nature} onChange={(v) => setPaymentForm((c) => ({ ...c, nature: v }))} />
+              <Select label="Mode *" options={PAYMENT_METHODS} value={paymentForm.method} onChange={(v) => setPaymentForm((c) => ({ ...c, method: v }))} />
+              <Field label="Montant (€) *" type="number" value={paymentForm.amount} onChange={(v) => setPaymentForm((c) => ({ ...c, amount: v }))} />
+              <Field label="Date *" type="date" value={paymentForm.date} onChange={(v) => setPaymentForm((c) => ({ ...c, date: v }))} />
+              <Field label="Montant du contrat (€)" type="number" value={paymentForm.contractTotal} onChange={(v) => setPaymentForm((c) => ({ ...c, contractTotal: v }))} />
+              <Textarea label="Commentaire" value={paymentForm.comment} onChange={(v) => setPaymentForm((c) => ({ ...c, comment: v }))} />
             </div>
-
             <div className="mt-5 rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-4">
               <p className="text-sm font-black text-cyan-800">Récapitulatif</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Info label="Montant du contrat" value={formatEur(formSummary.contractTotal)} />
-                <Info label="Déjà encaissé" value={formatEur(formSummary.alreadyPaid)} />
-                <Info label="Reste à payer avant paiement" value={formatEur(formSummary.remainingBefore)} />
-                <Info label="Reste à payer après validation" value={formatEur(formSummary.remainingAfter)} />
+                <Info label="Contrat" value={formatEur(paymentFormSummary.contractTotal)} />
+                <Info label="Déjà encaissé" value={formatEur(paymentFormSummary.alreadyPaid)} />
+                <Info label="Reste avant" value={formatEur(paymentFormSummary.remainingBefore)} />
+                <Info label="Reste après" value={formatEur(paymentFormSummary.remainingAfter)} />
               </div>
             </div>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold text-slate-400">
-                {canSubmit ? 'Prêt à enregistrer.' : 'Renseignez l\u2019élève, le montant, la date et le mode de paiement.'}
-              </p>
-              <button
-                className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
-                type="submit"
-                disabled={!canSubmit}
-              >
-                Enregistrer l'encaissement
-              </button>
-            </div>
+            <SubmitRow canSubmit={canSubmitPayment && !saving} label={saving ? 'Enregistrement…' : 'Enregistrer l\u2019encaissement'} />
           </form>
-        </div>
+        </FinanceModal>
+      )}
+
+      {modal === 'expense' && (
+        <FinanceModal title="Nouvelle dépense" onClose={() => setModal(null)}>
+          <form onSubmit={saveExpense}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Select label="Catégorie *" options={EXPENSE_CATEGORIES} value={expenseForm.category} onChange={(v) => setExpenseForm((c) => ({ ...c, category: v }))} />
+              <Field label="Montant (€) *" type="number" value={expenseForm.amount} onChange={(v) => setExpenseForm((c) => ({ ...c, amount: v }))} />
+              <Field label="Date *" type="date" value={expenseForm.date} onChange={(v) => setExpenseForm((c) => ({ ...c, date: v }))} />
+              <label className="block">
+                <span className="text-sm font-bold text-slate-700">Véhicule (optionnel)</span>
+                <select
+                  className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800"
+                  value={expenseForm.vehicleId}
+                  onChange={(e) => setExpenseForm((c) => ({ ...c, vehicleId: e.target.value }))}
+                >
+                  <option value="">—</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{vehicleLabel(v)}</option>
+                  ))}
+                </select>
+              </label>
+              <Textarea label="Commentaire" value={expenseForm.comment} onChange={(v) => setExpenseForm((c) => ({ ...c, comment: v }))} />
+            </div>
+            <SubmitRow canSubmit={canSubmitExpense && !saving} label={saving ? 'Enregistrement…' : 'Enregistrer la dépense'} />
+          </form>
+        </FinanceModal>
       )}
     </div>
+  )
+}
+
+function TabButton({ active, children, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl px-4 py-2 text-sm font-black transition ${active ? 'bg-navy-950 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -302,11 +485,35 @@ function InlineNotice({ label }) {
   )
 }
 
+function FinanceModal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Finances</p>
+            <h2 className="mt-1 text-2xl font-extrabold text-slate-950">{title}</h2>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={onClose} type="button">
+            Fermer
+          </button>
+        </div>
+        <div className="mt-5">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 function Field({ label, onChange, type = 'text', value }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} type={type} value={value} />
+      <input
+        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        onChange={(e) => onChange(e.target.value)}
+        type={type}
+        value={value}
+      />
     </label>
   )
 }
@@ -315,7 +522,11 @@ function Textarea({ label, onChange, value }) {
   return (
     <label className="block md:col-span-2">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <textarea className="mt-2 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value} />
+      <textarea
+        className="mt-2 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        onChange={(e) => onChange(e.target.value)}
+        value={value}
+      />
     </label>
   )
 }
@@ -324,9 +535,29 @@ function Select({ label, onChange, options, value }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <select className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value}>
-        {options.map((option) => <option key={option}>{option}</option>)}
+      <select
+        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        onChange={(e) => onChange(e.target.value)}
+        value={value}
+      >
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
       </select>
     </label>
+  )
+}
+
+function SubmitRow({ canSubmit, label }) {
+  return (
+    <div className="mt-5 flex justify-end">
+      <button
+        className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+        type="submit"
+        disabled={!canSubmit}
+      >
+        {label}
+      </button>
+    </div>
   )
 }

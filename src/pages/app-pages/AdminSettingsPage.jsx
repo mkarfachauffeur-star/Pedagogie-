@@ -1,6 +1,115 @@
-import ModernPage from '../../components/ModernPage'
-import { pageConfigs } from '../../data/pageConfigs'
+import { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import {
+  fetchOrganization,
+  orgLogoUrl,
+  updateOrganization,
+  uploadOrgLogo,
+} from '../../services/organization'
 
 export default function AdminSettingsPage() {
-  return <ModernPage config={pageConfigs.adminSettings} />
+  const { profileId, user, organizationId, organization, canWrite, refreshOrg } = useAuth()
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postal_code: '',
+    website: '',
+    siret: '',
+    prefecture_approval: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState(null)
+
+  useEffect(() => {
+    if (!organization) return
+    setForm({
+      name: organization.name || '',
+      email: organization.email || '',
+      phone: organization.phone || '',
+      address: organization.address || '',
+      city: organization.city || '',
+      postal_code: organization.postal_code || '',
+      website: organization.website || '',
+      siret: organization.siret || '',
+      prefecture_approval: organization.prefecture_approval || '',
+    })
+  }, [organization])
+
+  const save = async (e) => {
+    e.preventDefault()
+    if (!canWrite || !organizationId) return
+    setSaving(true)
+    const { error } = await updateOrganization(organizationId, form)
+    setSaving(false)
+    setMessage(error ? 'Erreur de sauvegarde.' : 'Paramètres enregistrés.')
+    if (!error) refreshOrg?.(user?.id)
+  }
+
+  const onLogo = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !organizationId || !canWrite) return
+    const { path, error } = await uploadOrgLogo(organizationId, file)
+    if (!error && path) {
+      await updateOrganization(organizationId, { logo_storage_path: path })
+      refreshOrg?.(profileId)
+    }
+  }
+
+  const logoUrl = orgLogoUrl(organization?.logo_storage_path)
+
+  if (!profileId) return null
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <section className="rounded-[2rem] bg-gradient-to-br from-navy-950 to-cyan-900 p-8 text-white">
+        <h1 className="text-3xl font-extrabold">Paramètres</h1>
+        <p className="mt-2 text-sm text-blue-50">Auto-école — identité, coordonnées et logo.</p>
+      </section>
+
+      <form className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6" onSubmit={save}>
+        <div className="flex items-center gap-4">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-16 w-16 rounded-xl object-cover" />
+          ) : (
+            <div className="grid h-16 w-16 place-items-center rounded-xl bg-slate-100 text-2xl">🏫</div>
+          )}
+          {canWrite && (
+            <label className="text-sm font-bold text-cyan-700 cursor-pointer">
+              Changer le logo
+              <input type="file" accept="image/*" className="hidden" onChange={onLogo} />
+            </label>
+          )}
+        </div>
+
+        <Field label="Nom auto-école" value={form.name} onChange={(v) => setForm((c) => ({ ...c, name: v }))} disabled={!canWrite} />
+        <Field label="E-mail" value={form.email} onChange={(v) => setForm((c) => ({ ...c, email: v }))} disabled={!canWrite} />
+        <Field label="Téléphone" value={form.phone} onChange={(v) => setForm((c) => ({ ...c, phone: v }))} disabled={!canWrite} />
+        <Field label="Adresse" value={form.address} onChange={(v) => setForm((c) => ({ ...c, address: v }))} disabled={!canWrite} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Code postal" value={form.postal_code} onChange={(v) => setForm((c) => ({ ...c, postal_code: v }))} disabled={!canWrite} />
+          <Field label="Ville" value={form.city} onChange={(v) => setForm((c) => ({ ...c, city: v }))} disabled={!canWrite} />
+        </div>
+        <Field label="Site web" value={form.website} onChange={(v) => setForm((c) => ({ ...c, website: v }))} disabled={!canWrite} />
+        <Field label="SIRET" value={form.siret} onChange={(v) => setForm((c) => ({ ...c, siret: v }))} disabled={!canWrite} />
+        <Field label="N° agrément préfectoral" value={form.prefecture_approval} onChange={(v) => setForm((c) => ({ ...c, prefecture_approval: v }))} disabled={!canWrite} />
+
+        {message && <p className="text-sm font-semibold text-emerald-700">{message}</p>}
+        {canWrite && (
+          <button type="submit" disabled={saving} className="pd-btn-primary">{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        )}
+      </form>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, disabled }) {
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      {label}
+      <input className="pd-input mt-2 w-full disabled:bg-slate-50" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+    </label>
+  )
 }

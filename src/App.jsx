@@ -1,7 +1,9 @@
 import { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProfileSelection from './pages/ProfileSelection'
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import AcceptInvitePage from './pages/AcceptInvitePage'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -18,6 +20,15 @@ import ManagerStatisticsPage from './pages/app-pages/AdminStatisticsPage'
 import ManagerSettingsPage from './pages/app-pages/AdminSettingsPage'
 import ManagerMessagesPage from './pages/app-pages/ManagerMessagesPage'
 import ManagerExportsPage from './pages/app-pages/ManagerExportsPage'
+import ManagerPackagesPage from './pages/app-pages/ManagerPackagesPage'
+import ManagerRegulatoryExportPage from './pages/app-pages/ManagerRegulatoryExportPage'
+
+import PlatformLayout from './layouts/PlatformLayout'
+import PlatformProtectedRoute from './components/PlatformProtectedRoute'
+import PlatformDashboardPage from './pages/platform/PlatformDashboardPage'
+import PlatformOrganizationsPage from './pages/platform/PlatformOrganizationsPage'
+import PlatformSubscriptionsPage from './pages/platform/PlatformSubscriptionsPage'
+import PlatformAuditPage from './pages/platform/PlatformAuditPage'
 
 import StudentDashboardPage from './pages/app-pages/StudentDashboardPage'
 const StudentLessonsPage = lazy(() => import('./pages/app-pages/StudentLessonsPage'))
@@ -33,6 +44,7 @@ import TeacherStudentsPage from './pages/app-pages/TeacherStudentsPage'
 import TeacherLessonsPage from './pages/app-pages/TeacherLessonsPage'
 import TeacherVehiclesPage from './pages/app-pages/TeacherVehiclesPage'
 import TeacherMessagesPage from './pages/app-pages/TeacherMessagesPage'
+import TeacherFinancePage from './pages/app-pages/TeacherFinancePage'
 import TeacherProfilePage from './pages/app-pages/TeacherProfilePage'
 
 import SecretaryDashboardPage from './pages/app-pages/SecretaryDashboardPage'
@@ -59,6 +71,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/manager/dashboard" element={withProtectedLayout('manager', ManagerDashboardPage)} />
@@ -70,6 +84,8 @@ function App() {
         <Route path="/manager/contracts" element={withProtectedLayout('manager', ManagerContractsPage)} />
         <Route path="/manager/payments" element={withProtectedLayout('manager', ManagerPaymentsPage)} />
         <Route path="/manager/exports" element={withProtectedLayout('manager', ManagerExportsPage)} />
+        <Route path="/manager/packages" element={withProtectedLayout('manager', ManagerPackagesPage)} />
+        <Route path="/manager/regulatory-export" element={withProtectedLayout('manager', ManagerRegulatoryExportPage)} />
         <Route path="/manager/messages" element={withProtectedLayout('manager', ManagerMessagesPage)} />
         <Route path="/manager/statistics" element={withProtectedLayout('manager', ManagerStatisticsPage)} />
         <Route path="/manager/settings" element={withProtectedLayout('manager', ManagerSettingsPage)} />
@@ -105,6 +121,7 @@ function App() {
         <Route path="/teacher/lessons" element={withProtectedLayout('teacher', TeacherLessonsPage)} />
         <Route path="/teacher/vehicles" element={withProtectedLayout('teacher', TeacherVehiclesPage)} />
         <Route path="/teacher/messages" element={withProtectedLayout('teacher', TeacherMessagesPage)} />
+        <Route path="/teacher/finance" element={withProtectedLayout('teacher', TeacherFinancePage)} />
         <Route path="/teacher/profile" element={withProtectedLayout('teacher', TeacherProfilePage)} />
 
         <Route
@@ -139,6 +156,21 @@ function App() {
           path="/secretary/messages"
           element={withProtectedLayout('secretary', SecretaryMessagesPage)}
         />
+
+        <Route
+          path="/platform"
+          element={
+            <PlatformProtectedRoute>
+              <PlatformLayout />
+            </PlatformProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<PlatformDashboardPage />} />
+          <Route path="organizations" element={<PlatformOrganizationsPage />} />
+          <Route path="subscriptions" element={<PlatformSubscriptionsPage />} />
+          <Route path="audit" element={<PlatformAuditPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

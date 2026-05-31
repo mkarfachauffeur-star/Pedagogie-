@@ -358,12 +358,12 @@ export default function ProfileSelection() {
               Rejoignez les centaines d’auto-écoles qui modernisent leur gestion et leur pédagogie avec PEDAGOGIA DRIVE.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <a href="#contact" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-7 py-4 text-sm font-black text-white shadow-xl shadow-blue-900/35 transition hover:-translate-y-0.5">
-                Demander une démo
+              <Link to="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5">
+                Créer mon auto-école
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
               <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10">
-                Essayer gratuitement
+                Se connecter
               </Link>
             </div>
           </motion.div>
