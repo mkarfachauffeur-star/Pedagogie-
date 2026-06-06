@@ -22,7 +22,7 @@ const rawPageConfigs = {
       eyebrow: 'Gérant',
       title: 'Tableau de bord Gérant',
       subtitle: "Vue d'ensemble de votre auto-école : activité, planning, élèves et revenus.",
-      actions: [actions.export, actions.addÉlève],
+      actions: [{ label: 'Exporter' }],
     },
     metrics: [],
     sections: [

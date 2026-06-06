@@ -30,3 +30,4 @@ extracted/
 *.sw?
 .vercel
 scripts/.pydeps
+.env*

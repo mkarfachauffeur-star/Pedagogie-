@@ -44,14 +44,14 @@ function getTone(tone = 'cyan') {
   return toneStyles[tone] || toneStyles.cyan
 }
 
-function ActionButton({ children, variant = 'primary', onClick }) {
+function ActionButton({ children, variant = 'primary', onClick, className = '' }) {
   return (
     <button
-      className={
+      className={`${
         variant === 'secondary'
           ? 'pd-btn-secondary'
           : 'pd-btn-primary'
-      }
+      } ${className}`}
       type="button"
       onClick={onClick}
     >
@@ -91,25 +91,36 @@ function Hero({ hero, onAction }) {
               {hero.eyebrow}
             </span>
           )}
-          <h1 className="mt-5 max-w-4xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            {hero.title}
-          </h1>
-          {hero.subtitle && (
-            <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">{hero.subtitle}</p>
-          )}
-          {hero.actions?.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-3">
-              {hero.actions.map((action) => (
-                <ActionButton
-                  key={action.label}
-                  onClick={() => onAction(action)}
-                  variant={action.variant}
-                >
-                  {action.label}
-                </ActionButton>
-              ))}
+          <div
+            className={
+              hero.actions?.length
+                ? 'mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'
+                : 'mt-5'
+            }
+          >
+            <div>
+              <h1 className="max-w-4xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                {hero.title}
+              </h1>
+              {hero.subtitle && (
+                <p className="mt-3 max-w-3xl text-base leading-7 text-cyan-50/85">{hero.subtitle}</p>
+              )}
             </div>
-          )}
+            {hero.actions?.length > 0 && (
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                {hero.actions.map((action) => (
+                  <ActionButton
+                    key={action.label}
+                    className="w-full shrink-0 sm:w-auto"
+                    onClick={() => onAction(action)}
+                    variant={action.variant}
+                  >
+                    {action.label}
+                  </ActionButton>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {hero.focus && (

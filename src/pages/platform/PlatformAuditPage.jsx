@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import PageHero from '../../components/ui/PageHero'
 import { listAuditLogs } from '../../services/platform'
 
 export default function PlatformAuditPage() {
@@ -9,9 +10,12 @@ export default function PlatformAuditPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-3xl font-extrabold text-slate-950">Journaux d&apos;audit</h1>
-      <p className="text-sm text-slate-500">Conservation 7 ans — création, modification, suppression, connexion, exports.</p>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <PageHero
+        eyebrow="Super Admin"
+        title="Journaux d'audit"
+        subtitle="Conservation 7 ans — création, modification, suppression, connexion, exports."
+      />
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>

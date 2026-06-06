@@ -61,12 +61,17 @@ Deno.serve(async (req) => {
     }
 
     // Invitation par e-mail + métadonnées (org + rôle) -> profil créé par trigger.
+    const appUrl = (Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'http://localhost:5173')
+      .replace(/\/$/, '')
+    const redirectTo = `${appUrl}/accept-invite`
+
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {
         organization_id: callerProfile.organization_id,
         role,
         full_name: fullName,
       },
+      redirectTo,
     })
     if (error) return json({ error: error.message }, 400)
 

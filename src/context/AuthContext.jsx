@@ -8,6 +8,8 @@ import {
 } from '../utils/authSession'
 import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
 import { checkIsSuperAdmin } from '../services/platform'
+import { clearPersistedSupabaseSession, DEMO_PROFILE_IDS } from '../data/demoPracticeExam'
+import { getUserFacingError } from '../lib/userFacingError'
 
 export const VALID_ROLES = [...Object.keys(roleDestinations), 'super_admin']
 
@@ -121,7 +123,7 @@ export function AuthProvider({ children }) {
 
   const signInWithPassword = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error, role: null }
+    if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null }
     let nextRole = null
     try {
       const superAdmin = await checkIsSuperAdmin(data.user?.id)
@@ -142,8 +144,17 @@ export function AuthProvider({ children }) {
     return { error: null, role: nextRole }
   }, [loadProfile])
 
-  const signInWithRole = useCallback((role) => {
+  const signInWithRole = useCallback(async (role) => {
     if (!roleDestinations[role]) return null
+    clearPersistedSupabaseSession()
+    void supabase.auth.signOut().catch(() => {})
+    setSession(null)
+    setSupabaseRole(null)
+    setProfile(null)
+    setOrganization(null)
+    setSubscription(null)
+    setStudentCount(0)
+    setIsSuperAdmin(false)
     setStoredRole(role)
     setLocalRole(role)
     return roleDestinations[role]
@@ -165,7 +176,9 @@ export function AuthProvider({ children }) {
     setIsSuperAdmin(false)
   }, [])
 
-  const role = isSuperAdmin ? 'super_admin' : (profile?.role || supabaseRole || localRole)
+  const role = isSuperAdmin
+    ? 'super_admin'
+    : (session ? (profile?.role || supabaseRole) : null) || localRole
   const isTrial = organization?.status === 'trial'
   const canWrite = useMemo(
     () => computeCanWrite(organization, subscription),
@@ -177,8 +190,15 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       profile,
-      profileId: profile?.id ?? session?.user?.id ?? null,
-      organizationId: profile?.organization_id ?? null,
+      profileId:
+        profile?.id
+        ?? session?.user?.id
+        ?? (localRole === 'student'
+          ? DEMO_PROFILE_IDS.student
+          : localRole === 'teacher'
+            ? DEMO_PROFILE_IDS.teacher
+            : null),
+      organizationId: profile?.organization_id ?? (localRole ? DEMO_PROFILE_IDS.organization : null),
       organization,
       subscription,
       studentCount,
@@ -187,6 +207,7 @@ export function AuthProvider({ children }) {
       isTrial,
       role,
       isAuthenticated: Boolean(session) || Boolean(localRole),
+      isDemoSession: Boolean(localRole) && !session,
       loading,
       signInWithPassword,
       signInWithRole,

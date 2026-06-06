@@ -506,5 +506,19 @@ export function useStudentTrackingStore() {
     ])
   }
 
-  return { students: studentsWithProgress, updateRemcStatus, addLesson, updateLesson, addStudent }
+  const upsertStudent = (payload) => {
+    setStudents((current) => {
+      const existing = current.find((student) => student.id === payload.id)
+      if (existing) {
+        return current.map((student) =>
+          student.id === payload.id
+            ? normalizeStudent({ ...student, ...payload }, 0)
+            : student,
+        )
+      }
+      return [normalizeStudent(payload, current.length), ...current]
+    })
+  }
+
+  return { students: studentsWithProgress, updateRemcStatus, addLesson, updateLesson, addStudent, upsertStudent }
 }

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { toUserError } from '../lib/userFacingError'
 
 export const PAYMENT_METHODS = ['Carte bancaire', 'Espèces', 'Chèque', 'Virement']
 
@@ -87,7 +88,7 @@ export async function createPayment(payload) {
     if (error) throw error
     return { payment: data, error: null }
   } catch (error) {
-    return { payment: null, error }
+    return { payment: null, error: toUserError(error, 'save') }
   }
 }
 
@@ -139,7 +140,7 @@ export async function createExpense(payload) {
     if (error) throw error
     return { expense: data, error: null }
   } catch (error) {
-    return { expense: null, error }
+    return { expense: null, error: toUserError(error, 'save') }
   }
 }
 

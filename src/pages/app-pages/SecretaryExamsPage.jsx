@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
 import WeekdayDatePicker from '../../components/ui/WeekdayDatePicker'
 
 const initialExams = []
@@ -172,37 +173,31 @@ export default function SecretaryExamsPage() {
         )}
       </section>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
-          <form className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl" onSubmit={saveExam}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-cyan-700">{editingId ? 'Modification' : 'Nouvelle session'}</p>
-                <h2 className="mt-1 text-2xl font-extrabold text-slate-950">{editingId ? 'Modifier l\u2019examen' : 'Planifier un examen'}</h2>
-              </div>
-              <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={closeForm} type="button">Fermer</button>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} value={form.student} />
-              <Select label="Type" onChange={(value) => setForm((current) => ({ ...current, type: value }))} options={['Code', 'Permis B', 'AAC', 'Boîte auto', 'Examen blanc']} value={form.type} />
-              <WeekdayDatePicker label="Date (lundi au samedi)" value={form.date} onChange={handleDateChange} />
-              <Select label="Heure" onChange={(value) => setForm((current) => ({ ...current, hour: value }))} options={TIME_SLOTS} value={form.hour} />
-              <Field label="Enseignant référent" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} value={form.teacher} />
-              <Field label="Centre d'examen" onChange={(value) => setForm((current) => ({ ...current, center: value }))} value={form.center} />
-              <Select label="Statut" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['Confirmé', 'À confirmer', 'Dossier incomplet']} value={form.status} />
-            </div>
-            <div className="mt-5 flex justify-end">
-              <button
-                className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                type="submit"
-                disabled={dateInvalid}
-              >
-                {editingId ? 'Enregistrer les modifications' : 'Enregistrer'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <AppModal
+        open={showForm}
+        onClose={closeForm}
+        eyebrow={editingId ? 'Modification' : 'Nouvelle session'}
+        title={editingId ? 'Modifier l\u2019examen' : 'Planifier un examen'}
+        size="lg"
+        footer={(
+          <AppModalFooter
+            onClose={closeForm}
+            submitForm="exam-form"
+            submitLabel={editingId ? 'Enregistrer les modifications' : 'Enregistrer'}
+            submitDisabled={dateInvalid}
+          />
+        )}
+      >
+        <form id="exam-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveExam}>
+          <Field label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} value={form.student} />
+          <Select label="Type" onChange={(value) => setForm((current) => ({ ...current, type: value }))} options={['Code', 'Permis B', 'AAC', 'Boîte auto', 'Examen blanc']} value={form.type} />
+          <WeekdayDatePicker label="Date (lundi au samedi)" value={form.date} onChange={handleDateChange} />
+          <Select label="Heure" onChange={(value) => setForm((current) => ({ ...current, hour: value }))} options={TIME_SLOTS} value={form.hour} />
+          <Field label="Enseignant référent" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} value={form.teacher} />
+          <Field label="Centre d'examen" onChange={(value) => setForm((current) => ({ ...current, center: value }))} value={form.center} />
+          <Select label="Statut" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['Confirmé', 'À confirmer', 'Dossier incomplet']} value={form.status} />
+        </form>
+      </AppModal>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import AcceptInvitePage from './pages/AcceptInvitePage'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
+import AuthHashRedirect from './components/AuthHashRedirect'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
 import ManagerStudentsPage from './pages/app-pages/AdminStudentsPage'
@@ -21,7 +22,6 @@ import ManagerSettingsPage from './pages/app-pages/AdminSettingsPage'
 import ManagerMessagesPage from './pages/app-pages/ManagerMessagesPage'
 import ManagerExportsPage from './pages/app-pages/ManagerExportsPage'
 import ManagerPackagesPage from './pages/app-pages/ManagerPackagesPage'
-import ManagerRegulatoryExportPage from './pages/app-pages/ManagerRegulatoryExportPage'
 
 import PlatformLayout from './layouts/PlatformLayout'
 import PlatformProtectedRoute from './components/PlatformProtectedRoute'
@@ -35,8 +35,19 @@ const StudentLessonsPage = lazy(() => import('./pages/app-pages/StudentLessonsPa
 import StudentLexiconPage from './pages/app-pages/StudentLexiconPage'
 import StudentProgressPage from './pages/app-pages/StudentProgressPage'
 import StudentExamsPage from './pages/app-pages/StudentExamsPage'
+import StudentPracticeExamsPage from './pages/app-pages/StudentPracticeExamsPage'
 import StudentAccompaniedDrivingPage from './pages/app-pages/StudentAccompaniedDrivingPage'
 import StudentMessagesPage from './pages/app-pages/StudentMessagesPage'
+import StudentInitialAssessmentPage from './pages/app-pages/StudentInitialAssessmentPage'
+import StudentPlanningPage from './pages/app-pages/StudentPlanningPage'
+import StudentObservationsPage from './pages/app-pages/StudentObservationsPage'
+import StudentDocumentsPage from './pages/app-pages/StudentDocumentsPage'
+import StudentContractPage from './pages/app-pages/StudentContractPage'
+import StudentPaymentsPage from './pages/app-pages/StudentPaymentsPage'
+import StudentNextLessonPage from './pages/app-pages/StudentNextLessonPage'
+import StudentCompetencyReportsPage from './pages/app-pages/StudentCompetencyReportsPage'
+import StudentPedagogicalAppointmentsPage from './pages/app-pages/StudentPedagogicalAppointmentsPage'
+import StudentTrackRoute from './components/StudentTrackRoute'
 
 import TeacherDashboardPage from './pages/app-pages/TeacherDashboardPage'
 import TeacherPlanningPage from './pages/app-pages/TeacherPlanningPage'
@@ -66,9 +77,22 @@ function withProtectedLayout(role, Page, fullWidth = false) {
   )
 }
 
+function withStudentLayout(Page, fullWidth = false) {
+  return (
+    <ProtectedRoute role="student">
+      <DashboardLayout role="student" fullWidth={fullWidth}>
+        <StudentTrackRoute>
+          <Page />
+        </StudentTrackRoute>
+      </DashboardLayout>
+    </ProtectedRoute>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <AuthHashRedirect />
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -85,34 +109,47 @@ function App() {
         <Route path="/manager/payments" element={withProtectedLayout('manager', ManagerPaymentsPage)} />
         <Route path="/manager/exports" element={withProtectedLayout('manager', ManagerExportsPage)} />
         <Route path="/manager/packages" element={withProtectedLayout('manager', ManagerPackagesPage)} />
-        <Route path="/manager/regulatory-export" element={withProtectedLayout('manager', ManagerRegulatoryExportPage)} />
+        <Route path="/manager/regulatory-export" element={<Navigate replace to="/manager/exports" />} />
         <Route path="/manager/messages" element={withProtectedLayout('manager', ManagerMessagesPage)} />
         <Route path="/manager/statistics" element={withProtectedLayout('manager', ManagerStatisticsPage)} />
         <Route path="/manager/settings" element={withProtectedLayout('manager', ManagerSettingsPage)} />
+        <Route path="/manager/settings/pricing" element={<Navigate replace to="/manager/packages" />} />
 
-        <Route path="/student/dashboard" element={withProtectedLayout('student', StudentDashboardPage)} />
+        <Route path="/student/dashboard" element={withStudentLayout(StudentDashboardPage)} />
         <Route
           path="/student/lessons"
           element={
             <ProtectedRoute role="student">
               <DashboardLayout role="student">
-                <Suspense fallback={<LoadingSpinner label="Chargement des leçons…" />}>
-                  <StudentLessonsPage />
-                </Suspense>
+                <StudentTrackRoute>
+                  <Suspense fallback={<LoadingSpinner label="Chargement des leçons…" />}>
+                    <StudentLessonsPage />
+                  </Suspense>
+                </StudentTrackRoute>
               </DashboardLayout>
             </ProtectedRoute>
           }
         />
-        <Route path="/student/lexicon" element={withProtectedLayout('student', StudentLexiconPage)} />
-        <Route path="/student/progress" element={withProtectedLayout('student', StudentProgressPage)} />
-        <Route path="/student/exams" element={withProtectedLayout('student', StudentExamsPage)} />
+        <Route path="/student/planning" element={withStudentLayout(StudentPlanningPage)} />
+        <Route path="/student/initial-assessment" element={withStudentLayout(StudentInitialAssessmentPage)} />
+        <Route path="/student/competency-reports" element={withStudentLayout(StudentCompetencyReportsPage)} />
+        <Route path="/student/pedagogical-appointments" element={withStudentLayout(StudentPedagogicalAppointmentsPage)} />
+        <Route path="/student/observations" element={withStudentLayout(StudentObservationsPage)} />
+        <Route path="/student/documents" element={withStudentLayout(StudentDocumentsPage)} />
+        <Route path="/student/contract" element={withStudentLayout(StudentContractPage)} />
+        <Route path="/student/payments" element={withStudentLayout(StudentPaymentsPage)} />
+        <Route path="/student/next-lesson" element={withStudentLayout(StudentNextLessonPage)} />
+        <Route path="/student/lexicon" element={withStudentLayout(StudentLexiconPage)} />
+        <Route path="/student/progress" element={withStudentLayout(StudentProgressPage)} />
+        <Route path="/student/exams" element={withStudentLayout(StudentExamsPage)} />
+        <Route path="/student/practice-exams" element={withStudentLayout(StudentPracticeExamsPage)} />
         <Route
           path="/student/accompanied-driving"
-          element={withProtectedLayout('student', StudentAccompaniedDrivingPage)}
+          element={withStudentLayout(StudentAccompaniedDrivingPage)}
         />
         <Route
           path="/student/messages"
-          element={withProtectedLayout('student', StudentMessagesPage)}
+          element={withStudentLayout(StudentMessagesPage)}
         />
 
         <Route path="/teacher/dashboard" element={withProtectedLayout('teacher', TeacherDashboardPage)} />

@@ -16,23 +16,6 @@ function getTeachingHours(slots) {
   return slots.filter((slot) => slot.type !== 'break').reduce((sum, slot) => sum + slot.duration, 0)
 }
 
-function formatDaySchedule(day, dayHours) {
-  const schedule = DAY_SCHEDULES[day]
-  if (!schedule) return `${dayHours}h de conduite`
-
-  const lunch = schedule.lunchStart
-    ? ` · pause ${schedule.lunchStart}–${schedule.lunchEnd}`
-    : ''
-  return `${schedule.start}–${schedule.end}${lunch} · ${dayHours}h de conduite`
-}
-
-function formatWeekScheduleSummary(days) {
-  if (!days.length) return 'Horaires variables'
-
-  const average = Math.round((days.reduce((sum, entry) => sum + entry.hours, 0) / days.length) * 10) / 10
-  return `Horaires variables · ~${average}h/jour en moyenne`
-}
-
 function formatDayRangeLabel(day) {
   const schedule = DAY_SCHEDULES[day]
   if (!schedule) return ''
@@ -118,11 +101,6 @@ export default function TeacherPlanningPage() {
   const slotsToDisplay =
     period === 'jour' ? activeSlots.filter((slot) => slot.day === selectedDay) : activeSlots
   const groupedDays = groupSlotsByDay(slotsToDisplay)
-  const selectedDayHours = getTeachingHours(activeSlots.filter((slot) => slot.day === selectedDay))
-  const workedDayRanges =
-    period === 'jour'
-      ? formatDaySchedule(selectedDay, selectedDayHours)
-      : formatWeekScheduleSummary(groupedDays)
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -134,9 +112,8 @@ export default function TeacherPlanningPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section>
         <MetricCard label="Heures travaillées cette semaine" value={`${weeklyTeachingHours}h`} tone="cyan" />
-        <MetricCard label="Heures de la journée travaillée" value={workedDayRanges} tone="slate" compact />
       </section>
 
       <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
@@ -237,19 +214,18 @@ export default function TeacherPlanningPage() {
   )
 }
 
-function MetricCard({ label, value, tone, compact = false }) {
+function MetricCard({ label, value, tone }) {
   const toneClass = {
     cyan: 'bg-gradient-to-br from-cyan-50 to-white text-cyan-700 border-cyan-200',
     emerald: 'bg-gradient-to-br from-emerald-50 to-white text-emerald-700 border-emerald-200',
     amber: 'bg-gradient-to-br from-amber-50 to-white text-amber-700 border-amber-200',
     sky: 'bg-gradient-to-br from-sky-50 to-white text-sky-700 border-sky-200',
-    slate: 'bg-slate-100 text-slate-700 border-slate-200',
   }[tone]
 
   return (
     <article className={`rounded-2xl border p-5 shadow-[var(--shadow-soft)] ${toneClass}`}>
       <p className="text-sm font-semibold text-slate-500">{label}</p>
-      <p className={`mt-2 ${compact ? 'text-sm font-semibold leading-6' : 'text-3xl font-black'}`}>{value}</p>
+      <p className="mt-2 text-3xl font-black">{value}</p>
     </article>
   )
 }

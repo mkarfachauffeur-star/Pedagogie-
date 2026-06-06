@@ -4,9 +4,21 @@
 -- Conversations + participants + messages + accusés de lecture + notifications.
 -- Permissions de mise en relation appliquées par `app.can_converse` (matrice
 -- des rôles) et un trigger de validation des participants.
+-- Migration idempotente : ré-exécutable si le schéma existe déjà (SQL Editor).
 -- =============================================================================
 
-create type public.conversation_kind as enum ('internal','student');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'conversation_kind'
+  ) then
+    create type public.conversation_kind as enum ('internal', 'student');
+  end if;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- Conversations
@@ -291,15 +303,47 @@ create policy notifications_update on public.notifications
 -- =============================================================================
 -- Realtime : diffusion des changements (RLS appliquée côté abonnement).
 -- =============================================================================
-do $$ begin
-  alter publication supabase_realtime add table public.messages;
-exception when duplicate_object then null; end $$;
-do $$ begin
-  alter publication supabase_realtime add table public.notifications;
-exception when duplicate_object then null; end $$;
-do $$ begin
-  alter publication supabase_realtime add table public.message_reads;
-exception when duplicate_object then null; end $$;
-do $$ begin
-  alter publication supabase_realtime add table public.conversations;
-exception when duplicate_object then null; end $$;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+end $$;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'message_reads'
+  ) then
+    alter publication supabase_realtime add table public.message_reads;
+  end if;
+end $$;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'conversations'
+  ) then
+    alter publication supabase_realtime add table public.conversations;
+  end if;
+end $$;

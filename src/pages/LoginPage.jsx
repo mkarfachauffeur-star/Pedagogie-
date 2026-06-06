@@ -24,6 +24,7 @@ import BrandLogo from '../components/BrandLogo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { roleDestinations, roleLabels } from '../utils/authSession'
 import { useAuth } from '../context/AuthContext'
+import { getUserFacingError } from '../lib/userFacingError'
 
 const roles = [
   { id: 'student', label: 'Élève', icon: GraduationCap },
@@ -177,7 +178,7 @@ export default function LoginPage() {
       const { error, role: realRole } = await signInWithPassword(email, password)
       setSubmitting(false)
       if (error) {
-        setAuthError('E-mail ou mot de passe incorrect.')
+        setAuthError(error.message || getUserFacingError(error, 'login'))
         return
       }
       navigate(roleDestinations[realRole] || '/', { replace: true })
@@ -185,12 +186,14 @@ export default function LoginPage() {
     }
     // Sinon : accès démo par rôle (transitoire, conservé pour les tests).
     if (!canSubmit) return
-    const destination = signInWithRole(role)
+    setSubmitting(true)
+    const destination = await signInWithRole(role)
+    setSubmitting(false)
     if (destination) navigate(destination, { replace: true })
   }
 
-  const handleQuickAccess = (selectedRoleId) => {
-    const destination = signInWithRole(selectedRoleId)
+  const handleQuickAccess = async (selectedRoleId) => {
+    const destination = await signInWithRole(selectedRoleId)
     if (destination) navigate(destination, { replace: true })
   }
 

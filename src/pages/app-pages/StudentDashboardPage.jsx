@@ -1,38 +1,108 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageShell from '../../components/ui/PageShell'
 import EmptyState from '../../components/ui/EmptyState'
-import { useStudentTrackingStore } from '../../data/studentTrackingStore'
+import RemcProgressOverview from '../../components/remc/RemcProgressOverview'
+import { useAuth } from '../../context/AuthContext'
+import { useRemcUnlock } from '../../hooks/useRemcUnlock'
+import { useStudentTrack } from '../../hooks/useStudentTrack'
+import { getStudentNavItems } from '../../config/navigation'
+import { getTrackLabel } from '../../lib/studentTrack'
+import {
+  formatAssessmentStatus,
+  getStudentHoursSummary,
+} from '../../services/initialAssessment'
+import { listPracticeExamsForStudent } from '../../services/practiceExams'
+import {
+  computeStudentPracticeExamStats,
+  estimateSuccessProbability,
+} from '../../services/practiceExamScoring'
+import { supabase } from '../../lib/supabase'
 
-const quickLinks = [
-  { href: '/student/lessons', label: 'Mes leçons', desc: 'Modules REMC et QCU' },
-  { href: '/student/exams', label: 'Examens', desc: 'Banque vérifications' },
-  { href: '/student/lexicon', label: 'Lexique', desc: 'Définitions clés' },
-  { href: '/student/accompanied-driving', label: 'Suivi accompagné', desc: 'Km et RVP' },
-]
+function formatDateFr(value) {
+  if (!value) return '—'
+  try {
+    return new Date(value).toLocaleDateString('fr-FR')
+  } catch {
+    return '—'
+  }
+}
+
+function StatCard({ label, value }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-sm font-semibold text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+    </article>
+  )
+}
 
 export default function StudentDashboardPage() {
-  const { students } = useStudentTrackingStore()
-  const student = students[0]
+  const { profile, profileId } = useAuth()
+  const { student, track, isPermisB, loading: trackLoading } = useStudentTrack(profileId)
+  const { studentId, unlockState, globalProgress, isCompetencyValidated, loading: remcLoading } = useRemcUnlock(profileId)
+  const [teacherName, setTeacherName] = useState('Non assigné')
+  const [hoursSummary, setHoursSummary] = useState(null)
+  const [practiceExamStats, setPracticeExamStats] = useState(null)
+  const [practiceExams, setPracticeExams] = useState([])
 
-  // Les séances à venir proviendront des données réelles (planning Supabase).
-  const lessons = []
+  useEffect(() => {
+    if (!student?.id) return
+    getStudentHoursSummary(student.id).then(setHoursSummary)
+  }, [student?.id])
 
-  if (!student) {
+  useEffect(() => {
+    if (!profileId) return
+    supabase
+      .from('students')
+      .select(`
+        student_assignments(is_referent, teacher:teacher_id(full_name))
+      `)
+      .eq('profile_id', profileId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const referent = data?.student_assignments?.find((row) => row.is_referent)?.teacher
+        setTeacherName(referent?.full_name || 'Non assigné')
+      })
+  }, [profileId])
+
+  useEffect(() => {
+    const resolvedId = studentId || student?.id
+    if (!resolvedId || !isPermisB) {
+      setPracticeExams([])
+      setPracticeExamStats(null)
+      return
+    }
+    listPracticeExamsForStudent(resolvedId).then(({ exams }) => {
+      setPracticeExams(exams)
+      setPracticeExamStats(computeStudentPracticeExamStats(exams))
+    })
+  }, [studentId, student?.id, isPermisB])
+
+  const displayName = useMemo(() => {
+    if (student?.first_name) return student.first_name
+    if (profile?.full_name) return profile.full_name.split(' ')[0]
+    return 'Élève'
+  }, [student, profile])
+
+  const formationLabel = student?.package_name || student?.formation_type || getTrackLabel(track)
+  const navLinks = getStudentNavItems(track, student).filter((item) => item.href !== '/student/dashboard')
+  const assessment = hoursSummary?.assessment
+  const assessmentDone = assessment?.status === 'completed'
+  const remcValidatedCount = ['C1', 'C2', 'C3', 'C4'].filter((code) => isCompetencyValidated(code)).length
+  const practiceExamProbability = estimateSuccessProbability(practiceExams, remcValidatedCount)
+
+  if (!profileId && !remcLoading && !trackLoading) {
     return (
       <PageShell>
-        <section className="pd-section-card pd-section-card-body">
-          <EmptyState
-            title="Aucune donnée disponible"
-            message="Aucune donnée disponible pour le moment. Votre espace s’activera dès l’ajout de votre dossier élève."
-            icon="🎓"
-          />
-        </section>
+        <EmptyState
+          icon="🎓"
+          message="Aucune donnée disponible pour le moment. Votre espace s'activera dès l'ajout de votre dossier élève."
+          title="Aucune donnée disponible"
+        />
       </PageShell>
     )
   }
-
-  const remcValidated = student.progress.global === 100
-  const isAac = student.formationType?.includes('AAC')
 
   return (
     <PageShell>
@@ -40,107 +110,104 @@ export default function StudentDashboardPage() {
         <div className="grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_280px] md:p-8">
           <div>
             <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-              Espace élève
+              {getTrackLabel(track)}
             </span>
             <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Bonjour {student.firstName}
+              Bonjour {displayName}
             </h1>
             <p className="mt-3 max-w-xl text-base leading-7 text-cyan-50/85">
-              {student.formationType} · Moniteur {student.teacher}
+              {formationLabel} · Moniteur {teacherName}
             </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {quickLinks.slice(0, 2).map((link) => (
-                <Link
-                  className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:border-cyan-300/40 hover:bg-white/15"
-                  key={link.href}
-                  to={link.href}
-                >
-                  {link.label}
-                  <span className="mt-0.5 block text-xs font-medium text-cyan-100/80">{link.desc}</span>
-                </Link>
-              ))}
-            </div>
           </div>
-          <aside className="rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Progression REMC</p>
-            <p className="mt-1 text-5xl font-black text-cyan-600">{student.progress.global}%</p>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
-                style={{ width: `${student.progress.global}%` }}
-              />
-            </div>
-            <p className="mt-3 text-sm text-slate-500">
-              {remcValidated
-                ? 'Parcours REMC complet — examen praticable.'
-                : 'Continuez les modules pour débloquer l’examen.'}
-            </p>
-          </aside>
-        </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {quickLinks.map((link) => (
-          <Link
-            className="group card-tile"
-            key={link.href}
-            to={link.href}
-          >
-            <p className="text-base font-black text-slate-950 group-hover:text-cyan-800">{link.label}</p>
-            <p className="mt-1 text-sm text-slate-500">{link.desc}</p>
-          </Link>
-        ))}
-      </section>
-
-      <section className="pd-card">
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Planning</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-950">Prochaines séances</h2>
-          </div>
-          <p className="rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
-            {lessons.length} rendez-vous
-          </p>
-        </div>
-
-        {!remcValidated && (
-          <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-            Examen pratique : toutes les compétences REMC doivent être validées par votre enseignant.
-          </p>
-        )}
-
-        {isAac && (
-          <p className="mt-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-900">
-            Parcours AAC : consultez votre suivi km et vos rendez-vous pédagogiques.
-          </p>
-        )}
-
-        <div className="mt-5 grid gap-3">
-          {lessons.length === 0 && (
-            <EmptyState title="Aucune leçon programmée" message="Aucune leçon programmée pour le moment." icon="📅" />
+          {isPermisB ? (
+            <aside className="rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Progression REMC</p>
+              <p className="mt-1 text-5xl font-black text-cyan-600">{globalProgress}%</p>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
+                  style={{ width: `${globalProgress}%` }}
+                />
+              </div>
+            </aside>
+          ) : (
+            <aside className="rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Prochaine leçon</p>
+              <p className="mt-2 text-lg font-black text-slate-900">À venir</p>
+              <Link className="mt-4 inline-flex text-sm font-bold text-cyan-700" to="/student/next-lesson">
+                Voir le détail →
+              </Link>
+            </aside>
           )}
-          {lessons.map((lesson) => (
-            <article
-              className="card-muted flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-              key={`${lesson.time}-${lesson.dateLabel}-${lesson.type}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-white px-3 py-2 text-center shadow-sm">
-                  <p className="text-sm font-black text-slate-900">{lesson.time}</p>
-                </div>
+        </div>
+      </section>
+
+      {isPermisB && (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <StatCard
+              label="Évaluation de départ réalisée"
+              value={assessmentDone ? 'Oui' : 'Non'}
+            />
+            <StatCard label="Date de réalisation" value={formatDateFr(assessment?.completed_at)} />
+            <StatCard
+              label="Heures recommandées"
+              value={hoursSummary?.recommendedHours ? `${hoursSummary.recommendedHours} h` : '—'}
+            />
+            <StatCard label="Heures au contrat" value={`${hoursSummary?.contractHours ?? 0} h`} />
+            <StatCard label="Heures effectuées" value={`${hoursSummary?.completedHours ?? 0} h`} />
+            <StatCard label="Heures restantes" value={`${hoursSummary?.remainingHours ?? 0} h`} />
+          </section>
+
+          {!assessmentDone && (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+              Évaluation de départ : {formatAssessmentStatus(assessment?.status || 'pending').toLowerCase()}.
+              Elle doit être réalisée avant le début complet du suivi pédagogique.
+              <Link className="ml-2 font-black text-amber-950 underline" to="/student/initial-assessment">
+                Consulter
+              </Link>
+            </p>
+          )}
+
+          {unlockState && (
+            <RemcProgressOverview globalProgress={globalProgress} unlockState={unlockState} />
+          )}
+
+          {practiceExamStats?.count > 0 && (
+            <section className="pd-section-card pd-section-card-body">
+              <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h3 className="font-extrabold text-slate-900">{lesson.dateLabel}</h3>
-                  <p className="text-sm text-slate-600">
-                    {lesson.type} · {lesson.duration}
-                  </p>
+                  <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Examen blanc</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">Préparation à l&apos;épreuve pratique</h2>
                 </div>
               </div>
-              <span className="w-fit rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">
-                {lesson.status}
-              </span>
-            </article>
-          ))}
-        </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { label: 'Dernier score', value: `${practiceExamStats.lastScore}/31` },
+                  { label: 'Meilleur score', value: `${practiceExamStats.bestScore}/31` },
+                  { label: 'Examens blancs', value: practiceExamStats.count },
+                  {
+                    label: 'Probabilité estimée',
+                    value: practiceExamProbability != null ? `${practiceExamProbability} %` : '—',
+                  },
+                ].map((item) => (
+                  <article className="card-muted" key={item.label}>
+                    <p className="text-sm font-semibold text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-2xl font-black text-slate-950">{item.value}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {navLinks.map((link) => (
+          <Link className="group card-tile" key={link.href} to={link.href}>
+            <p className="text-base font-black text-slate-950 group-hover:text-cyan-800">{link.label}</p>
+          </Link>
+        ))}
       </section>
     </PageShell>
   )

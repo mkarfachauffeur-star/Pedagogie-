@@ -30,6 +30,8 @@ Deno.serve(async (req) => {
     const phone = String(body.phone || '').trim()
     const password = String(body.password || '')
     const address = String(body.address || '').trim()
+    const postalCode = String(body.postal_code || '').trim()
+    const city = String(body.city || '').trim()
     const siret = String(body.siret || '').trim()
     const prefectureApproval = String(body.prefecture_approval || '').trim()
     const logoBase64 = body.logo_base64 ? String(body.logo_base64) : null
@@ -54,6 +56,8 @@ Deno.serve(async (req) => {
         email,
         phone: phone || null,
         address: address || null,
+        postal_code: postalCode || null,
+        city: city || null,
         siret: siret || null,
         prefecture_approval: prefectureApproval || null,
         status: 'trial',

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
+import { getUserFacingError } from '../../lib/userFacingError'
 import { listStudents } from '../../services/students'
 import {
   EXPENSE_CATEGORIES,
@@ -171,7 +174,7 @@ export default function SecretaryPaiementsPage() {
     })
     setSaving(false)
     if (error) {
-      setLoadError('Enregistrement de l\u2019encaissement impossible.')
+      setLoadError(getUserFacingError(error, 'save'))
       return
     }
     setSelectedStudentId(paymentForm.studentId)
@@ -195,7 +198,7 @@ export default function SecretaryPaiementsPage() {
     })
     setSaving(false)
     if (error) {
-      setLoadError('Enregistrement de la dépense impossible.')
+      setLoadError(getUserFacingError(error, 'save'))
       return
     }
     setModal(null)
@@ -203,46 +206,37 @@ export default function SecretaryPaiementsPage() {
     refresh()
   }
 
-  if (!profileId) {
-    return (
-      <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte secrétariat." icon="💳" />
-    )
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
-        <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
-          <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-            Finances
-          </span>
-          <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Encaissements & dépenses</h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
-                Entrées d&apos;argent (inscriptions, forfaits, code…) et sorties (carburant, frais…) centralisées pour le gérant.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={openPaymentForm}
-                type="button"
-                disabled={students.length === 0}
-              >
-                + Encaissement
-              </button>
-              <button
-                className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-white/20"
-                onClick={openExpenseForm}
-                type="button"
-              >
-                + Dépense
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Finances"
+        title="Encaissements & dépenses"
+        subtitle="Entrées d'argent (inscriptions, forfaits, code…) et sorties (carburant, frais…) centralisées pour le gérant."
+        actions={profileId ? (
+          <>
+            <button
+              className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={openPaymentForm}
+              type="button"
+              disabled={students.length === 0}
+            >
+              + Encaissement
+            </button>
+            <button
+              className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-white/20"
+              onClick={openExpenseForm}
+              type="button"
+            >
+              + Dépense
+            </button>
+          </>
+        ) : null}
+      />
+
+      {!profileId ? (
+        <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte secrétariat." icon="💳" />
+      ) : (
+        <>
 
       {loadError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -376,71 +370,95 @@ export default function SecretaryPaiementsPage() {
         </section>
       )}
 
-      {modal === 'payment' && (
-        <FinanceModal title="Nouvel encaissement" onClose={() => setModal(null)}>
-          <form onSubmit={savePayment}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block md:col-span-2">
-                <span className="text-sm font-bold text-slate-700">Élève (dossier) *</span>
-                <select
-                  className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                  onChange={(e) => handleSelectStudentInForm(e.target.value)}
-                  value={paymentForm.studentId}
-                >
-                  <option value="">Sélectionner un dossier élève…</option>
-                  {students.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {studentLabel(student)} · {student.file_number || student.id.slice(0, 8)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Select label="Nature *" options={PAYMENT_NATURES} value={paymentForm.nature} onChange={(v) => setPaymentForm((c) => ({ ...c, nature: v }))} />
-              <Select label="Mode *" options={PAYMENT_METHODS} value={paymentForm.method} onChange={(v) => setPaymentForm((c) => ({ ...c, method: v }))} />
-              <Field label="Montant (€) *" type="number" value={paymentForm.amount} onChange={(v) => setPaymentForm((c) => ({ ...c, amount: v }))} />
-              <Field label="Date *" type="date" value={paymentForm.date} onChange={(v) => setPaymentForm((c) => ({ ...c, date: v }))} />
-              <Field label="Montant du contrat (€)" type="number" value={paymentForm.contractTotal} onChange={(v) => setPaymentForm((c) => ({ ...c, contractTotal: v }))} />
-              <Textarea label="Commentaire" value={paymentForm.comment} onChange={(v) => setPaymentForm((c) => ({ ...c, comment: v }))} />
+      <AppModal
+        open={modal === 'payment'}
+        onClose={() => setModal(null)}
+        eyebrow="Finances"
+        title="Nouvel encaissement"
+        size="xl"
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(null)}
+            submitForm="secretary-payment-form"
+            submitLabel={saving ? 'Enregistrement…' : 'Enregistrer l\u2019encaissement'}
+            submitDisabled={!canSubmitPayment || saving}
+          />
+        )}
+      >
+        <form id="secretary-payment-form" onSubmit={savePayment}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">Élève (dossier) *</span>
+              <select
+                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                onChange={(e) => handleSelectStudentInForm(e.target.value)}
+                value={paymentForm.studentId}
+              >
+                <option value="">Sélectionner un dossier élève…</option>
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {studentLabel(student)} · {student.file_number || student.id.slice(0, 8)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Select label="Nature *" options={PAYMENT_NATURES} value={paymentForm.nature} onChange={(v) => setPaymentForm((c) => ({ ...c, nature: v }))} />
+            <Select label="Mode *" options={PAYMENT_METHODS} value={paymentForm.method} onChange={(v) => setPaymentForm((c) => ({ ...c, method: v }))} />
+            <Field label="Montant (€) *" type="number" value={paymentForm.amount} onChange={(v) => setPaymentForm((c) => ({ ...c, amount: v }))} />
+            <Field label="Date *" type="date" value={paymentForm.date} onChange={(v) => setPaymentForm((c) => ({ ...c, date: v }))} />
+            <Field label="Montant du contrat (€)" type="number" value={paymentForm.contractTotal} onChange={(v) => setPaymentForm((c) => ({ ...c, contractTotal: v }))} />
+            <Textarea label="Commentaire" value={paymentForm.comment} onChange={(v) => setPaymentForm((c) => ({ ...c, comment: v }))} />
+          </div>
+          <div className="mt-5 rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-4">
+            <p className="text-sm font-black text-cyan-800">Récapitulatif</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Info label="Contrat" value={formatEur(paymentFormSummary.contractTotal)} />
+              <Info label="Déjà encaissé" value={formatEur(paymentFormSummary.alreadyPaid)} />
+              <Info label="Reste avant" value={formatEur(paymentFormSummary.remainingBefore)} />
+              <Info label="Reste après" value={formatEur(paymentFormSummary.remainingAfter)} />
             </div>
-            <div className="mt-5 rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-4">
-              <p className="text-sm font-black text-cyan-800">Récapitulatif</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Info label="Contrat" value={formatEur(paymentFormSummary.contractTotal)} />
-                <Info label="Déjà encaissé" value={formatEur(paymentFormSummary.alreadyPaid)} />
-                <Info label="Reste avant" value={formatEur(paymentFormSummary.remainingBefore)} />
-                <Info label="Reste après" value={formatEur(paymentFormSummary.remainingAfter)} />
-              </div>
-            </div>
-            <SubmitRow canSubmit={canSubmitPayment && !saving} label={saving ? 'Enregistrement…' : 'Enregistrer l\u2019encaissement'} />
-          </form>
-        </FinanceModal>
-      )}
+          </div>
+        </form>
+      </AppModal>
 
-      {modal === 'expense' && (
-        <FinanceModal title="Nouvelle dépense" onClose={() => setModal(null)}>
-          <form onSubmit={saveExpense}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Select label="Catégorie *" options={EXPENSE_CATEGORIES} value={expenseForm.category} onChange={(v) => setExpenseForm((c) => ({ ...c, category: v }))} />
-              <Field label="Montant (€) *" type="number" value={expenseForm.amount} onChange={(v) => setExpenseForm((c) => ({ ...c, amount: v }))} />
-              <Field label="Date *" type="date" value={expenseForm.date} onChange={(v) => setExpenseForm((c) => ({ ...c, date: v }))} />
-              <label className="block">
-                <span className="text-sm font-bold text-slate-700">Véhicule (optionnel)</span>
-                <select
-                  className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800"
-                  value={expenseForm.vehicleId}
-                  onChange={(e) => setExpenseForm((c) => ({ ...c, vehicleId: e.target.value }))}
-                >
-                  <option value="">—</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>{vehicleLabel(v)}</option>
-                  ))}
-                </select>
-              </label>
-              <Textarea label="Commentaire" value={expenseForm.comment} onChange={(v) => setExpenseForm((c) => ({ ...c, comment: v }))} />
-            </div>
-            <SubmitRow canSubmit={canSubmitExpense && !saving} label={saving ? 'Enregistrement…' : 'Enregistrer la dépense'} />
-          </form>
-        </FinanceModal>
+      <AppModal
+        open={modal === 'expense'}
+        onClose={() => setModal(null)}
+        eyebrow="Finances"
+        title="Nouvelle dépense"
+        size="xl"
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(null)}
+            submitForm="secretary-expense-form"
+            submitLabel={saving ? 'Enregistrement…' : 'Enregistrer la dépense'}
+            submitDisabled={!canSubmitExpense || saving}
+          />
+        )}
+      >
+        <form id="secretary-expense-form" onSubmit={saveExpense}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select label="Catégorie *" options={EXPENSE_CATEGORIES} value={expenseForm.category} onChange={(v) => setExpenseForm((c) => ({ ...c, category: v }))} />
+            <Field label="Montant (€) *" type="number" value={expenseForm.amount} onChange={(v) => setExpenseForm((c) => ({ ...c, amount: v }))} />
+            <Field label="Date *" type="date" value={expenseForm.date} onChange={(v) => setExpenseForm((c) => ({ ...c, date: v }))} />
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Véhicule (optionnel)</span>
+              <select
+                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800"
+                value={expenseForm.vehicleId}
+                onChange={(e) => setExpenseForm((c) => ({ ...c, vehicleId: e.target.value }))}
+              >
+                <option value="">—</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>{vehicleLabel(v)}</option>
+                ))}
+              </select>
+            </label>
+            <Textarea label="Commentaire" value={expenseForm.comment} onChange={(v) => setExpenseForm((c) => ({ ...c, comment: v }))} />
+          </div>
+        </form>
+      </AppModal>
+        </>
       )}
     </div>
   )
@@ -481,25 +499,6 @@ function InlineNotice({ label }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
       {label}
-    </div>
-  )
-}
-
-function FinanceModal({ title, children, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Finances</p>
-            <h2 className="mt-1 text-2xl font-extrabold text-slate-950">{title}</h2>
-          </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={onClose} type="button">
-            Fermer
-          </button>
-        </div>
-        <div className="mt-5">{children}</div>
-      </div>
     </div>
   )
 }
@@ -548,16 +547,3 @@ function Select({ label, onChange, options, value }) {
   )
 }
 
-function SubmitRow({ canSubmit, label }) {
-  return (
-    <div className="mt-5 flex justify-end">
-      <button
-        className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
-        type="submit"
-        disabled={!canSubmit}
-      >
-        {label}
-      </button>
-    </div>
-  )
-}

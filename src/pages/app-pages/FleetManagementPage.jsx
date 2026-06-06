@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
-
-const initialVehicles = []
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import { useAuth } from '../../context/AuthContext'
+import { createEmptyFleetVehicle, listFleetVehicles, saveFleetVehicle } from '../../services/vehicles'
 
 const initialFuelLogs = []
 
@@ -43,7 +44,10 @@ const emptyMaintenanceForm = {
 }
 
 export default function FleetManagementPage({ role = 'secretary' }) {
-  const [vehicles, setVehicles] = useState(initialVehicles)
+  const { organizationId, canWrite } = useAuth()
+  const [vehicles, setVehicles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saveError, setSaveError] = useState(null)
   const [fuelLogs, setFuelLogs] = useState(initialFuelLogs)
   const [maintenanceLogs, setMaintenanceLogs] = useState(initialMaintenanceLogs)
   const [selectedVehicleId, setSelectedVehicleId] = useState('')
@@ -51,6 +55,28 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   const [fuelForm, setFuelForm] = useState(emptyFuelForm)
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenanceForm)
   const [vehicleForm, setVehicleForm] = useState(null)
+  const [vehicleFormIsNew, setVehicleFormIsNew] = useState(false)
+
+  const refreshVehicles = useCallback(async () => {
+    setLoading(true)
+    const { vehicles: rows } = await listFleetVehicles()
+    setVehicles(rows)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    refreshVehicles()
+  }, [refreshVehicles])
+
+  useEffect(() => {
+    if (!vehicles.length) {
+      setSelectedVehicleId('')
+      return
+    }
+    if (!selectedVehicleId || !vehicles.some((vehicle) => vehicle.id === selectedVehicleId)) {
+      setSelectedVehicleId(vehicles[0].id)
+    }
+  }, [vehicles, selectedVehicleId])
 
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) || vehicles[0]
 
@@ -97,6 +123,15 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   const openVehicleModal = () => {
     if (!selectedVehicle) return
     setVehicleForm(selectedVehicle)
+    setVehicleFormIsNew(false)
+    setSaveError(null)
+    setModal('vehicle')
+  }
+
+  const openAddVehicleModal = () => {
+    setVehicleForm(createEmptyFleetVehicle())
+    setVehicleFormIsNew(true)
+    setSaveError(null)
     setModal('vehicle')
   }
 
@@ -111,12 +146,38 @@ export default function FleetManagementPage({ role = 'secretary' }) {
     setModal('maintenance')
   }
 
-  const saveVehicle = (event) => {
+  const saveVehicle = async (event) => {
     event.preventDefault()
-    setVehicles((current) =>
-      current.map((vehicle) => (vehicle.id === vehicleForm.id ? vehicleForm : vehicle)),
-    )
+    if (!canWrite) {
+      setSaveError('Modification impossible : accès en lecture seule.')
+      return
+    }
+    if (!organizationId) {
+      setSaveError('Organisation introuvable.')
+      return
+    }
+    if (!vehicleForm.brand?.trim() || !vehicleForm.model?.trim() || !vehicleForm.plate?.trim()) {
+      setSaveError('Indiquez la marque, le modèle et l\'immatriculation.')
+      return
+    }
+
+    setSaveError(null)
+    const { vehicle, error } = await saveFleetVehicle(vehicleForm, organizationId)
+    if (error) {
+      setSaveError(error)
+      return
+    }
+
+    setVehicles((current) => {
+      const exists = current.some((item) => item.id === vehicle.id)
+      return exists
+        ? current.map((item) => (item.id === vehicle.id ? vehicle : item))
+        : [...current, vehicle]
+    })
+    setSelectedVehicleId(vehicle.id)
     setModal(null)
+    setVehicleForm(null)
+    setVehicleFormIsNew(false)
   }
 
   const saveFuel = (event) => {
@@ -192,7 +253,14 @@ export default function FleetManagementPage({ role = 'secretary' }) {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <Hero role={role} onFuel={() => openFuelModal()} onMaintenance={() => openMaintenanceModal()} />
+      <Hero
+        canAddVehicle={canWrite}
+        hasVehicles={vehicles.length > 0}
+        onAddVehicle={openAddVehicleModal}
+        onFuel={() => openFuelModal()}
+        onMaintenance={() => openMaintenanceModal()}
+        role={role}
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Véhicules suivis" value={vehicles.length} />
@@ -208,22 +276,49 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               <h2 className="text-2xl font-extrabold text-slate-950">Flotte auto-école</h2>
               <p className="mt-1 text-sm text-slate-500">Cliquez un véhicule pour ouvrir sa fiche complète.</p>
             </div>
-            <button
-              className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
-              onClick={openVehicleModal}
-              type="button"
-            >
-              Modifier la fiche
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {canWrite && (
+                <button
+                  className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+                  onClick={openAddVehicleModal}
+                  type="button"
+                >
+                  + Ajouter un véhicule
+                </button>
+              )}
+              {selectedVehicle && (
+                <button
+                  className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+                  onClick={openVehicleModal}
+                  type="button"
+                >
+                  Modifier la fiche
+                </button>
+              )}
+            </div>
           </div>
 
-          {!vehicles.length ? (
-            <EmptyState
-              className="mt-5"
-              title="Aucun véhicule enregistré"
-              message="Aucun véhicule enregistré pour le moment. Ajoutez un véhicule pour suivre votre flotte."
-              icon="🚗"
-            />
+          {loading ? (
+            <p className="mt-5 text-sm font-medium text-slate-500">Chargement de la flotte…</p>
+          ) : !vehicles.length ? (
+            <div className="mt-5">
+              <EmptyState
+                title="Aucun véhicule enregistré"
+                message="Ajoutez un véhicule pour suivre votre flotte, les pleins et l'entretien."
+                icon="🚗"
+              />
+              {canWrite && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:bg-white"
+                    onClick={openAddVehicleModal}
+                    type="button"
+                  >
+                    + Ajouter un véhicule
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             {vehicles.map((vehicle) => (
@@ -323,9 +418,22 @@ export default function FleetManagementPage({ role = 'secretary' }) {
 
       <ManagerStats stats={stats} vehicles={vehicles} fuelLogs={fuelLogs} />
 
-      {modal === 'fuel' && (
-        <Modal title={fuelFormIsElectric ? 'Ajouter une recharge' : 'Ajouter un plein carburant'} onClose={() => setModal(null)}>
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={saveFuel}>
+      <AppModal
+        open={modal === 'fuel'}
+        onClose={() => setModal(null)}
+        eyebrow="Gestion flotte"
+        title={fuelFormIsElectric ? 'Ajouter une recharge' : 'Ajouter un plein carburant'}
+        size="xl"
+        zIndex={100}
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(null)}
+            submitForm="fleet-fuel-form"
+            submitLabel={fuelFormIsElectric ? 'Enregistrer la recharge' : 'Enregistrer le plein'}
+          />
+        )}
+      >
+        <form id="fleet-fuel-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveFuel}>
             <Select label="Véhicule" onChange={(value) => setFuelForm((current) => ({ ...current, vehicleId: value }))} options={vehicles.map((vehicle) => ({ label: `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}`, value: vehicle.id }))} value={fuelForm.vehicleId} />
             <Select label="Enseignant" onChange={(value) => setFuelForm((current) => ({ ...current, teacher: value }))} options={teachers} value={fuelForm.teacher} />
             <Field label="Date" onChange={(value) => setFuelForm((current) => ({ ...current, date: value }))} type="date" value={fuelForm.date} />
@@ -346,32 +454,56 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               </>
             )}
             <Field className="md:col-span-2" label="Observations" onChange={(value) => setFuelForm((current) => ({ ...current, observations: value }))} value={fuelForm.observations} />
-            <SubmitButton label={fuelFormIsElectric ? 'Enregistrer la recharge' : 'Enregistrer le plein'} />
-          </form>
-        </Modal>
-      )}
+        </form>
+      </AppModal>
 
-      {modal === 'maintenance' && (
-        <Modal title="Ajouter entretien ou dégât" onClose={() => setModal(null)}>
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={saveMaintenance}>
+      <AppModal
+        open={modal === 'maintenance'}
+        onClose={() => setModal(null)}
+        eyebrow="Gestion flotte"
+        title="Ajouter entretien ou dégât"
+        size="xl"
+        zIndex={100}
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(null)}
+            submitForm="fleet-maintenance-form"
+            submitLabel="Enregistrer intervention"
+          />
+        )}
+      >
+        <form id="fleet-maintenance-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveMaintenance}>
             <Select label="Véhicule" onChange={(value) => setMaintenanceForm((current) => ({ ...current, vehicleId: value }))} options={vehicles.map((vehicle) => ({ label: `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}`, value: vehicle.id }))} value={maintenanceForm.vehicleId} />
             <Select label="Type intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, type: value }))} options={maintenanceTypes} value={maintenanceForm.type} />
             <Field label="Date intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, date: value }))} type="date" value={maintenanceForm.date} />
             <Select label="Signalé par" onChange={(value) => setMaintenanceForm((current) => ({ ...current, reporter: value }))} options={teachers} value={maintenanceForm.reporter} />
             <FileField label="Photos dégâts / intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, photo: value }))} value={maintenanceForm.photo} />
             <Field className="md:col-span-2" label="Observations" onChange={(value) => setMaintenanceForm((current) => ({ ...current, observations: value }))} value={maintenanceForm.observations} />
-            <SubmitButton label="Enregistrer intervention" />
-          </form>
-        </Modal>
-      )}
+        </form>
+      </AppModal>
 
-      {modal === 'vehicle' && vehicleForm && (
-        <Modal title="Modifier la fiche véhicule" onClose={() => setModal(null)}>
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={saveVehicle}>
-            <Field label="Marque" onChange={(value) => setVehicleForm((current) => ({ ...current, brand: value }))} value={vehicleForm.brand} />
-            <Field label="Modèle" onChange={(value) => setVehicleForm((current) => ({ ...current, model: value }))} value={vehicleForm.model} />
-            <Field label="Immatriculation" onChange={(value) => setVehicleForm((current) => ({ ...current, plate: value }))} value={vehicleForm.plate} />
-            <Field label="Kilométrage actuel" onChange={(value) => setVehicleForm((current) => ({ ...current, mileage: Number(value) }))} type="number" value={String(vehicleForm.mileage)} />
+      <AppModal
+        open={modal === 'vehicle' && Boolean(vehicleForm)}
+        onClose={() => setModal(null)}
+        eyebrow="Gestion flotte"
+        title={vehicleFormIsNew ? 'Ajouter un véhicule' : 'Modifier la fiche véhicule'}
+        size="xl"
+        zIndex={100}
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(null)}
+            submitForm="fleet-vehicle-form"
+            submitLabel={vehicleFormIsNew ? 'Ajouter le véhicule' : 'Enregistrer le véhicule'}
+          />
+        )}
+      >
+        {vehicleForm && (
+        <form id="fleet-vehicle-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveVehicle}>
+            <Field label="Marque *" onChange={(value) => setVehicleForm((current) => ({ ...current, brand: value }))} value={vehicleForm.brand} />
+            <Field label="Modèle *" onChange={(value) => setVehicleForm((current) => ({ ...current, model: value }))} value={vehicleForm.model} />
+            <Field label="Immatriculation *" onChange={(value) => setVehicleForm((current) => ({ ...current, plate: value }))} value={vehicleForm.plate} />
+            <Select label="Énergie" onChange={(value) => setVehicleForm((current) => ({ ...current, energy: value }))} options={['essence', 'diesel', 'électrique', 'hybride']} value={vehicleForm.energy} />
+            <Field label="Kilométrage actuel" onChange={(value) => setVehicleForm((current) => ({ ...current, mileage: Number(value) || 0 }))} type="number" value={String(vehicleForm.mileage)} />
             <Select label="Disponibilité véhicule" onChange={(value) => setVehicleForm((current) => ({ ...current, availability: value }))} options={['Disponible', 'En leçon', 'Maintenance', 'Indisponible']} value={vehicleForm.availability} />
             <Select label="Propreté" onChange={(value) => setVehicleForm((current) => ({ ...current, cleanliness: value }))} options={['propre', 'à nettoyer', 'urgent lavage']} value={vehicleForm.cleanliness} />
             <Select label="État pneus" onChange={(value) => setVehicleForm((current) => ({ ...current, tires: value }))} options={['OK', 'À vérifier', 'À remplacer']} value={vehicleForm.tires} />
@@ -384,15 +516,19 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               <Field label="Niveau carburant (%)" onChange={(value) => setVehicleForm((current) => ({ ...current, fuelLevel: Number(value) }))} type="number" value={String(vehicleForm.fuelLevel)} />
             )}
             <Field label="Contrôle technique" onChange={(value) => setVehicleForm((current) => ({ ...current, technicalControl: value }))} type="date" value={vehicleForm.technicalControl} />
-            <SubmitButton label="Sauvegarder la fiche" />
-          </form>
-        </Modal>
-      )}
+            {saveError && (
+              <p className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {saveError}
+              </p>
+            )}
+        </form>
+        )}
+      </AppModal>
     </div>
   )
 }
 
-function Hero({ onFuel, onMaintenance, role }) {
+function Hero({ canAddVehicle, hasVehicles, onAddVehicle, onFuel, onMaintenance, role }) {
   const roleLabel = role === 'manager' ? 'Gérant' : role === 'teacher' ? 'Enseignant' : 'Secrétariat'
 
   return (
@@ -409,12 +545,21 @@ function Hero({ onFuel, onMaintenance, role }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={onFuel} type="button">
-              + Ajouter un plein
-            </button>
-            <button className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/15" onClick={onMaintenance} type="button">
-              + Entretien / dégâts
-            </button>
+            {canAddVehicle && (
+              <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={onAddVehicle} type="button">
+                + Ajouter un véhicule
+              </button>
+            )}
+            {hasVehicles && (
+              <>
+                <button className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/15" onClick={onFuel} type="button">
+                  + Ajouter un plein
+                </button>
+                <button className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/15" onClick={onMaintenance} type="button">
+                  + Entretien / dégâts
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -527,25 +672,6 @@ function BarChart({ items, suffix, title }) {
   )
 }
 
-function Modal({ children, onClose, title }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
-      <div className="pointer-events-auto max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Gestion flotte</p>
-            <h2 className="mt-1 text-2xl font-extrabold text-slate-950">{title}</h2>
-          </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50" onClick={onClose} type="button">
-            Fermer
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 function Kpi({ label, tone = 'cyan', value }) {
   const color = tone === 'emerald' ? 'text-emerald-600' : tone === 'amber' ? 'text-amber-600' : 'text-cyan-600'
   return (
@@ -639,16 +765,6 @@ function Select({ label, onChange, options, value }) {
         ))}
       </select>
     </label>
-  )
-}
-
-function SubmitButton({ label }) {
-  return (
-    <div className="md:col-span-2 flex justify-end">
-      <button className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700" type="submit">
-        {label}
-      </button>
-    </div>
   )
 }
 

@@ -113,7 +113,9 @@ export default function ManagerMessagesPage() {
 
             <div className="mt-4 grid gap-3">
               {conversations.length === 0 ? (
-                <EmptyState title="Aucune conversation" message="Aucune conversation pour le moment." icon="💬" />
+                <p className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-5 text-center text-sm font-medium text-slate-500">
+                  Aucune conversation enregistrée.
+                </p>
               ) : (
                 conversations.map((item) => (
                   <button key={item.id} type="button" onClick={() => setActiveId(item.id)} className={`rounded-2xl border p-4 text-left transition-all duration-200 ${activeId === item.id ? 'pd-msg-thread-active' : 'pd-msg-thread hover:-translate-y-0.5'}`}>
@@ -162,7 +164,19 @@ export default function ManagerMessagesPage() {
                 </form>
               </>
             ) : (
-              <EmptyState title="Aucune conversation" message="Sélectionnez une conversation ou démarrez-en une nouvelle." icon="💬" />
+              <EmptyState
+                icon="💬"
+                message={
+                  conversations.length === 0
+                    ? 'Cliquez sur « + Nouvelle » pour contacter un enseignant ou un membre du secrétariat.'
+                    : 'Choisissez une conversation dans la liste de gauche.'
+                }
+                title={
+                  conversations.length === 0
+                    ? 'Aucune conversation'
+                    : 'Sélectionnez une conversation'
+                }
+              />
             )}
           </section>
         </div>

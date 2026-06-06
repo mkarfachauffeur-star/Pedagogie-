@@ -1,0 +1,22 @@
+# PEDAGOGIA DRIVE — configuration Supabase CLI
+# Project ref : watdeahravfccjdoseaf (https://watdeahravfccjdoseaf.supabase.co)
+
+project_id = "watdeahravfccjdoseaf"
+
+[api]
+enabled = true
+
+[db]
+major_version = 15
+
+[functions.register-organization]
+verify_jwt = false
+
+[functions.invite-user]
+verify_jwt = true
+
+[functions.create-student]
+verify_jwt = true
+
+[functions.manage-user]
+verify_jwt = true

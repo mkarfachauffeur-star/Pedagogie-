@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
 
 const teachers = ['Tous']
 const vehicles = ['Tous']
@@ -332,43 +333,33 @@ export default function SecretaryPlanningPage() {
         )}
       </section>
 
-      {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/60 p-4 backdrop-blur-sm">
-          <form
-            className="pointer-events-auto max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-            onSubmit={saveSlot}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
-                  {editingId ? 'Modifier' : 'Nouveau créneau'}
-                </p>
-                <h2 className="mt-1 text-2xl font-extrabold text-slate-950">Créneau planning</h2>
-              </div>
-              <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600" onClick={() => setShowForm(false)} type="button">
-                Fermer
-              </button>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Select label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} options={students} value={form.student} />
-              <Field label="Date" onChange={(value) => setForm((current) => ({ ...current, date: value }))} type="date" value={form.date} />
-              <Field label="Heure" onChange={(value) => setForm((current) => ({ ...current, start: value }))} type="time" value={form.start} />
-              <Select label="Durée" onChange={(value) => setForm((current) => ({ ...current, duration: value }))} options={['30', '45', '60', '90', '120']} value={form.duration} />
-              <Select label="Enseignant" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} options={teachers.slice(1)} value={form.teacher} />
-              <Select label="Véhicule" onChange={(value) => setForm((current) => ({ ...current, vehicle: value }))} options={vehicles.slice(1)} value={form.vehicle} />
-              <Select label="Catégorie" onChange={(value) => setForm((current) => ({ ...current, category: value }))} options={categories.slice(1)} value={form.category} />
-              <Select label="État" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['confirmé', 'annulé', 'en attente']} value={form.status} />
-              <Field label="Type de rendez-vous" onChange={(value) => setForm((current) => ({ ...current, type: value }))} value={form.type} />
-            </div>
-            <div className="mt-5 flex justify-end">
-              <button className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-cyan-700" type="submit">
-                Enregistrer le créneau
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <AppModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        eyebrow={editingId ? 'Modifier' : 'Nouveau créneau'}
+        title="Créneau planning"
+        size="xl"
+        zIndex={100}
+        footer={(
+          <AppModalFooter
+            onClose={() => setShowForm(false)}
+            submitForm="planning-slot-form"
+            submitLabel="Enregistrer le créneau"
+          />
+        )}
+      >
+        <form id="planning-slot-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveSlot}>
+          <Select label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} options={students} value={form.student} />
+          <Field label="Date" onChange={(value) => setForm((current) => ({ ...current, date: value }))} type="date" value={form.date} />
+          <Field label="Heure" onChange={(value) => setForm((current) => ({ ...current, start: value }))} type="time" value={form.start} />
+          <Select label="Durée" onChange={(value) => setForm((current) => ({ ...current, duration: value }))} options={['30', '45', '60', '90', '120']} value={form.duration} />
+          <Select label="Enseignant" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} options={teachers.slice(1)} value={form.teacher} />
+          <Select label="Véhicule" onChange={(value) => setForm((current) => ({ ...current, vehicle: value }))} options={vehicles.slice(1)} value={form.vehicle} />
+          <Select label="Catégorie" onChange={(value) => setForm((current) => ({ ...current, category: value }))} options={categories.slice(1)} value={form.category} />
+          <Select label="État" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['confirmé', 'annulé', 'en attente']} value={form.status} />
+          <Field label="Type de rendez-vous" onChange={(value) => setForm((current) => ({ ...current, type: value }))} value={form.type} />
+        </form>
+      </AppModal>
     </div>
   )
 }

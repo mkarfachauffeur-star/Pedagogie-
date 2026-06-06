@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import EmptyState from '../../components/ui/EmptyState'
+import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
 import {
   fetchOrganization,
@@ -60,14 +64,29 @@ export default function AdminSettingsPage() {
 
   const logoUrl = orgLogoUrl(organization?.logo_storage_path)
 
-  if (!profileId) return null
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <section className="rounded-[2rem] bg-gradient-to-br from-navy-950 to-cyan-900 p-8 text-white">
-        <h1 className="text-3xl font-extrabold">Paramètres</h1>
-        <p className="mt-2 text-sm text-blue-50">Auto-école — identité, coordonnées et logo.</p>
-      </section>
+      <PageHero
+        eyebrow="Paramètres"
+        title="Configuration de l'auto-école"
+        subtitle="Identité, coordonnées et logo de votre établissement."
+      />
+
+      {!profileId ? (
+        <EmptyState title="Connexion requise" message="Connectez-vous en tant que gérant." icon="⚙️" />
+      ) : (
+        <>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <h2 className="text-lg font-extrabold text-slate-950">Formules & tarifs</h2>
+            <p className="mt-1 text-sm text-slate-500">Forfaits, heures incluses et tarifs AAC / CS de votre auto-école.</p>
+            <Link
+              to="/manager/packages"
+              className="mt-4 flex items-center justify-between rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-bold text-cyan-800 transition hover:bg-cyan-100"
+            >
+              Gérer les formules
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </section>
 
       <form className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6" onSubmit={save}>
         <div className="flex items-center gap-4">
@@ -101,6 +120,8 @@ export default function AdminSettingsPage() {
           <button type="submit" disabled={saving} className="pd-btn-primary">{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
         )}
       </form>
+        </>
+      )}
     </div>
   )
 }

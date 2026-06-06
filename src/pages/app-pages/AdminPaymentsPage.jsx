@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
+import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
 import {
   fetchFinancialData,
@@ -74,21 +75,18 @@ export default function AdminPaymentsPage() {
     return merged
   }, [payments, expenses, filterType])
 
-  if (!profileId) {
-    return <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="💰" />
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
-        <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-          Finances
-        </p>
-        <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Paiements & dépenses</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-50">
-          Journal unifié des encaissements (secrétariat, enseignants) et sorties d&apos;argent de l&apos;auto-école.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Finances"
+        title="Paiements & dépenses"
+        subtitle="Journal unifié des encaissements (secrétariat, enseignants) et sorties d'argent de l'auto-école."
+      />
+
+      {!profileId ? (
+        <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="💰" />
+      ) : (
+        <>
 
       {loadError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -177,6 +175,8 @@ export default function AdminPaymentsPage() {
           <BreakdownCard title="Encaissements par nature" items={summary.incomeByNature} tone="income" />
           <BreakdownCard title="Dépenses par catégorie" items={summary.expensesByCategory} tone="expense" />
         </section>
+      )}
+        </>
       )}
     </div>
   )

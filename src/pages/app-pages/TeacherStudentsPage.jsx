@@ -1,6 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStudentTrackingStore } from '../../data/studentTrackingStore'
+import { useAuth } from '../../context/AuthContext'
+import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
+import { isPermisBStudent } from '../../lib/studentTrack'
+import { getInitialAssessmentForStudent } from '../../services/initialAssessment'
+import { listStudents } from '../../services/students'
+import RemcTeacherValidationPanel from '../../components/remc/RemcTeacherValidationPanel'
+import PracticeExamTeacherPanel from '../../components/practice-exam/PracticeExamTeacherPanel'
 import EmptyState from '../../components/ui/EmptyState'
+
+function StudentPanelTab({ active, children, onClick }) {
+  return (
+    <button
+      className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${
+        active
+          ? 'bg-navy-950 text-white shadow-md'
+          : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
+      }`}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+    </button>
+  )
+}
 
 const remcStatuses = ['Non commencé', 'En cours', 'Validé']
 const lessonStatuses = ['Débuté', 'En cours', 'Terminé']
@@ -13,6 +36,19 @@ function nowDateTime() {
   return { date, time }
 }
 
+function mapApiStudentToTracking(student) {
+  const referent = student.student_assignments?.find((assignment) => assignment.is_referent)?.teacher
+  return {
+    id: student.id,
+    firstName: student.first_name,
+    lastName: student.last_name,
+    teacher: referent?.full_name || 'Non assigné',
+    formationType: student.package_name || student.formation_type || 'Permis B traditionnel',
+    licenseCategory: student.license_category,
+    codeStatus: 'Non obtenu',
+  }
+}
+
 export default function TeacherStudentsPage() {
   const formatDateFr = (dateString) => {
     if (!dateString) return ''
@@ -21,11 +57,16 @@ export default function TeacherStudentsPage() {
     return `${day}/${month}/${year}`
   }
 
-  const { students, updateRemcStatus, addLesson, updateLesson } = useStudentTrackingStore()
-  const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id)
+  const { students, updateRemcStatus, addLesson, updateLesson, upsertStudent } = useStudentTrackingStore()
+  const { profileId, organizationId } = useAuth()
+  const [apiStudents, setApiStudents] = useState([])
+  const [studentsLoading, setStudentsLoading] = useState(true)
+  const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [teacherName, setTeacherName] = useState('')
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
   const [skillsPanelOpen, setSkillsPanelOpen] = useState(false)
+  const [studentPanelTab, setStudentPanelTab] = useState('remc')
+  const [initialAssessment, setInitialAssessment] = useState(null)
   const [expandedCompetencyCode, setExpandedCompetencyCode] = useState(null)
   const [newLesson, setNewLesson] = useState({
     date: '',
@@ -35,13 +76,75 @@ export default function TeacherStudentsPage() {
     status: 'Débuté',
   })
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStudents() {
+      setStudentsLoading(true)
+      const { students: rows } = await listStudents()
+      if (cancelled) return
+
+      setApiStudents(rows)
+      rows.forEach((row) => upsertStudent(mapApiStudentToTracking(row)))
+      setStudentsLoading(false)
+    }
+
+    loadStudents()
+    return () => {
+      cancelled = true
+    }
+  }, [upsertStudent])
+
+  const displayStudents = useMemo(() => {
+    if (!apiStudents.length) return students
+    return apiStudents.map((row) => {
+      const tracked = students.find((student) => student.id === row.id)
+      const mapped = mapApiStudentToTracking(row)
+      if (tracked) {
+        return {
+          ...tracked,
+          firstName: mapped.firstName,
+          lastName: mapped.lastName,
+          teacher: mapped.teacher,
+          formationType: mapped.formationType,
+        }
+      }
+      return mapped
+    })
+  }, [apiStudents, students])
+
+  useEffect(() => {
+    if (!displayStudents.length) return
+    if (!selectedStudentId || !displayStudents.some((student) => student.id === selectedStudentId)) {
+      setSelectedStudentId(displayStudents[0].id)
+    }
+  }, [displayStudents, selectedStudentId])
+
   const selectedStudent = useMemo(
-    () => students.find((student) => student.id === selectedStudentId) || students[0],
-    [selectedStudentId, students],
+    () => displayStudents.find((student) => student.id === selectedStudentId) || displayStudents[0],
+    [selectedStudentId, displayStudents],
   )
+
+  const selectedApiStudent = useMemo(
+    () => apiStudents.find((student) => student.id === selectedStudent?.id) || null,
+    [apiStudents, selectedStudent?.id],
+  )
+
+  const selectedIsPermisB = isPermisBStudent(selectedApiStudent || selectedStudent)
+
+  useEffect(() => {
+    if (!selectedStudent?.id || !selectedIsPermisB) {
+      setInitialAssessment(null)
+      return
+    }
+    getInitialAssessmentForStudent(selectedStudent.id).then(({ assessment }) => {
+      setInitialAssessment(assessment)
+    })
+  }, [selectedStudent?.id, selectedIsPermisB])
 
   useEffect(() => {
     setExpandedCompetencyCode(null)
+    setStudentPanelTab('remc')
   }, [selectedStudentId])
 
   const toggleCompetency = (code) => {
@@ -63,7 +166,7 @@ export default function TeacherStudentsPage() {
   const handleCreateLesson = (event) => {
     event.preventDefault()
     if (!selectedStudent) return
-    const selectedSkills = selectedStudent.remc
+    const selectedSkills = (selectedStudent.remc || [])
       .flatMap((competency) => competency.items)
       .filter((item) => item.status !== 'Non commencé')
       .map((item) => item.label)
@@ -73,6 +176,20 @@ export default function TeacherStudentsPage() {
       skills: selectedSkills,
     })
     setLessonFormOpen(false)
+  }
+
+  if (studentsLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+          <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
+            Mes élèves
+          </p>
+          <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Suivi REMC et leçons terrain</h1>
+        </section>
+        <p className="text-sm font-semibold text-slate-500">Chargement des élèves…</p>
+      </div>
+    )
   }
 
   if (!selectedStudent) {
@@ -105,7 +222,7 @@ export default function TeacherStudentsPage() {
         <aside className="card-panel">
           <h2 className="text-lg font-extrabold text-slate-900">Liste élèves</h2>
           <div className="mt-4 grid gap-3">
-            {students.map((student) => (
+            {displayStudents.map((student) => (
               <button
                 key={student.id}
                 type="button"
@@ -128,13 +245,17 @@ export default function TeacherStudentsPage() {
                     AAC début : {formatDateFr(student.aacTracking.startDate)} · Min fin : {formatDateFr(student.aacTracking.minimumEndDate)}
                   </p>
                 )}
+                {student.progress && (
+                  <>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
                     style={{ width: `${student.progress.global}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs font-black text-cyan-700">Progression REMC : {student.progress.global}%</p>
+                <p className="mt-2 text-xs font-black text-cyan-700">Progression sous-compétences : {student.progress.global}%</p>
+                  </>
+                )}
               </button>
             ))}
           </div>
@@ -148,7 +269,8 @@ export default function TeacherStudentsPage() {
                   {selectedStudent.firstName} {selectedStudent.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Progression globale REMC {selectedStudent.progress.global}% · Formation {selectedStudent.formationType}
+                  Formation {selectedStudent.formationType}
+                  {selectedStudent.progress ? ` · Sous-compétences ${selectedStudent.progress.global}%` : ''}
                 </p>
                 {selectedStudent.aacTracking && (
                   <p className="mt-1 text-xs font-bold text-cyan-700">
@@ -157,6 +279,8 @@ export default function TeacherStudentsPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
+                {studentPanelTab === 'remc' && (
+                  <>
                 <button
                   type="button"
                   onClick={openLesson}
@@ -171,7 +295,29 @@ export default function TeacherStudentsPage() {
                 >
                   Ajouter compétences travaillées
                 </button>
+                  </>
+                )}
               </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {selectedIsPermisB ? (
+                <>
+                  <StudentPanelTab active={studentPanelTab === 'initial-assessment'} onClick={() => setStudentPanelTab('initial-assessment')}>
+                    Évaluation de départ
+                  </StudentPanelTab>
+                  <StudentPanelTab active={studentPanelTab === 'remc'} onClick={() => setStudentPanelTab('remc')}>
+                    Suivi REMC
+                  </StudentPanelTab>
+                  <StudentPanelTab active={studentPanelTab === 'examen-blanc'} onClick={() => setStudentPanelTab('examen-blanc')}>
+                    Examen blanc
+                  </StudentPanelTab>
+                </>
+              ) : (
+                <StudentPanelTab active onClick={() => {}}>
+                  Suivi Moto / AM
+                </StudentPanelTab>
+              )}
             </div>
 
             <div className="card-muted mt-4">
@@ -185,7 +331,7 @@ export default function TeacherStudentsPage() {
                     setLessonFormOpen(false)
                   }}
                 >
-                  {students.map((student) => (
+                  {displayStudents.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.firstName} {student.lastName} · {student.formationType}
                     </option>
@@ -194,7 +340,7 @@ export default function TeacherStudentsPage() {
               </label>
             </div>
 
-            {lessonFormOpen && (
+            {studentPanelTab === 'remc' && lessonFormOpen && (
               <form
                 className="mt-4 grid gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 p-4 md:grid-cols-2"
                 onSubmit={handleCreateLesson}
@@ -283,6 +429,14 @@ export default function TeacherStudentsPage() {
             )}
           </section>
 
+          {selectedIsPermisB && studentPanelTab === 'remc' && (
+            <>
+          <RemcTeacherValidationPanel
+            organizationId={organizationId}
+            studentId={selectedStudent.id}
+            teacherId={profileId}
+          />
+
           {skillsPanelOpen && (
             <section className="card-panel-lg">
               <h2 className="text-2xl font-extrabold text-slate-900">Compétences et sous-compétences REMC</h2>
@@ -290,9 +444,9 @@ export default function TeacherStudentsPage() {
                 Cliquez une compétence pour afficher ou masquer ses sous-compétences.
               </p>
               <div className="mt-4 grid gap-3">
-                {selectedStudent.remc.map((competency) => {
+                {(selectedStudent.remc || []).map((competency) => {
                   const isExpanded = expandedCompetencyCode === competency.code
-                  const progress = selectedStudent.progress.byCompetency[competency.code]
+                  const progress = selectedStudent.progress?.byCompetency?.[competency.code] ?? 0
 
                   return (
                     <article
@@ -447,6 +601,37 @@ export default function TeacherStudentsPage() {
               ))}
             </div>
           </section>
+            </>
+          )}
+
+          {studentPanelTab === 'initial-assessment' && selectedIsPermisB && (
+            <InitialAssessmentWizard
+              assessment={initialAssessment}
+              completedBy={profileId}
+              onSaved={setInitialAssessment}
+              organizationId={organizationId}
+              readOnly={initialAssessment?.status === 'completed'}
+              studentId={selectedStudent.id}
+            />
+          )}
+
+          {studentPanelTab === 'examen-blanc' && selectedIsPermisB && (
+            <PracticeExamTeacherPanel
+              organizationId={organizationId}
+              student={selectedStudent}
+              teacherId={profileId}
+            />
+          )}
+
+          {!selectedIsPermisB && (
+            <section className="card-panel-lg">
+              <EmptyState
+                icon="🏍️"
+                message="Le suivi REMC, les examens blancs et l'évaluation de départ ne concernent pas les parcours Moto et AM."
+                title="Parcours Moto / AM"
+              />
+            </section>
+          )}
         </main>
       </div>
     </div>

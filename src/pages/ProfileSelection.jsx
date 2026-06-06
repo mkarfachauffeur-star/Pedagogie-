@@ -1,15 +1,19 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
-  BarChart3,
-  CalendarDays,
+  Bell,
+  BookOpen,
+  Briefcase,
+  Building2,
   CheckCircle2,
-  Cloud,
-  Download,
+  ClipboardList,
+  FileText,
   GraduationCap,
   Menu,
-  ShieldCheck,
+  MessageSquare,
   Sparkles,
+  Target,
+  UserRound,
   Users,
   X,
 } from 'lucide-react'
@@ -19,33 +23,104 @@ import StorePlatformBadges from '../components/StorePlatformBadges'
 
 const navLinks = [
   { label: 'Accueil', href: '#accueil' },
+  { label: 'Plateforme', href: '#plateforme' },
+  { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
-  { label: 'Démonstration', href: '#demonstration' },
   { label: 'Contact', href: '#contact' },
 ]
 
-const featureCards = [
-  { title: 'Gestion des élèves', text: 'Suivi complet, dossiers, progression et historique centralisés.', icon: Users },
-  { title: 'Planning intelligent', text: 'Organisez leçons, disponibilités et créneaux en quelques clics.', icon: CalendarDays },
-  { title: 'QCU intelligents', text: 'Entraînement par compétences avec correction et suivi des résultats.', icon: GraduationCap },
-  { title: 'Statistiques avancées', text: 'Pilotez votre activité avec des indicateurs clairs et actionnables.', icon: BarChart3 },
-  { title: 'Sauvegarde cloud', text: 'Données sécurisées, synchronisées et disponibles en permanence.', icon: Cloud },
-  { title: 'Exports & Rapports', text: 'Générez vos exports et rapports pour votre organisation interne.', icon: Download },
-  { title: 'Multi-utilisateurs', text: 'Gérant, secrétariat, enseignants et élèves, chacun son espace.', icon: ShieldCheck },
+const platformHighlights = [
+  {
+    title: 'Livret d\'apprentissage numérique',
+    text: 'Un espace pédagogique vivant où l\'élève consulte ses leçons, ses QCU et sa progression REMC.',
+    icon: BookOpen,
+  },
+  {
+    title: 'Suivi des compétences',
+    text: 'Visualisez l\'acquisition des compétences après chaque leçon, pour l\'élève comme pour l\'enseignant.',
+    icon: Target,
+  },
+  {
+    title: 'Communication intégrée',
+    text: 'Messagerie temps réel entre élève, enseignant et secrétariat — sans multiplier les outils.',
+    icon: MessageSquare,
+  },
 ]
 
-const previewPoints = [
-  'Vue d’ensemble en temps réel',
-  'Accès rapide aux fonctionnalités clés',
-  'Notifications et alertes intelligentes',
-  'Données sécurisées et synchronisées',
+const roleBenefits = [
+  {
+    role: 'Auto-école',
+    title: 'Pilotez avec une vision complète',
+    text: 'Centralisez pédagogie, administration et suivi des élèves sur une plateforme pensée pour le quotidien des auto-écoles modernes.',
+    icon: Building2,
+  },
+  {
+    role: 'Élève',
+    title: 'Progresse entre chaque leçon',
+    text: 'Livret interactif, QCU par compétence et suivi personnalisé : l\'élève reste acteur de sa formation, même en dehors de la voiture.',
+    icon: GraduationCap,
+  },
+  {
+    role: 'Enseignant',
+    title: 'Plus de pédagogie, moins de répétitions',
+    text: 'Les contenus sont accessibles à tout moment. Les élèves arrivent mieux préparés — concentrez-vous sur la conduite et l\'accompagnement.',
+    icon: UserRound,
+  },
+  {
+    role: 'Secrétariat',
+    title: 'Gestion centralisée et fluide',
+    text: 'Inscriptions, documents, dossiers et informations pédagogiques réunis dans un espace unique, sécurisé et simple à utiliser.',
+    icon: Briefcase,
+  },
+]
+
+const availableFeatures = [
+  {
+    title: 'Suivi REMC',
+    text: 'Compétences et sous-compétences suivies en temps réel.',
+    icon: Target,
+  },
+  {
+    title: 'QCU Compétence 1',
+    text: 'Exercice interactif inédit — validation à 80 % par l\'élève.',
+    icon: ClipboardList,
+  },
+  {
+    title: 'Messagerie temps réel',
+    text: 'Échanges directs entre tous les acteurs de la formation.',
+    icon: MessageSquare,
+  },
+  {
+    title: 'Documents centralisés',
+    text: 'Dossiers élèves, pièces administratives et exports au même endroit.',
+    icon: FileText,
+  },
+  {
+    title: 'Gestion élèves & staff',
+    text: 'Gérant, secrétariat, enseignants et élèves — chacun son espace.',
+    icon: Users,
+  },
+  {
+    title: 'Notifications intelligentes',
+    text: 'Alertes messages, rendez-vous et événements importants.',
+    icon: Bell,
+  },
+]
+
+const upcomingFeatures = [
+  { title: 'QCU compétences 2 à 4', text: 'Entraînement par compétence REMC, étape par étape.' },
+  { title: 'Vidéos pédagogiques', text: 'Contenus commentés par des professionnels de la conduite.' },
+  { title: 'Signalisation interactive', text: 'Panneaux et règles expliqués visuellement.' },
+  { title: 'Schémas & situations', text: 'Circulation, priorités et cas concrets de conduite.' },
+  { title: 'Préparation examen pratique', text: 'Révisions ciblées avant le jour J.' },
+  { title: 'Révision Code par thème', text: 'Thématiques structurées pour ancrer les acquis.' },
 ]
 
 const footerLinks = {
-  Produit: ['Fonctionnalités', 'Tarifs', 'Démonstration', 'Mises à jour'],
-  Ressources: ['Documentation', 'FAQ', 'Blog', 'Guides'],
-  Entreprise: ['À propos', 'Contact', 'Partenaires', 'Carrières'],
-  Légal: ['Mentions légales', 'CGU', 'Confidentialité', 'Cookies'],
+  Produit: ['Fonctionnalités', 'Livret numérique', 'Applications mobiles'],
+  Ressources: ['Documentation', 'FAQ', 'Support'],
+  Entreprise: ['À propos', 'Contact'],
+  Légal: ['Mentions légales', 'CGU', 'Confidentialité'],
 }
 
 function reveal(shouldReduceMotion, delay = 0) {
@@ -108,77 +183,105 @@ function BrandLogo() {
 }
 
 function DashboardPreview() {
+  const shouldReduceMotion = useReducedMotion()
+
+  const stats = [
+    { value: '1/4', label: 'Compétences REMC', sub: '5 sous-comp. validées' },
+    { value: '12', label: 'Leçons', sub: 'dont 3 cette semaine' },
+    { value: '24', label: 'Lexique', sub: 'termes validés' },
+  ]
+
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-3 shadow-2xl shadow-blue-950/30 backdrop-blur-xl">
       <motion.div
         animate={{ opacity: 1, y: 0 }}
         className="rounded-[1.35rem] bg-slate-950 p-4 sm:p-5"
-        initial={{ opacity: 0, y: 12 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        initial={shouldReduceMotion ? undefined : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
       >
-        <motion.div
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center justify-between gap-4 border-b border-white/10 pb-4"
-          initial={{ opacity: 0, x: -8 }}
-          transition={{ duration: 0.45, delay: 0.05 }}
-        >
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Tableau de bord</p>
-            <p className="mt-1 text-lg font-black text-white">Votre auto-école</p>
-            <p className="mt-1 text-[11px] font-semibold text-slate-500">Aperçu de l’interface</p>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Livret numérique</p>
+            <p className="mt-1 text-lg font-black text-white">Marie Dupont</p>
+            <p className="mt-0.5 text-[11px] font-semibold text-slate-500">Forfait 20h · Permis B</p>
           </div>
           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-200">En ligne</span>
-        </motion.div>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className="text-slate-400">Progression globale</span>
+            <span className="font-black text-cyan-300">38 %</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+            <motion.div
+              animate={{ width: '38%' }}
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+              initial={shouldReduceMotion ? undefined : { width: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+            />
+          </div>
+        </div>
+
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {[
-            ['—', 'Élèves actifs'],
-            ['—', 'Leçons aujourd’hui'],
-            ['—', 'Taux de réussite'],
-          ].map(([value, label], index) => (
+          {stats.map(({ value, label, sub }, index) => (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-white/10 bg-white/[0.08] p-4"
-              initial={{ opacity: 0, y: 10 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.08] p-3.5"
+              initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
               key={label}
-              transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+              transition={{ duration: 0.35, delay: 0.15 + index * 0.06 }}
             >
-              <p className="text-2xl font-black text-white sm:text-3xl">{value}</p>
-              <p className="mt-1 text-xs font-semibold text-slate-400">{label}</p>
+              <p className="text-xl font-black text-white sm:text-2xl">{value}</p>
+              <p className="mt-0.5 text-xs font-bold text-slate-300">{label}</p>
+              <p className="mt-0.5 text-[10px] font-medium text-slate-500">{sub}</p>
             </motion.div>
           ))}
         </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.08] p-4"
-            initial={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.45, delay: 0.2 }}
-          >
-            <p className="text-sm font-black text-white">Réussite QCU</p>
-            <p className="mt-1 text-[11px] leading-snug text-slate-400">
-              Part de bonnes réponses aux quiz, jour par jour.
-            </p>
-            <div className="mt-3 flex h-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 text-center">
-              <p className="text-sm font-bold text-slate-300">Aucune donnée disponible</p>
-              <p className="text-[11px] font-medium text-slate-500">Les statistiques s’afficheront avec vos données.</p>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-blue-300">
+                Compétence REMC 1 <span className="text-slate-500">/ 4</span>
+              </p>
+              <p className="mt-1 text-sm font-bold text-white">Maîtriser le poste de conduite</p>
             </div>
-          </motion.div>
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.08] p-4"
-            initial={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.45, delay: 0.25 }}
-          >
-            <p className="text-sm font-black text-white">Répartition élèves</p>
-            <p className="mt-1 text-[11px] leading-snug text-slate-400">
-              Où en est chaque élève dans son parcours permis.
-            </p>
-            <div className="mt-3 flex h-[5.5rem] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 text-center">
-              <p className="text-sm font-bold text-slate-300">Aucune donnée disponible</p>
-              <p className="text-[11px] font-medium text-slate-500">La répartition s’affichera avec vos élèves.</p>
-            </div>
-          </motion.div>
+            <span className="shrink-0 rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-black text-blue-200">
+              En cours
+            </span>
+          </div>
+          <div className="mt-3 flex items-center justify-between text-[10px] font-semibold">
+            <span className="text-slate-500">Sous-compétences</span>
+            <span className="text-blue-300">4 / 6 validées</span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <motion.div
+              animate={{ width: '67%' }}
+              className="h-full rounded-full bg-blue-500"
+              initial={shouldReduceMotion ? undefined : { width: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.35 }}
+            />
+          </div>
         </div>
+
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] p-4"
+          initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
+          transition={{ duration: 0.4, delay: 0.45 }}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-emerald-100">QCU Compétence 1 — réussi</p>
+            <p className="mt-0.5 text-xs text-emerald-200/80">Score 88 % · Validé le 12 mai 2026</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-emerald-400/20 px-2.5 py-1 text-xs font-black text-emerald-300">
+            88 %
+          </span>
+        </motion.div>
       </motion.div>
     </div>
   )
@@ -208,13 +311,13 @@ export default function ProfileSelection() {
               </a>
             ))}
           </nav>
-          <a
-            href="#contact"
+          <Link
+            to="/signup"
             className="hidden items-center rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110 lg:inline-flex"
           >
-            Demander une démo
+            Créer mon auto-école
             <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
+          </Link>
           <button className="rounded-2xl border border-white/15 p-2 lg:hidden" onClick={() => setMobileOpen((value) => !value)} type="button">
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -227,74 +330,64 @@ export default function ProfileSelection() {
                   {item.label}
                 </a>
               ))}
-              <a className="mt-2 rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-black text-white" href="#contact">
-                Demander une démo
-              </a>
+              <Link className="mt-2 rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-black text-white" to="/signup">
+                Créer mon auto-école
+              </Link>
             </motion.div>
           </div>
         )}
       </header>
 
       <main>
-        <section id="accueil" className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 lg:px-8 lg:pb-20 lg:pt-20">
-          <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-4xl text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
-              <Sparkles className="h-3.5 w-3.5" />
-              Fonctionnalités
-            </p>
-            <h1 className="mt-6 text-3xl font-black leading-tight tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
-              Tout ce dont votre auto-école a besoin, réuni dans une{' '}
-              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">seule plateforme.</span>
-            </h1>
-          </motion.div>
-
-          <div id="fonctionnalites" className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featureCards.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <motion.article
-                  {...reveal(shouldReduceMotion, index * 0.03)}
-                  whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                  className="glass-card relative overflow-hidden p-5 shadow-lg shadow-black/20"
-                  key={item.title}
-                >
-                  <div className={`absolute inset-x-0 top-0 h-px ${index % 2 === 0 ? 'bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_16px_rgba(59,130,246,0.55)]' : 'bg-gradient-to-r from-transparent via-red-400 to-transparent shadow-[0_0_16px_rgba(239,68,68,0.55)]'}`} />
-                  <div className="inline-flex rounded-xl border border-blue-400/25 bg-blue-500/10 p-2.5 text-blue-300">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h2 className="mt-4 text-base font-black text-white">{item.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{item.text}</p>
-                </motion.article>
-              )
-            })}
-          </div>
-        </section>
-
-        <section id="demonstration" className="border-y border-white/10 bg-[#07111f] py-16 lg:py-24">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
+        {/* Hero */}
+        <section id="accueil" className="mx-auto max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div {...reveal(shouldReduceMotion)}>
-              <p className="inline-flex rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-200">
-                Aperçu plateforme
+              <p className="inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+                <BookOpen className="h-3.5 w-3.5" />
+                Enseignant de la conduite · Livret numérique
               </p>
-              <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">Une interface pensée pour votre quotidien.</h2>
-              <p className="mt-4 text-base leading-8 text-slate-300">
-                Un tableau de bord clair et complet pour piloter votre auto-école en toute simplicité.
+              <h1 className="mt-6 text-3xl font-black leading-tight tracking-[-0.04em] text-white sm:text-5xl lg:leading-[1.1]">
+                Le livret numérique{' '}
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+                  réinventé
+                </span>
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
+                PEDAGOGIA DRIVE est le livret numérique nouvelle génération, créé par un enseignant de la
+                conduite qui accompagne des élèves au quotidien.
               </p>
-              <ul className="mt-6 space-y-3">
-                {previewPoints.map((point) => (
-                  <li className="flex items-center gap-3 text-sm font-semibold text-slate-200" key={point}>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+                REMC, QCU, documents, messagerie et gestion des élèves — une plateforme qui prolonge
+                l&apos;apprentissage bien au-delà des heures de conduite.
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  'Conçu sur le terrain, pas depuis un bureau',
+                  'QCU Compétence 1 déjà disponible pour les élèves',
+                  'Essai gratuit 30 jours · 20 élèves inclus',
+                ].map((point) => (
+                  <li className="flex items-center gap-2.5 text-sm font-semibold text-slate-200" key={point}>
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
                     {point}
                   </li>
                 ))}
               </ul>
-              <a
-                href="#demonstration"
-                className="mt-8 inline-flex items-center gap-2 rounded-2xl border border-blue-400/35 bg-blue-500/10 px-6 py-3 text-sm font-black text-white transition hover:bg-blue-500/20"
-              >
-                Découvrir la démonstration
-                <ArrowRight className="h-4 w-4" />
-              </a>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
+                >
+                  Créer mon auto-école
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10"
+                >
+                  Se connecter
+                </Link>
+              </div>
             </motion.div>
             <motion.div {...reveal(shouldReduceMotion, 0.1)}>
               <DashboardPreview />
@@ -302,127 +395,206 @@ export default function ProfileSelection() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-          <motion.h2 {...reveal(shouldReduceMotion)} className="text-center text-2xl font-black text-white sm:text-3xl">
-            Une plateforme qui fait la différence.
-          </motion.h2>
-          <motion.div {...reveal(shouldReduceMotion, 0.08)} className="mt-10">
-            <div className="glass-card-lg mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
-              <span className="inline-flex rounded-xl border border-blue-400/25 bg-blue-500/10 p-2.5 text-blue-300">
-                <BarChart3 className="h-5 w-5" />
-              </span>
-              <p className="text-base font-bold text-white">
-                Les statistiques seront disponibles après le lancement officiel.
-              </p>
-            </div>
-          </motion.div>
-        </section>
-
-        <section className="border-y border-white/10 bg-[#07111f] py-16 lg:py-24">
+        {/* Plateforme */}
+        <section id="plateforme" className="border-y border-white/10 bg-[#07111f] py-14 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div {...reveal(shouldReduceMotion)} className="text-center">
-              <p className="inline-flex rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-200">
-                Ils nous font confiance
+            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">La plateforme</p>
+              <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+                Bien plus qu&apos;un logiciel de gestion
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-400">
+                Les outils classiques gèrent les dossiers.
+                <br />
+                PEDAGOGIA DRIVE accompagne l&apos;apprentissage — avec des ressources pédagogiques évolutives,
+                dont les vidéos commentées arrivent prochainement.
               </p>
-              <h2 className="mt-5 text-3xl font-black text-white sm:text-4xl">Ce que disent nos clients</h2>
             </motion.div>
-            <motion.div {...reveal(shouldReduceMotion, 0.08)} className="mt-10">
-              <div className="glass-card-lg mx-auto max-w-2xl text-center">
-                <p className="text-base font-bold text-white">Témoignages bientôt disponibles.</p>
-                <p className="mt-2 text-sm text-slate-400">
-                  Les retours de nos auto-écoles partenaires seront publiés après le lancement officiel.
-                </p>
-              </div>
-            </motion.div>
+            <div className="mt-10 grid gap-5 sm:grid-cols-3">
+              {platformHighlights.map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <motion.article
+                    {...reveal(shouldReduceMotion, index * 0.05)}
+                    className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5"
+                    key={item.title}
+                  >
+                    <div className="inline-flex rounded-xl border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-300">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="mt-4 text-base font-black text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{item.text}</p>
+                  </motion.article>
+                )
+              })}
+            </div>
           </div>
         </section>
 
-        <section id="contact" className="relative overflow-hidden py-20 lg:py-28">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.15),transparent_40%),radial-gradient(circle_at_80%_50%,rgba(239,68,68,0.12),transparent_40%)]" />
-          <motion.div
-            animate={shouldReduceMotion ? undefined : { opacity: [0.35, 0.7, 0.35] }}
-            className="pointer-events-none absolute bottom-[20%] left-[-5%] h-[3px] w-[55%] rotate-[-8deg] rounded-full bg-gradient-to-r from-transparent via-blue-400 to-transparent blur-[0.5px]"
-            transition={shouldReduceMotion ? undefined : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <motion.div
-            animate={shouldReduceMotion ? undefined : { opacity: [0.35, 0.7, 0.35] }}
-            className="pointer-events-none absolute bottom-[15%] right-[-5%] h-[3px] w-[55%] rotate-[8deg] rounded-full bg-gradient-to-r from-transparent via-red-400 to-transparent blur-[0.5px]"
-            transition={shouldReduceMotion ? undefined : { duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-          />
-          <motion.div {...reveal(shouldReduceMotion)} className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <h2 className="text-3xl font-black leading-tight text-white sm:text-5xl">
-              Prêt à faire passer votre auto-école à la{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">vitesse supérieure ?</span>
+        {/* Bénéfices par rôle */}
+        <section id="benefices" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+          <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Pour qui ?</p>
+            <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+              Une plateforme pensée pour toute l&apos;équipe
             </h2>
-            <p className="mt-5 text-base leading-8 text-slate-300">
-              Rejoignez les centaines d’auto-écoles qui modernisent leur gestion et leur pédagogie avec PEDAGOGIA DRIVE.
+            <p className="mt-4 text-base leading-8 text-slate-400">
+              Auto-école, élève, enseignant ou secrétariat — chacun dispose d&apos;un espace adapté à son rôle,
+              connecté au même fil pédagogique.
+            </p>
+          </motion.div>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+              {roleBenefits.map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <motion.article
+                    {...reveal(shouldReduceMotion, index * 0.04)}
+                    className="group relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)]"
+                    key={item.role}
+                  >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-blue-400 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+                    <div className="flex items-start gap-4">
+                      <div className="inline-flex shrink-0 rounded-xl border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-300">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-blue-300/80">{item.role}</p>
+                        <h3 className="mt-1 text-base font-black text-white">{item.title}</h3>
+                        <p className="mt-2 text-sm leading-7 text-slate-400">{item.text}</p>
+                      </div>
+                    </div>
+                  </motion.article>
+                )
+              })}
+            </div>
+        </section>
+
+        {/* Fonctionnalités */}
+        <section id="fonctionnalites" className="border-y border-white/10 bg-[#07111f] py-14 sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Outils</p>
+              <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+                Fonctionnalités pédagogiques
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-400">
+                Des outils opérationnels dès aujourd&apos;hui, et une feuille de route riche pour les mois à venir.
+              </p>
+            </motion.div>
+
+            <div className="mt-10 grid gap-10 lg:grid-cols-2">
+              <motion.div {...reveal(shouldReduceMotion)}>
+                <p className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  Disponible actuellement
+                </p>
+                <ul className="space-y-3">
+                  {availableFeatures.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <li
+                        className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                        key={item.title}
+                      >
+                        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-500/10 text-emerald-300">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-black text-white">{item.title}</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-400">{item.text}</p>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </motion.div>
+
+              <motion.div {...reveal(shouldReduceMotion, 0.06)}>
+                <p className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-violet-300">
+                  <span className="h-2 w-2 rounded-full bg-violet-400" />
+                  Bientôt disponible
+                </p>
+                <ul className="space-y-3">
+                  {upcomingFeatures.map((item) => (
+                    <li
+                      className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      key={item.title}
+                    >
+                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-violet-300">
+                        <Sparkles className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-200">{item.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{item.text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section id="contact" className="relative overflow-hidden py-16 lg:py-24">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.12),transparent_45%)]" />
+          <motion.div {...reveal(shouldReduceMotion)} className="relative mx-auto max-w-2xl px-4 text-center sm:px-6">
+            <h2 className="text-3xl font-black text-white sm:text-4xl">
+              Remettez la pédagogie au centre
+            </h2>
+            <p className="mt-4 text-base leading-8 text-slate-400">
+              Rejoignez les auto-écoles qui modernisent leur livret d&apos;apprentissage avec une plateforme
+              conçue par un enseignant de la conduite, pour des enseignants et leurs élèves.
+            </p>
+            <p className="mt-2 text-sm font-semibold text-blue-300">
+              Essai gratuit 30 jours · 20 élèves inclus · Sans engagement
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link to="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5">
                 Créer mon auto-école
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10">
+              <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white transition hover:bg-white/10">
                 Se connecter
               </Link>
             </div>
           </motion.div>
         </section>
 
-        <section
-          id="applications-mobiles"
-          className="border-t border-white/10 bg-[#07111f] py-20 sm:py-24 lg:py-28"
-        >
-          <motion.div
-            {...reveal(shouldReduceMotion)}
-            className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8"
-          >
-            <p className="inline-flex rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-200">
-              Applications mobiles
+        {/* Mobile */}
+        <section id="applications-mobiles" className="border-t border-white/10 bg-[#07111f] py-14 sm:py-16">
+          <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">Disponible sur iOS et Android</h2>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-400">
+              Retrouvez votre livret numérique, votre suivi REMC et vos documents sur smartphone —
+              la formation vous suit partout.
             </p>
-            <h2 className="mt-6 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Disponible sur iOS et Android
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              Téléchargez l’application sur votre smartphone et retrouvez toute votre formation au volant.
-            </p>
-            <StorePlatformBadges className="mt-12" size="large" />
+            <StorePlatformBadges className="mt-8" size="large" />
           </motion.div>
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-[#020817] px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.2fr_2fr]">
+      <footer className="border-t border-white/10 bg-[#020817] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
             <BrandLogo />
-            <p className="mt-4 max-w-sm text-sm leading-7 text-slate-400">
-              La plateforme tout-en-un pour gérer, suivre et développer votre auto-école avec une expérience moderne.
-            </p>
-            <div className="mt-5 flex gap-3">
-              {['Facebook', 'Instagram', 'LinkedIn'].map((network) => (
-                <span className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-400" key={network}>
-                  {network}
-                </span>
-              ))}
-            </div>
           </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 text-sm sm:grid-cols-4 sm:gap-10">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title}>
-                <p className="text-sm font-black text-white">{title}</p>
-                <ul className="mt-3 space-y-2">
+                <p className="font-black text-white">{title}</p>
+                <ul className="mt-2 space-y-1">
                   {links.map((link) => (
-                    <li className="text-sm text-slate-400" key={link}>
-                      {link}
-                    </li>
+                    <li className="text-slate-500" key={link}>{link}</li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
         </div>
-        <p className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-6 text-center text-xs text-slate-500">
-          © 2026 Pedagogia Drive. Tous droits réservés.
+        <p className="mx-auto mt-8 max-w-7xl border-t border-white/10 pt-6 text-center text-xs text-slate-600">
+          © 2026 Pedagogia Drive
         </p>
       </footer>
     </div>

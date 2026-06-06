@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { toUserError } from '../lib/userFacingError'
 
 const BUCKET = 'message-attachments'
 
@@ -111,6 +112,6 @@ export async function linkAttachmentToDocument({ organizationId, studentId, atta
     sender_name: senderName || null,
     classified_at: new Date().toISOString(),
   })
-  if (error) return { error }
+  if (error) return { error: toUserError(error, 'document') }
   return { error: null }
 }

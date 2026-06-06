@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import AddStudentModal from '../../components/AddStudentModal'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
-import { listStudents } from '../../services/students'
+import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
+import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
+import { listStudents, subscribeStudents } from '../../services/students'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -22,6 +24,7 @@ function referentTeacher(student) {
 export default function AdminStudentsPage() {
   const { profileId } = useAuth()
   const [students, setStudents] = useState([])
+  const [assessmentsByStudent, setAssessmentsByStudent] = useState({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -29,6 +32,7 @@ export default function AdminStudentsPage() {
   const refresh = useCallback(async () => {
     if (!profileId) {
       setStudents([])
+      setAssessmentsByStudent({})
       setLoading(false)
       return
     }
@@ -37,12 +41,21 @@ export default function AdminStudentsPage() {
     const { students: rows, error } = await listStudents()
     if (error) setLoadError('Impossible de charger la liste des élèves.')
     setStudents(rows)
+    const studentIds = rows.map((row) => row.id)
+    const { assessments } = await listInitialAssessmentsForStudents(studentIds)
+    const map = Object.fromEntries((assessments || []).map((row) => [row.student_id, row]))
+    setAssessmentsByStudent(map)
     setLoading(false)
   }, [profileId])
 
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (!profileId) return undefined
+    return subscribeStudents(refresh)
+  }, [profileId, refresh])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -79,7 +92,11 @@ export default function AdminStudentsPage() {
           <EmptyState title="Aucun élève enregistré" message="Ajoutez votre premier élève pour créer son compte et son dossier." icon="🎓" />
         ) : (
           <div className="grid gap-3">
-            {students.map((student) => (
+            {students.map((student) => {
+              const track = resolveStudentTrack(student)
+              const assessment = assessmentsByStudent[student.id]
+              const formationLabel = student.package_name || student.formation_type || getTrackLabel(track)
+              return (
               <article key={student.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                   <div className="min-w-0">
@@ -92,10 +109,22 @@ export default function AdminStudentsPage() {
                     {referentTeacher(student) && (
                       <p className="mt-1 text-xs font-medium text-slate-500">Référent : {referentTeacher(student)}</p>
                     )}
+                    <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+                      <p><span className="font-bold text-slate-500">Formation :</span> {formationLabel}</p>
+                      {track === 'permis_b' && (
+                        <>
+                          <p><span className="font-bold text-slate-500">Évaluation de départ :</span> {formatAssessmentStatus(assessment?.status || 'pending')}</p>
+                          <p><span className="font-bold text-slate-500">Date :</span> {assessment?.completed_at ? formatDateFr(assessment.completed_at) : '—'}</p>
+                          <p><span className="font-bold text-slate-500">Score obtenu :</span> {assessment?.status === 'completed' ? assessment.final_score : '—'}</p>
+                          <p><span className="font-bold text-slate-500">Heures recommandées :</span> {assessment?.recommended_hours_min ? `${assessment.recommended_hours_min}${assessment.recommended_hours_max !== assessment.recommended_hours_min ? ` à ${assessment.recommended_hours_max}` : ''} h` : '—'}</p>
+                          <p className="sm:col-span-2"><span className="font-bold text-slate-500">Enseignant évaluateur :</span> {assessment?.teacher?.full_name || '—'}</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
-                      {student.package_name || 'Formule non renseignée'}
+                      {getTrackLabel(track)}
                     </span>
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                       {student.status || 'En attente'}
@@ -106,7 +135,8 @@ export default function AdminStudentsPage() {
                   </div>
                 </div>
               </article>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>

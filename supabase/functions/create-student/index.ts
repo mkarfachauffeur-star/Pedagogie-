@@ -1,4 +1,4 @@
-// PEDAGOGIA DRIVE — Création élève par invitation e-mail
+// PEDAGOGIA DRIVE — Création élève (compte + dossier + accès provisoire)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS = {
@@ -21,6 +21,13 @@ function formatNamePart(value = '') {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+function generateTempPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  const arr = new Uint8Array(12)
+  crypto.getRandomValues(arr)
+  return Array.from(arr, (b) => chars[b % chars.length]).join('')
 }
 
 async function generateFileNumber(
@@ -54,7 +61,7 @@ async function generateFileNumber(
 }
 
 async function canCreateStudent(admin: ReturnType<typeof createClient>, orgId: string) {
-  const { data: org } = await admin.from('organizations').select('status').eq('id', orgId).single()
+  const { data: org } = await admin.from('organizations').select('status, name').eq('id', orgId).single()
   if (!org || ['suspended', 'cancelled'].includes(org.status)) return { ok: false, reason: 'Organisation en lecture seule.' }
 
   const { data: sub } = await admin
@@ -77,7 +84,44 @@ async function canCreateStudent(admin: ReturnType<typeof createClient>, orgId: s
       return { ok: false, reason: `Limite de ${maxStudents} élèves atteinte pendant l'essai.` }
     }
   }
-  return { ok: true }
+  return { ok: true, orgName: org.name || 'votre auto-école' }
+}
+
+async function sendAccessEmail(
+  email: string,
+  fullName: string,
+  tempPassword: string,
+  orgName: string,
+) {
+  const resendKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendKey) return false
+
+  const appUrl = Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'https://pedagogia-drive.vercel.app'
+  const from = Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
+
+  const html = `
+    <p>Bonjour ${fullName},</p>
+    <p>Votre compte élève a été créé chez <strong>${orgName}</strong>.</p>
+    <p><strong>Identifiant :</strong> ${email}<br/>
+    <strong>Mot de passe provisoire :</strong> ${tempPassword}</p>
+    <p>Connectez-vous sur <a href="${appUrl}">${appUrl}</a> puis modifiez votre mot de passe dès la première connexion.</p>
+    <p>— Pedagogia Drive</p>
+  `
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: `Accès élève — ${orgName}`,
+      html,
+    }),
+  })
+  return res.ok
 }
 
 Deno.serve(async (req) => {
@@ -117,42 +161,65 @@ Deno.serve(async (req) => {
     const email = String(body.email || '').trim().toLowerCase()
     const phone = String(body.phone || '').trim()
     const birthDate = body.birth_date ? String(body.birth_date) : null
+    const birthPlace = String(body.birth_place || '').trim()
     const streetNumber = String(body.street_number || '').trim()
     const street = String(body.street || '').trim()
+    const postalCode = String(body.postal_code || '').trim()
+    const city = String(body.city || '').trim()
+    const neph = String(body.neph || '').trim()
+    const licenseCategory = String(body.license_category || 'Permis B').trim()
     const packageId = body.package_id ? String(body.package_id) : null
+    const packageNameInput = String(body.package_name || '').trim()
     const teacherId = body.teacher_id ? String(body.teacher_id) : null
     const extraHours = Math.max(0, Math.floor(Number(body.extra_hours) || 0))
+    const codeStatus = String(body.code_status || 'Non obtenu').trim()
+    const status = String(body.status || 'En attente').trim()
+    const registrationDate = body.registration_date ? String(body.registration_date) : new Date().toISOString().slice(0, 10)
+    const documents = Array.isArray(body.documents) ? body.documents.map(String) : []
+    const paymentCollected = Math.max(0, Number(body.payment_collected) || 0)
+    const remainingPayment = body.remaining_payment != null && body.remaining_payment !== ''
+      ? Math.max(0, Number(body.remaining_payment) || 0)
+      : null
+    const sendAccessEmailFlag = body.send_access_email !== false
 
     if (!firstName || !lastName || !email) {
       return json({ error: 'Nom, prénom et e-mail sont obligatoires.' }, 400)
     }
 
     const fullName = `${firstName} ${lastName}`.trim()
+    const tempPassword = generateTempPassword()
 
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { organization_id: orgId, role: 'student', full_name: fullName },
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        organization_id: orgId,
+        role: 'student',
+        full_name: fullName,
+      },
     })
 
-    if (inviteError) {
-      const message = inviteError.message?.includes('already')
+    if (authError) {
+      const message = authError.message?.includes('already')
         ? 'Un compte existe déjà avec cet e-mail.'
-        : inviteError.message
+        : authError.message
       return json({ error: message }, 400)
     }
 
-    const userId = inviteData.user?.id
-    if (!userId) return json({ error: 'Invitation impossible.' }, 500)
+    const userId = authData.user?.id
+    if (!userId) return json({ error: 'Création du compte impossible.' }, 500)
 
     await admin.from('profiles').update({ full_name: fullName, phone: phone || null }).eq('id', userId)
 
     const fileNumber = await generateFileNumber(admin, orgId, lastName, firstName)
 
-    let packageName: string | null = null
+    let packageName: string | null = packageNameInput || null
     let pkg: Record<string, unknown> | null = null
     if (packageId) {
       const { data } = await admin.from('pricing_packages').select('*').eq('id', packageId).eq('organization_id', orgId).maybeSingle()
       pkg = data
-      packageName = data?.name || null
+      packageName = data?.name || packageName
     }
 
     const { data: student, error: studentError } = await admin
@@ -166,12 +233,20 @@ Deno.serve(async (req) => {
         email,
         phone: phone || null,
         birth_date: birthDate || null,
+        birth_place: birthPlace || null,
         street_number: streetNumber || null,
         street: street || null,
+        postal_code: postalCode || null,
+        city: city || null,
+        neph: neph || null,
+        license_category: licenseCategory || null,
         package_id: packageId,
         package_name: packageName,
+        formation_type: packageName,
         extra_hours: extraHours,
-        status: 'En attente',
+        code_status: codeStatus,
+        status,
+        registration_date: registrationDate,
       })
       .select('id, file_number, first_name, last_name, email, status')
       .single()
@@ -193,8 +268,39 @@ Deno.serve(async (req) => {
         exam_presentation_ttc: examTtc,
         extra_hours: extraHours,
         extra_hours_amount_ttc: extraAmount,
-        signed_at: new Date().toISOString().slice(0, 10),
+        signed_at: registrationDate,
       })
+    } else {
+      const manualTotal = paymentCollected + (remainingPayment ?? 0)
+      await admin.from('contracts').insert({
+        organization_id: orgId,
+        student_id: student.id,
+        contract_total: manualTotal,
+        signed_at: registrationDate,
+      })
+    }
+
+    if (paymentCollected > 0) {
+      await admin.from('payments').insert({
+        organization_id: orgId,
+        student_id: student.id,
+        amount: paymentCollected,
+        method: 'Espèces',
+        nature: 'Inscription',
+        created_by: caller.id,
+      })
+    }
+
+    if (documents.length) {
+      await admin.from('documents').insert(
+        documents.map((type) => ({
+          organization_id: orgId,
+          student_id: student.id,
+          type,
+          status: 'Reçu',
+          created_by: caller.id,
+        })),
+      )
     }
 
     if (teacherId) {
@@ -205,13 +311,23 @@ Deno.serve(async (req) => {
       })
     }
 
+    let emailSent = false
+    if (sendAccessEmailFlag) {
+      emailSent = await sendAccessEmail(email, fullName, tempPassword, gate.orgName || 'votre auto-école')
+    }
+
     return json({
       ok: true,
       student,
       email,
       full_name: fullName,
-      invited: true,
-      message: 'Invitation envoyée par e-mail. L\'élève pourra définir son mot de passe via le lien reçu.',
+      temp_password: tempPassword,
+      email_sent: emailSent,
+      message: emailSent
+        ? 'Compte créé. Un e-mail d’accès avec le mot de passe provisoire a été envoyé.'
+        : sendAccessEmailFlag
+          ? 'Compte créé. Communiquez le mot de passe provisoire à l’élève (e-mail automatique non configuré).'
+          : 'Compte créé. Communiquez le mot de passe provisoire à l’élève.',
     })
   } catch (err) {
     return json({ error: String(err?.message || err) }, 500)

@@ -1,138 +1,80 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
+import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
-import {
-  EXPENSE_CATEGORIES,
-  PAYMENT_NATURES,
-  fetchFinancialData,
-  formatEur,
-  todayIso,
-} from '../../services/finance'
-
-function defaultDateFrom() {
-  const now = new Date()
-  return `${now.getFullYear()}-01-01`
-}
+import { PAYMENT_NATURES, formatEur } from '../../services/finance'
+import { fetchProfitabilityDashboard } from '../../services/profitability'
 
 export default function AdminStatisticsPage() {
-  const { profileId } = useAuth()
-  const [dateFrom, setDateFrom] = useState(defaultDateFrom)
-  const [dateTo, setDateTo] = useState(todayIso())
-  const [summary, setSummary] = useState(null)
-  const [payments, setPayments] = useState([])
-  const [expenses, setExpenses] = useState([])
+  const { profileId, organizationId } = useAuth()
+  const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
   const refresh = useCallback(async () => {
-    if (!profileId) {
+    if (!profileId || !organizationId) {
       setLoading(false)
       return
     }
     setLoading(true)
     setLoadError(null)
-    const result = await fetchFinancialData({
-      dateFrom: dateFrom || null,
-      dateTo: dateTo || null,
-    })
-    if (result.error) setLoadError('Impossible de charger les statistiques financières.')
-    setSummary(result.summary)
-    setPayments(result.payments)
-    setExpenses(result.expenses)
+    const { dashboard: data, error } = await fetchProfitabilityDashboard({ organizationId })
+    if (error) setLoadError('Impossible de charger le tableau de bord.')
+    setDashboard(data)
     setLoading(false)
-  }, [profileId, dateFrom, dateTo])
+  }, [profileId, organizationId])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  const monthlyTrend = useMemo(() => {
-    const buckets = {}
-    const addToBucket = (dateStr, amount, kind) => {
-      const key = String(dateStr).slice(0, 7)
-      if (!key || key.length < 7) return
-      if (!buckets[key]) buckets[key] = { income: 0, expense: 0 }
-      buckets[key][kind] += Number(amount || 0)
-    }
-    payments.forEach((item) => addToBucket(item.paid_at, item.amount, 'income'))
-    expenses.forEach((item) => addToBucket(item.spent_at, item.amount, 'expense'))
-    return Object.entries(buckets)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, values]) => ({
-        month,
-        label: formatMonthLabel(month),
-        ...values,
-        net: values.income - values.expense,
-      }))
-  }, [payments, expenses])
-
-  const maxMonthly = useMemo(
-    () => Math.max(...monthlyTrend.map((row) => Math.max(row.income, row.expense)), 1),
-    [monthlyTrend],
-  )
-
-  if (!profileId) {
-    return <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="📈" />
-  }
+  const revenueTotal = dashboard
+    ? Object.values(dashboard.revenueByNature || {}).reduce((sum, value) => sum + value, 0)
+    : 0
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
-        <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-          Analyse
-        </p>
-        <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Statistiques financières</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-50">
-          Vue consolidée des entrées et sorties enregistrées par le secrétariat et les enseignants.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Évolution du CA"
+        title="Tableau de bord financier"
+        subtitle="Indicateurs de performance de votre auto-école : chiffre d'affaires, élèves actifs, heures réalisées et reste à encaisser."
+      />
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-        <div className="grid gap-4 sm:grid-cols-2 lg:max-w-md">
-          <FilterField label="Période — du" type="date" value={dateFrom} onChange={setDateFrom} />
-          <FilterField label="Période — au" type="date" value={dateTo} onChange={setDateTo} />
-        </div>
-      </section>
-
-      {loadError && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-          {loadError}
-        </div>
-      )}
-
-      {loading ? (
-        <p className="text-sm text-slate-500">Chargement des statistiques…</p>
-      ) : summary ? (
+      {!profileId ? (
+        <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="📈" />
+      ) : loading ? (
+        <p className="text-sm text-slate-500">Chargement du tableau de bord…</p>
+      ) : loadError ? (
+        <EmptyState title="Erreur de chargement" message={loadError} icon="⚠️" />
+      ) : dashboard ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Chiffre encaissé" value={formatEur(summary.totalIncome)} hint={`${summary.paymentCount} encaissement(s)`} />
-            <StatCard label="Total dépenses" value={formatEur(summary.totalExpenses)} hint={`${summary.expenseCount} dépense(s)`} tone="rose" />
-            <StatCard
-              label="Résultat net"
-              value={formatEur(summary.netBalance)}
-              hint="Encaissements − dépenses"
-              tone={summary.netBalance >= 0 ? 'cyan' : 'rose'}
-            />
-            <StatCard label="Contrats signés" value={formatEur(summary.contractTotal)} hint={`Reste à payer : ${formatEur(summary.remaining)}`} tone="amber" />
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Kpi label="CA mensuel" value={formatEur(dashboard.monthlyRevenue)} tone="cyan" />
+            <Kpi label="CA annuel" value={formatEur(dashboard.annualRevenue)} tone="cyan" />
+            <Kpi label="Élèves actifs" value={String(dashboard.activeStudents)} tone="indigo" />
+            <Kpi label="Heures réalisées" value={`${dashboard.hoursCompleted} h`} tone="violet" />
+            <Kpi label="Panier moyen / élève" value={formatEur(dashboard.averageBasket)} tone="emerald" />
+            <Kpi label="Restant à encaisser" value={formatEur(dashboard.remainingToCollect)} tone="amber" />
           </section>
 
           <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-            <h2 className="text-xl font-extrabold text-slate-950">Évolution mensuelle</h2>
-            {monthlyTrend.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">Pas de mouvements sur la période.</p>
+            <h2 className="text-xl font-extrabold text-slate-950">Évolution du chiffre d'affaires</h2>
+            <p className="mt-1 text-sm text-slate-500">Encaissements des 12 derniers mois.</p>
+            {dashboard.monthlyTrend.length === 0 ? (
+              <p className="mt-4 text-sm text-slate-500">Aucun encaissement enregistré.</p>
             ) : (
               <div className="mt-6 grid gap-4">
-                {monthlyTrend.map((row) => (
+                {dashboard.monthlyTrend.map((row) => (
                   <div key={row.month}>
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <div className="mb-2 flex items-center justify-between gap-2 text-sm">
                       <span className="font-black text-slate-800">{row.label}</span>
-                      <span className={`font-black ${row.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        Net {formatEur(row.net)}
-                      </span>
+                      <span className="font-black text-cyan-700">{formatEur(row.revenue)}</span>
                     </div>
-                    <div className="grid gap-2">
-                      <BarRow label="Entrées" amount={row.income} max={maxMonthly} color="bg-emerald-500" />
-                      <BarRow label="Sorties" amount={row.expense} max={maxMonthly} color="bg-rose-500" />
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-300"
+                        style={{ width: `${Math.round((row.revenue / dashboard.maxMonthly) * 100)}%` }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -140,9 +82,35 @@ export default function AdminStatisticsPage() {
             )}
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-2">
-            <CategoryGrid title="Répartition des encaissements" categories={PAYMENT_NATURES} data={summary.incomeByNature} tone="income" />
-            <CategoryGrid title="Répartition des dépenses" categories={EXPENSE_CATEGORIES} data={summary.expensesByCategory} tone="expense" />
+          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <h2 className="text-xl font-extrabold text-slate-950">Répartition des revenus</h2>
+            <p className="mt-1 text-sm text-slate-500">Par nature d'encaissement enregistrée.</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {PAYMENT_NATURES.map((nature) => {
+                const amount = dashboard.revenueByNature?.[nature] || 0
+                const pct = revenueTotal > 0 ? Math.round((amount / revenueTotal) * 100) : 0
+                return (
+                  <div key={nature} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <p className="text-xs font-bold text-slate-500">{nature}</p>
+                    <p className={`mt-1 text-lg font-black ${amount > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {formatEur(amount)}
+                    </p>
+                    {amount > 0 && <p className="text-xs text-slate-400">{pct} % du total</p>}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="grid gap-4 sm:grid-cols-2">
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+              <p className="text-sm font-bold text-slate-500">Total encaissé</p>
+              <p className="mt-2 text-3xl font-black text-emerald-600">{formatEur(dashboard.totalCollected)}</p>
+            </article>
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+              <p className="text-sm font-bold text-slate-500">Montant contractuel total</p>
+              <p className="mt-2 text-3xl font-black text-slate-900">{formatEur(dashboard.contractTotal)}</p>
+            </article>
           </section>
         </>
       ) : null}
@@ -150,72 +118,18 @@ export default function AdminStatisticsPage() {
   )
 }
 
-function formatMonthLabel(ym) {
-  const [year, month] = ym.split('-')
-  const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-}
-
-function FilterField({ label, type, value, onChange }) {
-  return (
-    <label className="block">
-      <span className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</span>
-      <input
-        className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-800"
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
-  )
-}
-
-function StatCard({ label, value, hint, tone = 'cyan' }) {
-  const color = tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-cyan-600'
+function Kpi({ label, value, tone = 'cyan' }) {
+  const colors = {
+    cyan: 'text-cyan-600',
+    indigo: 'text-indigo-600',
+    violet: 'text-violet-600',
+    emerald: 'text-emerald-600',
+    amber: 'text-amber-600',
+  }
   return (
     <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
-      <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
-      {hint && <p className="mt-2 text-xs font-semibold text-slate-400">{hint}</p>}
-    </article>
-  )
-}
-
-function BarRow({ label, amount, max, color }) {
-  const pct = max > 0 ? Math.round((amount / max) * 100) : 0
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-16 shrink-0 text-xs font-bold text-slate-500">{label}</span>
-      <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="w-24 shrink-0 text-right text-xs font-black text-slate-700">{formatEur(amount)}</span>
-    </div>
-  )
-}
-
-function CategoryGrid({ title, categories, data, tone }) {
-  const total = Object.values(data || {}).reduce((sum, value) => sum + value, 0)
-  const textColor = tone === 'income' ? 'text-emerald-600' : 'text-rose-600'
-
-  return (
-    <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-      <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {categories.map((category) => {
-          const amount = data?.[category] || 0
-          const pct = total > 0 ? Math.round((amount / total) * 100) : 0
-          return (
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3" key={category}>
-              <p className="text-xs font-bold text-slate-500">{category}</p>
-              <p className={`mt-1 text-lg font-black ${amount > 0 ? textColor : 'text-slate-400'}`}>
-                {formatEur(amount)}
-              </p>
-              {amount > 0 && <p className="text-xs text-slate-400">{pct} % du total</p>}
-            </div>
-          )
-        })}
-      </div>
+      <p className={`mt-2 text-3xl font-black ${colors[tone] || colors.cyan}`}>{value}</p>
     </article>
   )
 }

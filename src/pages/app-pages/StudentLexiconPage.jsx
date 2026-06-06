@@ -1,4 +1,9 @@
 import { useState } from 'react'
+import franceC20a from '../../assets/signs/france-c20a.svg?url'
+
+const officialSignViewBox = '-0.781 -0.08 576.53826 507.94375'
+const yieldSignViewBox = '-50 -30 50.300621 44'
+const priorityRoadSignViewBox = '-0.722 -0.722 576 576'
 
 const labels = {
   studentOnly: 'Élève uniquement',
@@ -26,7 +31,13 @@ const terms = [
       'Il favorise un arrêt précis et stable, notamment pour s’immobiliser au bon endroit sans secousse à l’arrêt.',
   },
   { word: 'Rétrograder', definition: 'Passer à un rapport inférieur.', explanation: 'On rétrograde pour récupérer de la puissance, ralentir ou adapter l’allure.' },
-  { word: 'Angle mort', definition: 'Zone invisible dans les rétroviseurs.', explanation: 'Il faut tourner la tête pour vérifier qu’aucun usager ne se trouve dans cette zone.' },
+  {
+    word: 'Angle mort',
+    definition:
+      'Zone de visibilité cachée autour d’un véhicule où un usager peut se trouver sans être vu par le conducteur.',
+    explanation:
+      'Les rétroviseurs et le pare-brise ne couvrent pas tout le pourtour du véhicule. Avant de changer de direction, il faut tourner la tête pour contrôler ces zones.',
+  },
   { word: 'Trajectoire', definition: 'Chemin suivi par le véhicule.', explanation: 'La trajectoire dépend du regard, de l’allure et de la précision des gestes au volant.' },
   { word: 'Priorité', definition: 'Droit de passer avant un autre usager.', explanation: 'Avoir la priorité ne dispense jamais d’observer et de ralentir si nécessaire.' },
   { word: 'Intersection', definition: 'Lieu où plusieurs routes se croisent.', explanation: 'Il faut y rechercher la signalisation, contrôler les usagers et adapter son allure.' },
@@ -110,6 +121,17 @@ const signs = [
     answer: 'Le véhicule arrivant par la droite est prioritaire.',
   },
   {
+    name: 'Route à caractère prioritaire',
+    type: 'priorityRoad',
+    category: 'Priorité',
+    accent: 'amber',
+    explanation:
+      'Indique une route où le conducteur dispose de la priorité aux intersections, jusqu’au panneau de fin de priorité.',
+    question: 'Que signifie ce losange jaune ?',
+    answer:
+      'Vous circulez sur une route prioritaire : vous avez la priorité aux intersections jusqu’à la fin de cette route.',
+  },
+  {
     name: 'Sens unique',
     type: 'oneWay',
     category: 'Indication',
@@ -140,7 +162,16 @@ const signs = [
 
 const quiz = [
   { question: 'Que signifie débrayer ?', answer: 'Appuyer sur l’embrayage pour séparer le moteur des roues', choices: ['Appuyer sur l’embrayage pour séparer le moteur des roues', 'Accélérer fortement pour passer une vitesse', 'Couper le contact du moteur', 'Tourner le volant à fond'] },
-  { question: 'Qu’est-ce qu’un angle mort ?', answer: 'Une zone invisible dans les rétroviseurs', choices: ['Une zone invisible dans les rétroviseurs', 'Une voie d’insertion sur autoroute', 'Une zone réservée aux piétons', 'Un emplacement de stationnement'] },
+  {
+    question: 'Qu’est-ce qu’un angle mort ?',
+    answer: 'Une zone de visibilité cachée où un usager peut se trouver sans être vu par le conducteur',
+    choices: [
+      'Une zone de visibilité cachée où un usager peut se trouver sans être vu par le conducteur',
+      'Une zone invisible uniquement dans les rétroviseurs',
+      'Une voie d’insertion sur autoroute',
+      'Un emplacement de stationnement',
+    ],
+  },
   { question: 'À quoi sert une voie d’insertion ?', answer: 'Entrer progressivement dans une circulation rapide', choices: ['Entrer progressivement dans une circulation rapide', 'Stationner sur le côté de la chaussée', 'Faire demi-tour en toute sécurité', 'Doubler les véhicules lents'] },
   { question: 'Que veut dire rétrograder ?', answer: 'Passer à un rapport inférieur', choices: ['Passer à un rapport inférieur', 'Passer à un rapport supérieur', 'Couper le contact du moteur', 'Mettre la boîte au point mort'] },
   { question: 'Le clignotant sert principalement à :', answer: 'Informer les autres usagers de l’intention de tourner', choices: ['Informer les autres usagers de l’intention de tourner', 'Obtenir automatiquement la priorité', 'Signaler une situation d’urgence', 'Demander aux piétons de s’écarter'] },
@@ -176,6 +207,22 @@ const quiz = [
   { question: 'Quel est ce panneau ?', visualType: 'pedestrian', answer: 'Passage piéton', choices: ['Passage piéton', 'Sens unique', 'Feu tricolore', 'Rond-point'] },
   { question: 'Quel est ce panneau ?', visualType: 'trafficLight', answer: 'Feu tricolore', choices: ['Feu tricolore', 'Rond-point', 'Passage piéton', 'Priorité à droite'] },
   { question: 'Quel est ce panneau ?', visualType: 'priority', answer: 'Priorité à droite', choices: ['Priorité à droite', 'Ralentisseur', 'Cédez le passage', 'STOP'] },
+  {
+    question: 'Quel est ce panneau ?',
+    visualType: 'priorityRoad',
+    answer: 'Route à caractère prioritaire',
+    choices: ['Route à caractère prioritaire', 'Priorité à droite', 'Cédez le passage', 'Sens unique'],
+  },
+  {
+    question: 'Que signifie une route à caractère prioritaire ?',
+    answer: 'Le conducteur a la priorité aux intersections jusqu’au panneau de fin de priorité',
+    choices: [
+      'Le conducteur a la priorité aux intersections jusqu’au panneau de fin de priorité',
+      'La priorité à droite s’applique à chaque intersection',
+      'Il doit céder le passage à tous les usagers',
+      'La vitesse est limitée à 30 km/h',
+    ],
+  },
   { question: 'Quel est ce panneau ?', visualType: 'oneWay', answer: 'Sens unique', choices: ['Sens unique', 'Sens interdit', 'Passage piéton', 'Rond-point'] },
   { question: 'Quel est ce panneau ?', visualType: 'noParking', answer: 'Stationnement interdit', choices: ['Stationnement interdit', 'Sens interdit', 'Sens unique', 'Limitation de vitesse'] },
   { question: 'Quel est ce panneau ?', visualType: 'bump', answer: 'Ralentisseur', choices: ['Ralentisseur', 'Priorité à droite', 'Limitation de vitesse', 'Cédez le passage'] },
@@ -205,6 +252,22 @@ const accentBadge = {
   emerald: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100',
 }
 
+function HorizontalCarousel({ children, ariaLabel }) {
+  return (
+    <div className="relative mt-5 min-w-0">
+      <div
+        aria-label={ariaLabel}
+        className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto pb-3 scroll-smooth [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+        role="region"
+      >
+        {children}
+      </div>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
+    </div>
+  )
+}
+
 function SignVisual({ type, size = 'md' }) {
   const dim = size === 'sm' ? 'h-20 w-20' : size === 'lg' ? 'h-36 w-36' : 'h-28 w-28'
   const className = `${dim} drop-shadow-[0_8px_18px_rgba(15,23,42,0.18)]`
@@ -221,9 +284,21 @@ function SignVisual({ type, size = 'md' }) {
       )
     case 'yield':
       return (
-        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau Cédez le passage">
-          <polygon points="60,112 6,16 114,16" fill="#d4101a" />
-          <polygon points="60,100 19,26 101,26" fill="#ffffff" />
+        <svg className={className} viewBox={yieldSignViewBox} role="img" aria-label="Panneau Cédez le passage AB3a">
+          <path
+            d="m -2.5715637,-29.850003 c 2.10285065,0 3.38462265,2.26687 2.36562465,4.05625 L -22.480936,12.815626 c -0.532571,0.915464 -1.45303,1.367516 -2.36875,1.3625 -0.91572,0.005 -1.836179,-0.447036 -2.36875,-1.3625 l -22.275003,-38.609379 c -1.018998,-1.78938 0.262774,-4.05625 2.365625,-4.05625 z"
+            fill="#ffffff"
+            stroke="#000000"
+            strokeWidth="0.2"
+          />
+          <path
+            d="m -2.5684457,-28.800131 c 1.269022,0.0052 2.09296165,1.222161 1.403125,2.425 L -23.452818,12.243623 c -0.357662,0.624542 -0.879931,0.894339 -1.396875,0.884375 -0.516944,0.01 -1.039213,-0.259833 -1.396875,-0.884375 l -22.287503,-38.618754 c -0.689837,-1.202839 0.134103,-2.4198 1.403125,-2.425 z"
+            fill="#c4121e"
+          />
+          <path
+            d="m -24.849698,1.6706576 13.923502,-23.9986116 -27.847003,0.0052 13.923501,23.9933586 0,2.7e-5 z"
+            fill="#ffffff"
+          />
         </svg>
       )
     case 'noEntry':
@@ -256,19 +331,12 @@ function SignVisual({ type, size = 'md' }) {
       )
     case 'pedestrian':
       return (
-        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau passage piéton">
-          <rect x="8" y="8" width="104" height="104" rx="10" fill="#0a52a3" />
-          <polygon points="60,22 100,98 20,98" fill="#ffffff" />
-          <circle cx="62" cy="44" r="5.5" fill="#0f172a" />
-          <path d="M58 50.5l-7 16 4 3 5-11" fill="#0f172a" />
-          <path d="M62 50.5l9 13-2 5-9-9" fill="#0f172a" />
-          <path d="M56 67l-7 14 4 2 6-11" fill="#0f172a" />
-          <path d="M64 64l8 14-3 3-8-11" fill="#0f172a" />
-          <line x1="32" y1="92" x2="88" y2="92" stroke="#0a52a3" strokeWidth="3" />
-          <line x1="37" y1="86" x2="83" y2="86" stroke="#0a52a3" strokeWidth="3" />
-          <line x1="42" y1="80" x2="78" y2="80" stroke="#0a52a3" strokeWidth="3" />
-          <line x1="47" y1="74" x2="73" y2="74" stroke="#0a52a3" strokeWidth="3" />
-        </svg>
+        <img
+          src={franceC20a}
+          className={className}
+          alt="Panneau passage piéton C20a"
+          role="img"
+        />
       )
     case 'trafficLight':
       return (
@@ -290,11 +358,56 @@ function SignVisual({ type, size = 'md' }) {
       )
     case 'priority':
       return (
-        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau priorité à droite">
-          <polygon points="60,10 114,104 6,104" fill="#ffffff" />
-          <polygon points="60,10 114,104 6,104" fill="none" stroke="#d4101a" strokeWidth="9" strokeLinejoin="round" />
-          <line x1="42" y1="58" x2="78" y2="94" stroke="#0f172a" strokeWidth="13" strokeLinecap="square" />
-          <line x1="78" y1="58" x2="42" y2="94" stroke="#0f172a" strokeWidth="13" strokeLinecap="square" />
+        <svg className={className} viewBox={officialSignViewBox} role="img" aria-label="Panneau priorité à droite AB1">
+          <path
+            d="M 4.663749,460.12175 260.66975,16.707755 c 5.531,-9.58 15.753,-15.482 26.815,-15.482 11.063,0 21.284,5.902 26.815,15.482 L 570.30474,460.12175 c 5.531,9.58 5.531,21.383 0,30.964 -5.531,9.579 -15.753,15.481 -26.815,15.481 H 31.479749 c -11.062,0 -21.284,-5.902 -26.815,-15.481 -5.53100003,-9.581 -5.53200003,-21.384 -10e-4,-30.964 z"
+            fill="#ffffff"
+            stroke="#000000"
+            strokeWidth="2"
+          />
+          <path
+            d="M 559.62374,466.39275 303.52875,22.822755 c -3.31,-5.732 -9.425,-9.263 -16.044,-9.263 -6.619,0 -12.734,3.531 -16.044,9.263 L 15.344749,466.39275 c -3.31,5.732 -3.309,12.794 0,18.526 3.31,5.731 9.425,9.263 16.044,9.263 H 543.57974 c 6.619,0 12.734,-3.531 16.044,-9.263 3.31,-5.732 3.31,-12.794 0,-18.526 z"
+            fill="#f91a0e"
+          />
+          <polygon transform="translate(0.42774897,1.137755)" points="510.884,455.888 63.23,455.888 287.057,68.208" fill="#ffffff" />
+          <polyline
+            transform="translate(0.42774897,1.137755)"
+            points="287.057,314.667 217.274,246.313 195.668,268.37 264.999,336.281 197.087,405.612 219.145,427.219 287.057,357.888 354.969,427.219 377.026,405.612 309.114,336.281 378.445,268.37 356.839,246.313 287.057,314.667"
+            fill="#000000"
+          />
+        </svg>
+      )
+    case 'priorityRoad':
+      return (
+        <svg className={className} viewBox={priorityRoadSignViewBox} role="img" aria-label="Panneau route à caractère prioritaire AB6">
+          <path
+            fill="#ffffff"
+            stroke="#000000"
+            strokeWidth="0.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M270.312,7.328 L7.328,270.312c-4.5,4.5-7.028,10.603-7.028,16.967c0,6.364,2.528,12.467,7.028,16.967l262.984,262.984c4.5,4.499,10.603,7.027,16.966,7.027c6.363,0,12.467-2.528,16.967-7.027l262.983-262.984c4.5-4.5,7.028-10.603,7.028-16.967c0-6.364-2.528-12.467-7.028-16.967L304.245,7.328c-4.5-4.5-10.604-7.028-16.967-7.028C280.915,0.3,274.812,2.828,270.312,7.328z"
+          />
+          <path
+            fill="#ffffff"
+            stroke="#000000"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M274.554,28.536 L28.536,274.554c-3.375,3.375-5.271,7.952-5.271,12.725s1.896,9.35,5.271,12.725l246.018,246.017c3.375,3.375,7.952,5.271,12.725,5.271s9.35-1.896,12.725-5.271l246.018-246.017c3.375-3.375,5.271-7.952,5.271-12.725s-1.896-9.35-5.271-12.725L300.003,28.536c-3.375-3.375-7.952-5.271-12.725-5.271S277.928,25.162,274.554,28.536z"
+          />
+          <rect
+            x="156.894"
+            y="156.895"
+            transform="matrix(0.7071 -0.7071 0.7071 0.7071 -118.9949 287.2785)"
+            fill="#F6F73D"
+            stroke="#000000"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            width="260.768"
+            height="260.768"
+          />
         </svg>
       )
     case 'oneWay':
@@ -315,11 +428,22 @@ function SignVisual({ type, size = 'md' }) {
       )
     case 'bump':
       return (
-        <svg className={className} viewBox="0 0 120 120" role="img" aria-label="Panneau ralentisseur">
-          <polygon points="60,10 114,104 6,104" fill="#ffffff" />
-          <polygon points="60,10 114,104 6,104" fill="none" stroke="#d4101a" strokeWidth="9" strokeLinejoin="round" />
-          <path d="M22 90 C 36 70, 50 70, 60 90 C 70 70, 84 70, 98 90" fill="none" stroke="#0f172a" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-          <line x1="18" y1="92" x2="102" y2="92" stroke="#0f172a" strokeWidth="4" strokeLinecap="round" />
+        <svg className={className} viewBox={officialSignViewBox} role="img" aria-label="Panneau ralentisseur A2b">
+          <path
+            d="M 4.6637489,460.12175 260.66975,16.707756 c 5.531,-9.58 15.753,-15.4819999 26.815,-15.4819999 11.063,0 21.284,5.9019999 26.815,15.4819999 L 570.30474,460.12175 c 5.531,9.58 5.531,21.383 0,30.964 -5.531,9.579 -15.753,15.481 -26.815,15.481 H 31.479749 c -11.062,0 -21.284,-5.902 -26.8150001,-15.481 -5.5309999,-9.581 -5.5319999,-21.384 -0.001,-30.964 z"
+            fill="#ffffff"
+            stroke="#000000"
+            strokeWidth="2"
+          />
+          <path
+            d="M 31.388749,494.18175 H 543.57974 c 6.619,0 12.734,-3.531 16.044,-9.263 3.31,-5.732 3.31,-12.794 0,-18.526 L 303.52875,22.822756 c -3.31,-5.732 -9.425,-9.263 -16.044,-9.263 -6.619,0 -12.734,3.531 -16.044,9.263 L 15.344749,466.39275 c -3.31,5.732 -3.309,12.794 0,18.526 3.31,5.732 9.425,9.263 16.044,9.263 z"
+            fill="#f41a0e"
+          />
+          <polygon transform="translate(0.42774893,1.1377561)" points="510.884,455.888 63.23,455.888 287.057,68.208" fill="#ffffff" />
+          <path
+            d="m 287.48543,374.5308 c -79.30655,0 -77.47603,48.61288 -154.3875,48.61288 v 12.48508 h 308.773 v -12.48508 c -76.91141,0 -75.07896,-48.61288 -154.3855,-48.61288 z"
+            fill="#000000"
+          />
         </svg>
       )
     default:
@@ -368,7 +492,7 @@ export default function StudentLexiconPage() {
   const percentage = session ? Math.round((score / session.length) * 100) : 0
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6">
       <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">{labels.studentOnly}</span>
@@ -377,32 +501,45 @@ export default function StudentLexiconPage() {
         </div>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Définitions du lexique</p>
               <h2 className="mt-1 text-2xl font-black text-slate-950">Cartes interactives</h2>
+              <p className="mt-2 text-xs font-semibold text-slate-500 sm:text-sm">Faites défiler pour parcourir tous les mots →</p>
             </div>
             <p className="rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">{terms.length} mots clés</p>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <HorizontalCarousel ariaLabel="Lexique — cartes défilables">
             {terms.map((term) => {
               const isFlipped = Boolean(flipped[term.word])
+              const isActive = activeTerm.word === term.word
               return (
                 <button
-                  className="min-h-40 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-1 hover:border-cyan-200 hover:bg-cyan-50/60 hover:shadow-lg"
+                  className={`snap-start shrink-0 w-[17.5rem] rounded-[1.5rem] border p-4 text-left transition hover:-translate-y-1 hover:shadow-lg sm:w-[19rem] ${
+                    isActive
+                      ? 'border-cyan-300 bg-cyan-50/80 shadow-md'
+                      : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/60'
+                  }`}
                   key={term.word}
-                  onClick={() => { setActiveTerm(term); setFlipped((current) => ({ ...current, [term.word]: !current[term.word] })) }}
+                  onClick={() => {
+                    setActiveTerm(term)
+                    setFlipped((current) => ({ ...current, [term.word]: !current[term.word] }))
+                  }}
                   type="button"
                 >
                   <p className="text-lg font-black text-slate-950">{term.word}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{isFlipped ? term.explanation : term.definition}</p>
-                  <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{isFlipped ? 'Explication' : 'Définition'}</span>
+                  <p className="mt-3 min-h-[4.5rem] text-sm leading-6 text-slate-600">
+                    {isFlipped ? term.explanation : term.definition}
+                  </p>
+                  <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">
+                    {isFlipped ? 'Explication' : 'Définition'}
+                  </span>
                 </button>
               )
             })}
-          </div>
+          </HorizontalCarousel>
         </div>
         <aside className="h-fit rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Carte sélectionnée</p>
@@ -412,24 +549,24 @@ export default function StudentLexiconPage() {
         </aside>
       </section>
 
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
+      <section className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Panneaux de signalisation</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-[1.65rem]">Les panneaux les plus rencontrés</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Une galerie visuelle pour reconnaître rapidement les panneaux essentiels et comprendre leur signification en conduite.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Faites défiler pour parcourir tous les panneaux →</p>
           </div>
           <p className="rounded-full bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700">{signs.length} panneaux à reconnaître</p>
         </div>
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <HorizontalCarousel ariaLabel="Panneaux de signalisation — galerie défilable">
           {signs.map((sign, index) => (
             <article
               key={sign.type}
               lang="fr"
-              className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)]"
+              className="group flex w-[16.5rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)] sm:w-[18rem]"
             >
-              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+              <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
                 <div
                   aria-hidden="true"
                   className="absolute inset-0 opacity-[0.18]"
@@ -438,30 +575,27 @@ export default function StudentLexiconPage() {
                       'radial-gradient(circle at 18% 22%, rgba(15,23,42,0.18) 0, transparent 38%), radial-gradient(circle at 82% 78%, rgba(15,23,42,0.12) 0, transparent 45%)',
                   }}
                 />
-                <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-200">{String(index + 1).padStart(2, '0')}</span>
-                <span className={`absolute right-3 top-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${accentBadge[sign.accent]}`} style={{ letterSpacing: '0.04em' }}>{sign.category}</span>
-                <div className="relative grid h-32 w-32 place-items-center transition duration-300 group-hover:scale-105">
+                <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-200">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span
+                  className={`absolute right-3 top-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${accentBadge[sign.accent]}`}
+                  style={{ letterSpacing: '0.04em' }}
+                >
+                  {sign.category}
+                </span>
+                <div className="relative grid h-28 w-28 place-items-center transition duration-300 group-hover:scale-105">
                   <SignVisual type={sign.type} size="lg" />
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
-                <h3
-                  className="text-left text-lg font-extrabold text-slate-950 sm:text-xl"
-                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.3' }}
-                >
-                  {sign.name}
-                </h3>
-                <p
-                  className="text-left text-[15px] text-slate-600"
-                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'manual', letterSpacing: 'normal', lineHeight: '1.65', textAlign: 'left' }}
-                >
-                  {sign.explanation}
-                </p>
+              <div className="flex flex-1 flex-col gap-2 p-4">
+                <h3 className="text-left text-base font-extrabold leading-snug text-slate-950">{sign.name}</h3>
+                <p className="text-left text-sm leading-6 text-slate-600">{sign.explanation}</p>
               </div>
             </article>
           ))}
-        </div>
+        </HorizontalCarousel>
       </section>
 
       <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7" lang="fr">

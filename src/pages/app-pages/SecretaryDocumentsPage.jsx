@@ -9,6 +9,7 @@ import {
   subscribeToDocuments,
   uploadStudentDocument,
 } from '../../services/documents'
+import { getUserFacingError } from '../../lib/userFacingError'
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -88,7 +89,7 @@ export default function SecretaryDocumentsPage() {
     })
     setSubmitting(false)
     if (error) {
-      setStatus({ type: 'error', message: error.message || 'Échec de l’enregistrement.' })
+      setStatus({ type: 'error', message: getUserFacingError(error, 'document') })
       return
     }
     setStatus({ type: 'ok', message: 'Document enregistré.' })

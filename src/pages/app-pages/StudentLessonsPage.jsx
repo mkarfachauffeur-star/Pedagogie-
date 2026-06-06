@@ -1,5 +1,11 @@
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import { useRemcUnlock } from '../../hooks/useRemcUnlock'
+import RemcLockedBanner from '../../components/remc/RemcLockedBanner'
+import RemcProgressOverview from '../../components/remc/RemcProgressOverview'
+import { REMC_COMPETENCY_ORDER, REMC_LOCKED_MESSAGE } from '../../data/remcCompetencies'
+import { competencyStatusIcon } from '../../services/remcProgress'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import LessonImage from '../../components/ui/LessonImage'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
@@ -10,6 +16,8 @@ import startStopGuideImage from '../../assets/lessons/demarrer-arreter.png'
 import brakingTypesGuideImage from '../../assets/lessons/types-freinage.png'
 import doseAccelerationFreinageImage from '../../assets/lessons/doser-acceleration-freinage.png'
 import gearboxGuideImage from '../../assets/lessons/utiliser-boite-vitesses.png'
+import forwardReverseGuideImage from '../../assets/lessons/marche-avant-arriere.png'
+import observationWarningGuideImage from '../../assets/lessons/regarder-autour-avertir.png'
 
 const competencies = [
   {
@@ -1418,6 +1426,18 @@ const forwardReverseModule = {
   title: 'Diriger le véhicule en marche avant et en marche arrière',
   intro:
     'Le conducteur doit être capable de diriger le véhicule avec précision tout en gardant le contrôle de la trajectoire. La direction dépend du regard, de la vitesse et des mouvements du volant. Le véhicule suit généralement le regard du conducteur.',
+  schemaSection: {
+    kicker: 'Schémas et photos',
+    title: 'Marche avant et marche arrière',
+  },
+  images: [
+    {
+      src: forwardReverseGuideImage,
+      alt: 'Infographie : diriger le véhicule en marche avant et en marche arrière — trajectoire, regard, rétroviseurs et points clés',
+      title: 'Marche avant et marche arrière',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'La marche avant',
@@ -1538,6 +1558,18 @@ const observationWarningModule = {
   title: 'Regarder autour de soi et avertir',
   intro:
     'Le conducteur doit observer son environnement afin d’anticiper les dangers, d’adapter sa conduite et d’informer les autres usagers de ses intentions. Observer permet d’anticiper, avertir permet d’être compris.',
+  schemaSection: {
+    kicker: 'Schémas et photos',
+    title: 'Regarder autour de soi et avertir',
+  },
+  images: [
+    {
+      src: observationWarningGuideImage,
+      alt: 'Infographie : regarder autour de soi et avertir — observer, contrôler les rétroviseurs et angles morts, avertir en cas d’urgence, sécuriser chaque déplacement',
+      title: 'Regarder autour de soi et avertir',
+      objectFit: 'contain',
+    },
+  ],
   summary: [
     {
       title: 'Regarder autour',
@@ -1688,6 +1720,8 @@ const lessonModules = {
   },
 }
 
+const subcompetencyAccents = ['cyan', 'emerald', 'amber', 'violet', 'rose', 'teal', 'indigo', 'orange', 'sky', 'fuchsia']
+
 const accentStyles = {
   cyan: {
     card: 'border-cyan-100 bg-cyan-50/60',
@@ -1719,6 +1753,26 @@ const accentStyles = {
     badge: 'bg-teal-100 text-teal-700 ring-teal-200',
     icon: 'bg-teal-500',
   },
+  indigo: {
+    card: 'border-indigo-100 bg-indigo-50/60',
+    badge: 'bg-indigo-100 text-indigo-700 ring-indigo-200',
+    icon: 'bg-indigo-500',
+  },
+  orange: {
+    card: 'border-orange-100 bg-orange-50/60',
+    badge: 'bg-orange-100 text-orange-700 ring-orange-200',
+    icon: 'bg-orange-500',
+  },
+  sky: {
+    card: 'border-sky-100 bg-sky-50/60',
+    badge: 'bg-sky-100 text-sky-700 ring-sky-200',
+    icon: 'bg-sky-500',
+  },
+  fuchsia: {
+    card: 'border-fuchsia-100 bg-fuchsia-50/60',
+    badge: 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200',
+    icon: 'bg-fuchsia-500',
+  },
 }
 
 function StatusPill({ label, value, complete }) {
@@ -1739,16 +1793,32 @@ function StatusPill({ label, value, complete }) {
   )
 }
 
-function getSavedModuleProgress(storageKey) {
-  if (typeof window === 'undefined') {
-    return { completed: false, score: null, percentage: null }
-  }
+function buildEmptyModuleProgress() {
+  return Object.fromEntries(
+    Object.values(lessonModules).map((module) => [
+      module.id,
+      { completed: false, score: null, percentage: null },
+    ]),
+  )
+}
+
+function lessonProgressStorageKey(storageKey, ownerId) {
+  if (!ownerId) return null
+  return `${storageKey}:${ownerId}`
+}
+
+function getSavedModuleProgress(storageKey, ownerId) {
+  const empty = { completed: false, score: null, percentage: null }
+  if (!ownerId || typeof window === 'undefined') return empty
+
+  const scopedKey = lessonProgressStorageKey(storageKey, ownerId)
+  if (!scopedKey) return empty
 
   try {
-    const saved = window.localStorage.getItem(storageKey)
-    return saved ? JSON.parse(saved) : { completed: false, score: null, percentage: null }
+    const saved = window.localStorage.getItem(scopedKey)
+    return saved ? JSON.parse(saved) : empty
   } catch {
-    return { completed: false, score: null, percentage: null }
+    return empty
   }
 }
 
@@ -1785,6 +1855,15 @@ const severityBadge = {
 }
 
 export default function StudentLessonsPage() {
+  const { profileId } = useAuth()
+  const {
+    studentId,
+    unlockState,
+    globalProgress,
+    isCompetencyUnlocked,
+    isCompetencyValidated,
+  } = useRemcUnlock(profileId)
+  const progressOwnerId = studentId || profileId
   const [activeCompetencyId, setActiveCompetencyId] = useState('C1')
   const [openedModuleId, setOpenedModuleId] = useState(null)
   const [moduleMode, setModuleMode] = useState('lesson')
@@ -1793,14 +1872,7 @@ export default function StudentLessonsPage() {
   const [quizIndexByModule, setQuizIndexByModule] = useState({})
   const [answersByModule, setAnswersByModule] = useState({})
   const [validatedByModule, setValidatedByModule] = useState({})
-  const [moduleProgressById, setModuleProgressById] = useState(() =>
-    Object.fromEntries(
-      Object.values(lessonModules).map((module) => [
-        module.id,
-        getSavedModuleProgress(module.storageKey),
-      ]),
-    ),
-  )
+  const [moduleProgressById, setModuleProgressById] = useState(buildEmptyModuleProgress)
   const activeCompetency =
     competencies.find((competency) => competency.id === activeCompetencyId) || competencies[0]
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
@@ -1831,13 +1903,41 @@ export default function StudentLessonsPage() {
   const canValidate = currentQuestions.length > 0 && answeredCount === currentQuestions.length
   const openedModuleIndex = activeSubcompetencies.findIndex((item) => item.id === openedModuleId)
   const hasNextModule = openedModuleIndex >= 0 && openedModuleIndex < activeSubcompetencies.length - 1
+  const activeCompetencyUnlocked = isCompetencyUnlocked(activeCompetencyId)
+
+  useEffect(() => {
+    if (!progressOwnerId) {
+      setModuleProgressById(buildEmptyModuleProgress())
+      return
+    }
+
+    setModuleProgressById(
+      Object.fromEntries(
+        Object.values(lessonModules).map((module) => [
+          module.id,
+          getSavedModuleProgress(module.storageKey, progressOwnerId),
+        ]),
+      ),
+    )
+  }, [progressOwnerId])
+
+  useEffect(() => {
+    if (!unlockState) return
+    if (!isCompetencyUnlocked(activeCompetencyId)) {
+      const firstUnlocked = REMC_COMPETENCY_ORDER.find((code) => unlockState[code]?.unlocked) || 'C1'
+      setActiveCompetencyId(firstUnlocked)
+      setOpenedModuleId(null)
+    }
+  }, [unlockState, activeCompetencyId, isCompetencyUnlocked])
 
   const openLesson = (moduleId) => {
+    if (!isCompetencyUnlocked(activeCompetencyId)) return
     setOpenedModuleId(moduleId)
     setModuleMode('lesson')
   }
 
   const openQuiz = (moduleId) => {
+    if (!isCompetencyUnlocked(activeCompetencyId)) return
     setOpenedModuleId(moduleId)
     setModuleMode('quiz')
     const lesson = lessonModules[moduleId]
@@ -1930,7 +2030,10 @@ export default function StudentLessonsPage() {
 
     setValidatedByModule((current) => ({ ...current, [openedLesson.id]: true }))
     setModuleProgressById((current) => ({ ...current, [openedLesson.id]: nextProgress }))
-    window.localStorage.setItem(openedLesson.storageKey, JSON.stringify(nextProgress))
+    const scopedKey = lessonProgressStorageKey(openedLesson.storageKey, progressOwnerId)
+    if (scopedKey) {
+      window.localStorage.setItem(scopedKey, JSON.stringify(nextProgress))
+    }
   }
 
   const resetModule = () => {
@@ -2012,10 +2115,10 @@ export default function StudentLessonsPage() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                  Progression
+                  Progression REMC
                 </p>
                 <p className="mt-1 text-5xl font-black text-cyan-600">
-                  {activeCompetency.progress}%
+                  {unlockState ? globalProgress : activeCompetency.progress}%
                 </p>
               </div>
               <span className="rounded-full bg-cyan-50 px-3 py-1 text-sm font-bold text-cyan-700">
@@ -2025,11 +2128,30 @@ export default function StudentLessonsPage() {
             <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500 ease-out"
-                style={{ width: `${activeCompetency.progress}%` }}
+                style={{ width: `${unlockState ? globalProgress : activeCompetency.progress}%` }}
               />
             </div>
+            {unlockState && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {REMC_COMPETENCY_ORDER.map((code) => {
+                  const icon = competencyStatusIcon(unlockState[code], code)
+                  return (
+                  <span
+                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-700"
+                    key={code}
+                  >
+                    {code}{icon ? ` ${icon}` : ''}
+                  </span>
+                  )
+                })}
+              </div>
+            )}
             <p className="mt-4 text-sm leading-6 text-slate-500">
-              {`Continuez les modules restants pour valider la compétence ${activeCompetency.id}.`}
+              {unlockState && isCompetencyValidated('C4')
+                ? 'Parcours REMC terminé — félicitations !'
+                : unlockState && !activeCompetencyUnlocked
+                ? REMC_LOCKED_MESSAGE
+                : `Continuez les modules restants pour valider la compétence ${activeCompetency.id}.`}
             </p>
           </aside>
         </div>
@@ -2043,19 +2165,36 @@ export default function StudentLessonsPage() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {competencies.map((competency) => {
             const isActive = competency.id === activeCompetency.id
+            const unlocked = isCompetencyUnlocked(competency.id)
+            const entry = unlockState?.[competency.id]
+            const statusIcon = competencyStatusIcon(entry, competency.id)
 
             return (
             <button
               aria-pressed={isActive}
               className={`group relative min-h-44 w-full overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-cyan-300/30 ${
-                isActive
+                !unlocked
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-75'
+                  : isActive
                   ? 'border-cyan-300/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 text-white shadow-2xl shadow-cyan-950/20'
                   : 'border-slate-200 bg-white shadow-[var(--shadow-soft)] hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-md'
               }`}
+              disabled={!unlocked}
               key={competency.id}
-              onClick={() => setActiveCompetencyId(competency.id)}
+              onClick={() => {
+                if (unlocked) setActiveCompetencyId(competency.id)
+              }}
               type="button"
             >
+              {statusIcon && (
+              <span
+                className="absolute right-3 top-3 text-lg"
+                aria-hidden="true"
+                title={unlocked ? (entry?.validated ? 'Validée' : 'Débloquée') : 'Verrouillée'}
+              >
+                {statusIcon}
+              </span>
+              )}
               <span
                 className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl transition-opacity duration-300 ${
                   isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -2077,13 +2216,24 @@ export default function StudentLessonsPage() {
               <div className={`mt-4 h-1.5 overflow-hidden rounded-full ${isActive ? 'bg-white/15' : 'bg-slate-100'}`}>
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-500"
-                  style={{ width: `${competency.progress}%` }}
+                  style={{ width: `${unlocked ? competency.progress : 0}%` }}
                 />
               </div>
+              {!unlocked && competency.id !== 'C1' && (
+                <p className={`mt-3 text-xs font-bold leading-5 ${isActive ? 'text-cyan-100' : 'text-slate-500'}`}>
+                  Verrouillée — validation enseignant requise
+                </p>
+              )}
             </button>
             )
           })}
         </div>
+
+        {unlockState && (
+          <div className="mt-5">
+            <RemcProgressOverview globalProgress={globalProgress} unlockState={unlockState} />
+          </div>
+        )}
       </section>
 
       <section>
@@ -2101,7 +2251,9 @@ export default function StudentLessonsPage() {
           </span>
         </div>
 
-        {!competencyHasContent ? (
+        {!activeCompetencyUnlocked ? (
+          <RemcLockedBanner competencyCode={activeCompetencyId} />
+        ) : !competencyHasContent ? (
           <div
             key={activeCompetency.id}
             className="animate-slide-up overflow-hidden rounded-[2rem] border border-cyan-100 bg-white shadow-[var(--shadow-card)]"
@@ -2149,22 +2301,23 @@ export default function StudentLessonsPage() {
           key={activeCompetency.id}
           className="grid gap-4 animate-slide-up lg:grid-cols-2"
         >
-          {activeSubcompetencies.map((item) => {
-            const styles = accentStyles[item.accent]
+          {activeSubcompetencies.map((item, index) => {
+            const accentKey = subcompetencyAccents[index % subcompetencyAccents.length]
+            const styles = accentStyles[accentKey]
             const lessonModule = lessonModules[item.id]
             const lessonPool = getLessonQuestionPool(lessonModule)
             const qcmAvailable = lessonPool.length > 0
             const qcmTotal = getExpectedQuizCount(lessonModule) || lessonPool.length
             const itemProgress = moduleProgressById[item.id] || { completed: false, score: null, percentage: null }
-            const itemDone = item.done || itemProgress.completed
+            const itemDone = itemProgress.completed
             const lessonValue = lessonModule
               ? (itemProgress.completed ? 'Validée' : 'Disponible')
               : item.video
             const qcmValue = lessonModule && qcmAvailable && itemProgress.percentage !== null
               ? `${itemProgress.score}/${qcmTotal}`
               : (lessonModule && qcmAvailable ? 'Disponible' : item.qcm)
-            const lessonComplete = lessonModule ? itemProgress.completed : itemDone
-            const qcmComplete = lessonModule && qcmAvailable ? itemProgress.percentage !== null : qcmValue !== 'À faire'
+            const lessonComplete = lessonModule ? itemProgress.completed : false
+            const qcmComplete = lessonModule && qcmAvailable ? itemProgress.completed : false
 
             return (
               <article
@@ -2217,7 +2370,7 @@ export default function StudentLessonsPage() {
       </section>
 
 
-      {openedModule && (
+      {openedModule && activeCompetencyUnlocked && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
           <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
             <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
@@ -2287,14 +2440,15 @@ export default function StudentLessonsPage() {
                       </div>
                       <div className="grid gap-4 p-4">
                         {openedLesson.images.map((image) => (
-                          <button
-                            className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                          <figure
+                            className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50"
                             key={image.src}
-                            onClick={() => setOpenedGalleryImage(image)}
-                            type="button"
                           >
-                            <div
-                              className={`overflow-hidden bg-white ${image.objectFit === 'contain' ? 'min-h-[280px] sm:min-h-[360px]' : 'aspect-[16/9]'}`}
+                            <button
+                              aria-label={`Agrandir : ${image.title || image.alt}`}
+                              className={`group block w-full cursor-zoom-in overflow-hidden bg-white text-left ${image.objectFit === 'contain' ? 'min-h-[280px] sm:min-h-[360px]' : 'aspect-[16/9]'}`}
+                              onClick={() => setOpenedGalleryImage(image)}
+                              type="button"
                             >
                               <LessonImage
                                 alt={image.alt}
@@ -2302,17 +2456,13 @@ export default function StudentLessonsPage() {
                                 objectFit={image.objectFit === 'contain' ? 'contain' : 'cover'}
                                 src={image.src}
                               />
-                            </div>
-                            <div className="p-4">
-                              <p className="text-base font-black text-slate-950">{image.title}</p>
-                              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                                {image.caption}
-                              </p>
-                              <span className="mt-3 inline-flex rounded-full bg-navy-950 px-4 py-2 text-xs font-black text-white">
-                                Ouvrir la galerie
-                              </span>
-                            </div>
-                          </button>
+                            </button>
+                            {image.caption && (
+                              <figcaption className="border-t border-slate-100 p-4">
+                                <p className="text-sm font-semibold leading-6 text-slate-500">{image.caption}</p>
+                              </figcaption>
+                            )}
+                          </figure>
                         ))}
                       </div>
                     </section>

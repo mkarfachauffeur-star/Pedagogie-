@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
 
 export const DOCUMENT_CATEGORIES = [
@@ -100,7 +101,7 @@ export async function uploadStudentDocument({ organizationId, studentId, type, s
     classified_at: nowIso,
     created_by: createdBy,
   })
-  if (error) return { error }
+  if (error) return { error: toUserError(error, 'document') }
   return { error: null }
 }
 

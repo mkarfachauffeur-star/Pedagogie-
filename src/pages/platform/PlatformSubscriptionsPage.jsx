@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import PageHero from '../../components/ui/PageHero'
 import { listAllSubscriptions } from '../../services/platform'
 
 export default function PlatformSubscriptionsPage() {
@@ -9,9 +10,12 @@ export default function PlatformSubscriptionsPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-3xl font-extrabold text-slate-950">Abonnements</h1>
-      <p className="text-sm text-slate-500">Gestion manuelle V1 — Stripe désactivé.</p>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <PageHero
+        eyebrow="Super Admin"
+        title="Abonnements"
+        subtitle="Gestion manuelle V1 — Stripe désactivé."
+      />
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full text-left text-sm">
           <thead>

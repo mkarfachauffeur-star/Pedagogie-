@@ -1,24 +1,198 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import EmptyState from '../../components/ui/EmptyState'
-import { useAuth } from '../../context/AuthContext'
 import {
-  PACKAGE_CATEGORIES,
-  categoryLabel,
+  Car,
+  Clock,
+  Euro,
+  GraduationCap,
+  Pencil,
+  Plus,
+  Receipt,
+  Trash2,
+} from 'lucide-react'
+import EmptyState from '../../components/ui/EmptyState'
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import PageHero from '../../components/ui/PageHero'
+import { useAuth } from '../../context/AuthContext'
+import { getUserFacingError } from '../../lib/userFacingError'
+import {
+  PACKAGE_FAMILY_OPTIONS,
+  PACKAGE_FORMATION_OPTIONS,
+  PACKAGE_GEARBOX_OPTIONS,
+  PACKAGE_RVP_OPTIONS,
+  buildPackageCategory,
+  categoryEyebrow,
   deletePricingPackage,
+  formationAppliesToBothGearboxes,
+  formatRvpSummary,
   listPricingPackages,
+  packageHasConfiguredPrice,
+  parsePackageCategory,
   upsertPricingPackage,
 } from '../../services/pricing'
 
+const FAMILY_META = {
+  permis_b: {
+    label: 'Permis B',
+    accent: 'from-cyan-500 to-teal-500',
+    chip: 'bg-cyan-50 text-cyan-800 ring-cyan-100',
+    icon: Car,
+  },
+  moto: {
+    label: 'Permis moto',
+    accent: 'from-amber-500 to-orange-500',
+    chip: 'bg-amber-50 text-amber-900 ring-amber-100',
+    icon: Car,
+  },
+  code: {
+    label: 'Code seul',
+    accent: 'from-violet-500 to-purple-500',
+    chip: 'bg-violet-50 text-violet-800 ring-violet-100',
+    icon: GraduationCap,
+  },
+}
+
+const FILTER_OPTIONS = [
+  { value: 'all', label: 'Toutes' },
+  { value: 'permis_b', label: 'Permis B' },
+  { value: 'moto', label: 'Moto' },
+  { value: 'code', label: 'Code' },
+  { value: 'active', label: 'Actives' },
+]
+
+function formatEur(value) {
+  if (value === '' || value == null || Number.isNaN(Number(value))) return '—'
+  return `${Number(value).toLocaleString('fr-FR')} €`
+}
+
+function groupPackagesByFamily(packages) {
+  const order = ['permis_b', 'moto', 'code']
+  const buckets = Object.fromEntries(order.map((key) => [key, []]))
+  packages.forEach((pkg) => {
+    const { family } = parsePackageCategory(pkg.category)
+    if (buckets[family]) buckets[family].push(pkg)
+    else buckets.permis_b.push(pkg)
+  })
+  return order
+    .map((family) => ({ family, packages: buckets[family] }))
+    .filter((group) => group.packages.length > 0)
+}
+
+function PackageStat({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        {label}
+      </div>
+      <p className="mt-1 text-sm font-extrabold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
+  const hasPrice = packageHasConfiguredPrice(pkg)
+  const isActive = hasPrice && pkg.is_active
+  const { family } = parsePackageCategory(pkg.category)
+  const meta = FAMILY_META[family] || FAMILY_META.permis_b
+  const FamilyIcon = meta.icon
+  const rvpSummary = formatRvpSummary(pkg)
+
+  return (
+    <article className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/80 hover:shadow-lg">
+      <div className={`h-1.5 bg-gradient-to-r ${meta.accent}`} />
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ring-1 ring-inset ${meta.chip}`}>
+                <FamilyIcon className="h-3 w-3" />
+                {categoryEyebrow(pkg.category)}
+              </span>
+            </div>
+            <h2 className="mt-3 text-lg font-extrabold leading-snug text-slate-950">{pkg.name}</h2>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${
+              isActive
+                ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+                : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
+            }`}
+          >
+            {isActive ? 'Actif' : 'Inactif'}
+          </span>
+        </div>
+
+        <div className="mt-5 flex items-end gap-1.5">
+          <span className="text-3xl font-extrabold tracking-tight text-navy-950">
+            {hasPrice ? formatEur(pkg.price_ttc).replace(' €', '') : '—'}
+          </span>
+          {hasPrice && <span className="pb-1 text-sm font-bold text-slate-400">€ TTC</span>}
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <PackageStat icon={Clock} label="Heures" value={`${pkg.included_hours}h`} />
+          <PackageStat icon={Receipt} label="Frais admin" value={formatEur(pkg.admin_fee_ttc)} />
+          <PackageStat
+            icon={Euro}
+            label="Examen"
+            value={
+              pkg.exam_presentation_included
+                ? formatEur(pkg.exam_presentation_ttc)
+                : 'Non inclus'
+            }
+          />
+        </div>
+
+        {rvpSummary && (
+          <p className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/60 px-3 py-2 text-xs font-semibold text-cyan-900">
+            RVP AAC : {rvpSummary}
+          </p>
+        )}
+
+        {canWrite && (
+          <div className="mt-auto flex gap-2 border-t border-slate-100 pt-4">
+            <button
+              className="pd-btn-secondary inline-flex flex-1 items-center justify-center gap-2 text-sm"
+              onClick={() => onEdit(pkg)}
+              type="button"
+            >
+              <Pencil className="h-4 w-4" />
+              Modifier
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
+              onClick={() => onDelete(pkg)}
+              type="button"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
 const emptyForm = {
   id: null,
-  name: '',
-  category: 'b_manuelle',
+  packageFamily: 'permis_b',
+  gearbox: 'manuelle',
+  formation: 'classique',
   priceTtc: '',
   includedHours: '',
   adminFeeTtc: '',
   examPresentationIncluded: false,
   examPresentationTtc: '',
   extraHourPriceTtc: '',
+  rvpIncluded: false,
+  rvpTtc: '',
+  rvp1Included: false,
+  rvp1Ttc: '',
+  rvp2Included: false,
+  rvp2Ttc: '',
+  rvp3Included: false,
+  rvp3Ttc: '',
   isActive: true,
 }
 
@@ -26,9 +200,11 @@ export default function ManagerPackagesPage() {
   const { profileId, organizationId, canWrite } = useAuth()
   const [packages, setPackages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   const refresh = useCallback(async () => {
     if (!profileId) return
@@ -42,113 +218,352 @@ export default function ManagerPackagesPage() {
     refresh()
   }, [refresh])
 
+  const stats = useMemo(() => {
+    const active = packages.filter((pkg) => packageHasConfiguredPrice(pkg) && pkg.is_active).length
+    return { total: packages.length, active, inactive: packages.length - active }
+  }, [packages])
+
+  const filteredPackages = useMemo(() => {
+    return packages.filter((pkg) => {
+      const { family } = parsePackageCategory(pkg.category)
+      const isActive = packageHasConfiguredPrice(pkg) && pkg.is_active
+      if (filter === 'active') return isActive
+      if (filter === 'all') return true
+      return family === filter
+    })
+  }, [packages, filter])
+
+  const groupedPackages = useMemo(
+    () => groupPackagesByFamily(filteredPackages),
+    [filteredPackages],
+  )
+
+  const handleDelete = async (pkg) => {
+    if (!window.confirm(`Supprimer la formule « ${pkg.name} » ?`)) return
+    await deletePricingPackage(pkg.id)
+    refresh()
+  }
+
   const openEdit = (pkg) => {
+    const { family, gearbox, formation } = parsePackageCategory(pkg.category)
     setForm({
       id: pkg.id,
-      name: pkg.name,
-      category: pkg.category,
+      packageFamily: family,
+      gearbox: formationAppliesToBothGearboxes(formation) ? null : (gearbox || 'manuelle'),
+      formation: formation || 'classique',
       priceTtc: String(pkg.price_ttc ?? ''),
       includedHours: String(pkg.included_hours ?? ''),
       adminFeeTtc: String(pkg.admin_fee_ttc ?? ''),
       examPresentationIncluded: pkg.exam_presentation_included,
       examPresentationTtc: String(pkg.exam_presentation_ttc ?? ''),
       extraHourPriceTtc: String(pkg.extra_hour_price_ttc ?? ''),
+      rvpIncluded: Boolean(pkg.rvp_included),
+      rvpTtc: String(pkg.rvp_ttc ?? ''),
+      rvp1Included: Boolean(pkg.rvp1_included),
+      rvp1Ttc: String(pkg.rvp1_ttc ?? ''),
+      rvp2Included: Boolean(pkg.rvp2_included),
+      rvp2Ttc: String(pkg.rvp2_ttc ?? ''),
+      rvp3Included: Boolean(pkg.rvp3_included),
+      rvp3Ttc: String(pkg.rvp3_ttc ?? ''),
       isActive: pkg.is_active,
     })
+    setSaveError(null)
     setModal(true)
   }
 
   const save = async (e) => {
     e.preventDefault()
-    if (!canWrite || !organizationId) return
+    setSaveError(null)
+
+    if (!canWrite) {
+      setSaveError('Modification impossible : abonnement ou accès en lecture seule.')
+      return
+    }
+    if (!organizationId) {
+      setSaveError('Organisation introuvable. Reconnectez-vous.')
+      return
+    }
+    if (form.priceTtc === '' || Number.isNaN(Number(form.priceTtc))) {
+      setSaveError('Indiquez le prix TTC de la formule.')
+      return
+    }
+    if (form.includedHours === '' || Number.isNaN(Number(form.includedHours))) {
+      setSaveError('Indiquez le nombre d\'heures incluses.')
+      return
+    }
+
     setSaving(true)
-    await upsertPricingPackage({ ...form, organizationId })
+    const category = buildPackageCategory({
+      family: form.packageFamily,
+      gearbox: form.gearbox,
+      formation: form.formation,
+    })
+    const { error, rvpWarning } = await upsertPricingPackage({ ...form, category, organizationId })
     setSaving(false)
+
+    if (error) {
+      setSaveError(getUserFacingError(error, 'save'))
+      return
+    }
+
+    if (rvpWarning) {
+      setSaveError(rvpWarning)
+      await refresh()
+      return
+    }
+
     setModal(false)
     setForm(emptyForm)
     refresh()
   }
 
-  if (!profileId) return <EmptyState title="Connexion requise" icon="💶" message="Connectez-vous en tant que gérant." />
+  if (!profileId) {
+    return (
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <PageHero
+          eyebrow="Gérant"
+          title="Formules & tarifs"
+          subtitle="Grille tarifaire de votre auto-école — base du chiffre d'affaires et des contrats."
+        />
+        <EmptyState title="Connexion requise" icon="💶" message="Connectez-vous en tant que gérant." />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] bg-gradient-to-br from-navy-950 to-cyan-900 p-8 text-white">
-        <h1 className="text-3xl font-extrabold">Formules & tarifs</h1>
-        <p className="mt-2 max-w-2xl text-sm text-blue-50">Grille tarifaire de votre auto-école — base du chiffre d&apos;affaires et des contrats.</p>
-        {canWrite && (
-          <button type="button" className="pd-btn-primary mt-4" onClick={() => { setForm(emptyForm); setModal(true) }}>
-            + Nouvelle formule
+      <PageHero
+        eyebrow="Gérant"
+        title="Formules & tarifs"
+        subtitle="Grille tarifaire de votre auto-école — base du chiffre d'affaires, des inscriptions et des contrats élèves."
+        actions={canWrite ? (
+          <button
+            className="pd-btn-primary inline-flex items-center gap-2"
+            onClick={() => { setForm(emptyForm); setSaveError(null); setModal(true) }}
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            Nouvelle formule
           </button>
-        )}
-      </section>
-
-      {loading ? (
-        <p className="text-sm text-slate-500">Chargement…</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {packages.map((pkg) => (
-            <article key={pkg.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase text-cyan-700">{categoryLabel(pkg.category)}</p>
-                  <h2 className="text-xl font-extrabold text-slate-950">{pkg.name}</h2>
-                </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-black ${pkg.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                  {pkg.is_active ? 'Actif' : 'Inactif'}
-                </span>
-              </div>
-              <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                <div><dt className="text-slate-400">Prix TTC</dt><dd className="font-black">{Number(pkg.price_ttc).toLocaleString('fr-FR')} €</dd></div>
-                <div><dt className="text-slate-400">Heures</dt><dd className="font-black">{pkg.included_hours}h</dd></div>
-                <div><dt className="text-slate-400">Frais admin</dt><dd className="font-black">{Number(pkg.admin_fee_ttc).toLocaleString('fr-FR')} €</dd></div>
-                <div><dt className="text-slate-400">Examen</dt><dd className="font-black">{pkg.exam_presentation_included ? `${Number(pkg.exam_presentation_ttc).toLocaleString('fr-FR')} €` : 'Non'}</dd></div>
-              </dl>
-              {canWrite && (
-                <div className="mt-4 flex gap-2">
-                  <button type="button" className="text-sm font-bold text-cyan-700" onClick={() => openEdit(pkg)}>Modifier</button>
-                  <button type="button" className="text-sm font-bold text-rose-600" onClick={() => deletePricingPackage(pkg.id).then(refresh)}>Supprimer</button>
-                </div>
-              )}
-            </article>
+        ) : null}
+      >
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: 'Formules', value: stats.total },
+            { label: 'Actives', value: stats.active },
+            { label: 'Inactives', value: stats.inactive },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-cyan-100/80">{item.label}</p>
+              <p className="mt-1 text-2xl font-extrabold text-white">{item.value}</p>
+            </div>
           ))}
         </div>
-      )}
+      </PageHero>
 
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <form className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onSubmit={save}>
-            <h2 className="text-xl font-extrabold">{form.id ? 'Modifier' : 'Nouvelle formule'}</h2>
-            <div className="mt-4 grid gap-3">
-              <Field label="Nom *" value={form.name} onChange={(v) => setForm((c) => ({ ...c, name: v }))} />
-              <label className="block text-sm font-bold">Catégorie *
-                <select className="pd-input mt-1 w-full" value={form.category} onChange={(e) => setForm((c) => ({ ...c, category: e.target.value }))}>
-                  {PACKAGE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-              </label>
-              <Field label="Prix TTC (€) *" type="number" value={form.priceTtc} onChange={(v) => setForm((c) => ({ ...c, priceTtc: v }))} />
-              <Field label="Heures incluses *" type="number" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
-              <Field label="Frais administratifs TTC (€)" type="number" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
-              <label className="flex items-center gap-2 text-sm font-bold">
-                <input type="checkbox" checked={form.examPresentationIncluded} onChange={(e) => setForm((c) => ({ ...c, examPresentationIncluded: e.target.checked }))} />
-                Présentation examen incluse
-              </label>
-              {form.examPresentationIncluded && (
-                <Field label="Montant présentation examen TTC (€)" type="number" value={form.examPresentationTtc} onChange={(v) => setForm((c) => ({ ...c, examPresentationTtc: v }))} />
-              )}
-              <Field label="Prix heure supplémentaire TTC (€)" type="number" value={form.extraHourPriceTtc} onChange={(v) => setForm((c) => ({ ...c, extraHourPriceTtc: v }))} />
-              <label className="flex items-center gap-2 text-sm font-bold">
-                <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((c) => ({ ...c, isActive: e.target.checked }))} />
-                Formule active
-              </label>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button type="button" className="pd-btn-secondary" onClick={() => setModal(false)}>Annuler</button>
-              <button type="submit" disabled={saving} className="pd-btn-primary">{saving ? '…' : 'Enregistrer'}</button>
-            </div>
-          </form>
+      <div className="flex flex-wrap gap-2">
+        {FILTER_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+              filter === option.value
+                ? 'bg-navy-950 text-white shadow-sm'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
+            }`}
+            onClick={() => setFilter(option.value)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-sm font-medium text-slate-500">Chargement de la grille tarifaire…</p>
+      ) : filteredPackages.length === 0 ? (
+        <EmptyState
+          icon="💶"
+          message={
+            filter === 'all'
+              ? 'Créez votre première formule pour alimenter les inscriptions et les contrats.'
+              : 'Aucune formule ne correspond à ce filtre.'
+          }
+          title="Aucune formule"
+        />
+      ) : (
+        <div className="flex flex-col gap-8">
+          {groupedPackages.map(({ family, packages: rows }) => {
+            const meta = FAMILY_META[family] || FAMILY_META.permis_b
+            return (
+              <section key={family}>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className={`h-8 w-1 rounded-full bg-gradient-to-b ${meta.accent}`} />
+                  <div>
+                    <h2 className="text-lg font-extrabold text-slate-950">{meta.label}</h2>
+                    <p className="text-sm text-slate-500">
+                      {rows.length} formule{rows.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {rows.map((pkg) => (
+                    <PackageCard
+                      key={pkg.id}
+                      canWrite={canWrite}
+                      onDelete={handleDelete}
+                      onEdit={openEdit}
+                      pkg={pkg}
+                    />
+                  ))}
+                </div>
+              </section>
+            )
+          })}
         </div>
       )}
+
+      <AppModal
+        open={modal}
+        onClose={() => setModal(false)}
+        eyebrow="Gérant"
+        title={form.id ? 'Modifier la formule' : 'Nouvelle formule'}
+        size="xl"
+        footer={(
+          <AppModalFooter
+            onClose={() => setModal(false)}
+            submitForm="package-form"
+            submitLabel={saving ? 'Enregistrement…' : 'Enregistrer'}
+            submitDisabled={saving}
+          />
+        )}
+      >
+        <form id="package-form" onSubmit={save}>
+          <div className="grid gap-3">
+            <label className="block text-sm font-bold">Type de formule *
+              <select
+                className="pd-input mt-1 w-full"
+                value={form.packageFamily}
+                onChange={(e) => {
+                  const packageFamily = e.target.value
+                  setForm((c) => ({
+                    ...c,
+                    packageFamily,
+                    gearbox: packageFamily === 'permis_b' ? c.gearbox : 'manuelle',
+                    formation: packageFamily === 'permis_b' ? c.formation : 'classique',
+                  }))
+                }}
+              >
+                {PACKAGE_FAMILY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            {form.packageFamily === 'permis_b' && (
+              <>
+                <label className="block text-sm font-bold">Parcours *
+                  <select
+                    className="pd-input mt-1 w-full"
+                    value={form.formation}
+                    onChange={(e) => {
+                      const formation = e.target.value
+                      setForm((c) => ({
+                        ...c,
+                        formation,
+                        gearbox: formationAppliesToBothGearboxes(formation) ? null : c.gearbox,
+                        ...(formation === 'aac'
+                          ? {}
+                          : {
+                            rvpIncluded: false,
+                            rvpTtc: '',
+                            rvp1Included: false,
+                            rvp1Ttc: '',
+                            rvp2Included: false,
+                            rvp2Ttc: '',
+                            rvp3Included: false,
+                            rvp3Ttc: '',
+                          }),
+                      }))
+                    }}
+                  >
+                    {PACKAGE_FORMATION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                {formationAppliesToBothGearboxes(form.formation) ? null : (
+                  <label className="block text-sm font-bold">Boîte de vitesses *
+                    <select
+                      className="pd-input mt-1 w-full"
+                      value={form.gearbox}
+                      onChange={(e) => setForm((c) => ({ ...c, gearbox: e.target.value }))}
+                    >
+                      {PACKAGE_GEARBOX_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </>
+            )}
+            <Field label="Prix TTC (€) *" type="number" value={form.priceTtc} onChange={(v) => setForm((c) => ({ ...c, priceTtc: v }))} />
+            <Field label="Heures incluses *" type="number" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
+            <Field label="Frais administratifs TTC (€)" type="number" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input type="checkbox" checked={form.examPresentationIncluded} onChange={(e) => setForm((c) => ({ ...c, examPresentationIncluded: e.target.checked }))} />
+              Présentation examen incluse
+            </label>
+            {form.examPresentationIncluded && (
+              <Field label="Montant présentation examen TTC (€)" type="number" value={form.examPresentationTtc} onChange={(v) => setForm((c) => ({ ...c, examPresentationTtc: v }))} />
+            )}
+            {form.packageFamily === 'permis_b' && form.formation === 'aac' && (
+            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <legend className="px-1 text-sm font-bold text-slate-700">Rendez-vous préalable (AAC)</legend>
+              <p className="mb-3 text-xs font-medium text-slate-500">
+                Cochez « inclus » si le rendez-vous est compris dans la formule. Sinon, indiquez le tarif TTC facturé à part.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PACKAGE_RVP_OPTIONS.map(({ key, label }) => {
+                  const includedKey = `${key}Included`
+                  const priceKey = `${key}Ttc`
+                  return (
+                    <RvpField
+                      key={key}
+                      included={form[includedKey]}
+                      label={label}
+                      onIncludedChange={(checked) => setForm((c) => ({
+                        ...c,
+                        [includedKey]: checked,
+                        ...(checked ? { [priceKey]: '' } : {}),
+                      }))}
+                      onPriceChange={(value) => setForm((c) => ({ ...c, [priceKey]: value }))}
+                      price={form[priceKey]}
+                    />
+                  )
+                })}
+              </div>
+            </fieldset>
+            )}
+            <Field label="Prix heure supplémentaire TTC (€)" type="number" value={form.extraHourPriceTtc} onChange={(v) => setForm((c) => ({ ...c, extraHourPriceTtc: v }))} />
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((c) => ({ ...c, isActive: e.target.checked }))} />
+              Formule active
+            </label>
+            {saveError && (
+              <p className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                saveError.includes('RVP')
+                  ? 'border-amber-200 bg-amber-50 text-amber-900'
+                  : 'border-rose-200 bg-rose-50 text-rose-700'
+              }`}
+              >
+                {saveError}
+              </p>
+            )}
+          </div>
+        </form>
+      </AppModal>
     </div>
   )
 }
@@ -159,5 +574,29 @@ function Field({ label, value, onChange, type = 'text' }) {
       {label}
       <input className="pd-input mt-1 w-full" type={type} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
+  )
+}
+
+function RvpField({ label, included, price, onIncludedChange, onPriceChange }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+      <label className="flex items-start gap-2 text-sm font-bold text-slate-700">
+        <input
+          checked={included}
+          className="mt-1"
+          onChange={(e) => onIncludedChange(e.target.checked)}
+          type="checkbox"
+        />
+        <span>{label} — inclus dans la formule</span>
+      </label>
+      {!included && (
+        <Field
+          label="Prix TTC (€)"
+          onChange={onPriceChange}
+          type="number"
+          value={price}
+        />
+      )}
+    </div>
   )
 }

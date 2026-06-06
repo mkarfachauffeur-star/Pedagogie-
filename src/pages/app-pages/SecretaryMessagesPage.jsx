@@ -7,6 +7,7 @@ import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../.
 import { getStudentIdByProfile, listInternalContacts, listStudentContacts } from '../../services/directory'
 import { linkAttachmentToDocument } from '../../services/attachments'
 import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
+import { getUserFacingError } from '../../lib/userFacingError'
 import { contactDisplayName, roleLabel } from '../../utils/messagingLabels'
 
 const formatTime = (iso) => {
@@ -128,7 +129,7 @@ export default function SecretaryMessagesPage() {
       senderName: studentProfile.full_name,
     })
     if (error) {
-      setClassifyStatus({ type: 'error', message: error.message || 'Échec du classement.' })
+      setClassifyStatus({ type: 'error', message: getUserFacingError(error, 'document') })
       return
     }
     setClassifyStatus({ type: 'ok', message: 'Document classé — visible dans Documents en temps réel.' })

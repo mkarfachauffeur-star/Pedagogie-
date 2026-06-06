@@ -5,13 +5,17 @@ import BrandLogo from '../components/BrandLogo'
 import OrgStatusBanner from '../components/OrgStatusBanner'
 import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
+import { useStudentTrack } from '../hooks/useStudentTrack'
 import { useUnreadCount } from '../hooks/useUnreadCount'
+import { getTrackLabel } from '../lib/studentTrack'
 
 export default function DashboardLayout({ role, children, fullWidth = false }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, profileId } = useAuth()
   const config = NAVIGATION[role]
+  const { navItems, track, loading: trackLoading } = useStudentTrack(role === 'student' ? profileId : null)
+  const items = role === 'student' ? navItems : config.items
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   // Le badge n'apparaît que lorsqu'il y a réellement des messages non lus
@@ -51,7 +55,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   }
 
   const closeSidebar = () => setSidebarOpen(false)
-  const activeItem = config.items.find((item) => location.pathname === item.href)
+  const activeItem = items.find((item) => location.pathname === item.href)
 
   const isMessagesNavItem = (href) => href.endsWith('/messages')
 
@@ -136,7 +140,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             className={`flex-1 space-y-1 overflow-y-auto px-3 py-4 ${sidebarCollapsed ? 'lg:px-2' : ''}`}
             aria-label="Navigation principale"
           >
-            {config.items.map((item) => {
+            {items.map((item) => {
               const active = location.pathname === item.href
               const showMessagesBadge = isMessagesNavItem(item.href)
               return (
@@ -213,7 +217,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                 {activeItem?.label || 'Tableau de bord'}
               </p>
               <p className="text-sm font-semibold text-slate-900">
-                {config.user?.name || 'PEDAGOGIA DRIVE'}
+                {role === 'student' && !trackLoading
+                  ? getTrackLabel(track)
+                  : (config.user?.name || 'PEDAGOGIA DRIVE')}
               </p>
             </div>
           </div>

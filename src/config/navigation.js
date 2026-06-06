@@ -1,3 +1,42 @@
+import { isAacFormation } from '../lib/studentTrack'
+
+const PERMIS_B_ITEMS = [
+  { href: '/student/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
+  { href: '/student/planning', icon: '\u{1F4C5}', label: 'Planning' },
+  { href: '/student/initial-assessment', icon: '\u{1F4CB}', label: 'Évaluation de départ', track: 'permis_b' },
+  { href: '/student/lessons', icon: '\u{1F4DA}', label: 'Compétences', track: 'permis_b' },
+  { href: '/student/competency-reports', icon: '\u{1F4C8}', label: 'Bilans de compétences', track: 'permis_b' },
+  {
+    href: '/student/pedagogical-appointments',
+    icon: '\u{1F697}',
+    label: 'Rendez-vous pédagogiques (AAC)',
+    track: 'permis_b',
+    aacOnly: true,
+  },
+  { href: '/student/observations', icon: '\u{1F4AC}', label: 'Observations' },
+  { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
+  { href: '/student/contract', icon: '\u{1F4C4}', label: 'Contrat' },
+  { href: '/student/payments', icon: '\u{1F4B3}', label: 'Paiements' },
+]
+
+const MOTO_AM_ITEMS = [
+  { href: '/student/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
+  { href: '/student/planning', icon: '\u{1F4C5}', label: 'Planning' },
+  { href: '/student/next-lesson', icon: '\u{1F3CD}\uFE0F', label: 'Prochaine leçon', track: 'moto_am' },
+  { href: '/student/observations', icon: '\u{1F4AC}', label: 'Observations' },
+  { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
+  { href: '/student/contract', icon: '\u{1F4C4}', label: 'Contrat' },
+  { href: '/student/payments', icon: '\u{1F4B3}', label: 'Paiements' },
+]
+
+export function getStudentNavItems(track, student = null) {
+  const items = track === 'moto_am' ? MOTO_AM_ITEMS : PERMIS_B_ITEMS
+  return items.filter((item) => {
+    if (item.aacOnly && !isAacFormation(student)) return false
+    return true
+  })
+}
+
 export const NAVIGATION = {
   manager: {
     user: { avatar: '\u{1F4BC}', name: 'Gérant', role: 'Gérant' },
@@ -11,23 +50,15 @@ export const NAVIGATION = {
       { href: '/manager/contracts', icon: '\u{1F4C4}', label: 'Contrats' },
       { href: '/manager/payments', icon: '\u{1F4B0}', label: 'Paiements' },
       { href: '/manager/packages', icon: '\u{1F4B8}', label: 'Formules & tarifs' },
-      { href: '/manager/regulatory-export', icon: '\u{1F4CB}', label: 'Export réglementaire' },
       { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports' },
       { href: '/manager/messages', icon: '\u{1F4AC}', label: 'Messages' },
-      { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Statistiques' },
+      { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Évolution du CA' },
       { href: '/manager/settings', icon: '\u2699\uFE0F', label: 'Paramètres' },
     ],
   },
   student: {
     user: null,
-    items: [
-      { href: '/student/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
-      { href: '/student/lessons', icon: '\u{1F4DA}', label: 'Mes leçons' },
-      { href: '/student/lexicon', icon: '\u{1F4D8}', label: 'Lexique auto-école' },
-      { href: '/student/exams', icon: '\u{1F3AF}', label: 'Examens' },
-      { href: '/student/accompanied-driving', icon: '\u{1F697}', label: 'Suivi accompagné' },
-      { href: '/student/messages', icon: '\u{1F4AC}', label: 'Messagerie' },
-    ],
+    items: PERMIS_B_ITEMS,
   },
   teacher: {
     user: { avatar: '\u{1F468}\u200D\u{1F3EB}', name: 'Enseignant', role: 'Enseignant' },

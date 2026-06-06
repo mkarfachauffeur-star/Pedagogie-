@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase'
+import { toUserError } from '../lib/userFacingError'
 
 export async function registerOrganization(payload) {
   const { data, error } = await supabase.functions.invoke('register-organization', { body: payload })
-  if (error) return { error }
-  if (data?.error) return { error: new Error(data.error) }
+  if (error) return { error: toUserError(error, 'signup') }
+  if (data?.error) return { error: toUserError(data.error, 'signup') }
   return { data, error: null }
 }
 

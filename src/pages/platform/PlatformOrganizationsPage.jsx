@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import PageHero from '../../components/ui/PageHero'
 import { listAllOrganizations, updateOrganizationStatus } from '../../services/platform'
 
 const STATUS_LABELS = { trial: 'Essai', active: 'Active', suspended: 'Suspendue', cancelled: 'Annulée' }
@@ -24,8 +25,12 @@ export default function PlatformOrganizationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-3xl font-extrabold text-slate-950">Auto-écoles</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <PageHero
+        eyebrow="Super Admin"
+        title="Auto-écoles"
+        subtitle="Liste et gestion des établissements inscrits sur la plateforme."
+      />
       {loading ? (
         <p className="text-sm text-slate-500">Chargement…</p>
       ) : (
