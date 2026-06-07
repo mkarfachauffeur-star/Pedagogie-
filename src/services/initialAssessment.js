@@ -7,7 +7,10 @@ import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 
 export function formatAssessmentStatus(status) {
-  return ASSESSMENT_STATUS_LABELS[status] || status
+  const label = ASSESSMENT_STATUS_LABELS[status]
+  if (label) return label
+  if (typeof status === 'string') return status
+  return ASSESSMENT_STATUS_LABELS.pending
 }
 
 export async function getInitialAssessmentForStudent(studentId) {

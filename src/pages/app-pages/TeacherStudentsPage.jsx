@@ -3,6 +3,7 @@ import { useStudentTrackingStore } from '../../data/studentTrackingStore'
 import { useAuth } from '../../context/AuthContext'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
 import { isPermisBStudent } from '../../lib/studentTrack'
+import { normalizeInitialAssessment } from '../../lib/initialAssessmentUtils'
 import { getInitialAssessmentForStudent } from '../../services/initialAssessment'
 import { listStudents } from '../../services/students'
 import RemcTeacherValidationPanel from '../../components/remc/RemcTeacherValidationPanel'
@@ -138,7 +139,7 @@ export default function TeacherStudentsPage() {
       return
     }
     getInitialAssessmentForStudent(selectedStudent.id).then(({ assessment }) => {
-      setInitialAssessment(assessment)
+      setInitialAssessment(normalizeInitialAssessment(assessment))
     })
   }, [selectedStudent?.id, selectedIsPermisB])
 
@@ -608,10 +609,12 @@ export default function TeacherStudentsPage() {
             <InitialAssessmentWizard
               assessment={initialAssessment}
               completedBy={profileId}
-              onSaved={setInitialAssessment}
+              onSaved={(saved) => setInitialAssessment(normalizeInitialAssessment(saved))}
               organizationId={organizationId}
               readOnly={initialAssessment?.status === 'completed'}
+              student={selectedApiStudent || selectedStudent}
               studentId={selectedStudent.id}
+              teacherMode
             />
           )}
 

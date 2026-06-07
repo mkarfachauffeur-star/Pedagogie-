@@ -1,16 +1,22 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
-  ASSESSMENT_STEPS,
-  RESULT_LEVEL_LABELS,
+  ASSESSMENT_MODULES,
+  FSB_LEGEND,
+  FSB_OPTIONS,
   computeAssessmentScores,
   recommendHoursFromScore,
 } from '../../data/initialAssessmentForm'
 import { saveInitialAssessmentStep } from '../../services/initialAssessment'
+import { exportInitialAssessmentPdf } from '../../services/initialAssessmentPdf'
+import { getUserFacingError } from '../../lib/userFacingError'
+import { normalizeAssessmentAnswers } from '../../lib/initialAssessmentUtils'
 
-function StepProgress({ steps, currentIndex }) {
+const PLACEHOLDER_MESSAGE = 'Cette section sera disponible prochainement.'
+
+function ModuleProgress({ modules, currentIndex }) {
   return (
-    <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-      {steps.map((step, index) => {
+    <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {modules.map((step, index) => {
         const active = index === currentIndex
         const done = index < currentIndex
         return (
@@ -24,7 +30,9 @@ function StepProgress({ steps, currentIndex }) {
             }`}
             key={step.id}
           >
-            <span className="block text-[10px] uppercase tracking-wide opacity-70">Étape {index + 1}</span>
+            <span className="block text-[10px] uppercase tracking-wide opacity-70">
+              Module {step.moduleNumber}
+            </span>
             {step.title}
           </li>
         )
@@ -33,127 +41,180 @@ function StepProgress({ steps, currentIndex }) {
   )
 }
 
-function GeneralFields({ fields, answers, onChange, readOnly }) {
+function SelectFields({ fields, answers, onChange, readOnly }) {
+  if (!fields?.length) return null
   return (
     <div className="grid gap-3">
       {fields.map((field) => (
         <label className="block text-sm font-bold text-slate-700" key={field.id}>
           {field.label}
-          {field.type === 'textarea' ? (
-            <textarea
-              className="pd-input mt-1 min-h-[96px] w-full"
-              disabled={readOnly}
-              onChange={(e) => onChange(field.id, e.target.value)}
-              value={answers[field.id] || ''}
-            />
-          ) : (
-            <select
-              className="pd-input mt-1 w-full"
-              disabled={readOnly}
-              onChange={(e) => onChange(field.id, e.target.value)}
-              value={answers[field.id] || field.options[0]}
-            >
-              {field.options.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          )}
+          <select
+            className="pd-input mt-1 w-full"
+            disabled={readOnly}
+            onChange={(e) => onChange(field.id, e.target.value)}
+            value={answers[field.id] || ''}
+          >
+            <option disabled value="">— Sélectionner —</option>
+            {field.options.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
         </label>
       ))}
     </div>
   )
 }
 
-function ScoredItems({ items, answers, onToggle, readOnly }) {
+function RatingFields({ ratings, answers, onChange, readOnly, teacherOnly }) {
+  if (!ratings?.length) return null
   return (
-    <div className="grid gap-2">
-      {items.map((item) => {
-        const checked = Boolean(answers[item.id])
-        return (
-          <label
-            className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition ${
-              checked
-                ? item.type === 'positive'
-                  ? 'border-emerald-200 bg-emerald-50'
-                  : 'border-rose-200 bg-rose-50'
-                : 'border-slate-200 bg-white hover:border-cyan-200'
-            } ${readOnly ? 'cursor-default opacity-90' : ''}`}
-            key={item.id}
-          >
-            <input
-              checked={checked}
-              className="mt-1"
-              disabled={readOnly}
-              onChange={() => onToggle(item.id, !checked)}
-              type="checkbox"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold text-slate-800">{item.label}</span>
-              <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-black ${
-                item.type === 'positive' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-              }`}
-              >
-                {item.type === 'positive' ? `+${item.points}` : `-${item.points}`}
-              </span>
-            </span>
-          </label>
-        )
-      })}
+    <div className="mt-5 space-y-3">
+      {teacherOnly && (
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Appréciation enseignant
+        </p>
+      )}
+      <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+        <p className="font-bold text-slate-700">Notation F / S / B</p>
+        <ul className="mt-1 space-y-0.5">
+          {Object.entries(FSB_LEGEND).map(([key, text]) => (
+            <li key={key}><span className="font-black">{key}</span> — {text}</li>
+          ))}
+        </ul>
+      </div>
+      {ratings.map((rating) => (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3" key={rating.id}>
+          <p className="text-sm font-bold text-slate-800">{rating.label}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {FSB_OPTIONS.map((opt) => {
+              const selected = answers[rating.id] === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange(rating.id, opt.value)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-bold transition ${
+                    selected
+                      ? 'border-cyan-500 bg-cyan-50 text-cyan-900'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
+                  } ${readOnly ? 'cursor-default opacity-90' : ''}`}
+                >
+                  {opt.value}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
 
-function ResultsPanel({ answers }) {
+function ModulePlaceholder() {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+      <p className="text-sm font-semibold text-slate-600">{PLACEHOLDER_MESSAGE}</p>
+    </div>
+  )
+}
+
+function ResultsPanel({ answers, student, assessment, onExportPdf }) {
   const scores = useMemo(() => computeAssessmentScores(answers), [answers])
-  const recommendation = useMemo(() => recommendHoursFromScore(scores), [scores])
+  const recommendation = useMemo(
+    () => recommendHoursFromScore({ ...scores, moduleScores: scores.moduleScores }),
+    [scores],
+  )
+  const moduleRows = useMemo(
+    () => Object.values(scores.moduleScores || {}).sort((a, b) => a.moduleNumber - b.moduleNumber),
+    [scores.moduleScores],
+  )
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-        <p className="text-sm font-semibold text-emerald-700">Score positif</p>
-        <p className="mt-1 text-3xl font-black text-emerald-900">{scores.positiveScore}</p>
-      </article>
-      <article className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-        <p className="text-sm font-semibold text-rose-700">Score négatif</p>
-        <p className="mt-1 text-3xl font-black text-rose-900">{scores.negativeScore}</p>
-      </article>
-      <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 sm:col-span-2">
-        <p className="text-sm font-semibold text-cyan-700">Résultat final</p>
-        <p className="mt-1 text-4xl font-black text-cyan-950">{scores.finalScore}</p>
-        <p className="mt-2 text-sm font-bold text-cyan-900">
-          {RESULT_LEVEL_LABELS[recommendation.resultLevel]}
-        </p>
-      </article>
-      <article className="rounded-2xl border border-slate-200 bg-white p-4 sm:col-span-2">
-        <p className="text-sm font-semibold text-slate-500">Volume horaire recommandé</p>
-        <p className="mt-1 text-2xl font-black text-slate-950">{recommendation.label}</p>
-      </article>
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+          <p className="text-sm font-semibold text-cyan-700">Score total</p>
+          <p className="mt-1 text-4xl font-black text-cyan-950">{scores.finalScore} %</p>
+        </article>
+        <article className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+          <p className="text-sm font-semibold text-indigo-700">Profil élève</p>
+          <p className="mt-1 text-2xl font-black text-indigo-950">{recommendation.profileLabel}</p>
+        </article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-sm font-semibold text-slate-500">Volume horaire estimé</p>
+          <p className="mt-1 text-2xl font-black text-slate-950">{recommendation.label}</p>
+        </article>
+      </div>
+      {moduleRows.length > 0 && (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Module</th>
+                <th className="px-4 py-3">Score</th>
+                <th className="px-4 py-3">Max</th>
+              </tr>
+            </thead>
+            <tbody>
+              {moduleRows.map((row) => (
+                <tr className="border-t border-slate-100" key={row.moduleNumber}>
+                  <td className="px-4 py-3 font-semibold">{row.moduleNumber}. {row.title}</td>
+                  <td className="px-4 py-3">{row.score}</td>
+                  <td className="px-4 py-3 text-slate-500">{row.max}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {onExportPdf && (
+        <button className="pd-btn-secondary" onClick={() => onExportPdf({ answers, student, assessment })} type="button">
+          Télécharger le PDF d&apos;évaluation
+        </button>
+      )}
     </div>
   )
 }
 
 export default function InitialAssessmentWizard({
   assessment,
+  student,
   studentId,
   organizationId,
   completedBy = null,
   readOnly = false,
+  teacherMode = false,
   onSaved,
 }) {
-  const [answers, setAnswers] = useState(assessment?.answers || {})
+  const navigableModules = useMemo(
+    () => ASSESSMENT_MODULES.filter((m) => !m.readOnly),
+    [],
+  )
+  const resultsIndex = ASSESSMENT_MODULES.findIndex((m) => m.id === 'results')
+
+  const [answers, setAnswers] = useState(() => normalizeAssessmentAnswers(assessment?.answers))
   const [stepIndex, setStepIndex] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
-  const step = ASSESSMENT_STEPS[stepIndex]
-  const isLastStep = stepIndex === ASSESSMENT_STEPS.length - 1
+  const currentModule = ASSESSMENT_MODULES[stepIndex] ?? null
+  const isResultsStep = currentModule?.readOnly === true
+  const isLastNavStep = stepIndex >= resultsIndex - 1 && stepIndex < resultsIndex
+
+  useEffect(() => {
+    setAnswers(normalizeAssessmentAnswers(assessment?.answers))
+    setError(null)
+  }, [assessment?.id, assessment?.updated_at])
 
   const updateAnswer = (key, value) => {
     setAnswers((current) => ({ ...current, [key]: value }))
   }
 
-  const toggleItem = (key, value) => {
-    setAnswers((current) => ({ ...current, [key]: value }))
+  const canEditModule = (mod) => {
+    if (readOnly) return false
+    if (mod.teacherOnly && !teacherMode) return false
+    return true
   }
 
   const persist = async (markCompleted = false) => {
@@ -170,7 +231,7 @@ export default function InitialAssessmentWizard({
     })
     setSaving(false)
     if (saveError) {
-      setError(saveError)
+      setError(getUserFacingError(saveError, 'save'))
       return false
     }
     onSaved?.(saved)
@@ -178,40 +239,90 @@ export default function InitialAssessmentWizard({
   }
 
   const handleNext = async () => {
-    const ok = await persist(isLastStep)
+    if (readOnly) {
+      setStepIndex((i) => Math.min(i + 1, ASSESSMENT_MODULES.length - 1))
+      return
+    }
+    const ok = await persist(isLastNavStep)
     if (!ok) return
-    if (!isLastStep) setStepIndex((current) => current + 1)
+    setStepIndex((i) => Math.min(i + 1, ASSESSMENT_MODULES.length - 1))
+  }
+
+  const handleFinalize = async () => {
+    const ok = await persist(true)
+    if (ok) setStepIndex(resultsIndex)
+  }
+
+  const handleExportPdf = (payload) => {
+    exportInitialAssessmentPdf({
+      ...payload,
+      answers: payload.answers || answers,
+      student: payload.student || student || {},
+      assessment: payload.assessment || assessment,
+    })
+  }
+
+  if (!currentModule) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-6 text-center">
+        <p className="text-sm font-semibold text-amber-900">{PLACEHOLDER_MESSAGE}</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-5">
-      <StepProgress currentIndex={stepIndex} steps={ASSESSMENT_STEPS} />
+      <ModuleProgress
+        currentIndex={Math.min(stepIndex, navigableModules.length - 1)}
+        modules={navigableModules}
+      />
 
       <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
-          Étape {stepIndex + 1} / {ASSESSMENT_STEPS.length}
+          {currentModule.readOnly ? 'Synthèse' : `Module ${currentModule.moduleNumber} / ${navigableModules.length}`}
         </p>
-        <h2 className="mt-1 text-2xl font-black text-slate-950">{step.title}</h2>
-        <p className="mt-2 text-sm text-slate-500">{step.description}</p>
+        <h2 className="mt-1 text-2xl font-black text-slate-950">{currentModule.title}</h2>
+        {currentModule.objective && (
+          <p className="mt-2 text-sm font-semibold text-slate-700">{currentModule.objective}</p>
+        )}
+        {currentModule.description && (
+          <p className="mt-1 text-sm text-slate-500">{currentModule.description}</p>
+        )}
 
         <div className="mt-5">
-          {step.fields && (
-            <GeneralFields
+          {!currentModule.available ? (
+            <ModulePlaceholder />
+          ) : currentModule.readOnly ? (
+            <ResultsPanel
               answers={answers}
-              fields={step.fields}
-              onChange={updateAnswer}
-              readOnly={readOnly}
+              assessment={assessment}
+              onExportPdf={teacherMode || assessment?.status === 'completed' ? handleExportPdf : null}
+              student={student}
             />
+          ) : (
+            <>
+              {currentModule.fields?.length > 0 && (
+                <SelectFields
+                  answers={answers}
+                  fields={currentModule.fields}
+                  onChange={updateAnswer}
+                  readOnly={!canEditModule(currentModule)}
+                />
+              )}
+              {currentModule.ratings?.length > 0 && (
+                <RatingFields
+                  answers={answers}
+                  onChange={updateAnswer}
+                  ratings={currentModule.ratings}
+                  readOnly={!canEditModule(currentModule)}
+                  teacherOnly={currentModule.teacherOnly}
+                />
+              )}
+              {!currentModule.fields?.length && !currentModule.ratings?.length && (
+                <ModulePlaceholder />
+              )}
+            </>
           )}
-          {step.items && (
-            <ScoredItems
-              answers={answers}
-              items={step.items}
-              onToggle={toggleItem}
-              readOnly={readOnly}
-            />
-          )}
-          {step.readOnly && <ResultsPanel answers={answers} />}
         </div>
       </section>
 
@@ -221,26 +332,32 @@ export default function InitialAssessmentWizard({
         </p>
       )}
 
-      {!readOnly && (
-        <div className="flex flex-wrap gap-3">
-          <button
-            className="pd-btn-secondary"
-            disabled={stepIndex === 0 || saving}
-            onClick={() => setStepIndex((current) => Math.max(current - 1, 0))}
-            type="button"
-          >
-            Étape précédente
+      <div className="flex flex-wrap gap-3">
+        <button
+          className="pd-btn-secondary"
+          disabled={stepIndex === 0 || saving}
+          onClick={() => setStepIndex((i) => Math.max(i - 1, 0))}
+          type="button"
+        >
+          Module précédent
+        </button>
+        {!isResultsStep && (
+          <button className="pd-btn-primary" disabled={saving} onClick={handleNext} type="button">
+            {saving
+              ? 'Enregistrement…'
+              : readOnly
+                ? 'Module suivant'
+                : isLastNavStep
+                  ? 'Enregistrer et voir le résultat'
+                  : 'Enregistrer et continuer'}
           </button>
-          <button
-            className="pd-btn-primary"
-            disabled={saving}
-            onClick={handleNext}
-            type="button"
-          >
-            {saving ? 'Enregistrement…' : isLastStep ? 'Finaliser l\'évaluation' : 'Enregistrer et continuer'}
+        )}
+        {!readOnly && teacherMode && isLastNavStep && (
+          <button className="pd-btn-primary" disabled={saving} onClick={handleFinalize} type="button">
+            {saving ? 'Finalisation…' : 'Finaliser l\'évaluation'}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
