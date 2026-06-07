@@ -25,16 +25,65 @@ export const PACKAGE_OPTIONS = [
   'Passerelle B78 → B',
 ]
 
-export async function listStudents() {
+function logStudentsQuery(context, payload) {
+  console.group(`[listStudents] ${context}`)
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value instanceof Error) {
+      console.error(key, {
+        message: value.message,
+        code: value.code,
+        details: value.details,
+        hint: value.hint,
+      })
+    } else {
+      console.info(key, value)
+    }
+  })
+  console.groupEnd()
+}
+
+export async function listStudents({ teacherId = null, organizationId = null, logContext = 'default' } = {}) {
   if (isLocalDemoSession()) {
-    return { students: getDemoStudents(), error: null }
+    const students = getDemoStudents()
+    logStudentsQuery(logContext, {
+      teacherId,
+      organizationId,
+      mode: 'demo',
+      studentCount: students.length,
+      error: null,
+    })
+    return { students, error: null }
   }
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const authUserId = sessionData.session?.user?.id ?? null
+
+    let teacherProfile = null
+    if (teacherId || authUserId) {
+      const { data: profileRow, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, role, organization_id, full_name, email, is_active')
+        .eq('id', teacherId || authUserId)
+        .maybeSingle()
+
+      if (profileError) {
+        logStudentsQuery(logContext, {
+          teacherId: teacherId || authUserId,
+          organizationId,
+          authUserId,
+          profileError: profileError.message,
+          profileErrorCode: profileError.code,
+        })
+      }
+      teacherProfile = profileRow
+    }
+
     const { data, error } = await supabase
       .from('students')
       .select(`
         id,
+        organization_id,
         file_number,
         first_name,
         last_name,
@@ -51,14 +100,49 @@ export async function listStudents() {
         profile_id,
         student_assignments(
           is_referent,
+          teacher_id,
           teacher:teacher_id(id, full_name)
         )
       `)
       .order('created_at', { ascending: false })
-    if (error) throw error
-    return { students: data || [], error: null }
+
+    if (error) {
+      logStudentsQuery(logContext, {
+        teacherId: teacherId || authUserId,
+        organizationId: organizationId ?? teacherProfile?.organization_id ?? null,
+        authUserId,
+        teacherRole: teacherProfile?.role ?? null,
+        teacherProfileFound: Boolean(teacherProfile),
+        teacherIsActive: teacherProfile?.is_active ?? null,
+        studentCount: 0,
+        error,
+      })
+      throw error
+    }
+
+    const students = data || []
+    logStudentsQuery(logContext, {
+      teacherId: teacherId || authUserId,
+      organizationId: organizationId ?? teacherProfile?.organization_id ?? null,
+      authUserId,
+      teacherRole: teacherProfile?.role ?? null,
+      teacherProfileFound: Boolean(teacherProfile),
+      teacherIsActive: teacherProfile?.is_active ?? null,
+      teacherName: teacherProfile?.full_name ?? null,
+      studentCount: students.length,
+      studentIds: students.map((row) => row.id),
+      error: null,
+    })
+
+    return { students, error: null, teacherProfile }
   } catch (error) {
-    return { students: [], error }
+    logStudentsQuery(`${logContext} — échec`, {
+      teacherId,
+      organizationId,
+      studentCount: 0,
+      error,
+    })
+    return { students: [], error, teacherProfile: null }
   }
 }
 

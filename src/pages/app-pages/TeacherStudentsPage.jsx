@@ -58,10 +58,11 @@ export default function TeacherStudentsPage() {
     return `${day}/${month}/${year}`
   }
 
-  const { students, updateRemcStatus, addLesson, updateLesson, upsertStudent } = useStudentTrackingStore()
-  const { profileId, organizationId } = useAuth()
+  const { students, updateRemcStatus, addLesson, updateLesson, upsertStudents } = useStudentTrackingStore()
+  const { profileId, organizationId, role, loading: authLoading, profile, isAuthenticated } = useAuth()
   const [apiStudents, setApiStudents] = useState([])
   const [studentsLoading, setStudentsLoading] = useState(true)
+  const [studentsError, setStudentsError] = useState(null)
   const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [teacherName, setTeacherName] = useState('')
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
@@ -78,23 +79,69 @@ export default function TeacherStudentsPage() {
   })
 
   useEffect(() => {
+    if (authLoading) return undefined
+
+    if (!isAuthenticated || !profileId) {
+      setStudentsLoading(false)
+      setStudentsError('Session enseignant introuvable. Reconnectez-vous.')
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadStudents() {
       setStudentsLoading(true)
-      const { students: rows } = await listStudents()
-      if (cancelled) return
+      setStudentsError(null)
 
-      setApiStudents(rows)
-      rows.forEach((row) => upsertStudent(mapApiStudentToTracking(row)))
-      setStudentsLoading(false)
+      console.group('[TeacherStudentsPage] Chargement des élèves')
+      console.info('teacherId', profileId)
+      console.info('organizationId', organizationId ?? null)
+      console.info('role', role ?? null)
+      console.info('profileLoaded', Boolean(profile))
+
+      try {
+        const { students: rows, error, teacherProfile } = await listStudents({
+          teacherId: profileId,
+          organizationId,
+          logContext: 'TeacherStudentsPage',
+        })
+
+        if (cancelled) return
+
+        if (error) {
+          const message = error.message || String(error)
+          console.error('[TeacherStudentsPage] Erreur Supabase', {
+            message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+          })
+          setStudentsError(message)
+          setApiStudents([])
+          return
+        }
+
+        console.info('[TeacherStudentsPage] Élèves trouvés', rows.length)
+        console.info('[TeacherStudentsPage] Profil enseignant', teacherProfile ?? profile ?? null)
+        setApiStudents(rows)
+      } finally {
+        if (!cancelled) {
+          setStudentsLoading(false)
+          console.groupEnd()
+        }
+      }
     }
 
-    loadStudents()
+    void loadStudents()
     return () => {
       cancelled = true
     }
-  }, [upsertStudent])
+  }, [authLoading, isAuthenticated, profileId, organizationId])
+
+  useEffect(() => {
+    if (!apiStudents.length) return
+    upsertStudents(apiStudents.map(mapApiStudentToTracking))
+  }, [apiStudents, upsertStudents])
 
   const displayStudents = useMemo(() => {
     if (!apiStudents.length) return students
@@ -189,6 +236,25 @@ export default function TeacherStudentsPage() {
           <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Suivi REMC et leçons terrain</h1>
         </section>
         <p className="text-sm font-semibold text-slate-500">Chargement des élèves…</p>
+      </div>
+    )
+  }
+
+  if (studentsError) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+          <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
+            Mes élèves
+          </p>
+          <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Suivi REMC et leçons terrain</h1>
+        </section>
+        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          Impossible de charger les élèves : {studentsError}
+        </p>
+        <p className="text-xs text-slate-500">
+          Ouvrez la console du navigateur (F12) pour voir teacherId, organizationId et le détail de l&apos;erreur Supabase.
+        </p>
       </div>
     )
   }

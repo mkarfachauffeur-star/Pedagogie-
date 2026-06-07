@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Clé versionnée : invalide automatiquement les anciennes données de
 // démonstration encore stockées dans le navigateur (élèves fictifs, etc.).
@@ -506,7 +506,7 @@ export function useStudentTrackingStore() {
     ])
   }
 
-  const upsertStudent = (payload) => {
+  const upsertStudent = useCallback((payload) => {
     setStudents((current) => {
       const existing = current.find((student) => student.id === payload.id)
       if (existing) {
@@ -518,7 +518,23 @@ export function useStudentTrackingStore() {
       }
       return [normalizeStudent(payload, current.length), ...current]
     })
-  }
+  }, [])
 
-  return { students: studentsWithProgress, updateRemcStatus, addLesson, updateLesson, addStudent, upsertStudent }
+  const upsertStudents = useCallback((payloads = []) => {
+    if (!payloads.length) return
+    setStudents((current) => {
+      let next = [...current]
+      payloads.forEach((payload, index) => {
+        const existingIndex = next.findIndex((student) => student.id === payload.id)
+        if (existingIndex >= 0) {
+          next[existingIndex] = normalizeStudent({ ...next[existingIndex], ...payload }, 0)
+        } else {
+          next = [normalizeStudent(payload, next.length + index), ...next]
+        }
+      })
+      return next
+    })
+  }, [])
+
+  return { students: studentsWithProgress, updateRemcStatus, addLesson, updateLesson, addStudent, upsertStudent, upsertStudents }
 }
