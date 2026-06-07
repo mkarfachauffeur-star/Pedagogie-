@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStudentTrackingStore } from '../../data/studentTrackingStore'
 import { useAuth } from '../../context/AuthContext'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
@@ -6,6 +6,11 @@ import { isPermisBStudent } from '../../lib/studentTrack'
 import { normalizeInitialAssessment } from '../../lib/initialAssessmentUtils'
 import { getInitialAssessmentForStudent } from '../../services/initialAssessment'
 import { listStudents } from '../../services/students'
+import {
+  createLessonObservation,
+  listLessonObservationsForStudent,
+  updateLessonObservation,
+} from '../../services/studentLessonObservations'
 import RemcTeacherValidationPanel from '../../components/remc/RemcTeacherValidationPanel'
 import PracticeExamTeacherPanel from '../../components/practice-exam/PracticeExamTeacherPanel'
 import EmptyState from '../../components/ui/EmptyState'
@@ -49,6 +54,23 @@ function mapApiStudentToTracking(student) {
   }
 }
 
+function ShareToggle({ active, disabled, onClick, compact = false }) {
+  return (
+    <button
+      className={`rounded-xl border px-3 py-2 text-xs font-extrabold transition ${
+        active
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+      } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {active ? '✓ Partagé' : compact ? 'Partagé' : 'Partagé avec l\'élève'}
+    </button>
+  )
+}
+
 export default function TeacherStudentsPage() {
   const formatDateFr = (dateString) => {
     if (!dateString) return ''
@@ -59,20 +81,28 @@ export default function TeacherStudentsPage() {
 
   const { students, updateRemcStatus, addLesson, updateLesson, upsertStudents } = useStudentTrackingStore()
   const { profileId, organizationId, role, loading: authLoading, profile, isAuthenticated } = useAuth()
+  const currentTeacherName = useMemo(() => {
+    const name = profile?.full_name?.trim()
+    if (name) return name
+    return 'Enseignant'
+  }, [profile?.full_name])
   const [apiStudents, setApiStudents] = useState([])
   const [studentsLoading, setStudentsLoading] = useState(true)
   const [studentsError, setStudentsError] = useState(null)
   const [selectedStudentId, setSelectedStudentId] = useState(null)
-  const [teacherName, setTeacherName] = useState('')
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
   const [studentPanelTab, setStudentPanelTab] = useState('remc')
   const [initialAssessment, setInitialAssessment] = useState(null)
+  const [lessonObservations, setLessonObservations] = useState([])
+  const [lessonsLoading, setLessonsLoading] = useState(false)
+  const [lessonSaving, setLessonSaving] = useState(false)
   const [newLesson, setNewLesson] = useState({
     date: '',
     time: '',
     duration: '2H',
     observations: '',
     status: 'Débuté',
+    sharedWithStudent: false,
   })
 
   useEffect(() => {
@@ -187,6 +217,21 @@ export default function TeacherStudentsPage() {
     })
   }, [selectedStudent?.id, selectedIsPermisB])
 
+  const refreshLessonObservations = useCallback(async () => {
+    if (!selectedStudent?.id) {
+      setLessonObservations([])
+      return
+    }
+    setLessonsLoading(true)
+    const { lessons } = await listLessonObservationsForStudent(selectedStudent.id)
+    setLessonObservations(lessons)
+    setLessonsLoading(false)
+  }, [selectedStudent?.id])
+
+  useEffect(() => {
+    void refreshLessonObservations()
+  }, [refreshLessonObservations])
+
   useEffect(() => {
     setStudentPanelTab('remc')
   }, [selectedStudentId])
@@ -199,23 +244,85 @@ export default function TeacherStudentsPage() {
       duration: '2H',
       observations: '',
       status: 'Débuté',
+      sharedWithStudent: false,
     })
     setLessonFormOpen(true)
   }
 
-  const handleCreateLesson = (event) => {
+  const handleCreateLesson = async (event) => {
     event.preventDefault()
-    if (!selectedStudent) return
+    if (!selectedStudent || !organizationId || !profileId) return
     const selectedSkills = (selectedStudent.remc || [])
       .flatMap((competency) => competency.items)
       .filter((item) => item.status !== 'Non commencé')
       .map((item) => item.label)
+
+    setLessonSaving(true)
+    const { lesson, error } = await createLessonObservation({
+      organizationId,
+      studentId: selectedStudent.id,
+      teacherId: profileId,
+      openedBy: currentTeacherName,
+      date: newLesson.date,
+      time: newLesson.time,
+      duration: newLesson.duration,
+      status: newLesson.status,
+      observations: newLesson.observations,
+      skills: selectedSkills,
+      sharedWithStudent: newLesson.sharedWithStudent,
+    })
+    setLessonSaving(false)
+
+    if (lesson) {
+      addLesson(selectedStudent.id, lesson)
+      await refreshLessonObservations()
+      setLessonFormOpen(false)
+      return
+    }
+
     addLesson(selectedStudent.id, {
       ...newLesson,
-      openedBy: teacherName || 'Enseignant',
+      openedBy: currentTeacherName,
       skills: selectedSkills,
+      sharedWithStudent: newLesson.sharedWithStudent,
     })
     setLessonFormOpen(false)
+    if (error) {
+      console.error('[TeacherStudentsPage] createLessonObservation', error)
+    }
+  }
+
+  const handleToggleLessonShare = async (lesson) => {
+    const { lesson: updated, error } = await updateLessonObservation(lesson.id, {
+      sharedWithStudent: !lesson.sharedWithStudent,
+    })
+    if (updated) {
+      setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
+      updateLesson(selectedStudent.id, lesson.id, { sharedWithStudent: updated.sharedWithStudent })
+    } else if (error) {
+      console.error('[TeacherStudentsPage] updateLessonObservation share', error)
+    }
+  }
+
+  const handleLessonStatusChange = async (lesson, status) => {
+    updateLesson(selectedStudent.id, lesson.id, { status })
+    const { lesson: updated } = await updateLessonObservation(lesson.id, { status })
+    if (updated) {
+      setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
+    }
+  }
+
+  const handleCloseLesson = async (lesson) => {
+    const patch = {
+      status: 'Terminé',
+      closedBy: currentTeacherName,
+      closedAt: new Date().toISOString(),
+    }
+    updateLesson(selectedStudent.id, lesson.id, patch)
+    const { lesson: updated } = await updateLessonObservation(lesson.id, patch)
+    if (updated) {
+      setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
+    }
   }
 
   if (studentsLoading) {
@@ -400,9 +507,10 @@ export default function TeacherStudentsPage() {
                 <label className="text-sm font-bold text-slate-700">
                   Enseignant
                   <input
-                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={teacherName}
-                    onChange={(event) => setTeacherName(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none"
+                    disabled
+                    readOnly
+                    value={currentTeacherName}
                   />
                 </label>
                 <label className="text-sm font-bold text-slate-700">
@@ -469,12 +577,29 @@ export default function TeacherStudentsPage() {
                     placeholder="Ex : retravailler priorités à droite, manque d’anticipation, revoir installation poste."
                   />
                 </label>
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <ShareToggle
+                      active={newLesson.sharedWithStudent}
+                      onClick={() =>
+                        setNewLesson((current) => ({
+                          ...current,
+                          sharedWithStudent: !current.sharedWithStudent,
+                        }))
+                      }
+                    />
+                    <p className="text-xs font-semibold text-slate-500">
+                      {newLesson.sharedWithStudent
+                        ? 'Visible par l\'élève dans son espace Observations.'
+                        : 'Visible uniquement par enseignants, secrétariat et gérant.'}
+                    </p>
+                  </div>
                   <button
+                    disabled={lessonSaving}
                     type="submit"
-                    className="rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+                    className="w-fit rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:opacity-60"
                   >
-                    Enregistrer et démarrer la leçon
+                    {lessonSaving ? 'Enregistrement…' : 'Enregistrer'}
                   </button>
                 </div>
               </form>
@@ -493,14 +618,24 @@ export default function TeacherStudentsPage() {
 
           <section className="card-panel-lg">
             <h2 className="text-2xl font-extrabold text-slate-900">Historique des leçons</h2>
+            {lessonsLoading ? (
+              <p className="mt-4 text-sm font-semibold text-slate-500">Chargement…</p>
+            ) : (
             <div className="mt-4 grid gap-3">
-              {(selectedStudent.lessonHistory || []).map((lesson) => (
+              {(lessonObservations.length ? lessonObservations : selectedStudent.lessonHistory || []).map((lesson) => (
                 <article key={lesson.id} className="card-muted">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-extrabold text-slate-900">
                       Leçon du {lesson.date || 'date non renseignée'} · {lesson.time || '--:--'}
                     </h3>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{lesson.status}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <ShareToggle
+                        active={lesson.sharedWithStudent}
+                        compact
+                        onClick={() => handleToggleLessonShare(lesson)}
+                      />
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{lesson.status}</span>
+                    </div>
                   </div>
                   <p className="mt-2 text-sm text-slate-600">
                     Ouverture : <strong>{lesson.openedBy}</strong> · {new Date(lesson.openedAt).toLocaleString('fr-FR')}
@@ -524,7 +659,7 @@ export default function TeacherStudentsPage() {
                     <select
                       className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                       value={lesson.status}
-                      onChange={(event) => updateLesson(selectedStudent.id, lesson.id, { status: event.target.value })}
+                      onChange={(event) => handleLessonStatusChange(lesson, event.target.value)}
                     >
                       {lessonStatuses.map((status) => (
                         <option key={status} value={status}>
@@ -536,13 +671,7 @@ export default function TeacherStudentsPage() {
                       <button
                         type="button"
                         className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-extrabold text-white"
-                        onClick={() =>
-                          updateLesson(selectedStudent.id, lesson.id, {
-                            status: 'Terminé',
-                            closedBy: teacherName || 'Enseignant',
-                            closedAt: new Date().toISOString(),
-                          })
-                        }
+                        onClick={() => handleCloseLesson(lesson)}
                       >
                         Clôturer la leçon
                       </button>
@@ -551,6 +680,7 @@ export default function TeacherStudentsPage() {
                 </article>
               ))}
             </div>
+            )}
           </section>
             </>
           )}
