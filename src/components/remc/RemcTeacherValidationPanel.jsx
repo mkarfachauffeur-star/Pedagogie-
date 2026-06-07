@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { REMC_COMPETENCY_ORDER, REMC_COMPETENCIES } from '../../data/remcCompetencies'
 import {
   areAllSubCompetenciesValidated,
+  buildEffectiveUnlockState,
   computeGlobalRemcProgress,
   competencyStatusIcon,
   fetchCompetencyValidations,
+  isCompetencyEffectivelyValidated,
   syncAutoCompetencyValidations,
 } from '../../services/remcProgress'
 import { subscribePostgresChanges } from '../../services/realtime'
@@ -28,7 +30,8 @@ function RemcCompetencyCard({
   studentId,
 }) {
   const meta = REMC_COMPETENCIES[code]
-  const icon = competencyStatusIcon(entry, code)
+  const effectivelyValidated = isCompetencyEffectivelyValidated(entry, competency)
+  const icon = competencyStatusIcon(entry, code, competency)
   const unlocked = entry?.unlocked || code === 'C1'
   const items = competency?.items || []
   const subProgress = computeSubCompetencyProgress(items)
@@ -83,7 +86,7 @@ function RemcCompetencyCard({
             <p className="text-xs font-semibold text-slate-500">
               🔒 Validez la compétence précédente
             </p>
-          ) : entry?.validated && entry.validatedAt ? (
+          ) : effectivelyValidated && entry?.validatedAt ? (
             <>
               <p className="text-xs font-extrabold text-emerald-700">✅ Compétence validée</p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -225,8 +228,13 @@ export default function RemcTeacherValidationPanel({
   }, [studentId, refresh])
 
   const globalProgress = useMemo(
-    () => (unlockState ? computeGlobalRemcProgress(unlockState) : 0),
-    [unlockState],
+    () => (unlockState ? computeGlobalRemcProgress(unlockState, remcCompetencies) : 0),
+    [unlockState, remcCompetencies],
+  )
+
+  const effectiveUnlockState = useMemo(
+    () => buildEffectiveUnlockState(unlockState, remcCompetencies),
+    [unlockState, remcCompetencies],
   )
 
   const toggleCompetency = (code) => {
@@ -255,7 +263,7 @@ export default function RemcTeacherValidationPanel({
       ) : (
         <>
           <div className="mt-4">
-            <RemcProgressOverview compact globalProgress={globalProgress} unlockState={unlockState} />
+            <RemcProgressOverview compact globalProgress={globalProgress} unlockState={effectiveUnlockState} />
           </div>
 
           <div className="mt-4 grid gap-3">
@@ -263,7 +271,7 @@ export default function RemcTeacherValidationPanel({
               <RemcCompetencyCard
                 code={code}
                 competency={remcByCode[code]}
-                entry={unlockState?.[code]}
+                entry={effectiveUnlockState?.[code]}
                 expanded={expandedCode === code}
                 key={code}
                 onRemcStatusChange={onRemcStatusChange}
