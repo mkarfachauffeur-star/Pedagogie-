@@ -500,6 +500,7 @@ export default function TeacherStudentsPage() {
             <>
           <RemcTeacherValidationPanel
             organizationId={organizationId}
+            remcCompetencies={selectedStudent.remc || []}
             studentId={selectedStudent.id}
             teacherId={profileId}
           />

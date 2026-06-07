@@ -124,6 +124,48 @@ export async function fetchCompetencyValidations(studentId) {
   }
 }
 
+export function areAllSubCompetenciesValidated(competency) {
+  if (!competency?.items?.length) return false
+  return competency.items.every((item) => item.status === 'Validé')
+}
+
+/** Valide automatiquement C1–C4 lorsque toutes les sous-compétences locales sont « Validé ». */
+export async function syncAutoCompetencyValidations({
+  studentId,
+  organizationId,
+  teacherId,
+  remcCompetencies = [],
+  unlockState,
+}) {
+  if (!studentId || !organizationId || !teacherId) {
+    return { unlockState, error: null }
+  }
+
+  let latestState = unlockState
+
+  for (const competency of remcCompetencies) {
+    const code = competency.code
+    if (!REMC_COMPETENCY_ORDER.includes(code)) continue
+    if (latestState?.[code]?.validated) continue
+    if (!areAllSubCompetenciesValidated(competency)) continue
+    if (!latestState?.[code]?.unlocked && code !== 'C1') continue
+
+    const { unlockState: nextState } = await validateCompetency({
+      studentId,
+      organizationId,
+      competencyCode: code,
+      teacherId,
+    })
+    if (nextState) latestState = nextState
+  }
+
+  if (latestState !== unlockState) {
+    return fetchCompetencyValidations(studentId)
+  }
+
+  return { unlockState: latestState, error: null }
+}
+
 export async function validateCompetency({ studentId, organizationId, competencyCode, teacherId }) {
   if (!studentId || !organizationId || !competencyCode || !teacherId) {
     return { unlockState: null, error: new Error('Paramètres manquants.') }

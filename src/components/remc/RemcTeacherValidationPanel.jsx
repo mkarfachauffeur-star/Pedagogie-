@@ -4,45 +4,12 @@ import {
   computeGlobalRemcProgress,
   competencyStatusIcon,
   fetchCompetencyValidations,
-  revokeCompetencyValidation,
-  validateCompetency,
+  syncAutoCompetencyValidations,
 } from '../../services/remcProgress'
 import { subscribePostgresChanges } from '../../services/realtime'
 import RemcProgressOverview from './RemcProgressOverview'
 
-function RemcCompetencyAction({ studentId, organizationId, teacherId, competencyCode, entry, onUpdated }) {
-  const [busy, setBusy] = useState(false)
-  const [feedback, setFeedback] = useState(null)
-
-  const handleValidate = async () => {
-    setBusy(true)
-    setFeedback(null)
-    const { unlockState, error } = await validateCompetency({
-      studentId,
-      organizationId,
-      competencyCode,
-      teacherId,
-    })
-    if (unlockState) onUpdated(unlockState)
-    if (error) setFeedback('Enregistré localement — synchronisation en attente.')
-    setBusy(false)
-  }
-
-  const handleRevoke = async () => {
-    const label = REMC_COMPETENCIES[competencyCode]?.shortTitle || competencyCode
-    const confirmed = window.confirm(
-      `Retirer la validation de ${competencyCode} (${label}) ? Les compétences suivantes seront reverrouillées pour l'élève.`,
-    )
-    if (!confirmed) return
-
-    setBusy(true)
-    setFeedback(null)
-    const { unlockState, error } = await revokeCompetencyValidation({ studentId, competencyCode })
-    if (unlockState) onUpdated(unlockState)
-    if (error) setFeedback('Modification locale — synchronisation en attente.')
-    setBusy(false)
-  }
-
+function RemcCompetencyStatus({ competencyCode, entry }) {
   if (!entry?.unlocked && competencyCode !== 'C1') {
     return (
       <p className="text-xs font-semibold text-slate-500">
@@ -51,55 +18,64 @@ function RemcCompetencyAction({ studentId, organizationId, teacherId, competency
     )
   }
 
-  return (
-    <div className="flex flex-col items-end gap-2">
-      {entry.validated && entry.validatedAt && (
-        <p className="text-xs font-semibold text-slate-500">
+  if (entry?.validated && entry.validatedAt) {
+    return (
+      <div className="text-right">
+        <p className="text-xs font-extrabold text-emerald-700">✅ Compétence validée</p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">
           Validée le {new Date(entry.validatedAt).toLocaleDateString('fr-FR')}
           {entry.teacherName ? ` · ${entry.teacherName}` : ''}
         </p>
-      )}
-      <div className="flex flex-wrap justify-end gap-2">
-        {entry.validated ? (
-          <button
-            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-extrabold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60"
-            disabled={busy}
-            onClick={handleRevoke}
-            type="button"
-          >
-            Retirer la validation
-          </button>
-        ) : (
-          <button
-            className="rounded-xl bg-navy-950 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-cyan-700 disabled:opacity-60"
-            disabled={busy}
-            onClick={handleValidate}
-            type="button"
-          >
-            Valider la compétence
-          </button>
-        )}
       </div>
-      {feedback && <p className="text-xs font-semibold text-amber-700">{feedback}</p>}
-    </div>
+    )
+  }
+
+  return (
+    <p className="text-right text-xs font-semibold text-slate-500">
+      Validation automatique lorsque toutes les sous-compétences sont « Validé ».
+    </p>
   )
 }
 
-export default function RemcTeacherValidationPanel({ studentId, organizationId, teacherId }) {
+export default function RemcTeacherValidationPanel({
+  studentId,
+  organizationId,
+  teacherId,
+  remcCompetencies = [],
+  onUnlockStateChange,
+}) {
   const [unlockState, setUnlockState] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const applyUnlockState = useCallback((nextState) => {
+    setUnlockState(nextState)
+    onUnlockStateChange?.(nextState)
+  }, [onUnlockStateChange])
+
   const refresh = useCallback(async () => {
     if (!studentId) {
-      setUnlockState(null)
+      applyUnlockState(null)
       setLoading(false)
       return
     }
     setLoading(true)
-    const { unlockState: nextState } = await fetchCompetencyValidations(studentId)
-    setUnlockState(nextState)
+    const { unlockState: fetched } = await fetchCompetencyValidations(studentId)
+    let nextState = fetched
+
+    if (remcCompetencies.length && organizationId && teacherId) {
+      const { unlockState: synced } = await syncAutoCompetencyValidations({
+        studentId,
+        organizationId,
+        teacherId,
+        remcCompetencies,
+        unlockState: fetched,
+      })
+      nextState = synced || fetched
+    }
+
+    applyUnlockState(nextState)
     setLoading(false)
-  }, [studentId])
+  }, [studentId, organizationId, teacherId, remcCompetencies, applyUnlockState])
 
   useEffect(() => {
     refresh()
@@ -136,7 +112,8 @@ export default function RemcTeacherValidationPanel({ studentId, organizationId, 
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">Validation des compétences REMC</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Validez chaque compétence pour débloquer la suivante dans le livret numérique de l&apos;élève.
+            Chaque compétence est validée automatiquement lorsque toutes ses sous-compétences sont
+            marquées « Validé » ci-dessous.
           </p>
         </div>
         {!loading && (
@@ -177,14 +154,7 @@ export default function RemcTeacherValidationPanel({ studentId, organizationId, 
                     </div>
                     <p className="mt-1 text-xs leading-5 text-slate-500">{meta?.title}</p>
                   </div>
-                  <RemcCompetencyAction
-                    competencyCode={code}
-                    entry={entry}
-                    onUpdated={setUnlockState}
-                    organizationId={organizationId}
-                    studentId={studentId}
-                    teacherId={teacherId}
-                  />
+                  <RemcCompetencyStatus competencyCode={code} entry={entry} />
                 </article>
               )
             })}
