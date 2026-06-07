@@ -48,6 +48,8 @@ import StudentNextLessonPage from './pages/app-pages/StudentNextLessonPage'
 import StudentCompetencyReportsPage from './pages/app-pages/StudentCompetencyReportsPage'
 import StudentPedagogicalAppointmentsPage from './pages/app-pages/StudentPedagogicalAppointmentsPage'
 import StudentTrackRoute from './components/StudentTrackRoute'
+import StudentAccountGate from './components/StudentAccountGate'
+import RouteErrorBoundary from './components/RouteErrorBoundary'
 
 import TeacherDashboardPage from './pages/app-pages/TeacherDashboardPage'
 import TeacherPlanningPage from './pages/app-pages/TeacherPlanningPage'
@@ -81,9 +83,13 @@ function withStudentLayout(Page, fullWidth = false) {
   return (
     <ProtectedRoute role="student">
       <DashboardLayout role="student" fullWidth={fullWidth}>
-        <StudentTrackRoute>
-          <Page />
-        </StudentTrackRoute>
+        <RouteErrorBoundary>
+          <StudentAccountGate>
+            <StudentTrackRoute>
+              <Page />
+            </StudentTrackRoute>
+          </StudentAccountGate>
+        </RouteErrorBoundary>
       </DashboardLayout>
     </ProtectedRoute>
   )

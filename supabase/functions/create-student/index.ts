@@ -92,9 +92,12 @@ async function sendAccessEmail(
   fullName: string,
   tempPassword: string,
   orgName: string,
-) {
+): Promise<{ sent: boolean; reason?: string }> {
   const resendKey = Deno.env.get('RESEND_API_KEY')
-  if (!resendKey) return false
+  if (!resendKey) {
+    console.warn('[create-student] RESEND_API_KEY absent — e-mail d’accès non envoyé')
+    return { sent: false, reason: 'missing_resend_api_key' }
+  }
 
   const appUrl = Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'https://pedagogia-drive.vercel.app'
   const from = Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
@@ -121,7 +124,10 @@ async function sendAccessEmail(
       html,
     }),
   })
-  return res.ok
+  if (res.ok) return { sent: true }
+  const body = await res.text().catch(() => '')
+  console.error('[create-student] Resend a échoué', res.status, body)
+  return { sent: false, reason: `resend_${res.status}` }
 }
 
 Deno.serve(async (req) => {
@@ -210,7 +216,19 @@ Deno.serve(async (req) => {
     const userId = authData.user?.id
     if (!userId) return json({ error: 'Création du compte impossible.' }, 500)
 
-    await admin.from('profiles').update({ full_name: fullName, phone: phone || null }).eq('id', userId)
+    const { error: profileUpsertError } = await admin.from('profiles').upsert({
+      id: userId,
+      organization_id: orgId,
+      role: 'student',
+      full_name: fullName,
+      email,
+      phone: phone || null,
+    }, { onConflict: 'id' })
+
+    if (profileUpsertError) {
+      await admin.auth.admin.deleteUser(userId)
+      return json({ error: `Profil élève non créé : ${profileUpsertError.message}` }, 500)
+    }
 
     const fileNumber = await generateFileNumber(admin, orgId, lastName, firstName)
 
@@ -312,8 +330,11 @@ Deno.serve(async (req) => {
     }
 
     let emailSent = false
+    let emailError: string | null = null
     if (sendAccessEmailFlag) {
-      emailSent = await sendAccessEmail(email, fullName, tempPassword, gate.orgName || 'votre auto-école')
+      const emailResult = await sendAccessEmail(email, fullName, tempPassword, gate.orgName || 'votre auto-école')
+      emailSent = emailResult.sent
+      emailError = emailResult.reason ?? null
     }
 
     return json({
@@ -323,10 +344,13 @@ Deno.serve(async (req) => {
       full_name: fullName,
       temp_password: tempPassword,
       email_sent: emailSent,
+      email_error: emailError,
       message: emailSent
         ? 'Compte créé. Un e-mail d’accès avec le mot de passe provisoire a été envoyé.'
         : sendAccessEmailFlag
-          ? 'Compte créé. Communiquez le mot de passe provisoire à l’élève (e-mail automatique non configuré).'
+          ? emailError === 'missing_resend_api_key'
+            ? 'Compte créé. Communiquez le mot de passe provisoire à l’élève (service e-mail non configuré : RESEND_API_KEY).'
+            : 'Compte créé. Communiquez le mot de passe provisoire à l’élève (envoi e-mail échoué).'
           : 'Compte créé. Communiquez le mot de passe provisoire à l’élève.',
     })
   } catch (err) {

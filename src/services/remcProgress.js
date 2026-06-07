@@ -71,9 +71,14 @@ export async function resolveStudentRecordId(profileId) {
       .eq('profile_id', profileId)
       .maybeSingle()
     if (error) throw error
-    return data?.id || profileId
-  } catch {
-    return profileId
+    return data?.id ?? null
+  } catch (error) {
+    console.warn('[remcProgress] resolveStudentRecordId', {
+      profileId,
+      message: error?.message,
+      code: error?.code,
+    })
+    return null
   }
 }
 

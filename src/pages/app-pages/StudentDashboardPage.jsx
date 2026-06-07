@@ -38,7 +38,7 @@ function StatCard({ label, value }) {
 }
 
 export default function StudentDashboardPage() {
-  const { profile, profileId } = useAuth()
+  const { profile, profileId, user } = useAuth()
   const { student, track, isPermisB, loading: trackLoading } = useStudentTrack(profileId)
   const { studentId, unlockState, globalProgress, isCompetencyValidated, loading: remcLoading } = useRemcUnlock(profileId)
   const [teacherName, setTeacherName] = useState('Non assigné')
@@ -79,6 +79,19 @@ export default function StudentDashboardPage() {
     })
   }, [studentId, student?.id, isPermisB])
 
+  useEffect(() => {
+    if (!trackLoading && !remcLoading) {
+      console.info('[StudentDashboard] Chargement terminé', {
+        userId: user?.id ?? profileId,
+        userEmail: user?.email ?? profile?.email ?? null,
+        profile,
+        student,
+        track,
+        remcStudentId: studentId,
+      })
+    }
+  }, [user, profileId, profile, student, track, studentId, trackLoading, remcLoading])
+
   const displayName = useMemo(() => {
     if (student?.first_name) return student.first_name
     if (profile?.full_name) return profile.full_name.split(' ')[0]
@@ -92,14 +105,10 @@ export default function StudentDashboardPage() {
   const remcValidatedCount = ['C1', 'C2', 'C3', 'C4'].filter((code) => isCompetencyValidated(code)).length
   const practiceExamProbability = estimateSuccessProbability(practiceExams, remcValidatedCount)
 
-  if (!profileId && !remcLoading && !trackLoading) {
+  if (trackLoading || remcLoading) {
     return (
       <PageShell>
-        <EmptyState
-          icon="🎓"
-          message="Aucune donnée disponible pour le moment. Votre espace s'activera dès l'ajout de votre dossier élève."
-          title="Aucune donnée disponible"
-        />
+        <EmptyState icon="⏳" title="Chargement" message="Récupération de vos données pédagogiques…" />
       </PageShell>
     )
   }

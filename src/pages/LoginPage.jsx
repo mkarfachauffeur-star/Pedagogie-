@@ -181,7 +181,8 @@ export default function LoginPage() {
         setAuthError(error.message || getUserFacingError(error, 'login'))
         return
       }
-      navigate(roleDestinations[realRole] || '/', { replace: true })
+      const destination = roleDestinations[realRole] || roleDestinations[role] || '/'
+      navigate(destination, { replace: true })
       return
     }
     // Sinon : accès démo par rôle (transitoire, conservé pour les tests).

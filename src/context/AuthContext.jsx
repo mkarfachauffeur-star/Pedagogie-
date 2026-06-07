@@ -60,7 +60,15 @@ export function AuthProvider({ children }) {
         .select('id, organization_id, role, full_name, avatar_emoji, email, is_active')
         .eq('id', userId)
         .maybeSingle()
-      if (error) throw error
+      if (error) {
+        console.error('[AuthContext] loadProfile error', {
+          userId,
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        })
+        throw error
+      }
       setProfile(data ?? null)
 
       if (superAdmin) {
@@ -80,7 +88,12 @@ export function AuthProvider({ children }) {
         setSubscription(subRes.subscription)
         setStudentCount(countRes.count)
       }
-    } catch {
+    } catch (err) {
+      console.error('[AuthContext] loadProfile failed', {
+        userId,
+        message: err?.message,
+        code: err?.code,
+      })
       setProfile(null)
     }
   }, [])
@@ -134,7 +147,7 @@ export function AuthProvider({ children }) {
           await supabase.auth.signOut()
           return { error: new Error('Compte désactivé.'), role: null }
         }
-        nextRole = prof?.role ?? null
+        nextRole = prof?.role ?? resolveRoleFromUser(data.user) ?? null
       }
     } catch {
       // ignore

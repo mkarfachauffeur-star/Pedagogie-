@@ -42,8 +42,8 @@ export const NAVIGATION = {
     user: { avatar: '\u{1F4BC}', name: 'Gérant', role: 'Gérant' },
     items: [
       { href: '/manager/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
-      { href: '/manager/students', icon: '\u{1F465}', label: 'Élèves' },
       { href: '/manager/teachers', icon: '\u{1F468}\u200D\u{1F3EB}', label: 'Enseignants' },
+      { href: '/manager/students', icon: '\u{1F465}', label: 'Élèves' },
       { href: '/manager/users', icon: '\u{1F510}', label: 'Utilisateurs' },
       { href: '/manager/planning', icon: '\u{1F4C5}', label: 'Planning global' },
       { href: '/manager/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
