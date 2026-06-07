@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { REMC_COMPETENCY_ORDER, REMC_COMPETENCIES } from '../../data/remcCompetencies'
 import {
+  areAllSubCompetenciesValidated,
   computeGlobalRemcProgress,
   competencyStatusIcon,
   fetchCompetencyValidations,
@@ -9,31 +10,144 @@ import {
 import { subscribePostgresChanges } from '../../services/realtime'
 import RemcProgressOverview from './RemcProgressOverview'
 
-function RemcCompetencyStatus({ competencyCode, entry }) {
-  if (!entry?.unlocked && competencyCode !== 'C1') {
-    return (
-      <p className="text-xs font-semibold text-slate-500">
-        🔒 Validez la compétence précédente pour débloquer celle-ci.
-      </p>
-    )
-  }
+const REMC_SUB_STATUSES = ['Non commencé', 'En cours', 'Validé']
 
-  if (entry?.validated && entry.validatedAt) {
-    return (
-      <div className="text-right">
-        <p className="text-xs font-extrabold text-emerald-700">✅ Compétence validée</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">
-          Validée le {new Date(entry.validatedAt).toLocaleDateString('fr-FR')}
-          {entry.teacherName ? ` · ${entry.teacherName}` : ''}
-        </p>
-      </div>
-    )
-  }
+function computeSubCompetencyProgress(items = []) {
+  if (!items.length) return 0
+  const validated = items.filter((item) => item.status === 'Validé').length
+  return Math.round((validated / items.length) * 100)
+}
+
+function RemcCompetencyCard({
+  code,
+  entry,
+  competency,
+  expanded,
+  onToggle,
+  onRemcStatusChange,
+  studentId,
+}) {
+  const meta = REMC_COMPETENCIES[code]
+  const icon = competencyStatusIcon(entry, code)
+  const unlocked = entry?.unlocked || code === 'C1'
+  const items = competency?.items || []
+  const subProgress = computeSubCompetencyProgress(items)
+  const allSubsValidated = areAllSubCompetenciesValidated(competency)
 
   return (
-    <p className="text-right text-xs font-semibold text-slate-500">
-      Validation automatique lorsque toutes les sous-compétences sont « Validé ».
-    </p>
+    <article
+      className={`overflow-hidden rounded-2xl border transition-colors ${
+        expanded && unlocked
+          ? 'border-cyan-200 bg-cyan-50/60 shadow-sm'
+          : unlocked
+            ? 'border-slate-200 bg-white hover:border-cyan-100'
+            : 'border-slate-100 bg-slate-50/80'
+      }`}
+    >
+      <button
+        aria-expanded={expanded}
+        className="flex w-full flex-col gap-3 p-4 text-left sm:flex-row sm:items-start sm:justify-between"
+        disabled={!unlocked}
+        onClick={() => unlocked && onToggle(code)}
+        type="button"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {icon && (
+              <span aria-hidden="true" className="text-xl">
+                {icon}
+              </span>
+            )}
+            <p className="text-sm font-black text-slate-900 sm:text-base">
+              {code} · {meta?.shortTitle}
+            </p>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{meta?.title}</p>
+          {unlocked && items.length > 0 && (
+            <>
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                {items.length} sous-compétences · {subProgress}% validées
+              </p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
+                  style={{ width: `${subProgress}%` }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="shrink-0 sm:text-right">
+          {!unlocked ? (
+            <p className="text-xs font-semibold text-slate-500">
+              🔒 Validez la compétence précédente
+            </p>
+          ) : entry?.validated && entry.validatedAt ? (
+            <>
+              <p className="text-xs font-extrabold text-emerald-700">✅ Compétence validée</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Validée le {new Date(entry.validatedAt).toLocaleDateString('fr-FR')}
+                {entry.teacherName ? ` · ${entry.teacherName}` : ''}
+              </p>
+            </>
+          ) : allSubsValidated ? (
+            <p className="text-xs font-semibold text-cyan-700">Validation en cours…</p>
+          ) : (
+            <p className="text-xs font-semibold text-slate-500">
+              Cliquez pour valider les sous-compétences
+            </p>
+          )}
+          {unlocked && (
+            <span
+              aria-hidden="true"
+              className={`mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm text-slate-500 transition-transform ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            >
+              ▾
+            </span>
+          )}
+        </div>
+      </button>
+
+      {unlocked && expanded && items.length > 0 && (
+        <div className="border-t border-cyan-100 px-4 pb-4 pt-3">
+          <p className="mb-3 text-xs font-semibold text-slate-500">
+            Passez chaque sous-compétence en « Validé » — la compétence {code} sera validée
+            automatiquement lorsque toutes le seront.
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {items.map((item) => (
+              <div className="rounded-xl border border-slate-200 bg-white p-3" key={item.id}>
+                <p className="text-sm font-bold text-slate-700">
+                  {item.code ? (
+                    <>
+                      <span className="text-cyan-700">{item.code}</span> · {item.label}
+                    </>
+                  ) : (
+                    item.label
+                  )}
+                </p>
+                <select
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                  onChange={(event) =>
+                    onRemcStatusChange?.(studentId, code, item.id, event.target.value)
+                  }
+                  value={item.status}
+                >
+                  {REMC_SUB_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </article>
   )
 }
 
@@ -42,10 +156,17 @@ export default function RemcTeacherValidationPanel({
   organizationId,
   teacherId,
   remcCompetencies = [],
+  onRemcStatusChange,
   onUnlockStateChange,
 }) {
   const [unlockState, setUnlockState] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [expandedCode, setExpandedCode] = useState(null)
+
+  const remcByCode = useMemo(
+    () => Object.fromEntries((remcCompetencies || []).map((row) => [row.code, row])),
+    [remcCompetencies],
+  )
 
   const applyUnlockState = useCallback((nextState) => {
     setUnlockState(nextState)
@@ -82,6 +203,10 @@ export default function RemcTeacherValidationPanel({
   }, [refresh])
 
   useEffect(() => {
+    setExpandedCode(null)
+  }, [studentId])
+
+  useEffect(() => {
     if (!studentId) return undefined
     return subscribePostgresChanges({
       topicBase: `remc-teacher:${studentId}`,
@@ -104,6 +229,10 @@ export default function RemcTeacherValidationPanel({
     [unlockState],
   )
 
+  const toggleCompetency = (code) => {
+    setExpandedCode((current) => (current === code ? null : code))
+  }
+
   if (!studentId) return null
 
   return (
@@ -112,8 +241,8 @@ export default function RemcTeacherValidationPanel({
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">Validation des compétences REMC</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Chaque compétence est validée automatiquement lorsque toutes ses sous-compétences sont
-            marquées « Validé » ci-dessous.
+            Cliquez une compétence pour afficher ses sous-compétences. Lorsque toutes sont « Validé »,
+            la compétence est validée automatiquement.
           </p>
         </div>
         {!loading && (
@@ -130,34 +259,18 @@ export default function RemcTeacherValidationPanel({
           </div>
 
           <div className="mt-4 grid gap-3">
-            {REMC_COMPETENCY_ORDER.map((code) => {
-              const entry = unlockState?.[code]
-              const meta = REMC_COMPETENCIES[code]
-              const icon = competencyStatusIcon(entry, code)
-              return (
-                <article
-                  key={code}
-                  className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
-                    entry?.unlocked || code === 'C1' ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/80'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      {icon && (
-                        <span className="text-xl" aria-hidden="true">
-                          {icon}
-                        </span>
-                      )}
-                      <p className="text-sm font-black text-slate-900">
-                        {code} · {meta?.shortTitle}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{meta?.title}</p>
-                  </div>
-                  <RemcCompetencyStatus competencyCode={code} entry={entry} />
-                </article>
-              )
-            })}
+            {REMC_COMPETENCY_ORDER.map((code) => (
+              <RemcCompetencyCard
+                code={code}
+                competency={remcByCode[code]}
+                entry={unlockState?.[code]}
+                expanded={expandedCode === code}
+                key={code}
+                onRemcStatusChange={onRemcStatusChange}
+                onToggle={toggleCompetency}
+                studentId={studentId}
+              />
+            ))}
           </div>
         </>
       )}

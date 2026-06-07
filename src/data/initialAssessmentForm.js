@@ -37,8 +37,14 @@ export const ASSESSMENT_MODULES = [
         id: 'exp_context',
         label: 'Dans quel cadre ?',
         type: 'select',
-        options: ['Terrain privé', 'AAC', 'Conduite supervisée', 'Étranger', 'Autre', 'Non applicable'],
-        scoring: { 'Terrain privé': 1, AAC: 3, 'Conduite supervisée': 3, Étranger: 2, Autre: 1, 'Non applicable': 0 },
+        options: ['Route', 'Chemin privé', 'Parking', 'Auto-école', 'À l\'étranger'],
+        scoring: {
+          Route: 2,
+          'Chemin privé': 1,
+          Parking: 1,
+          'Auto-école': 3,
+          'À l\'étranger': 2,
+        },
       },
       {
         id: 'exp_hours',
