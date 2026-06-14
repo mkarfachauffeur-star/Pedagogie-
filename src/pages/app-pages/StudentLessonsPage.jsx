@@ -378,7 +378,7 @@ function buildQuizSession(questions = []) {
 
 const VEHICLE_ORGANS_QUIZ_SIZE = 10
 /** Incrémenter après modification des énoncés ou réponses pour régénérer les sessions QCU en cache. */
-const QUIZ_CONTENT_REVISION = 3
+const QUIZ_CONTENT_REVISION = 4
 
 function getLessonQuestionPool(lesson) {
   if (!lesson) return []
@@ -1012,9 +1012,9 @@ const steeringWheelQuestions = [
   },
   {
     question: 'Avec la technique du chevauchement :',
-    choices: ['Les mains peuvent se croiser', 'Le conducteur lâche le volant', 'Les bras restent tendus', 'Le volant ne tourne pas beaucoup'],
+    choices: ['Les mains se croisent sur un quart du volant', 'Le conducteur lâche le volant', 'Les bras restent tendus', 'Le volant ne tourne pas beaucoup'],
     answer: 0,
-    explanation: 'Avec le chevauchement, les mains peuvent se croiser sur un quart du volant pour obtenir une rotation plus importante.',
+    explanation: 'Avec le chevauchement, les mains se croisent sur un quart du volant pour obtenir une rotation plus importante.',
   },
   {
     question: 'Quelle pratique est interdite ?',
