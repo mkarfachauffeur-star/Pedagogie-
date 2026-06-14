@@ -1,3 +1,4 @@
+import { formatPersonName } from '../lib/staffAccounts'
 import {
   ASSESSMENT_MODULES,
   FSB_OPTIONS,
@@ -33,10 +34,7 @@ function slugify(value) {
 }
 
 function buildStudentName(student = {}) {
-  return [student.first_name, student.last_name].filter(Boolean).join(' ')
-    || [student.firstName, student.lastName].filter(Boolean).join(' ')
-    || student.full_name
-    || 'Élève'
+  return formatPersonName(student) || student.full_name || 'Élève'
 }
 
 function buildModuleSection(mod, answers) {

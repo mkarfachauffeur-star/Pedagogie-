@@ -17,6 +17,17 @@ function json(payload: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
+  const publicSignupEnabled = Deno.env.get('PUBLIC_SIGNUP_ENABLED') === 'true'
+  if (!publicSignupEnabled) {
+    return json(
+      {
+        error:
+          'Les inscriptions publiques sont fermées pendant la bêta privée. Demandez une démonstration sur le site.',
+      },
+      403,
+    )
+  }
+
   try {
     const url = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -47,7 +58,7 @@ Deno.serve(async (req) => {
       return json({ error: 'Adresse e-mail invalide.' }, 400)
     }
 
-    const fullName = `${managerFirst} ${managerLast}`.trim()
+    const fullName = `${managerLast} ${managerFirst}`.trim()
 
     const { data: org, error: orgError } = await admin
       .from('organizations')

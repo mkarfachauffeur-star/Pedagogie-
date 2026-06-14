@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
       return json({ error: 'Nom, prénom et e-mail sont obligatoires.' }, 400)
     }
 
-    const fullName = `${firstName} ${lastName}`.trim()
+    const fullName = `${lastName} ${firstName}`.trim()
     const tempPassword = generateTempPassword()
 
     const { data: authData, error: authError } = await admin.auth.admin.createUser({

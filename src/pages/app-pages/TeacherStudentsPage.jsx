@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
 import { isPermisBStudent, resolveStudentTrack, STUDENT_TRACKS } from '../../lib/studentTrack'
+import { formatPersonName } from '../../lib/staffAccounts'
 import { normalizeInitialAssessment, formatRecommendedHours } from '../../lib/initialAssessmentUtils'
 import { formatAssessmentStatus, getInitialAssessmentForStudent } from '../../services/initialAssessment'
 import { listStudents, subscribeStudents } from '../../services/students'
@@ -66,7 +67,9 @@ function normalizeStudentSearch(value = '') {
 
 function studentMatchesSearch(student, query) {
   if (!query) return true
-  const haystack = normalizeStudentSearch(`${student.firstName} ${student.lastName}`)
+  const haystack = normalizeStudentSearch(
+    `${formatPersonName(student)} ${student.firstName || ''} ${student.lastName || ''}`,
+  )
   return query.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))
 }
 
@@ -459,7 +462,7 @@ export default function TeacherStudentsPage() {
           <div>
             <h2 className="text-lg font-extrabold text-slate-900">Liste élèves</h2>
             <label className="mt-3 block text-sm font-bold text-slate-700">
-              Rechercher par nom ou prénom
+              Rechercher par nom et prénom
               <input
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                 onChange={(event) => setStudentSearchQuery(event.target.value)}
@@ -491,7 +494,7 @@ export default function TeacherStudentsPage() {
                 }`}
               >
                 <p className="font-extrabold text-slate-900">
-                  {student.firstName} {student.lastName}
+                  {formatPersonName(student)}
                 </p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{student.permisSummary}</p>
                 {student.aacTracking && (
@@ -544,7 +547,7 @@ export default function TeacherStudentsPage() {
                 {preRegistrations.slice(0, 8).map((row) => (
                   <article className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2" key={row.id}>
                     <p className="text-sm font-bold text-slate-900">
-                      {row.first_name} {row.last_name}
+                      {formatPersonName(row)}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-500">{row.desired_training}</p>
                     <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${preRegistrationStatusClass(row.status)}`}>
@@ -562,7 +565,7 @@ export default function TeacherStudentsPage() {
             <section className="card-panel-lg">
               <EmptyState
                 icon="👆"
-                message="Recherchez un élève par nom ou prénom, puis cliquez sur sa fiche pour ouvrir une leçon."
+                message="Recherchez un élève par nom et prénom, puis cliquez sur sa fiche pour ouvrir une leçon."
                 title="Sélectionnez un élève"
               />
             </section>
@@ -572,7 +575,7 @@ export default function TeacherStudentsPage() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold text-slate-900">
-                  {selectedStudent.firstName} {selectedStudent.lastName}
+                  {formatPersonName(selectedStudent)}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {selectedStudent.permisSummary}
@@ -633,7 +636,7 @@ export default function TeacherStudentsPage() {
                   Élève
                   <input
                     className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                    value={formatPersonName(selectedStudent)}
                     disabled
                   />
                 </label>

@@ -8,15 +8,21 @@ export const USER_ROLE_LABELS = {
 
 export const STAFF_ROLES = ['manager', 'teacher', 'secretary']
 
+export function formatPersonName(person = {}) {
+  const firstName = String(person.firstName ?? person.first_name ?? '').trim()
+  const lastName = String(person.lastName ?? person.last_name ?? '').trim()
+  return [lastName, firstName].filter(Boolean).join(' ')
+}
+
 export function splitFullName(fullName = '') {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
   if (!parts.length) return { firstName: '', lastName: '' }
-  if (parts.length === 1) return { firstName: parts[0], lastName: '' }
-  return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+  if (parts.length === 1) return { lastName: parts[0], firstName: '' }
+  return { lastName: parts[0], firstName: parts.slice(1).join(' ') }
 }
 
 export function joinFullName(firstName, lastName) {
-  return `${String(firstName || '').trim()} ${String(lastName || '').trim()}`.trim()
+  return formatPersonName({ firstName, lastName })
 }
 
 export function formatDateFr(value) {

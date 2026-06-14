@@ -8,6 +8,7 @@ import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPa
 import { listStudents, subscribeStudents } from '../../services/students'
 import { contractsMap, getStudentSummary } from '../../services/finance'
 import { supabase } from '../../lib/supabase'
+import { formatPersonName } from '../../lib/staffAccounts'
 
 function formatDateFr(value) {
   if (!value) return ''
@@ -149,7 +150,7 @@ export default function SecretaryInscriptionsPage() {
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <h3 className="font-extrabold text-slate-950">
-                        {student.first_name} {student.last_name}
+                        {formatPersonName(student)}
                       </h3>
                       <p className="text-sm text-slate-500">
                         {student.file_number || 'Dossier en cours'} · {student.package_name || student.formation_type || 'Formule non renseignée'}

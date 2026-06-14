@@ -97,14 +97,14 @@ export default function CreateUserModal({ open, onClose, onCreated }) {
         <form id={FORM_ID} className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">Prénom</span>
-              <input className={inputClass} value={form.firstName} onChange={(e) => update('firstName', e.target.value)} disabled={!canWrite || busy} />
-              {errors.firstName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.firstName}</p>}
-            </label>
-            <label className="block">
               <span className="text-sm font-bold text-slate-700">Nom</span>
               <input className={inputClass} value={form.lastName} onChange={(e) => update('lastName', e.target.value)} disabled={!canWrite || busy} />
               {errors.lastName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.lastName}</p>}
+            </label>
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Prénom</span>
+              <input className={inputClass} value={form.firstName} onChange={(e) => update('firstName', e.target.value)} disabled={!canWrite || busy} />
+              {errors.firstName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.firstName}</p>}
             </label>
           </div>
           <label className="block">

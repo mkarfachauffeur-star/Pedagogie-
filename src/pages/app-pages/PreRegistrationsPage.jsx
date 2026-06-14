@@ -13,6 +13,7 @@ import {
   reviewPreRegistration,
   subscribePreRegistrations,
 } from '../../services/preRegistrations'
+import { formatPersonName } from '../../lib/staffAccounts'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -63,7 +64,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
     if (!q) return list
     return list.filter((row) => {
       const haystack = normalizeSearchText(
-        `${row.first_name} ${row.last_name} ${row.email || ''} ${row.phone || ''} ${row.teacherName || ''} ${row.desired_training || ''}`,
+        `${formatPersonName(row)} ${row.email || ''} ${row.phone || ''} ${row.teacherName || ''} ${row.desired_training || ''}`,
       )
       return q.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))
     })
@@ -93,8 +94,8 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
     }
 
     const confirmMessage = action === 'approve'
-      ? `Accepter la pré-inscription de ${row.first_name} ${row.last_name} et créer le dossier élève ?`
-      : `Refuser la pré-inscription de ${row.first_name} ${row.last_name} ?`
+      ? `Accepter la pré-inscription de ${formatPersonName(row)} et créer le dossier élève ?`
+      : `Refuser la pré-inscription de ${formatPersonName(row)} ?`
 
     if (!window.confirm(confirmMessage)) return
 
@@ -112,7 +113,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
     setFeedback({
       type: 'success',
       message: action === 'approve' && tempPassword
-        ? `${message} Mot de passe provisoire du compte de ${row.first_name} ${row.last_name} (${row.email}) — à transmettre à cet élève pour sa première connexion : ${tempPassword}`
+        ? `${message} Mot de passe provisoire du compte de ${formatPersonName(row)} (${row.email}) — à transmettre à cet élève pour sa première connexion : ${tempPassword}`
         : message,
     })
     await refresh()
@@ -212,7 +213,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
                     <td className="px-3 py-4 font-semibold text-slate-700">{formatDateFr(row.created_at)}</td>
                     <td className="px-3 py-4">
                       <p className="font-extrabold text-slate-900">
-                        {row.first_name} {row.last_name}
+                        {formatPersonName(row)}
                       </p>
                       {row.notes && (
                         <p className="mt-1 max-w-xs text-xs text-slate-500">{row.notes}</p>

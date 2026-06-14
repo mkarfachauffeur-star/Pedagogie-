@@ -10,6 +10,7 @@ import {
   determinePracticeExamResult,
 } from '../../services/practiceExamScoring'
 import { getUserFacingError } from '../../lib/userFacingError'
+import { formatPersonName } from '../../lib/staffAccounts'
 import PracticeExamDetail from './PracticeExamDetail'
 import PracticeExamHelpModal, {
   PracticeExamGridEditor,
@@ -103,7 +104,7 @@ export default function PracticeExamTeacherPanel({
   const title = embedded ? 'Examen blanc (optionnel)' : 'Examen blanc permis B'
   const description = embedded
     ? 'Remplissez la grille officielle si un examen blanc est réalisé pendant cette leçon.'
-    : `${student.firstName} ${student.lastName} · grille officielle sur 31 points`
+    : `${formatPersonName(student)} · grille officielle sur 31 points`
 
   return (
     <section className={embedded ? 'rounded-2xl border border-slate-200 bg-white p-4 sm:p-5' : 'card-panel-lg'}>

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useStudentAccount } from '../../hooks/useStudentAccount'
 import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import EmptyState from '../../components/ui/EmptyState'
+import { formatPersonName } from '../../lib/staffAccounts'
 
 const FAMILY_OBJECTIVES_KEY = 'pedagogia:aac-family-objectives'
 
@@ -225,7 +226,7 @@ export default function StudentAccompaniedDrivingPage() {
               </p>
               <div className="mt-5 flex flex-wrap gap-2 text-sm font-semibold text-cyan-100">
                 <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
-                  {student.firstName} {student.lastName}
+                  {formatPersonName(student)}
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
                   Moniteur : {student.teacher}

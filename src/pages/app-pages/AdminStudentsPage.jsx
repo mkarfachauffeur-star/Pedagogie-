@@ -6,6 +6,7 @@ import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
 import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
 import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
+import { formatPersonName } from '../../lib/staffAccounts'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
 import { listStudents, subscribeStudents } from '../../services/students'
 
@@ -131,7 +132,7 @@ export default function AdminStudentsPage() {
                 <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                   <div className="min-w-0">
                     <h2 className="text-lg font-extrabold text-slate-900">
-                      {student.first_name} {student.last_name}
+                      {formatPersonName(student)}
                     </h2>
                     <p className="mt-1 text-sm font-semibold text-cyan-700">{student.file_number || 'Dossier en cours'}</p>
                     <p className="mt-2 text-sm text-slate-600">{student.email || '—'}</p>

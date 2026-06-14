@@ -17,6 +17,7 @@ import {
   estimateSuccessProbability,
 } from '../../services/practiceExamScoring'
 import { supabase } from '../../lib/supabase'
+import { splitFullName } from '../../lib/staffAccounts'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -96,7 +97,10 @@ export default function StudentDashboardPage() {
 
   const displayName = useMemo(() => {
     if (student?.first_name) return student.first_name
-    if (profile?.full_name) return profile.full_name.split(' ')[0]
+    if (profile?.full_name) {
+      const { firstName } = splitFullName(profile.full_name)
+      if (firstName) return firstName
+    }
     return 'Élève'
   }, [student, profile])
 

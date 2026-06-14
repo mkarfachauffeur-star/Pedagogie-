@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 import { listPracticeExamsForOrganization } from '../../services/practiceExams'
 import { computeTeacherPracticeExamStats } from '../../services/practiceExamScoring'
 import { listStudents } from '../../services/students'
+import { formatPersonName } from '../../lib/staffAccounts'
 
 export default function TeacherDashboardPage() {
   const { profileId } = useAuth()
@@ -82,7 +83,7 @@ export default function TeacherDashboardPage() {
               <article className="card-muted flex flex-wrap items-center justify-between gap-3" key={exam.id}>
                 <div>
                   <p className="font-extrabold text-slate-900">
-                    {exam.student?.first_name} {exam.student?.last_name}
+                    {formatPersonName(exam.student)}
                   </p>
                   <p className="text-sm text-slate-600">
                     {new Date(exam.exam_date).toLocaleDateString('fr-FR')} · {exam.score_total}/31 · {resultLabel(exam.result)}

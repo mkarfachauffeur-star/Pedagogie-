@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { formatPersonName } from '../lib/staffAccounts'
 import { inviteUser } from './invitations'
 import { subscribePostgresChanges } from './realtime'
 import { toUserError } from '../lib/userFacingError'
@@ -26,7 +26,7 @@ export function staffToSelectOptions(users, { roles } = {}) {
 }
 
 export async function createOrganizationUser({ firstName, lastName, email, phone, role }) {
-  const fullName = `${firstName} ${lastName}`.trim()
+  const fullName = formatPersonName({ firstName, lastName })
   const { error: inviteError, userId } = await inviteUser({ email, role, fullName })
   if (inviteError) return { user: null, error: inviteError }
 

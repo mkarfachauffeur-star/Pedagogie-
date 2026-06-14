@@ -19,14 +19,20 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import DemoRequestForm from '../components/marketing/DemoRequestForm'
+import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
+import PrivateBetaBanner from '../components/marketing/PrivateBetaBanner'
 import StorePlatformBadges from '../components/StorePlatformBadges'
+import { isPrivateBeta } from '../config/beta'
+import { useMarketingTheme } from '../hooks/useMarketingTheme'
+import { marketingSkin } from '../lib/marketingTheme'
 
-const navLinks = [
+const navLinks = (privateBeta) => [
   { label: 'Accueil', href: '#accueil' },
   { label: 'Plateforme', href: '#plateforme' },
   { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
-  { label: 'Contact', href: '#contact' },
+  { label: privateBeta ? 'Démonstration' : 'Contact', href: privateBeta ? '#demonstration' : '#contact' },
 ]
 
 const headerActionSizeClass =
@@ -135,7 +141,7 @@ function reveal(shouldReduceMotion, delay = 0) {
   }
 }
 
-function BrandLogo() {
+function BrandLogo({ isDark = true }) {
   return (
     <motion.div
       animate={{ opacity: 1, x: 0 }}
@@ -174,7 +180,7 @@ function BrandLogo() {
         </g>
       </svg>
       <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-white sm:text-[11px]">PEDAGOGIA</p>
+        <p className={`text-[10px] font-black uppercase tracking-[0.26em] sm:text-[11px] ${isDark ? 'text-white' : 'text-slate-800'}`}>PEDAGOGIA</p>
         <p className="text-[1.35rem] font-black uppercase leading-none tracking-[0.04em] sm:text-[1.55rem]">
           <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">DRI</span>
           <span className="bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">VE</span>
@@ -205,7 +211,7 @@ function DashboardPreview() {
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Livret numérique</p>
-            <p className="mt-1 text-lg font-black text-white">Marie Dupont</p>
+            <p className="mt-1 text-lg font-black text-white">Dupont Marie</p>
             <p className="mt-0.5 text-[11px] font-semibold text-slate-500">Forfait 20h · Permis B</p>
           </div>
           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-200">En ligne</span>
@@ -293,22 +299,29 @@ function DashboardPreview() {
 export default function ProfileSelection() {
   const shouldReduceMotion = useReducedMotion()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { theme, isDark, toggleTheme } = useMarketingTheme()
+  const skin = marketingSkin(theme)
+  const links = navLinks(isPrivateBeta)
+  const demoCtaClass =
+    `${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`
+  const heroCtaClass =
+    'inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto'
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#030712] text-white">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(37,99,235,0.18),transparent_30%),radial-gradient(circle_at_78%_16%,rgba(220,38,38,0.12),transparent_32%),linear-gradient(135deg,#020617_0%,#071426_56%,#0c1020_100%)]" />
+    <div className={skin.page} data-theme={theme}>
+      <div className={skin.ambient} />
 
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#030712]/80 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:gap-6 lg:px-8">
-          <a className="shrink-0" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
-            <BrandLogo />
+      <header className={skin.header}>
+        <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-6 lg:px-8">
+          <a className="shrink-0 justify-self-start" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
+            <BrandLogo isDark={isDark} />
           </a>
           <nav
-            className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1"
             aria-label="Navigation principale"
+            className="hidden items-center justify-center gap-0.5 lg:flex xl:gap-1"
           >
-            {navLinks.map((item, index) => (
+            {links.map((item, index) => (
               <a
-                className={`relative whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-semibold transition hover:bg-white/5 hover:text-white xl:px-3.5 xl:text-sm ${index === 0 ? 'text-white' : 'text-slate-300'}`}
+                className={skin.navLink(index === 0)}
                 href={item.href}
                 key={item.href}
               >
@@ -319,25 +332,29 @@ export default function ProfileSelection() {
               </a>
             ))}
           </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center justify-self-end gap-2 sm:gap-3">
+            <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
             <div className="hidden items-stretch gap-2.5 lg:flex">
               <Link
                 to="/login"
-                className={`${headerActionSizeClass} border border-white/15 bg-white/[0.04] text-white backdrop-blur transition hover:bg-white/10`}
+                className={`${headerActionSizeClass} ${skin.loginBtn}`}
               >
                 Se connecter
               </Link>
-              <Link
-                to="/signup"
-                className={`${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`}
-              >
-                Créer mon auto-école
-              </Link>
+              {isPrivateBeta ? (
+                <a className={demoCtaClass} href="#demonstration">
+                  Demander une démonstration
+                </a>
+              ) : (
+                <Link className={demoCtaClass} to="/signup">
+                  Créer mon auto-école
+                </Link>
+              )}
             </div>
             <button
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-              className="rounded-2xl border border-white/15 p-2 lg:hidden"
+              className={skin.menuToggle}
               onClick={() => setMobileOpen((value) => !value)}
               type="button"
             >
@@ -346,11 +363,11 @@ export default function ProfileSelection() {
           </div>
         </div>
         {mobileOpen && (
-          <div className="border-t border-white/10 bg-[#030712]/95 px-4 py-4 lg:hidden">
+          <div className={skin.mobileMenu}>
             <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-2" initial={{ opacity: 0, y: -6 }}>
-              {navLinks.map((item) => (
+              {links.map((item) => (
                 <a
-                  className="rounded-2xl px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/10"
+                  className={skin.mobileNav}
                   href={item.href}
                   key={item.href}
                   onClick={() => setMobileOpen(false)}
@@ -358,73 +375,96 @@ export default function ProfileSelection() {
                   {item.label}
                 </a>
               ))}
-              <div className="mt-2 grid gap-2.5 border-t border-white/10 pt-4">
+              <div className={`mt-2 grid gap-2.5 border-t pt-4 ${skin.mobileDivider}`}>
                 <Link
-                  className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-white/10 px-4 text-sm font-black text-white transition hover:bg-white/15"
+                  className={`inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl px-4 text-sm font-black transition ${skin.mobileLogin}`}
                   to="/login"
                   onClick={() => setMobileOpen(false)}
                 >
                   Se connecter
                 </Link>
-                <Link
-                  className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
-                  to="/signup"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Créer mon auto-école
-                </Link>
+                {isPrivateBeta ? (
+                  <a
+                    className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
+                    href="#demonstration"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Demander une démonstration
+                  </a>
+                ) : (
+                  <Link
+                    className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
+                    onClick={() => setMobileOpen(false)}
+                    to="/signup"
+                  >
+                    Créer mon auto-école
+                  </Link>
+                )}
               </div>
             </motion.div>
           </div>
         )}
       </header>
 
+      {isPrivateBeta ? <PrivateBetaBanner isDark={isDark} /> : null}
+
       <main>
         {/* Hero */}
         <section id="accueil" className="mx-auto max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div {...reveal(shouldReduceMotion)}>
-              <p className="inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+              <p className={skin.heroBadge}>
                 <BookOpen className="h-3.5 w-3.5" />
                 Enseignant de la conduite · Livret numérique
               </p>
-              <h1 className="mt-6 text-3xl font-black leading-tight tracking-[-0.04em] text-white sm:text-5xl lg:leading-[1.1]">
+              <h1 className={`mt-6 text-3xl font-black leading-tight tracking-[-0.04em] sm:text-5xl lg:leading-[1.1] ${skin.heading}`}>
                 Le livret numérique{' '}
                 <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
                   réinventé
                 </span>
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
+              <p className={`mt-5 max-w-xl text-base leading-8 sm:text-lg ${skin.body}`}>
                 PEDAGOGIA DRIVE est le livret numérique nouvelle génération, créé par un enseignant de la
                 conduite qui accompagne des élèves au quotidien.
               </p>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+              <p className={`mt-3 max-w-xl text-sm leading-7 sm:text-base ${skin.bodyMuted}`}>
                 REMC, QCU, documents, messagerie et gestion des élèves — une plateforme qui prolonge
                 l&apos;apprentissage bien au-delà des heures de conduite.
               </p>
               <ul className="mt-6 space-y-2.5">
-                {[
-                  'Conçu sur le terrain, pas depuis un bureau',
-                  'QCU Compétence 1 déjà disponible pour les élèves',
-                  'Essai gratuit 30 jours · 20 élèves inclus',
-                ].map((point) => (
-                  <li className="flex items-center gap-2.5 text-sm font-semibold text-slate-200" key={point}>
+                {(isPrivateBeta
+                  ? [
+                      'Conçu sur le terrain, pas depuis un bureau',
+                      'QCU Compétence 1 déjà disponible pour les élèves',
+                      'Accès sur invitation — bêta privée en cours',
+                    ]
+                  : [
+                      'Conçu sur le terrain, pas depuis un bureau',
+                      'QCU Compétence 1 déjà disponible pour les élèves',
+                      'Essai gratuit 30 jours · 20 élèves inclus',
+                    ]
+                ).map((point) => (
+                  <li className={`flex items-center gap-2.5 text-sm font-semibold ${skin.listItem}`} key={point}>
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
                     {point}
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:hidden">
-                <Link
-                  to="/signup"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
-                >
-                  Créer mon auto-école
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+              <div className={`mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center ${isPrivateBeta ? '' : 'lg:hidden'}`}>
+                {isPrivateBeta ? (
+                  <a className={heroCtaClass} href="#demonstration">
+                    Demander une démonstration
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <Link className={heroCtaClass} to="/signup">
+                    Créer mon auto-école
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
                 <Link
                   to="/login"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10 sm:w-auto"
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black backdrop-blur sm:w-auto ${skin.loginBtn}`}
                 >
                   Se connecter
                 </Link>
@@ -437,14 +477,14 @@ export default function ProfileSelection() {
         </section>
 
         {/* Plateforme */}
-        <section id="plateforme" className="border-y border-white/10 bg-[#07111f] py-14 lg:py-20">
+        <section id="plateforme" className={`${skin.sectionAlt} py-14 lg:py-20`}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">La plateforme</p>
-              <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+              <p className={skin.eyebrowBlue}>La plateforme</p>
+              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
                 Bien plus qu&apos;un logiciel de gestion
               </h2>
-              <p className="mt-4 text-base leading-8 text-slate-400">
+              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
                 Les outils classiques gèrent les dossiers.
                 <br />
                 PEDAGOGIA DRIVE accompagne l&apos;apprentissage — avec des ressources pédagogiques évolutives,
@@ -457,14 +497,14 @@ export default function ProfileSelection() {
                 return (
                   <motion.article
                     {...reveal(shouldReduceMotion, index * 0.05)}
-                    className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5"
+                    className={`${skin.card} p-5`}
                     key={item.title}
                   >
-                    <div className="inline-flex rounded-xl border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-300">
+                    <div className={`inline-flex rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
                       <Icon className="h-4 w-4" />
                     </div>
-                    <h3 className="mt-4 text-base font-black text-white">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">{item.text}</p>
+                    <h3 className={`mt-4 text-base font-black ${skin.heading}`}>{item.title}</h3>
+                    <p className={`mt-2 text-sm leading-6 ${skin.bodyMuted}`}>{item.text}</p>
                   </motion.article>
                 )
               })}
@@ -475,8 +515,8 @@ export default function ProfileSelection() {
         {/* Bénéfices par rôle */}
         <section id="benefices" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
           <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Pour qui ?</p>
-            <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+            <p className={skin.eyebrowBlue}>Pour qui ?</p>
+            <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
               Une plateforme pensée pour toute l&apos;équipe
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-400">
@@ -491,18 +531,18 @@ export default function ProfileSelection() {
                 return (
                   <motion.article
                     {...reveal(shouldReduceMotion, index * 0.04)}
-                    className="group relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)]"
+                    className={skin.cardHover}
                     key={item.role}
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-blue-400 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
                     <div className="flex items-start gap-4">
-                      <div className="inline-flex shrink-0 rounded-xl border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-300">
+                      <div className={`inline-flex shrink-0 rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-blue-300/80">{item.role}</p>
-                        <h3 className="mt-1 text-base font-black text-white">{item.title}</h3>
-                        <p className="mt-2 text-sm leading-7 text-slate-400">{item.text}</p>
+                        <p className={skin.roleLabel}>{item.role}</p>
+                        <h3 className={`mt-1 text-base font-black ${skin.heading}`}>{item.title}</h3>
+                        <p className={`mt-2 text-sm leading-7 ${skin.bodyMuted}`}>{item.text}</p>
                       </div>
                     </div>
                   </motion.article>
@@ -512,21 +552,21 @@ export default function ProfileSelection() {
         </section>
 
         {/* Fonctionnalités */}
-        <section id="fonctionnalites" className="border-y border-white/10 bg-[#07111f] py-14 sm:px-6 lg:py-20">
+        <section id="fonctionnalites" className={`${skin.sectionAlt} py-14 sm:px-6 lg:py-20`}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Outils</p>
-              <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+              <p className={skin.eyebrowEmerald}>Outils</p>
+              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
                 Fonctionnalités pédagogiques
               </h2>
-              <p className="mt-4 text-base leading-8 text-slate-400">
+              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
                 Des outils opérationnels dès aujourd&apos;hui, et une feuille de route riche pour les mois à venir.
               </p>
             </motion.div>
 
             <div className="mt-10 grid gap-10 lg:grid-cols-2">
               <motion.div {...reveal(shouldReduceMotion)}>
-                <p className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-emerald-300">
+                <p className={`mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
                   <span className="h-2 w-2 rounded-full bg-emerald-400" />
                   Disponible actuellement
                 </p>
@@ -535,15 +575,15 @@ export default function ProfileSelection() {
                     const Icon = item.icon
                     return (
                       <li
-                        className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                        className={skin.featureRow}
                         key={item.title}
                       >
-                        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-500/10 text-emerald-300">
+                        <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${isDark ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-600'}`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-black text-white">{item.title}</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-400">{item.text}</p>
+                          <p className={`font-black ${skin.heading}`}>{item.title}</p>
+                          <p className={`mt-1 text-sm leading-6 ${skin.bodyMuted}`}>{item.text}</p>
                         </div>
                       </li>
                     )
@@ -552,22 +592,22 @@ export default function ProfileSelection() {
               </motion.div>
 
               <motion.div {...reveal(shouldReduceMotion, 0.06)}>
-                <p className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-violet-300">
+                <p className={`mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide ${isDark ? 'text-violet-300' : 'text-violet-600'}`}>
                   <span className="h-2 w-2 rounded-full bg-violet-400" />
                   Bientôt disponible
                 </p>
                 <ul className="space-y-3">
                   {upcomingFeatures.map((item) => (
                     <li
-                      className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      className={skin.featureRow}
                       key={item.title}
                     >
-                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-violet-300">
+                      <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${isDark ? 'border-violet-400/20 bg-violet-500/10 text-violet-300' : 'border-violet-200 bg-violet-50 text-violet-600'}`}>
                         <Sparkles className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-200">{item.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-500">{item.text}</p>
+                        <p className={skin.upcomingTitle}>{item.title}</p>
+                        <p className={skin.upcomingText}>{item.text}</p>
                       </div>
                     </li>
                   ))}
@@ -577,28 +617,57 @@ export default function ProfileSelection() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section id="contact" className="relative overflow-hidden py-16 lg:py-24">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.12),transparent_45%)]" />
-          <motion.div {...reveal(shouldReduceMotion)} className="relative mx-auto max-w-2xl px-4 text-center sm:px-6">
-            <h2 className="text-3xl font-black text-white sm:text-4xl">
-              Remettez la pédagogie au centre
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-400">
-              Rejoignez les auto-écoles qui modernisent leur livret d&apos;apprentissage avec une plateforme
-              conçue par un enseignant de la conduite, pour des enseignants et leurs élèves.
-            </p>
-            <p className="mt-2 text-sm font-semibold text-blue-300">
-              Essai gratuit 30 jours · 20 élèves inclus · Sans engagement
-            </p>
-          </motion.div>
+        {/* Contact / démonstration */}
+        <section className="relative overflow-hidden py-16 lg:py-24" id="contact">
+          <div className={skin.contactGlow} />
+          <div className="relative mx-auto max-w-7xl space-y-12 px-4 sm:px-6 lg:px-8">
+            {isPrivateBeta ? (
+              <>
+                <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+                  <p className={skin.eyebrowBlue}>Bêta privée</p>
+                  <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>Pourquoi une bêta privée ?</h2>
+                  <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
+                    Nous préférons tester et perfectionner Pedagogia Drive avec un nombre limité
+                    d&apos;établissements avant l&apos;ouverture officielle.
+                  </p>
+                  <p className={`mt-3 text-base leading-8 ${skin.bodyMuted}`}>
+                    Notre objectif est de proposer un logiciel fiable, moderne et adapté aux besoins
+                    réels des auto-écoles.
+                  </p>
+                </motion.div>
+                <motion.div {...reveal(shouldReduceMotion, 0.06)}>
+                  <DemoRequestForm isDark={isDark} />
+                </motion.div>
+              </>
+            ) : (
+              <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+                <h2 className={`text-3xl font-black sm:text-4xl ${skin.heading}`}>
+                  Remettez la pédagogie au centre
+                </h2>
+                <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
+                  Rejoignez les auto-écoles qui modernisent leur livret d&apos;apprentissage avec une plateforme
+                  conçue par un enseignant de la conduite, pour des enseignants et leurs élèves.
+                </p>
+                <p className={`mt-2 text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                  Essai gratuit 30 jours · 20 élèves inclus · Sans engagement
+                </p>
+                <Link
+                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
+                  to="/signup"
+                >
+                  Créer mon auto-école
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+            )}
+          </div>
         </section>
 
         {/* Mobile */}
-        <section id="applications-mobiles" className="border-t border-white/10 bg-[#07111f] py-14 sm:py-16">
+        <section id="applications-mobiles" className={`${skin.sectionAlt} border-t py-14 sm:py-16`}>
           <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <h2 className="text-2xl font-black text-white sm:text-3xl">Disponible sur iOS et Android</h2>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-400">
+            <h2 className={`text-2xl font-black sm:text-3xl ${skin.heading}`}>Disponible sur iOS et Android</h2>
+            <p className={`mx-auto mt-4 max-w-lg text-base leading-7 ${skin.bodyMuted}`}>
               Retrouvez votre livret numérique, votre suivi REMC et vos documents sur smartphone —
               la formation vous suit partout.
             </p>
@@ -607,25 +676,25 @@ export default function ProfileSelection() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-[#020817] px-4 py-10 sm:px-6 lg:px-8">
+      <footer className={skin.footer}>
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
-            <BrandLogo />
+            <BrandLogo isDark={isDark} />
           </div>
           <div className="grid gap-6 text-sm sm:grid-cols-4 sm:gap-10">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title}>
-                <p className="font-black text-white">{title}</p>
+                <p className={skin.footerTitle}>{title}</p>
                 <ul className="mt-2 space-y-1">
                   {links.map((link) => (
-                    <li className="text-slate-500" key={link}>{link}</li>
+                    <li className={skin.footerLink} key={link}>{link}</li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
         </div>
-        <p className="mx-auto mt-8 max-w-7xl border-t border-white/10 pt-6 text-center text-xs text-slate-600">
+        <p className={skin.footerCopy}>
           © 2026 Pedagogia Drive
         </p>
       </footer>

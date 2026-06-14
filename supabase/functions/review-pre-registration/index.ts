@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     if (preRegError || !preReg) return json({ error: 'Pré-inscription introuvable.' }, 404)
     if (preReg.status !== 'pending') return json({ error: 'Cette pré-inscription a déjà été traitée.' }, 400)
 
-    const studentName = `${preReg.first_name} ${preReg.last_name}`.trim()
+    const studentName = `${preReg.last_name} ${preReg.first_name}`.trim()
 
     if (action === 'reject') {
       const { data: updated, error: updateError } = await admin
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     const lastName = String(preReg.last_name || '').trim()
     const phone = String(preReg.phone || '').trim()
     const training = mapDesiredTraining(String(preReg.desired_training || 'Permis B'))
-    const fullName = `${firstName} ${lastName}`.trim()
+    const fullName = `${lastName} ${firstName}`.trim()
     const tempPassword = generateTempPassword()
     const registrationDate = new Date().toISOString().slice(0, 10)
 

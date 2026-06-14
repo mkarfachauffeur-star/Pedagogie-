@@ -131,7 +131,7 @@ export default function SecretaryDocumentsPage() {
                   <input
                     className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Nom, prénom ou numéro dossier…"
+                    placeholder="Nom et prénom, ou numéro dossier…"
                     value={query}
                   />
                 </label>

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { formatPersonName } from '../lib/staffAccounts'
 
 // Annuaire des contacts joignables (filtré côté serveur par la RLS + can_converse).
 // Sert à démarrer une conversation : interne (staff) ou Secrétariat <-> Élève.
@@ -105,7 +106,7 @@ export async function listStudentContacts({ search = '' } = {}) {
     return (data || []).map((s) => ({
       profileId: s.profile_id,
       studentId: s.id,
-      name: `${s.first_name} ${s.last_name}`.trim(),
+      name: formatPersonName(s),
       fileNumber: s.file_number,
     }))
   } catch {

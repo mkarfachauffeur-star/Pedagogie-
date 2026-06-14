@@ -97,21 +97,21 @@ export default function PreRegistrationFormModal({ open, onClose, onCreated, org
           <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-bold text-slate-700">
-                Prénom
-                <input
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
-                  onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
-                  required
-                  value={form.firstName}
-                />
-              </label>
-              <label className="text-sm font-bold text-slate-700">
                 Nom
                 <input
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                   onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))}
                   required
                   value={form.lastName}
+                />
+              </label>
+              <label className="text-sm font-bold text-slate-700">
+                Prénom
+                <input
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                  onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
+                  required
+                  value={form.firstName}
                 />
               </label>
             </div>

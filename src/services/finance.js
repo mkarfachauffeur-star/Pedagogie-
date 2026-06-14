@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { formatPersonName } from '../lib/staffAccounts'
 import { toUserError } from '../lib/userFacingError'
 
 export const PAYMENT_METHODS = ['Carte bancaire', 'Espèces', 'Chèque', 'Virement']
@@ -35,7 +36,7 @@ export const todayIso = () => new Date().toISOString().slice(0, 10)
 
 export function studentLabel(student) {
   if (!student) return 'Élève'
-  return `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Élève'
+  return formatPersonName(student) || 'Élève'
 }
 
 export async function listPayments(filters = {}) {

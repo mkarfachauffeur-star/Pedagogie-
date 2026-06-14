@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { formatPersonName } from '../lib/staffAccounts'
 
 export function useClientPagination(items, { pageSize = 10, query = '', filterFn = null } = {}) {
   const [page, setPage] = useState(1)
@@ -42,7 +43,7 @@ export function normalizeSearchText(value = '') {
 
 export function matchStudentSearch(student, query) {
   const haystack = normalizeSearchText(
-    `${student.first_name || student.firstName || ''} ${student.last_name || student.lastName || ''} ${student.email || ''} ${student.file_number || ''}`,
+    `${formatPersonName(student)} ${student.first_name || student.firstName || ''} ${student.last_name || student.lastName || ''} ${student.email || ''} ${student.file_number || ''}`,
   )
   const q = normalizeSearchText(query)
   return q.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))

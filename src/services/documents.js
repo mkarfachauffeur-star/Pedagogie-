@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { toUserError } from '../lib/userFacingError'
+import { formatPersonName } from '../lib/staffAccounts'
 import { subscribePostgresChanges } from './realtime'
 
 export const DOCUMENT_CATEGORIES = [
@@ -30,7 +30,7 @@ export async function listStudentsForDocuments({ search = '' } = {}) {
     if (error) throw error
     return (data || []).map((s) => ({
       id: s.id,
-      name: `${s.first_name} ${s.last_name}`.trim(),
+      name: formatPersonName(s),
       fileNumber: s.file_number,
       status: s.status,
     }))

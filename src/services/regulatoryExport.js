@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { formatPersonName } from '../lib/staffAccounts'
 import { fetchExportStudents } from './adminExports'
 import { formatRecommendedHours } from '../lib/initialAssessmentUtils'
 import {
@@ -135,7 +136,7 @@ function referentTeacherName(student) {
 
 function studentFullName(student) {
   if (!student) return ''
-  return `${student.last_name || ''} ${student.first_name || ''}`.trim()
+  return formatPersonName(student)
 }
 
 function vehicleLabel(vehicle) {

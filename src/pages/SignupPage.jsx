@@ -2,6 +2,8 @@ import { ArrowLeft, ImagePlus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
+import PrivateBetaSignupClosed from '../components/marketing/PrivateBetaSignupClosed'
+import { isPublicSignupEnabled } from '../config/beta'
 import { registerOrganization } from '../services/organization'
 import { getUserFacingError } from '../lib/userFacingError'
 
@@ -219,7 +221,7 @@ function SiretInput({ value, onChange, invalid }) {
   )
 }
 
-export default function SignupPage() {
+function SignupPageForm() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     orgName: '',
@@ -376,12 +378,12 @@ export default function SignupPage() {
               <h2 className="text-lg font-extrabold text-slate-900">Gérant</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-sm font-bold text-slate-700">Prénom *</span>
-                  <input className={inputClass} required value={form.managerFirstName} onChange={(e) => update('managerFirstName', e.target.value)} />
-                </label>
-                <label className="block">
                   <span className="text-sm font-bold text-slate-700">Nom *</span>
                   <input className={inputClass} required value={form.managerLastName} onChange={(e) => update('managerLastName', e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Prénom *</span>
+                  <input className={inputClass} required value={form.managerFirstName} onChange={(e) => update('managerFirstName', e.target.value)} />
                 </label>
                 <label className="block">
                   <span className="text-sm font-bold text-slate-700">E-mail *</span>
@@ -449,4 +451,11 @@ export default function SignupPage() {
       </div>
     </div>
   )
+}
+
+export default function SignupPage() {
+  if (!isPublicSignupEnabled) {
+    return <PrivateBetaSignupClosed />
+  }
+  return <SignupPageForm />
 }
