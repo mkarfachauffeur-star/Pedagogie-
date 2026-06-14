@@ -2544,74 +2544,33 @@ export default function StudentLessonsPage() {
             ) : (
               <div className="p-4 sm:p-5 lg:p-6">
                 {openedLesson ? (
-                  <div className="space-y-5">
-                    <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[var(--shadow-soft)]">
-                      <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white">
-                        <p className="text-sm font-semibold text-cyan-100">Leçon avant QCU</p>
-                        <h3 className="mt-2 text-2xl font-black">{openedLesson.title}</h3>
-                        <p className="mt-3 max-w-4xl text-sm leading-6 text-cyan-50/85">
-                          {openedLesson.intro}
+                  <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
+                        <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
+                        <p className="mt-2 text-sm font-semibold text-slate-500">
+                          {getQuizIntro(openedLesson, quizDisplayTotal)}
                         </p>
                       </div>
-                      <div className="grid gap-5 p-5 lg:grid-cols-[1fr_320px]">
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résumé de leçon</p>
-                          <div className="mt-4 grid gap-3">
-                            {openedLesson.summary.map((item, index) => (
-                              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.title}>
-                                <div className="flex gap-3">
-                                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sm font-black text-cyan-700">
-                                    {index + 1}
-                                  </span>
-                                  <div>
-                                    <h4 className="font-extrabold text-slate-950">{item.title}</h4>
-                                    <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
-                                  </div>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                        <aside className="rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-4">
-                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Conseils de sécurité</p>
-                          <div className="mt-3 space-y-3">
-                            {openedLesson.safetyAdvice.map((advice) => (
-                              <p className="rounded-2xl border border-white bg-white/80 p-3 text-sm font-bold leading-6 text-slate-700" key={advice}>
-                                {advice}
-                              </p>
-                            ))}
-                          </div>
-                        </aside>
+                      <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
+                        {Math.min(currentQuizIndex + 1, quizDisplayTotal)}/{quizDisplayTotal}
+                        {openedLesson?.quizSize ? ' · aléatoire' : ''}
+                      </span>
+                    </div>
+
+                    {!currentValidated && currentQuestions.length > 0 && (
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
+                          style={{
+                            width: `${Math.round(((currentQuizIndex + (currentQuizAnswered ? 1 : 0)) / currentQuestions.length) * 100)}%`,
+                          }}
+                        />
                       </div>
-                    </section>
+                    )}
 
-                    <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
-                          <h3 className="mt-2 text-2xl font-extrabold text-slate-950">{openedLesson.title}</h3>
-                          <p className="mt-2 text-sm font-semibold text-slate-500">
-                            {getQuizIntro(openedLesson, quizDisplayTotal)}
-                          </p>
-                        </div>
-                        <span className="w-fit rounded-full border border-cyan-200 bg-white px-4 py-2 text-sm font-black text-cyan-700">
-                          {Math.min(currentQuizIndex + 1, quizDisplayTotal)}/{quizDisplayTotal}
-                          {openedLesson?.quizSize ? ' · aléatoire' : ''}
-                        </span>
-                      </div>
-
-                      {!currentValidated && currentQuestions.length > 0 && (
-                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
-                            style={{
-                              width: `${Math.round(((currentQuizIndex + (currentQuizAnswered ? 1 : 0)) / currentQuestions.length) * 100)}%`,
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {currentValidated ? (
+                    {currentValidated ? (
                         <article className="mt-5 rounded-[1.5rem] border border-white bg-white p-5 text-center shadow-sm">
                           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résultat final</p>
                           <p className="mt-3 text-5xl font-black text-slate-950">{percentage}%</p>
@@ -2707,7 +2666,6 @@ export default function StudentLessonsPage() {
                           )}
                         </article>
                       ) : null}
-                    </div>
                   </div>
                 ) : (
                   <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-center">
