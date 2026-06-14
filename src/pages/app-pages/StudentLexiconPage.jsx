@@ -18,7 +18,7 @@ const terms = [
   { word: 'Embrayer', definition: 'Relier le moteur aux roues avec l’embrayage.', explanation: 'Quand on relâche progressivement la pédale d’embrayage, la puissance du moteur revient vers les roues.' },
   { word: 'Débrayer', definition: 'Séparer le moteur des roues avec l’embrayage.', explanation: 'On débraye en appuyant à fond sur la pédale d’embrayage pour changer de vitesse ou s’arrêter.' },
   { word: 'Point de patinage', definition: 'Moment où le véhicule commence à vouloir avancer.', explanation: 'C’est le point d’équilibre entre l’embrayage et le moteur, très utile pour démarrer en douceur.' },
-  { word: 'Frein moteur', definition: 'Ralentissement naturel du véhicule quand on relâche l’embrayage.', explanation: 'Le frein moteur aide à ralentir sans freiner fortement, surtout en descente ou avant un virage.' },
+  { word: 'Frein moteur', definition: 'Ralentissement naturel du véhicule quand on relâche l’accélérateur avec une vitesse enclenchée.', explanation: 'Le frein moteur aide à ralentir sans freiner fortement, surtout en descente ou avant un virage. Débrayer annule son effet.' },
   {
     word: 'Freinage progressif',
     definition: 'Freiner doucement au début, puis augmenter progressivement la pression.',
@@ -35,7 +35,7 @@ const terms = [
   {
     word: 'Angle mort',
     definition:
-      'Zone de visibilité cachée autour d’un véhicule où un usager peut se trouver sans être vu par le conducteur.',
+      'Zone autour du véhicule que les rétroviseurs ne montrent pas, où un usager peut se cacher.',
     explanation:
       'Les rétroviseurs et le pare-brise ne couvrent pas tout le pourtour du véhicule. Avant de changer de direction, il faut tourner la tête pour contrôler ces zones.',
   },
@@ -165,19 +165,19 @@ const quiz = [
   { question: 'Que signifie débrayer ?', answer: 'Appuyer sur l’embrayage pour séparer le moteur des roues', choices: ['Appuyer sur l’embrayage pour séparer le moteur des roues', 'Accélérer fortement pour passer une vitesse', 'Couper le contact du moteur', 'Tourner le volant à fond'] },
   {
     question: 'Qu’est-ce qu’un angle mort ?',
-    answer: 'Une zone de visibilité cachée où un usager peut se trouver sans être vu par le conducteur',
+    answer: 'Des zones autour du véhicule que les rétroviseurs ne montrent pas',
     choices: [
-      'Une zone de visibilité cachée où un usager peut se trouver sans être vu par le conducteur',
-      'Une zone invisible uniquement dans les rétroviseurs',
+      'Des zones autour du véhicule que les rétroviseurs ne montrent pas',
+      'Des zones toujours visibles dans les rétroviseurs',
       'Une voie d’insertion sur autoroute',
       'Un emplacement de stationnement',
     ],
   },
   { question: 'À quoi sert une voie d’insertion ?', answer: 'Entrer progressivement dans une circulation rapide', choices: ['Entrer progressivement dans une circulation rapide', 'Stationner sur le côté de la chaussée', 'Faire demi-tour en toute sécurité', 'Doubler les véhicules lents'] },
   { question: 'Que veut dire rétrograder ?', answer: 'Passer à un rapport inférieur', choices: ['Passer à un rapport inférieur', 'Passer à un rapport supérieur', 'Couper le contact du moteur', 'Mettre la boîte au point mort'] },
-  { question: 'Le clignotant sert principalement à :', answer: 'Informer les autres usagers de l’intention de tourner', choices: ['Informer les autres usagers de l’intention de tourner', 'Obtenir automatiquement la priorité', 'Signaler une situation d’urgence', 'Demander aux piétons de s’écarter'] },
-  { question: 'Que veut dire décélérer ?', answer: 'Relâcher l’accélérateur', choices: ['Relâcher l’accélérateur', 'Accélérer franchement', 'Couper le moteur', 'Maintenir une allure constante'] },
-  { question: 'Qu’est-ce que le frein moteur ?', answer: 'Le ralentissement naturel du véhicule quand on relâche l’embrayage', choices: ['Le ralentissement naturel du véhicule quand on relâche l’embrayage', 'Le frein de stationnement à main', 'Le système ABS du véhicule', 'Une pédale spécifique au moteur'] },
+  { question: 'Le clignotant sert surtout à :', answer: 'Informer les autres usagers de l’intention de tourner', choices: ['Informer les autres usagers de l’intention de tourner', 'Obtenir automatiquement la priorité', 'Signaler une situation d’urgence', 'Demander aux piétons de s’écarter'] },
+  { question: 'Que veut dire décélérer ?', answer: 'Réduire son allure en relâchant la pédale d’accélérateur sans freiner', choices: ['Réduire son allure en relâchant la pédale d’accélérateur sans freiner', 'Accélérer franchement', 'Couper le moteur', 'Maintenir une allure constante'] },
+  { question: 'Qu’est-ce que le frein moteur ?', answer: 'Le ralentissement naturel quand on relâche l’accélérateur avec une vitesse enclenchée', choices: ['Le ralentissement naturel quand on relâche l’accélérateur avec une vitesse enclenchée', 'Le frein de stationnement à main', 'Le système ABS du véhicule', 'Une pédale spécifique au moteur'] },
   {
     question: 'Qu’est-ce que le freinage progressif ?',
     answer: 'Freiner doucement au début puis augmenter progressivement la pression',
