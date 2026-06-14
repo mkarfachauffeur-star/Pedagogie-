@@ -10,12 +10,7 @@ import { competencyStatusIcon } from '../../services/remcProgress'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import LessonImage from '../../components/ui/LessonImage'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
-import vehicleOrgansOverviewImage from '../../assets/lessons/vehicle-organs/elements-essentiels-00-vue-ensemble.png'
-import vehicleOrgansCommandesImage from '../../assets/lessons/vehicle-organs/elements-essentiels-01-commandes.png'
-import vehicleOrgansExterieursImage from '../../assets/lessons/vehicle-organs/elements-essentiels-02-elements-exterieurs.png'
-import vehicleOrgansTemoinsImage from '../../assets/lessons/vehicle-organs/elements-essentiels-03-temoins-tableau-de-bord.png'
-import vehicleOrgansVerificationsImage from '../../assets/lessons/vehicle-organs/elements-essentiels-04-verifications-avant-depart.png'
-import vehicleOrgansVisibiliteImage from '../../assets/lessons/vehicle-organs/elements-essentiels-05-visibilite.png'
+import vehicleOrgansDiagramImage from '../../assets/lessons/elements-essentiels-vehicule.png'
 import dashboardWarningLightsImage from '../../assets/lessons/voyants-tableau-de-bord.png'
 import steeringWheelGuideImage from '../../assets/lessons/tenir-tourner-volant.png'
 import startStopGuideImage from '../../assets/lessons/demarrer-arreter.png'
@@ -446,46 +441,11 @@ const vehicleOrgansModule = {
     'Chaque point du schéma vous aide à repérer les commandes, les organes de sécurité et les vérifications indispensables avant de prendre la route.',
   images: [
     {
-      src: vehicleOrgansOverviewImage,
-      alt: 'Vue d’ensemble : les éléments essentiels du véhicule',
-      title: 'Vue d’ensemble',
-      caption: 'Avant de prendre la route, repérez les commandes, les éléments extérieurs et les vérifications indispensables.',
-      objectFit: 'contain',
-    },
-    {
-      src: vehicleOrgansCommandesImage,
-      alt: 'Schéma : les commandes du véhicule (volant et pédales)',
-      title: 'Commandes',
-      caption: 'Volant, embrayage, frein et accélérateur : les commandes essentielles au poste de conduite.',
-      objectFit: 'contain',
-    },
-    {
-      src: vehicleOrgansExterieursImage,
-      alt: 'Schéma : les éléments extérieurs du véhicule',
-      title: 'Éléments extérieurs',
-      caption: 'Rétroviseurs, feux, clignotants et pneus : éléments indispensables à la sécurité.',
-      objectFit: 'contain',
-    },
-    {
-      src: vehicleOrgansTemoinsImage,
-      alt: 'Schéma : les témoins importants du tableau de bord',
-      title: 'Témoins du tableau de bord',
-      caption: 'Huile, batterie, moteur, frein et pneus : reconnaître les voyants les plus importants.',
-      objectFit: 'contain',
-    },
-    {
-      src: vehicleOrgansVerificationsImage,
-      alt: 'Liste : vérifications avant de prendre la route',
-      title: 'Vérifications avant départ',
-      caption: 'Pneus, feux, niveaux, rétroviseurs, essuie-glaces et documents à contrôler avant chaque trajet.',
-      objectFit: 'contain',
-    },
-    {
-      src: vehicleOrgansVisibiliteImage,
-      alt: 'Schéma : visibilité et essuie-glaces',
-      title: 'Visibilité',
-      caption: 'Les essuie-glaces permettent de conserver une bonne visibilité par temps de pluie.',
-      objectFit: 'contain',
+      src: vehicleOrgansDiagramImage,
+      alt: 'Schéma pédagogique : les éléments essentiels du véhicule',
+      title: 'Les éléments essentiels du véhicule',
+      caption:
+        'Commandes, éléments extérieurs, témoins du tableau de bord, vérifications avant départ et visibilité : repères visuels avant de prendre la route.',
     },
   ],
   summary: [
