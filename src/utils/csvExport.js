@@ -17,6 +17,48 @@ export function formatGeneratedAt(date = new Date()) {
   })
 }
 
+export function buildProfessionalCsv(headers, rows) {
+  const lines = [headers.map(escapeCsvCell).join(';')]
+  rows.forEach((row) => {
+    lines.push(headers.map((header) => escapeCsvCell(row[header])).join(';'))
+  })
+  return `\uFEFF${lines.join('\r\n')}`
+}
+
+export function downloadProfessionalCsv(filename, headers, rows) {
+  const content = buildProfessionalCsv(headers, rows)
+  downloadBlob(filename, new Blob([content], { type: 'text/csv;charset=utf-8;' }))
+}
+
+export async function downloadXlsxSheet({ filename, sheetName, headers, rows }) {
+  const ExcelJS = (await import('exceljs')).default
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'PEDAGOGIA DRIVE'
+  workbook.created = new Date()
+
+  const worksheet = workbook.addWorksheet((sheetName || 'Export').slice(0, 31))
+  worksheet.addRow(headers)
+  rows.forEach((row) => worksheet.addRow(headers.map((header) => row[header] ?? '')))
+  worksheet.getRow(1).font = { bold: true }
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
+  if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B) {
+    throw new Error('Le fichier Excel généré est invalide.')
+  }
+
+  downloadBlob(filename, new Blob([bytes], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  }))
+}
+
+export function formatAmount(value) {
+  if (value == null || value === '') return ''
+  const amount = Number(value)
+  if (!Number.isFinite(amount)) return String(value)
+  return amount.toFixed(2).replace('.', ',')
+}
+
 export function buildCsvContent({ generatedAt, meta = [], headers, rows }) {
   const lines = []
   lines.push(`Généré le;${escapeCsvCell(generatedAt)}`)
@@ -31,12 +73,20 @@ export function buildCsvContent({ generatedAt, meta = [], headers, rows }) {
 
 export function downloadCsv(filename, content) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  downloadBlob(filename, blob)
+}
+
+export function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
+  link.style.display = 'none'
   link.href = url
   link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
   link.click()
-  URL.revokeObjectURL(url)
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 3000)
 }
 
 export function timestampForFilename(date = new Date()) {

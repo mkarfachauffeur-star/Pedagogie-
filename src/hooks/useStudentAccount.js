@@ -17,7 +17,7 @@ function formatSupabaseError(error) {
  * Journalise les résultats dans la console pour faciliter le débogage.
  */
 export function useStudentAccount() {
-  const { user, profile, profileId, role, loading: authLoading, session, isDemoSession } = useAuth()
+  const { user, profile, profileId, role, loading: authLoading, session } = useAuth()
   const [student, setStudent] = useState(null)
   const [profileError, setProfileError] = useState(null)
   const [studentError, setStudentError] = useState(null)
@@ -106,7 +106,6 @@ export function useStudentAccount() {
   }, [authLoading, refresh])
 
   const issue = (() => {
-    if (isDemoSession) return null
     if (authLoading || loading) return null
     if (!session && !profileId) return { code: 'no_session', message: 'Aucune session active.' }
     if (profileError) {
@@ -162,7 +161,6 @@ export function useStudentAccount() {
     profileError,
     studentError,
     issue,
-    isDemoSession,
     refresh,
   }
 }

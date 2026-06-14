@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { DEMO_PROFILE_IDS, DEMO_STUDENT, getDemoPracticeExams, isDemoStudentId, isLocalDemoSession } from '../data/demoPracticeExam'
 import { emptyScoreForm } from '../data/practiceExamGrid'
 import {
   calculatePracticeExamScore,
@@ -7,27 +6,6 @@ import {
   generatePedagogicalReport,
 } from './practiceExamScoring'
 import { toUserError } from '../lib/userFacingError'
-
-function storageKey(studentId) {
-  return `pedagogia:practice-exams:${studentId}`
-}
-
-function readLocalExams(studentId) {
-  if (!studentId || typeof window === 'undefined') return []
-  try {
-    const raw = window.localStorage.getItem(storageKey(studentId))
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function writeLocalExams(studentId, exams) {
-  if (!studentId || typeof window === 'undefined') return
-  window.localStorage.setItem(storageKey(studentId), JSON.stringify(exams))
-}
 
 function normalizeExam(row, scores = []) {
   return {
@@ -52,12 +30,6 @@ async function fetchScoresForExams(examIds) {
 
 export async function listPracticeExamsForStudent(studentId) {
   if (!studentId) return { exams: [], error: null }
-
-  if (isDemoStudentId(studentId)) {
-    const demoExams = getDemoPracticeExams()
-    writeLocalExams(studentId || DEMO_STUDENT.id, demoExams)
-    return { exams: demoExams, error: null }
-  }
 
   try {
     const { data, error } = await supabase
@@ -86,23 +58,13 @@ export async function listPracticeExamsForStudent(studentId) {
     const exams = data || []
     const scoreMap = await fetchScoresForExams(exams.map((exam) => exam.id))
     const normalized = exams.map((exam) => normalizeExam(exam, scoreMap[exam.id] || []))
-
-    if (normalized.length) writeLocalExams(studentId, normalized)
-    return { exams: normalized.length ? normalized : readLocalExams(studentId), error: null }
+    return { exams: normalized, error: null }
   } catch (error) {
-    return { exams: readLocalExams(studentId), error }
+    return { exams: [], error }
   }
 }
 
 export async function listPracticeExamsForOrganization() {
-  if (isLocalDemoSession()) {
-    const demoExams = getDemoPracticeExams().map((exam) => ({
-      ...exam,
-      student: { id: DEMO_STUDENT.id, first_name: DEMO_STUDENT.firstName, last_name: DEMO_STUDENT.lastName },
-    }))
-    return { exams: demoExams, error: null }
-  }
-
   try {
     const { data, error } = await supabase
       .from('practice_exams')
@@ -169,19 +131,6 @@ export async function createPracticeExam({
     pedagogical_report: pedagogicalReport,
   }
 
-  if (isDemoStudentId(studentId)) {
-    const fallbackExam = {
-      id: `local-${Date.now()}`,
-      ...payload,
-      created_at: new Date().toISOString(),
-      teacher: { full_name: 'M. Dupont' },
-      item_scores: Object.entries(scores).map(([competence_id, note]) => ({ competence_id, note })),
-    }
-    const local = readLocalExams(studentId)
-    writeLocalExams(studentId, [fallbackExam, ...local])
-    return { exam: fallbackExam, error: null }
-  }
-
   try {
     const { data: exam, error } = await supabase
       .from('practice_exams')
@@ -200,37 +149,20 @@ export async function createPracticeExam({
     if (scoresError) throw scoresError
 
     const created = normalizeExam(exam, scoreRows.map((row, index) => ({ ...row, id: `local-${index}` })))
-    const local = readLocalExams(studentId)
-    writeLocalExams(studentId, [created, ...local])
     return { exam: created, error: null }
   } catch (error) {
-    if (isDemoStudentId(studentId)) {
-      const fallbackExam = {
-        id: `local-${Date.now()}`,
-        ...payload,
-        created_at: new Date().toISOString(),
-        item_scores: Object.entries(scores).map(([competence_id, note]) => ({ competence_id, note })),
-      }
-      const local = readLocalExams(studentId)
-      writeLocalExams(studentId, [fallbackExam, ...local])
-      return { exam: fallbackExam, error }
-    }
     return { exam: null, error: toUserError(error, 'practiceExam') }
   }
 }
 
-export async function deletePracticeExam(examId, studentId) {
+export async function deletePracticeExam(examId) {
   try {
     const { error } = await supabase.from('practice_exams').delete().eq('id', examId)
     if (error) throw error
-  } catch {
-    // fallback local
+    return { error: null }
+  } catch (error) {
+    return { error: toUserError(error, 'practiceExam') }
   }
-  writeLocalExams(
-    studentId,
-    readLocalExams(studentId).filter((exam) => exam.id !== examId),
-  )
-  return { error: null }
 }
 
 export function buildInitialPracticeExamForm() {

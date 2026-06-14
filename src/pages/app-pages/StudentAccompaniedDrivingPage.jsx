@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getStudentAacTracking, useStudentTrackingStore } from '../../data/studentTrackingStore'
+import { getStudentAacTracking } from '../../data/aacTracking'
+import { useAuth } from '../../context/AuthContext'
+import { useStudentAccount } from '../../hooks/useStudentAccount'
+import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import EmptyState from '../../components/ui/EmptyState'
 
 const FAMILY_OBJECTIVES_KEY = 'pedagogia:aac-family-objectives'
@@ -88,11 +91,19 @@ function rvpStatusClasses(status) {
 }
 
 export default function StudentAccompaniedDrivingPage() {
-  const { students } = useStudentTrackingStore()
-  const student = useMemo(
-    () => students.find((item) => isAccompaniedFormation(item.formationType)) || students[0],
-    [students],
-  )
+  const { student: studentRecord, loading: accountLoading } = useStudentAccount()
+  const { organizationId } = useAuth()
+  const { remc, loading: remcLoading } = useStudentRemcProgress(studentRecord?.id, { organizationId })
+
+  const student = useMemo(() => {
+    if (!studentRecord) return null
+    return {
+      id: studentRecord.id,
+      firstName: studentRecord.first_name,
+      lastName: studentRecord.last_name,
+      formationType: studentRecord.package_name || studentRecord.formation_type || 'Permis B traditionnel',
+    }
+  }, [studentRecord])
   const isAac = student?.formationType?.includes('AAC')
   const modeLabel = isAac ? 'Conduite accompagnée (AAC)' : 'Conduite supervisée'
 
@@ -133,8 +144,8 @@ export default function StudentAccompaniedDrivingPage() {
   const completedObjectives = familyObjectives.filter((item) => item.done).length
 
   const allSkills = useMemo(
-    () => (student?.remc || []).flatMap((competency) => competency.items || []),
-    [student?.remc],
+    () => (remc || []).flatMap((competency) => competency.items || []),
+    [remc],
   )
   const checkedByTeacher = allSkills
     .filter((item) => item.status === 'En cours' || item.status === 'Validé')
@@ -142,6 +153,14 @@ export default function StudentAccompaniedDrivingPage() {
   const toImprove = allSkills
     .filter((item) => item.status === 'Non commencé')
     .map((item) => item.label)
+
+  if (accountLoading || remcLoading) {
+    return (
+      <div className="mx-auto w-full max-w-7xl">
+        <p className="text-sm font-semibold text-slate-500">Chargement du suivi AAC…</p>
+      </div>
+    )
+  }
 
   if (!student) {
     return (

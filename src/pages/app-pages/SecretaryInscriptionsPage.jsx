@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddStudentModal from '../../components/AddStudentModal'
 import EmptyState from '../../components/ui/EmptyState'
+import ListSearchField from '../../components/ui/ListSearchField'
+import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
+import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
 import { listStudents, subscribeStudents } from '../../services/students'
 import { contractsMap, getStudentSummary } from '../../services/finance'
 import { supabase } from '../../lib/supabase'
@@ -23,6 +26,20 @@ export default function SecretaryInscriptionsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    totalItems,
+    pageItems,
+    pageSize,
+  } = useClientPagination(students, {
+    pageSize: 8,
+    query: searchQuery,
+    filterFn: matchStudentSearch,
+  })
 
   const refresh = useCallback(async () => {
     if (!profileId) {
@@ -107,6 +124,12 @@ export default function SecretaryInscriptionsPage() {
             </p>
           </div>
         </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <ListSearchField onChange={setSearchQuery} value={searchQuery} />
+          {!loading && students.length > 0 && (
+            <p className="text-xs font-semibold text-slate-500">{totalItems} dossier(s)</p>
+          )}
+        </div>
         <div className="mt-5 grid gap-3">
           {!profileId ? (
             <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte secrétariat." icon="🗂️" />
@@ -116,8 +139,10 @@ export default function SecretaryInscriptionsPage() {
             <EmptyState title="Erreur de chargement" message={loadError} icon="⚠️" />
           ) : students.length === 0 ? (
             <EmptyState title="Aucun dossier disponible" message="Créez une nouvelle inscription pour commencer." icon="🗂️" />
+          ) : pageItems.length === 0 ? (
+            <EmptyState title="Aucun résultat" message="Aucun dossier ne correspond à votre recherche." icon="🔍" />
           ) : (
-            students.map((student) => {
+            pageItems.map((student) => {
               const summary = getStudentSummary(student.id, payments, contractTotals)
               return (
                 <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={student.id}>
@@ -162,6 +187,16 @@ export default function SecretaryInscriptionsPage() {
             })
           )}
         </div>
+        {!loading && students.length > 0 && (
+          <PaginationBar
+            className="mt-4"
+            onPageChange={setPage}
+            page={page}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
+          />
+        )}
       </section>
 
       <AddStudentModal

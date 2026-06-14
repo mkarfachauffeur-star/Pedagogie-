@@ -3,8 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { listConversations, subscribeToConversationList } from '../services/messaging'
 import { subscribeToNotifications } from '../services/notifications'
 
-// Liste des conversations du profil courant, rafraîchie en temps réel à chaque
-// nouvelle notification. Retourne [] tant qu'aucune session réelle (mode démo).
+// Liste des conversations du profil courant, rafraîchie en temps réel.
 export function useConversations() {
   const { profileId } = useAuth()
   const [conversations, setConversations] = useState([])

@@ -1,32 +1,49 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { subscribePostgresChanges } from '../services/realtime'
+import { computeRemcProgress } from '../data/remcTemplate'
+import { fetchRemcProgress, subscribeRemcProgress } from '../services/remcItems'
 import {
   DEFAULT_UNLOCK_STATE,
+  buildEffectiveUnlockState,
   computeGlobalRemcProgress,
   fetchCompetencyValidations,
   isCompetencyUnlockedCode,
   resolveStudentRecordId,
 } from '../services/remcProgress'
+import { useAuth } from '../context/AuthContext'
 
 export function useRemcUnlock(profileId) {
+  const { organizationId } = useAuth()
   const [studentId, setStudentId] = useState(null)
   const [unlockState, setUnlockState] = useState(DEFAULT_UNLOCK_STATE)
+  const [remc, setRemc] = useState([])
+  const [itemProgress, setItemProgress] = useState(() => computeRemcProgress([]))
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     if (!profileId) {
       setStudentId(null)
       setUnlockState(DEFAULT_UNLOCK_STATE)
+      setRemc([])
+      setItemProgress(computeRemcProgress([]))
       setLoading(false)
       return
     }
+
     setLoading(true)
     const resolvedId = await resolveStudentRecordId(profileId)
     setStudentId(resolvedId)
-    const { unlockState: nextState } = await fetchCompetencyValidations(resolvedId)
+
+    const [{ unlockState: nextState }, { remc: nextRemc, progress: nextItemProgress }] =
+      await Promise.all([
+        fetchCompetencyValidations(resolvedId),
+        fetchRemcProgress(resolvedId, { organizationId }),
+      ])
+
     setUnlockState(nextState || DEFAULT_UNLOCK_STATE)
+    setRemc(nextRemc || [])
+    setItemProgress(nextItemProgress || computeRemcProgress([]))
     setLoading(false)
-  }, [profileId])
+  }, [profileId, organizationId])
 
   useEffect(() => {
     refresh()
@@ -34,28 +51,19 @@ export function useRemcUnlock(profileId) {
 
   useEffect(() => {
     if (!studentId) return undefined
-    return subscribePostgresChanges({
-      topicBase: `remc-unlock:${studentId}`,
-      listeners: [
-        {
-          config: {
-            event: '*',
-            schema: 'public',
-            table: 'student_competency_validations',
-            filter: `student_id=eq.${studentId}`,
-          },
-          callback: refresh,
-        },
-      ],
-    })
+    return subscribeRemcProgress(studentId, refresh)
   }, [studentId, refresh])
 
-  const effectiveUnlockState = unlockState || DEFAULT_UNLOCK_STATE
-
-  const globalProgress = useMemo(
-    () => computeGlobalRemcProgress(effectiveUnlockState),
-    [effectiveUnlockState],
+  const effectiveUnlockState = useMemo(
+    () => buildEffectiveUnlockState(unlockState, remc),
+    [unlockState, remc],
   )
+
+  const globalProgress = useMemo(() => {
+    const competencyProgress = computeGlobalRemcProgress(effectiveUnlockState, remc)
+    const subProgress = itemProgress?.global || 0
+    return Math.max(competencyProgress, subProgress)
+  }, [effectiveUnlockState, remc, itemProgress])
 
   const isCompetencyUnlocked = useCallback(
     (code) => isCompetencyUnlockedCode(code, effectiveUnlockState),
@@ -70,6 +78,8 @@ export function useRemcUnlock(profileId) {
   return {
     studentId,
     unlockState: effectiveUnlockState,
+    remc,
+    itemProgress,
     loading,
     globalProgress,
     refresh,

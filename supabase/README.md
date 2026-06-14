@@ -82,12 +82,40 @@ La RLS s'applique aussi aux abonnements (aucune fuite inter-organisation).
 Même backend Supabase : les SDK mobiles utilisent les mêmes tables, RLS et
 Realtime. Aucune logique de sécurité côté client → cohérence web + mobile.
 
-## Intégration front (phase suivante, non incluse ici)
-1. Activer Supabase Auth + écran de connexion réel (remplacer le rôle démo de `AuthContext`).
-2. `src/services/messaging.js` : `listConversations`, `listMessages`, `sendMessage`, `markConversationRead`, `subscribeToMessages`, `subscribeToNotifications`.
-3. Hooks `useConversations`, `useConversation`, `useUnreadCount`.
-4. Recâbler les pages `*MessagesPage.jsx` (design inchangé) + le badge cloche du `DashboardLayout`.
-5. Brancher progressivement les autres écrans (élèves, paiements, examens, planning, documents) sur ces tables.
+## Edge Functions (déploiement obligatoire avant commercialisation)
 
-> Aucune donnée fictive, aucun utilisateur de démonstration. Schéma prêt pour
-> plusieurs auto-écoles et plusieurs milliers d'élèves.
+| Function | Actions / rôle |
+|----------|----------------|
+| `invite-user` | Invitation initiale (gérant / secrétariat) |
+| `create-student` | Création dossier élève + compte Auth |
+| `manage-user` | `reset_password`, `resend_invite`, `disable`, `enable`, `delete`, `change_email` |
+| `register-organization` | Inscription nouvelle auto-école |
+
+```bash
+# Depuis la racine du projet, avec Supabase CLI connecté au projet
+supabase functions deploy invite-user
+supabase functions deploy create-student
+supabase functions deploy manage-user
+supabase functions deploy register-organization
+```
+
+Variables d'environnement requises côté Edge Functions :
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (injectées automatiquement)
+- `APP_URL` ou `SITE_URL` — URL publique de l'application (liens reset / invitation)
+
+## Migrations complémentaires (post-V1)
+
+Exécuter **toutes** les migrations dans `supabase/migrations/` par ordre chronologique, notamment :
+- `20260530120013_student_competency_validations.sql` — REMC C1–C4
+- `20260530120023_student_initial_assessments.sql` — évaluation de départ
+- `20260530120030_assessment_profile_levels.sql` — profils F/S/B
+- `20260530120033_assessment_hours_response.sql` — acceptation heures proposées
+- `20260530120031_student_lesson_observations.sql` — leçons / observations
+- `20260612120000_commercial_readiness.sql` — statut contrat SQL + numéro reçu paiement
+
+```bash
+supabase db push
+# ou SQL Editor : exécuter chaque fichier dans l'ordre
+```
+
+## Intégration front

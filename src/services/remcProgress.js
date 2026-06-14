@@ -1,10 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { DEMO_PROFILE_IDS, DEMO_STUDENT, isDemoStudentId } from '../data/demoPracticeExam'
 import { REMC_COMPETENCY_ORDER } from '../data/remcCompetencies'
-
-function storageKey(studentId) {
-  return `pedagogia:remc-competency:${studentId}`
-}
 
 function emptyEntry() {
   return { validated: false, validatedAt: null, validatedBy: null, teacherName: null }
@@ -146,27 +141,8 @@ export async function syncAutoCompetencyValidations({
   return { unlockState: latestState, error: null }
 }
 
-
-function readLocalValidations(studentId) {
-  if (!studentId || typeof window === 'undefined') return []
-  try {
-    const raw = window.localStorage.getItem(storageKey(studentId))
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function writeLocalValidations(studentId, validations) {
-  if (!studentId || typeof window === 'undefined') return
-  window.localStorage.setItem(storageKey(studentId), JSON.stringify(validations))
-}
-
 export async function resolveStudentRecordId(profileId) {
   if (!profileId) return null
-  if (profileId === DEMO_PROFILE_IDS.student) return DEMO_STUDENT.id
   try {
     const { data, error } = await supabase
       .from('students')
@@ -190,11 +166,6 @@ export async function fetchCompetencyValidations(studentId) {
     return { validations: [], unlockState: buildUnlockState([]), error: null }
   }
 
-  if (isDemoStudentId(studentId)) {
-    const rows = readLocalValidations(studentId)
-    return { validations: rows, unlockState: buildUnlockState(rows), error: null }
-  }
-
   try {
     const { data, error } = await supabase
       .from('student_competency_validations')
@@ -210,18 +181,12 @@ export async function fetchCompetencyValidations(studentId) {
     if (error) throw error
 
     const validations = data || []
-    if (validations.length) {
-      writeLocalValidations(studentId, validations)
-    }
-
-    const rows = validations.length ? validations : readLocalValidations(studentId)
-    const unlockState = buildUnlockState(rows)
-    return { validations: rows, unlockState, error: null }
+    const unlockState = buildUnlockState(validations)
+    return { validations, unlockState, error: null }
   } catch (error) {
-    const rows = readLocalValidations(studentId)
     return {
-      validations: rows,
-      unlockState: buildUnlockState(rows),
+      validations: [],
+      unlockState: buildUnlockState([]),
       error,
     }
   }
@@ -232,20 +197,12 @@ export async function validateCompetency({ studentId, organizationId, competency
     return { unlockState: null, error: new Error('Paramètres manquants.') }
   }
 
-  const validatedAt = new Date().toISOString()
   const row = {
     organization_id: organizationId,
     student_id: studentId,
     competency_code: competencyCode,
-    validated_at: validatedAt,
+    validated_at: new Date().toISOString(),
     validated_by: teacherId,
-  }
-
-  if (isDemoStudentId(studentId)) {
-    const local = readLocalValidations(studentId).filter((item) => item.competency_code !== competencyCode)
-    local.push({ ...row, validated_by_profile: { full_name: 'Enseignant démo' } })
-    writeLocalValidations(studentId, local)
-    return { unlockState: buildUnlockState(local), error: null }
   }
 
   try {
@@ -254,10 +211,7 @@ export async function validateCompetency({ studentId, organizationId, competency
       .upsert(row, { onConflict: 'student_id,competency_code' })
     if (error) throw error
   } catch (error) {
-    const local = readLocalValidations(studentId).filter((item) => item.competency_code !== competencyCode)
-    local.push({ ...row, validated_by_profile: null })
-    writeLocalValidations(studentId, local)
-    return { unlockState: buildUnlockState(local), error }
+    return { unlockState: null, error }
   }
 
   return fetchCompetencyValidations(studentId)
@@ -271,14 +225,6 @@ export async function revokeCompetencyValidation({ studentId, competencyCode }) 
   const startIndex = REMC_COMPETENCY_ORDER.indexOf(competencyCode)
   const codesToRevoke = startIndex >= 0 ? REMC_COMPETENCY_ORDER.slice(startIndex) : [competencyCode]
 
-  if (isDemoStudentId(studentId)) {
-    const local = readLocalValidations(studentId).filter(
-      (item) => !codesToRevoke.includes(item.competency_code),
-    )
-    writeLocalValidations(studentId, local)
-    return { unlockState: buildUnlockState(local), error: null }
-  }
-
   try {
     const { error } = await supabase
       .from('student_competency_validations')
@@ -287,11 +233,7 @@ export async function revokeCompetencyValidation({ studentId, competencyCode }) 
       .in('competency_code', codesToRevoke)
     if (error) throw error
   } catch (error) {
-    const local = readLocalValidations(studentId).filter(
-      (item) => !codesToRevoke.includes(item.competency_code),
-    )
-    writeLocalValidations(studentId, local)
-    return { unlockState: buildUnlockState(local), error }
+    return { unlockState: null, error }
   }
 
   return fetchCompetencyValidations(studentId)

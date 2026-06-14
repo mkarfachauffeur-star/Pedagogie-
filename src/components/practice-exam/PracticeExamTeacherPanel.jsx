@@ -20,6 +20,7 @@ export default function PracticeExamTeacherPanel({
   student,
   organizationId,
   teacherId,
+  embedded = false,
 }) {
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
@@ -99,28 +100,31 @@ export default function PracticeExamTeacherPanel({
 
   if (!student) return null
 
+  const title = embedded ? 'Examen blanc (optionnel)' : 'Examen blanc permis B'
+  const description = embedded
+    ? 'Remplissez la grille officielle si un examen blanc est réalisé pendant cette leçon.'
+    : `${student.firstName} ${student.lastName} · grille officielle sur 31 points`
+
   return (
-    <section className="card-panel-lg">
+    <section className={embedded ? 'rounded-2xl border border-slate-200 bg-white p-4 sm:p-5' : 'card-panel-lg'}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Examen blanc permis B</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {student.firstName} {student.lastName} · grille officielle sur 31 points
-          </p>
+          <h2 className={`font-extrabold text-slate-900 ${embedded ? 'text-lg' : 'text-2xl'}`}>{title}</h2>
+          <p className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
         <button
           className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-cyan-700"
           onClick={() => setHelpOpen(true)}
           type="button"
         >
-          Nouvel examen blanc
+          {formOpen ? 'Grille en cours' : 'Nouvel examen blanc'}
         </button>
       </div>
 
       {loading ? (
         <p className="mt-4 text-sm font-semibold text-slate-500">Chargement de l&apos;historique…</p>
       ) : (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[280px_1fr]">
+        <div className={`mt-5 grid gap-5 ${embedded ? 'xl:grid-cols-[240px_1fr]' : 'lg:grid-cols-[280px_1fr]'}`}>
           <aside className="space-y-3">
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Historique</p>
             {exams.length === 0 && (

@@ -1,11 +1,7 @@
 // PEDAGOGIA DRIVE — Configuration des pages (gabarits de mise en page).
 //
-// Préparation production : ce fichier ne contient AUCUNE donnée fictive
-// (aucun élève, enseignant, statistique, planning, paiement ou message de
-// démonstration). Seule la structure de mise en page est définie ici
-// (titres, sous-titres, colonnes, types de sections). Les données réelles
-// seront fournies ultérieurement via Supabase. En l'absence de données,
-// chaque section affiche un état vide professionnel (voir sanitizeConfig).
+// Aucune donnée fictive : structure de mise en page uniquement.
+// Les données réelles proviennent de Supabase.
 
 const actions = {
   export: { label: 'Exporter', variant: 'secondary' },

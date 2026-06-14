@@ -23,14 +23,13 @@ export default function StudentAccountGate({ children }) {
     issue,
     profileError,
     studentError,
-    isDemoSession,
   } = useStudentAccount()
 
   if (loading) {
     return <LoadingSpinner label="Chargement de votre espace élève…" />
   }
 
-  if (issue && !isDemoSession) {
+  if (issue) {
     console.error('[StudentAccountGate] Compte incomplet ou erreur', {
       issue,
       profileId,

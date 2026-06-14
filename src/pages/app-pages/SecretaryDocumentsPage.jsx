@@ -235,7 +235,11 @@ export default function SecretaryDocumentsPage() {
                         Envoi : {formatDate(document.sent_at || document.received_date)} · Classé : {formatDate(document.classified_at)}
                       </p>
                       <p className="mt-1 text-xs font-medium text-slate-400">
-                        {document.source === 'messagerie' ? `Via messagerie${document.sender_name ? ` · ${document.sender_name}` : ''}` : 'Dépôt direct'}
+                        {document.source === 'messagerie'
+                          ? `Via messagerie${document.sender_name ? ` · ${document.sender_name}` : ''}`
+                          : document.source === 'eleve'
+                            ? `Dépôt élève${document.sender_name ? ` · ${document.sender_name}` : ''}`
+                            : 'Dépôt direct'}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">{document.status}</span>

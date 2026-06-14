@@ -1,5 +1,58 @@
 import { supabase } from '../lib/supabase'
 
+export function parseLessonDurationHours(duration) {
+  const normalized = String(duration || '').trim().toUpperCase().replace(/\s+/g, '')
+  if (!normalized) return 2
+  if (normalized === '45MIN') return 0.75
+  if (normalized === '1H') return 1
+  if (normalized === '2H') return 2
+  const match = normalized.match(/^(\d+(?:\.\d+)?)H?$/)
+  return match ? Number(match[1]) : 0
+}
+
+export function formatLessonDateFr(dateString) {
+  if (!dateString) return ''
+  const [year, month, day] = String(dateString).slice(0, 10).split('-')
+  if (!year || !month || !day) return dateString
+  return `${day}/${month}/${year}`
+}
+
+export function formatLessonOpeningLabel(date, time) {
+  const dateFr = formatLessonDateFr(date)
+  if (!dateFr) return '—'
+  const hour = String(time || '').slice(0, 5)
+  return hour ? `${dateFr} · ${hour}` : dateFr
+}
+
+export function formatLessonClosingLabel(date, time, duration) {
+  if (!date) return '—'
+  const [year, month, day] = String(date).slice(0, 10).split('-').map(Number)
+  const [hours = 0, minutes = 0] = String(time || '00:00').split(':').map(Number)
+  const start = new Date(year, (month || 1) - 1, day || 1, hours, minutes)
+  if (Number.isNaN(start.getTime())) return '—'
+  const end = new Date(start.getTime() + parseLessonDurationHours(duration) * 60 * 60 * 1000)
+  const endDate = `${String(end.getDate()).padStart(2, '0')}/${String(end.getMonth() + 1).padStart(2, '0')}/${end.getFullYear()}`
+  const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+  return `${endDate} · ${endTime}`
+}
+
+function buildLessonTimestamps(date, time, duration) {
+  const now = new Date().toISOString()
+  if (!date) return { openedAt: now, closedAt: now }
+  const [year, month, day] = String(date).slice(0, 10).split('-').map(Number)
+  const [hours = 0, minutes = 0] = String(time || '00:00').split(':').map(Number)
+  const start = new Date(year, (month || 1) - 1, day || 1, hours, minutes)
+  if (Number.isNaN(start.getTime())) return { openedAt: now, closedAt: now }
+  const end = new Date(start.getTime() + parseLessonDurationHours(duration) * 60 * 60 * 1000)
+  return { openedAt: start.toISOString(), closedAt: end.toISOString() }
+}
+
+export function sumCompletedLessonHours(lessons = []) {
+  return lessons
+    .filter((lesson) => !['Annulé', 'Annule'].includes(lesson.status))
+    .reduce((sum, lesson) => sum + parseLessonDurationHours(lesson.duration), 0)
+}
+
 function mapRow(row) {
   if (!row) return null
   return {
@@ -51,6 +104,7 @@ export async function createLessonObservation({
   sharedWithStudent = false,
 }) {
   try {
+    const { openedAt, closedAt } = buildLessonTimestamps(date, time, duration)
     const { data, error } = await supabase
       .from('student_lesson_observations')
       .insert({
@@ -60,12 +114,14 @@ export async function createLessonObservation({
         lesson_date: date || null,
         lesson_time: time || null,
         duration: duration || '2H',
-        status: status || 'Débuté',
+        status: 'Terminé',
         observations: observations || '',
         skills,
         shared_with_student: sharedWithStudent,
         opened_by: openedBy || '',
-        opened_at: new Date().toISOString(),
+        opened_at: openedAt,
+        closed_by: openedBy || '',
+        closed_at: closedAt,
       })
       .select(`
         *,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PanelTabs from '../../components/ui/PanelTabs'
 import franceC20a from '../../assets/signs/france-c20a.svg?url'
 
 const officialSignViewBox = '-0.781 -0.08 576.53826 507.94375'
@@ -452,6 +453,7 @@ function SignVisual({ type, size = 'md' }) {
 }
 
 export default function StudentLexiconPage() {
+  const [sectionTab, setSectionTab] = useState('vocab')
   const [activeTerm, setActiveTerm] = useState(terms[0])
   const [flipped, setFlipped] = useState({})
 
@@ -501,6 +503,18 @@ export default function StudentLexiconPage() {
         </div>
       </section>
 
+      <PanelTabs
+        activeId={sectionTab}
+        className="sticky top-0 z-10 rounded-2xl border border-white/70 bg-white/95 p-3 shadow-sm backdrop-blur"
+        onChange={setSectionTab}
+        tabs={[
+          { id: 'vocab', label: 'Vocabulaire' },
+          { id: 'signs', label: 'Panneaux' },
+          { id: 'quiz', label: 'Quiz' },
+        ]}
+      />
+
+      {sectionTab === 'vocab' && (
       <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -548,7 +562,9 @@ export default function StudentLexiconPage() {
           <p className="mt-4 text-sm leading-6 text-slate-600">{activeTerm.explanation}</p>
         </aside>
       </section>
+      )}
 
+      {sectionTab === 'signs' && (
       <section className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -597,7 +613,9 @@ export default function StudentLexiconPage() {
           ))}
         </HorizontalCarousel>
       </section>
+      )}
 
+      {sectionTab === 'quiz' && (
       <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7" lang="fr">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -714,6 +732,7 @@ export default function StudentLexiconPage() {
           </div>
         )}
       </section>
+      )}
     </div>
   )
 }

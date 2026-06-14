@@ -154,6 +154,38 @@ export async function listContracts() {
   }
 }
 
+export async function fetchStudentContractOverview(studentId) {
+  if (!studentId) {
+    return { student: null, contract: null, payments: [], error: null }
+  }
+  try {
+    const [studentRes, contractRes, paymentsRes] = await Promise.all([
+      supabase
+        .from('students')
+        .select('package_name, formation_type, license_category, extra_hours, registration_date, file_number')
+        .eq('id', studentId)
+        .maybeSingle(),
+      supabase
+        .from('contracts')
+        .select('contract_total, currency, signed_at, status, updated_at')
+        .eq('student_id', studentId)
+        .maybeSingle(),
+      listPayments({ studentId }),
+    ])
+    if (studentRes.error) throw studentRes.error
+    if (contractRes.error) throw contractRes.error
+    if (paymentsRes.error) throw paymentsRes.error
+    return {
+      student: studentRes.data,
+      contract: contractRes.data,
+      payments: paymentsRes.payments,
+      error: null,
+    }
+  } catch (error) {
+    return { student: null, contract: null, payments: [], error }
+  }
+}
+
 export async function upsertContract({ organizationId, studentId, contractTotal }) {
   try {
     const { data, error } = await supabase

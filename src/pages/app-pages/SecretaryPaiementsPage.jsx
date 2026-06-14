@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
 import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import ListSearchField from '../../components/ui/ListSearchField'
+import PaginationBar from '../../components/ui/PaginationBar'
 import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
+import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { listStudents } from '../../services/students'
 import {
@@ -56,6 +59,7 @@ export default function SecretaryPaiementsPage() {
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm)
   const [expenseForm, setExpenseForm] = useState(emptyExpenseForm)
   const [saving, setSaving] = useState(false)
+  const [studentSearchQuery, setStudentSearchQuery] = useState('')
 
   const refresh = useCallback(async () => {
     if (!profileId) {
@@ -101,6 +105,37 @@ export default function SecretaryPaiementsPage() {
   const selectedHistory = selectedStudent
     ? payments.filter((item) => item.student_id === selectedStudent.id)
     : []
+
+  const {
+    page: studentPage,
+    setPage: setStudentPage,
+    totalPages: studentTotalPages,
+    totalItems: studentTotalItems,
+    pageItems: studentPageItems,
+    pageSize: studentPageSize,
+  } = useClientPagination(students, {
+    pageSize: 8,
+    query: studentSearchQuery,
+    filterFn: matchStudentSearch,
+  })
+
+  const {
+    page: historyPage,
+    setPage: setHistoryPage,
+    totalPages: historyTotalPages,
+    totalItems: historyTotalItems,
+    pageItems: historyPageItems,
+    pageSize: historyPageSize,
+  } = useClientPagination(selectedHistory, { pageSize: 5 })
+
+  const {
+    page: expensePage,
+    setPage: setExpensePage,
+    totalPages: expenseTotalPages,
+    totalItems: expenseTotalItems,
+    pageItems: expensePageItems,
+    pageSize: expensePageSize,
+  } = useClientPagination(expenses, { pageSize: 8 })
 
   const paymentFormSummary = useMemo(() => {
     const base = paymentForm.studentId
@@ -265,7 +300,12 @@ export default function SecretaryPaiementsPage() {
       ) : tab === 'payments' ? (
         <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
           <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
-            <h2 className="text-2xl font-extrabold text-slate-950">Dossiers financiers</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-2xl font-extrabold text-slate-950">Dossiers financiers</h2>
+              {students.length > 0 && (
+                <ListSearchField onChange={setStudentSearchQuery} value={studentSearchQuery} />
+              )}
+            </div>
             <div className="mt-5 grid gap-3">
               {students.length === 0 && (
                 <EmptyState
@@ -274,7 +314,10 @@ export default function SecretaryPaiementsPage() {
                   icon="💳"
                 />
               )}
-              {students.map((student) => {
+              {students.length > 0 && studentPageItems.length === 0 && (
+                <EmptyState title="Aucun résultat" message="Aucun dossier ne correspond à votre recherche." icon="🔍" />
+              )}
+              {studentPageItems.map((student) => {
                 const summary = getStudentSummary(student.id, payments, contractTotals)
                 const progress =
                   summary.contractTotal > 0
@@ -312,6 +355,14 @@ export default function SecretaryPaiementsPage() {
                 )
               })}
             </div>
+            <PaginationBar
+              className="mt-4"
+              onPageChange={setStudentPage}
+              page={studentPage}
+              pageSize={studentPageSize}
+              totalItems={studentTotalItems}
+              totalPages={studentTotalPages}
+            />
           </div>
 
           {selectedStudent && (
@@ -327,7 +378,7 @@ export default function SecretaryPaiementsPage() {
                 <p className="text-sm font-black text-slate-700">Historique</p>
                 <div className="mt-3 grid gap-2">
                   {selectedHistory.length === 0 && <InlineNotice label="Aucun encaissement enregistré." />}
-                  {selectedHistory.map((item) => (
+                  {historyPageItems.map((item) => (
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3" key={item.id}>
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-black text-slate-950">{formatEur(item.amount)}</p>
@@ -340,6 +391,14 @@ export default function SecretaryPaiementsPage() {
                     </div>
                   ))}
                 </div>
+                <PaginationBar
+                  className="mt-3"
+                  onPageChange={setHistoryPage}
+                  page={historyPage}
+                  pageSize={historyPageSize}
+                  totalItems={historyTotalItems}
+                  totalPages={historyTotalPages}
+                />
               </div>
             </aside>
           )}
@@ -351,7 +410,7 @@ export default function SecretaryPaiementsPage() {
             {expenses.length === 0 && (
               <EmptyState title="Aucune dépense" message="Enregistrez carburant, code de la route, frais divers…" icon="📤" />
             )}
-            {expenses.map((item) => (
+            {expensePageItems.map((item) => (
               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.id}>
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                   <div>
@@ -367,6 +426,14 @@ export default function SecretaryPaiementsPage() {
               </article>
             ))}
           </div>
+          <PaginationBar
+            className="mt-4"
+            onPageChange={setExpensePage}
+            page={expensePage}
+            pageSize={expensePageSize}
+            totalItems={expenseTotalItems}
+            totalPages={expenseTotalPages}
+          />
         </section>
       )}
 

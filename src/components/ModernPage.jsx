@@ -526,7 +526,7 @@ function DetailPanel({ detail, onClose }) {
           <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <p className="text-sm font-semibold text-blue-700">
               {actionForm.saved
-                ? 'Action enregistrée en démo, prête à être branchée sur une API.'
+                ? 'Action enregistrée.'
                 : "Remplissez les champs puis validez l'action."}
             </p>
             <button className="pd-btn-primary" type="submit">
@@ -596,13 +596,11 @@ export default function ModernPage({ config, actionHandlers = {} }) {
     setActiveDetail({
       id: `action-${action.label}`,
       title: action.label,
-      subtitle: 'Action simulée',
-      description:
-        'Cette action est prête pour une intégration backend. En mode démonstration, elle ouvre un panneau de suivi interactif.',
+      subtitle: 'Action',
+      description: 'Cette action sera disponible prochainement dans votre espace.',
       tone: action.variant === 'secondary' ? 'navy' : 'cyan',
       meta: [
-        { label: 'Statut', value: 'Disponible en démo' },
-        { label: 'Interface', value: 'Interactive' },
+        { label: 'Statut', value: 'À venir' },
       ],
     })
   }

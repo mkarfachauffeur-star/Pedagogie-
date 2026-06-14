@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import AddStudentModal from '../../components/AddStudentModal'
 import EmptyState from '../../components/ui/EmptyState'
+import ListSearchField from '../../components/ui/ListSearchField'
+import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
+import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
 import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
 import { listStudents, subscribeStudents } from '../../services/students'
@@ -28,6 +31,20 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    totalItems,
+    pageItems,
+    pageSize,
+  } = useClientPagination(students, {
+    pageSize: 8,
+    query: searchQuery,
+    filterFn: matchStudentSearch,
+  })
 
   const refresh = useCallback(async () => {
     if (!profileId) {
@@ -91,8 +108,21 @@ export default function AdminStudentsPage() {
         ) : students.length === 0 ? (
           <EmptyState title="Aucun élève enregistré" message="Ajoutez votre premier élève pour créer son compte et son dossier." icon="🎓" />
         ) : (
-          <div className="grid gap-3">
-            {students.map((student) => {
+          <>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <ListSearchField onChange={setSearchQuery} value={searchQuery} />
+              <p className="text-xs font-semibold text-slate-500">{totalItems} élève(s)</p>
+            </div>
+            {pageItems.length === 0 ? (
+              <EmptyState
+                className="mt-4"
+                icon="🔍"
+                message="Aucun élève ne correspond à votre recherche."
+                title="Aucun résultat"
+              />
+            ) : (
+          <div className="mt-4 grid gap-3">
+            {pageItems.map((student) => {
               const track = resolveStudentTrack(student)
               const assessment = assessmentsByStudent[student.id]
               const formationLabel = student.package_name || student.formation_type || getTrackLabel(track)
@@ -109,18 +139,20 @@ export default function AdminStudentsPage() {
                     {referentTeacher(student) && (
                       <p className="mt-1 text-xs font-medium text-slate-500">Référent : {referentTeacher(student)}</p>
                     )}
-                    <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-                      <p><span className="font-bold text-slate-500">Formation :</span> {formationLabel}</p>
-                      {track === 'permis_b' && (
-                        <>
-                          <p><span className="font-bold text-slate-500">Évaluation de départ :</span> {formatAssessmentStatus(assessment?.status || 'pending')}</p>
+                    <p className="mt-3 text-sm"><span className="font-bold text-slate-500">Formation :</span> {formationLabel}</p>
+                    {track === 'permis_b' && (
+                      <details className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <summary className="cursor-pointer text-sm font-bold text-cyan-800">
+                          Évaluation de départ · {formatAssessmentStatus(assessment?.status || 'pending')}
+                        </summary>
+                        <div className="mt-3 grid gap-2 pb-2 text-sm sm:grid-cols-2">
                           <p><span className="font-bold text-slate-500">Date :</span> {assessment?.completed_at ? formatDateFr(assessment.completed_at) : '—'}</p>
                           <p><span className="font-bold text-slate-500">Score obtenu :</span> {assessment?.status === 'completed' ? assessment.final_score : '—'}</p>
                           <p><span className="font-bold text-slate-500">Heures recommandées :</span> {assessment?.recommended_hours_min ? `${assessment.recommended_hours_min}${assessment.recommended_hours_max !== assessment.recommended_hours_min ? ` à ${assessment.recommended_hours_max}` : ''} h` : '—'}</p>
                           <p className="sm:col-span-2"><span className="font-bold text-slate-500">Enseignant évaluateur :</span> {assessment?.teacher?.full_name || '—'}</p>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </details>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
@@ -138,6 +170,16 @@ export default function AdminStudentsPage() {
               )
             })}
           </div>
+            )}
+            <PaginationBar
+              className="mt-4"
+              onPageChange={setPage}
+              page={page}
+              pageSize={pageSize}
+              totalItems={totalItems}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </section>
 

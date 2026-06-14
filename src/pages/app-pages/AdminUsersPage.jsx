@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import CreateUserModal from '../../components/users/CreateUserModal'
+import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
 import EmptyState from '../../components/ui/EmptyState'
+import ListSearchField from '../../components/ui/ListSearchField'
+import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
+import { normalizeSearchText, useClientPagination } from '../../hooks/useClientPagination'
 import {
   computeAccountStatus,
   formatDateTimeFr,
@@ -9,7 +13,7 @@ import {
   USER_ROLE_LABELS,
 } from '../../lib/staffAccounts'
 import { getUserFacingError } from '../../lib/userFacingError'
-import { listOrganizationUsers, manageUser, subscribeOrganizationUsers } from '../../services/users'
+import { listOrganizationUsers, manageUser, sendStaffPasswordReset, setStaffAccountActive, subscribeOrganizationUsers } from '../../services/users'
 
 export default function AdminUsersPage() {
   const { profileId, canWrite } = useAuth()
@@ -17,8 +21,29 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [resetConfirmUser, setResetConfirmUser] = useState(null)
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    totalItems,
+    pageItems,
+    pageSize,
+  } = useClientPagination(users, {
+    pageSize: 10,
+    query: searchQuery,
+    filterFn: (user, query) => {
+      const haystack = normalizeSearchText(
+        `${user.full_name || ''} ${user.email || ''} ${USER_ROLE_LABELS[user.role] || user.role || ''}`,
+      )
+      const q = normalizeSearchText(query)
+      return q.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))
+    },
+  })
 
   const refresh = useCallback(async () => {
     if (!profileId) {
@@ -40,19 +65,58 @@ export default function AdminUsersPage() {
     return subscribeOrganizationUsers(refresh)
   }, [profileId, refresh])
 
-  const runAction = async (action, userId) => {
+  const runAction = async (action, user) => {
     if (!canWrite) return
+    const userId = user.id
+
     if (action === 'delete' && !window.confirm('Supprimer définitivement ce compte ?')) return
     if (action === 'disable' && !window.confirm('Désactiver ce compte ?')) return
+    if (action === 'reset_password') {
+      setResetConfirmUser(user)
+      return
+    }
 
     setActionBusy(userId + action)
     setFeedback(null)
-    const { error, message } = await manageUser(action, userId)
+
+    let result
+    if (action === 'disable') {
+      result = await setStaffAccountActive(userId, false)
+    } else if (action === 'enable') {
+      result = await setStaffAccountActive(userId, true)
+    } else {
+      result = await manageUser(action, userId)
+    }
+
+    const { error, message } = result
     setActionBusy(null)
-    if (error) setFeedback({ type: 'error', text: getUserFacingError(error, 'permission') })
-    else {
+    if (error) {
+      setFeedback({
+        type: 'error',
+        text: getUserFacingError(error, 'permission'),
+      })
+    } else {
       setFeedback({ type: 'ok', text: message })
       refresh()
+    }
+  }
+
+  const confirmPasswordReset = async () => {
+    if (!resetConfirmUser || !canWrite) return
+    const userId = resetConfirmUser.id
+
+    setActionBusy(userId + 'reset_password')
+    setFeedback(null)
+
+    const { error, message } = await sendStaffPasswordReset(userId)
+
+    setActionBusy(null)
+    setResetConfirmUser(null)
+
+    if (error) {
+      setFeedback({ type: 'error', text: getUserFacingError(error, 'password') })
+    } else {
+      setFeedback({ type: 'ok', text: message })
     }
   }
 
@@ -91,6 +155,11 @@ export default function AdminUsersPage() {
         ) : users.length === 0 ? (
           <div className="p-5"><EmptyState title="Aucun utilisateur" message="Créez le premier compte staff de votre auto-école." icon="👤" /></div>
         ) : (
+          <>
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <ListSearchField onChange={setSearchQuery} value={searchQuery} />
+            <p className="text-xs font-semibold text-slate-500">{totalItems} utilisateur(s)</p>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -104,7 +173,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => {
+                {pageItems.map((user) => {
                   const status = computeAccountStatus({
                     isActive: user.is_active,
                     invitedAt: user.invited_at,
@@ -112,9 +181,16 @@ export default function AdminUsersPage() {
                     lastSignInAt: user.last_sign_in_at,
                   })
                   const busy = actionBusy?.startsWith(user.id)
+                  const isSelf = user.id === profileId
+                  const isRegistered = status.label === 'Actif'
                   return (
                     <tr key={user.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-4 py-3 font-extrabold text-slate-900">{user.full_name || '—'}</td>
+                      <td className="px-4 py-3 font-extrabold text-slate-900">
+                        {user.full_name || '—'}
+                        {isSelf && (
+                          <span className="ml-2 text-xs font-bold text-slate-400">(vous)</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-slate-600">{user.email || '—'}</td>
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700">
@@ -130,15 +206,21 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap justify-end gap-2">
                           {status.label === 'Invitation en attente' && (
-                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('resend_invite', user.id)} label="Renvoyer" />
+                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('resend_invite', user)} label="Renvoyer" />
                           )}
-                          <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('reset_password', user.id)} label="Mot de passe" />
+                          {isRegistered && (
+                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('reset_password', user)} label="Mot de passe" />
+                          )}
                           {user.is_active ? (
-                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('disable', user.id)} label="Désactiver" tone="amber" />
+                            !isSelf && (
+                              <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('disable', user)} label="Désactiver" tone="amber" />
+                            )
                           ) : (
-                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('enable', user.id)} label="Réactiver" tone="emerald" />
+                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('enable', user)} label="Réactiver" tone="emerald" />
                           )}
-                          <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('delete', user.id)} label="Supprimer" tone="rose" />
+                          {!isSelf && (
+                            <ActionBtn disabled={busy || !canWrite} onClick={() => runAction('delete', user)} label="Supprimer" tone="rose" />
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -147,10 +229,59 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          <PaginationBar
+            className="p-4"
+            onPageChange={setPage}
+            page={page}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
+          />
+          </>
         )}
       </section>
 
       <CreateUserModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={() => refresh()} />
+
+      <AppModal
+        open={Boolean(resetConfirmUser)}
+        onClose={() => !actionBusy && setResetConfirmUser(null)}
+        eyebrow="Utilisateurs"
+        title="Réinitialiser le mot de passe ?"
+        size="sm"
+        disableClose={Boolean(actionBusy)}
+        footer={(
+          <AppModalFooter
+            onClose={() => setResetConfirmUser(null)}
+            closeLabel="Annuler"
+            hideSubmit
+          >
+            <button
+              type="button"
+              disabled={Boolean(actionBusy)}
+              onClick={confirmPasswordReset}
+              className="pd-btn-primary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionBusy ? 'Envoi…' : 'Réinitialiser le mot de passe'}
+            </button>
+          </AppModalFooter>
+        )}
+      >
+        {resetConfirmUser && (
+          <div className="space-y-3 text-sm leading-6 text-slate-600">
+            <p>
+              Voulez-vous réinitialiser le mot de passe de{' '}
+              <span className="font-bold text-slate-900">{resetConfirmUser.full_name || 'cet utilisateur'}</span>
+              {' '}?
+            </p>
+            <p>
+              Un e-mail sera envoyé à{' '}
+              <span className="font-semibold text-slate-800">{resetConfirmUser.email || '—'}</span>
+              {' '}avec un lien pour définir un nouveau mot de passe.
+            </p>
+          </div>
+        )}
+      </AppModal>
     </div>
   )
 }

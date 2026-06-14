@@ -30,4 +30,6 @@ extracted/
 *.sw?
 .vercel
 scripts/.pydeps
+scripts/output/demo-credentials.json
+scripts/output/demo-credentials.md
 .env*

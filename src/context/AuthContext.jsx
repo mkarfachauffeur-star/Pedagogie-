@@ -1,17 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import {
-  clearStoredRole,
-  getStoredRole,
-  roleDestinations,
-  setStoredRole,
-} from '../utils/authSession'
 import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
 import { checkIsSuperAdmin } from '../services/platform'
-import { clearPersistedSupabaseSession, DEMO_PROFILE_IDS } from '../data/demoPracticeExam'
 import { getUserFacingError } from '../lib/userFacingError'
 
-export const VALID_ROLES = [...Object.keys(roleDestinations), 'super_admin']
+export const VALID_ROLES = ['student', 'teacher', 'secretary', 'manager', 'super_admin']
 
 const AuthContext = createContext(null)
 
@@ -39,7 +32,6 @@ export function AuthProvider({ children }) {
   const [studentCount, setStudentCount] = useState(0)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [supabaseRole, setSupabaseRole] = useState(null)
-  const [localRole, setLocalRole] = useState(() => getStoredRole())
   const [loading, setLoading] = useState(true)
 
   const loadProfile = useCallback(async (userId) => {
@@ -60,15 +52,7 @@ export function AuthProvider({ children }) {
         .select('id, organization_id, role, full_name, avatar_emoji, email, is_active')
         .eq('id', userId)
         .maybeSingle()
-      if (error) {
-        console.error('[AuthContext] loadProfile error', {
-          userId,
-          message: error.message,
-          code: error.code,
-          details: error.details,
-        })
-        throw error
-      }
+      if (error) throw error
       setProfile(data ?? null)
 
       if (superAdmin) {
@@ -126,14 +110,6 @@ export function AuthProvider({ children }) {
     }
   }, [loadProfile])
 
-  useEffect(() => {
-    function handleStorage() {
-      setLocalRole(getStoredRole())
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [])
-
   const signInWithPassword = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null }
@@ -142,7 +118,11 @@ export function AuthProvider({ children }) {
       const superAdmin = await checkIsSuperAdmin(data.user?.id)
       if (superAdmin) nextRole = 'super_admin'
       else {
-        const { data: prof } = await supabase.from('profiles').select('role, is_active').eq('id', data.user?.id).maybeSingle()
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', data.user?.id)
+          .maybeSingle()
         if (prof && prof.is_active === false) {
           await supabase.auth.signOut()
           return { error: new Error('Compte désactivé.'), role: null }
@@ -157,25 +137,7 @@ export function AuthProvider({ children }) {
     return { error: null, role: nextRole }
   }, [loadProfile])
 
-  const signInWithRole = useCallback(async (role) => {
-    if (!roleDestinations[role]) return null
-    clearPersistedSupabaseSession()
-    void supabase.auth.signOut().catch(() => {})
-    setSession(null)
-    setSupabaseRole(null)
-    setProfile(null)
-    setOrganization(null)
-    setSubscription(null)
-    setStudentCount(0)
-    setIsSuperAdmin(false)
-    setStoredRole(role)
-    setLocalRole(role)
-    return roleDestinations[role]
-  }, [])
-
   const signOut = useCallback(async () => {
-    clearStoredRole()
-    setLocalRole(null)
     try {
       await supabase.auth.signOut()
     } catch {
@@ -189,9 +151,7 @@ export function AuthProvider({ children }) {
     setIsSuperAdmin(false)
   }, [])
 
-  const role = isSuperAdmin
-    ? 'super_admin'
-    : (session ? (profile?.role || supabaseRole) : null) || localRole
+  const role = isSuperAdmin ? 'super_admin' : (session ? (profile?.role || supabaseRole) : null)
   const isTrial = organization?.status === 'trial'
   const canWrite = useMemo(
     () => computeCanWrite(organization, subscription),
@@ -203,15 +163,8 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       profile,
-      profileId:
-        profile?.id
-        ?? session?.user?.id
-        ?? (localRole === 'student'
-          ? DEMO_PROFILE_IDS.student
-          : localRole === 'teacher'
-            ? DEMO_PROFILE_IDS.teacher
-            : null),
-      organizationId: profile?.organization_id ?? (localRole ? DEMO_PROFILE_IDS.organization : null),
+      profileId: profile?.id ?? session?.user?.id ?? null,
+      organizationId: profile?.organization_id ?? null,
       organization,
       subscription,
       studentCount,
@@ -219,15 +172,13 @@ export function AuthProvider({ children }) {
       canWrite,
       isTrial,
       role,
-      isAuthenticated: Boolean(session) || Boolean(localRole),
-      isDemoSession: Boolean(localRole) && !session,
+      isAuthenticated: Boolean(session),
       loading,
       signInWithPassword,
-      signInWithRole,
       signOut,
       refreshOrg: loadProfile,
     }),
-    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, localRole, loading, signInWithPassword, signInWithRole, signOut, loadProfile],
+    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, loading, signInWithPassword, signOut, loadProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

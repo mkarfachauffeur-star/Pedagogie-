@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
+import { useConversationFromLocation } from '../../hooks/useConversationFromLocation'
 import { useConversations } from '../../hooks/useConversations'
 import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../../services/messaging'
@@ -22,6 +23,7 @@ export default function ManagerMessagesPage() {
   const { conversations, refresh } = useConversations()
 
   const [activeId, setActiveId] = useState(null)
+  useConversationFromLocation(setActiveId)
   const [newMessage, setNewMessage] = useState('')
   const [files, setFiles] = useState([])
   const [pickerOpen, setPickerOpen] = useState(false)

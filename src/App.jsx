@@ -40,10 +40,8 @@ import StudentAccompaniedDrivingPage from './pages/app-pages/StudentAccompaniedD
 import StudentMessagesPage from './pages/app-pages/StudentMessagesPage'
 import StudentInitialAssessmentPage from './pages/app-pages/StudentInitialAssessmentPage'
 import StudentPlanningPage from './pages/app-pages/StudentPlanningPage'
-import StudentObservationsPage from './pages/app-pages/StudentObservationsPage'
 import StudentDocumentsPage from './pages/app-pages/StudentDocumentsPage'
 import StudentContractPage from './pages/app-pages/StudentContractPage'
-import StudentPaymentsPage from './pages/app-pages/StudentPaymentsPage'
 import StudentNextLessonPage from './pages/app-pages/StudentNextLessonPage'
 import StudentCompetencyReportsPage from './pages/app-pages/StudentCompetencyReportsPage'
 import StudentPedagogicalAppointmentsPage from './pages/app-pages/StudentPedagogicalAppointmentsPage'
@@ -68,6 +66,7 @@ import SecretaryPaiementsPage from './pages/app-pages/SecretaryPaiementsPage'
 import SecretaryDocumentsPage from './pages/app-pages/SecretaryDocumentsPage'
 import SecretaryExamsPage from './pages/app-pages/SecretaryExamsPage'
 import SecretaryMessagesPage from './pages/app-pages/SecretaryMessagesPage'
+import PreRegistrationsPage from './pages/app-pages/PreRegistrationsPage'
 
 function withProtectedLayout(role, Page, fullWidth = false) {
   return (
@@ -107,6 +106,7 @@ function App() {
 
         <Route path="/manager/dashboard" element={withProtectedLayout('manager', ManagerDashboardPage)} />
         <Route path="/manager/students" element={withProtectedLayout('manager', ManagerStudentsPage)} />
+        <Route path="/manager/pre-registrations" element={withProtectedLayout('manager', () => <PreRegistrationsPage roleLabel="Gérant" />)} />
         <Route path="/manager/teachers" element={withProtectedLayout('manager', ManagerTeachersPage)} />
         <Route path="/manager/users" element={withProtectedLayout('manager', ManagerUsersPage)} />
         <Route path="/manager/planning" element={withProtectedLayout('manager', ManagerPlanningPage)} />
@@ -140,10 +140,10 @@ function App() {
         <Route path="/student/initial-assessment" element={withStudentLayout(StudentInitialAssessmentPage)} />
         <Route path="/student/competency-reports" element={withStudentLayout(StudentCompetencyReportsPage)} />
         <Route path="/student/pedagogical-appointments" element={withStudentLayout(StudentPedagogicalAppointmentsPage)} />
-        <Route path="/student/observations" element={withStudentLayout(StudentObservationsPage)} />
+        <Route path="/student/observations" element={<Navigate replace to="/student/competency-reports" />} />
         <Route path="/student/documents" element={withStudentLayout(StudentDocumentsPage)} />
         <Route path="/student/contract" element={withStudentLayout(StudentContractPage)} />
-        <Route path="/student/payments" element={withStudentLayout(StudentPaymentsPage)} />
+        <Route path="/student/payments" element={<Navigate replace to="/student/contract" />} />
         <Route path="/student/next-lesson" element={withStudentLayout(StudentNextLessonPage)} />
         <Route path="/student/lexicon" element={withStudentLayout(StudentLexiconPage)} />
         <Route path="/student/progress" element={withStudentLayout(StudentProgressPage)} />
@@ -174,6 +174,10 @@ function App() {
         <Route
           path="/secretary/inscriptions"
           element={withProtectedLayout('secretary', SecretaryInscriptionsPage)}
+        />
+        <Route
+          path="/secretary/pre-registrations"
+          element={withProtectedLayout('secretary', () => <PreRegistrationsPage roleLabel="Secrétariat" />)}
         />
         <Route
           path="/secretary/planning"

@@ -29,6 +29,9 @@ const navLinks = [
   { label: 'Contact', href: '#contact' },
 ]
 
+const headerActionSizeClass =
+  'inline-flex h-11 w-[13.75rem] shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-4 text-sm font-black xl:w-[14.5rem]'
+
 const platformHighlights = [
   {
     title: 'Livret d\'apprentissage numérique',
@@ -96,7 +99,7 @@ const availableFeatures = [
     icon: FileText,
   },
   {
-    title: 'Gestion élèves & staff',
+    title: 'Gestion élèves & personnel',
     text: 'Gérant, secrétariat, enseignants et élèves — chacun son espace.',
     icon: Users,
   },
@@ -295,44 +298,82 @@ export default function ProfileSelection() {
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(37,99,235,0.18),transparent_30%),radial-gradient(circle_at_78%_16%,rgba(220,38,38,0.12),transparent_32%),linear-gradient(135deg,#020617_0%,#071426_56%,#0c1020_100%)]" />
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#030712]/80 backdrop-blur-2xl">
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <a href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:gap-6 lg:px-8">
+          <a className="shrink-0" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
             <BrandLogo />
           </a>
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex" aria-label="Navigation principale">
+          <nav
+            className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1"
+            aria-label="Navigation principale"
+          >
             {navLinks.map((item, index) => (
               <a
-                className={`relative px-4 py-2 text-sm font-semibold transition hover:text-white ${index === 0 ? 'text-white' : 'text-slate-300'}`}
+                className={`relative whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-semibold transition hover:bg-white/5 hover:text-white xl:px-3.5 xl:text-sm ${index === 0 ? 'text-white' : 'text-slate-300'}`}
                 href={item.href}
                 key={item.href}
               >
                 {item.label}
-                {index === 0 ? <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]" /> : null}
+                {index === 0 ? (
+                  <span className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] xl:inset-x-3" />
+                ) : null}
               </a>
             ))}
           </nav>
-          <Link
-            to="/signup"
-            className="hidden items-center rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110 lg:inline-flex"
-          >
-            Créer mon auto-école
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-          <button className="rounded-2xl border border-white/15 p-2 lg:hidden" onClick={() => setMobileOpen((value) => !value)} type="button">
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+            <div className="hidden items-stretch gap-2.5 lg:flex">
+              <Link
+                to="/login"
+                className={`${headerActionSizeClass} border border-white/15 bg-white/[0.04] text-white backdrop-blur transition hover:bg-white/10`}
+              >
+                Se connecter
+              </Link>
+              <Link
+                to="/signup"
+                className={`${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`}
+              >
+                Créer mon auto-école
+              </Link>
+            </div>
+            <button
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              className="rounded-2xl border border-white/15 p-2 lg:hidden"
+              onClick={() => setMobileOpen((value) => !value)}
+              type="button"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
         {mobileOpen && (
           <div className="border-t border-white/10 bg-[#030712]/95 px-4 py-4 lg:hidden">
             <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-2" initial={{ opacity: 0, y: -6 }}>
               {navLinks.map((item) => (
-                <a className="rounded-2xl px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/10" href={item.href} key={item.href} onClick={() => setMobileOpen(false)}>
+                <a
+                  className="rounded-2xl px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/10"
+                  href={item.href}
+                  key={item.href}
+                  onClick={() => setMobileOpen(false)}
+                >
                   {item.label}
                 </a>
               ))}
-              <Link className="mt-2 rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-black text-white" to="/signup">
-                Créer mon auto-école
-              </Link>
+              <div className="mt-2 grid gap-2.5 border-t border-white/10 pt-4">
+                <Link
+                  className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-white/10 px-4 text-sm font-black text-white transition hover:bg-white/15"
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
+                  to="/signup"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Créer mon auto-école
+                </Link>
+              </div>
             </motion.div>
           </div>
         )}
@@ -373,17 +414,17 @@ export default function ProfileSelection() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:hidden">
                 <Link
                   to="/signup"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
                 >
                   Créer mon auto-école
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/10 sm:w-auto"
                 >
                   Se connecter
                 </Link>
@@ -550,15 +591,6 @@ export default function ProfileSelection() {
             <p className="mt-2 text-sm font-semibold text-blue-300">
               Essai gratuit 30 jours · 20 élèves inclus · Sans engagement
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link to="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5">
-                Créer mon auto-école
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-7 py-4 text-sm font-black text-white transition hover:bg-white/10">
-                Se connecter
-              </Link>
-            </div>
           </motion.div>
         </section>
 

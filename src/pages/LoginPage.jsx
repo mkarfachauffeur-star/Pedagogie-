@@ -4,34 +4,22 @@ import {
   ArrowRight,
   BarChart3,
   BookOpen,
-  Briefcase,
   ClipboardList,
   Eye,
   EyeOff,
-  GraduationCap,
   LockKeyhole,
   Mail,
-  Shield,
   ShieldCheck,
   Smartphone,
-  UserRound,
   Users,
-  Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
-import { roleDestinations, roleLabels } from '../utils/authSession'
+import { roleDestinations } from '../utils/authSession'
 import { useAuth } from '../context/AuthContext'
 import { getUserFacingError } from '../lib/userFacingError'
-
-const roles = [
-  { id: 'student', label: 'Élève', icon: GraduationCap },
-  { id: 'teacher', label: 'Enseignant', icon: UserRound },
-  { id: 'secretary', label: 'Secrétariat', icon: Briefcase },
-  { id: 'manager', label: 'Gérant', icon: Shield },
-]
 
 const featureHighlights = [
   {
@@ -133,13 +121,12 @@ function LoginBackground() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { signInWithRole, signInWithPassword } = useAuth()
+  const { signInWithPassword } = useAuth()
   const shouldReduceMotion = useReducedMotion()
   const [authError, setAuthError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState('student')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
@@ -163,39 +150,27 @@ export default function LoginPage() {
     }
   }, [])
 
-  const canSubmit = useMemo(() => Boolean(role), [role])
-  const selectedRole = roles.find((item) => item.id === role)
+  const canSubmit = useMemo(() => Boolean(email.trim() && password), [email, password])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setAuthError('')
+    if (!email.trim() || !password) {
+      setAuthError('Saisissez votre e-mail et votre mot de passe.')
+      return
+    }
     if (rememberMe && email) {
       window.localStorage.setItem('pedagogia-drive-login-email', email)
     }
-    // Connexion réelle Supabase si email + mot de passe sont renseignés.
-    if (email && password) {
-      setSubmitting(true)
-      const { error, role: realRole } = await signInWithPassword(email, password)
-      setSubmitting(false)
-      if (error) {
-        setAuthError(error.message || getUserFacingError(error, 'login'))
-        return
-      }
-      const destination = roleDestinations[realRole] || roleDestinations[role] || '/'
-      navigate(destination, { replace: true })
+    setSubmitting(true)
+    const { error, role: realRole } = await signInWithPassword(email, password)
+    setSubmitting(false)
+    if (error) {
+      setAuthError(error.message || getUserFacingError(error, 'login'))
       return
     }
-    // Sinon : accès démo par rôle (transitoire, conservé pour les tests).
-    if (!canSubmit) return
-    setSubmitting(true)
-    const destination = await signInWithRole(role)
-    setSubmitting(false)
-    if (destination) navigate(destination, { replace: true })
-  }
-
-  const handleQuickAccess = async (selectedRoleId) => {
-    const destination = await signInWithRole(selectedRoleId)
-    if (destination) navigate(destination, { replace: true })
+    const destination = roleDestinations[realRole] || '/'
+    navigate(destination, { replace: true })
   }
 
   const fadeUp = (delay = 0) =>
@@ -267,61 +242,7 @@ export default function LoginPage() {
               <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0c1424] p-6 shadow-2xl shadow-black/50 sm:p-8">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-blue-500/60 via-violet-400/30 to-red-500/60" />
 
-                {/* Accès démo rapide */}
-                <div className="rounded-2xl border border-white/10 bg-[#070d18]/80 p-4">
-                  <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-blue-200">
-                    <Zap className="h-4 w-4 text-blue-400" />
-                    Accès démo rapide
-                  </p>
-                  <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                    Ouvrez directement un dashboard sans saisir d&apos;e-mail ni de mot de passe.
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {roles.map((item) => {
-                      const Icon = item.icon
-                      return (
-                        <button
-                          key={`quick-${item.id}`}
-                          type="button"
-                          onClick={() => handleQuickAccess(item.id)}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a1220] px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:border-blue-400/35 hover:bg-blue-500/10 hover:text-white"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-blue-400" />
-                          {item.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-                  <div>
-                    <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                      Connexion par profil
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {roles.map((item) => {
-                        const Icon = item.icon
-                        const active = role === item.id
-                        return (
-                          <button
-                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
-                              active
-                                ? 'border-blue-400/50 bg-blue-500/15 text-white shadow-inner shadow-blue-900/20'
-                                : 'border-white/10 bg-[#0a1220] text-slate-300 hover:border-blue-400/30 hover:text-white'
-                            }`}
-                            key={item.id}
-                            onClick={() => setRole(item.id)}
-                            type="button"
-                          >
-                            <Icon className={`h-3.5 w-3.5 ${active ? 'text-blue-300' : 'text-blue-400'}`} />
-                            {item.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
+                <form className="grid gap-4" onSubmit={handleSubmit}>
                   <label className="block text-sm font-bold text-slate-200">
                     E-mail
                     <span className="mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#070d18] px-4 py-3">
@@ -382,8 +303,8 @@ export default function LoginPage() {
                     <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 p-4 text-sm leading-6 text-slate-300">
                       <p className="font-bold text-white">Réinitialisation du mot de passe</p>
                       <p className="mt-2">
-                        Contactez le secrétariat de votre auto-école pour obtenir un nouvel accès. En
-                        démo, utilisez l&apos;accès rapide ci-dessus.
+                        Contactez le secrétariat de votre auto-école pour obtenir un nouvel accès ou
+                        un lien de réinitialisation.
                       </p>
                       <button
                         className="mt-3 text-xs font-bold text-blue-300 underline"
@@ -416,11 +337,7 @@ export default function LoginPage() {
                   </button>
 
                   <p className="text-center text-xs text-slate-500">
-                    Espace{' '}
-                    <strong className="font-semibold text-slate-300">
-                      {selectedRole?.label || roleLabels[role]}
-                    </strong>{' '}
-                    : redirection automatique après connexion.
+                    Redirection automatique vers votre espace après connexion.
                   </p>
                 </form>
 

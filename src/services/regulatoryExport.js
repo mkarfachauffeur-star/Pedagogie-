@@ -1,19 +1,131 @@
-import ExcelJS from 'exceljs'
 import { supabase } from '../lib/supabase'
+import { fetchExportStudents } from './adminExports'
+import { formatRecommendedHours } from '../lib/initialAssessmentUtils'
 import {
-  fetchExportLessons,
-  fetchExportStudents,
-} from './adminExports'
-import {
-  buildCsvContent,
-  downloadCsv,
+  downloadProfessionalCsv,
+  downloadXlsxSheet,
+  formatAmount,
   formatDateFr,
-  formatDurationMinutes,
   formatGeneratedAt,
-  formatTimeFr,
+  splitFullName,
   timestampForFilename,
-  addMinutes,
 } from '../utils/csvExport'
+
+export const REGULATORY_EXPORTS = {
+  students: {
+    id: 'students',
+    title: 'Élèves',
+    description: 'Registre des dossiers élèves — une ligne par élève.',
+    filenamePrefix: 'reglementaire-eleves',
+    sheetName: 'Élèves',
+  },
+  teachers: {
+    id: 'teachers',
+    title: 'Enseignants',
+    description: 'Registre du personnel enseignant et autorisations.',
+    filenamePrefix: 'reglementaire-enseignants',
+    sheetName: 'Enseignants',
+  },
+  lessons: {
+    id: 'lessons',
+    title: 'Leçons',
+    description: 'Journal des leçons réalisées — une ligne par leçon.',
+    filenamePrefix: 'reglementaire-lecons',
+    sheetName: 'Leçons',
+  },
+  payments: {
+    id: 'payments',
+    title: 'Paiements',
+    description: 'Registre des encaissements sur la période.',
+    filenamePrefix: 'reglementaire-paiements',
+    sheetName: 'Paiements',
+  },
+  contracts: {
+    id: 'contracts',
+    title: 'Contrats',
+    description: 'Registre des contrats de formation élève.',
+    filenamePrefix: 'reglementaire-contrats',
+    sheetName: 'Contrats',
+  },
+  vehicles: {
+    id: 'vehicles',
+    title: 'Véhicules',
+    description: 'Parc automobile de l\'établissement.',
+    filenamePrefix: 'reglementaire-vehicules',
+    sheetName: 'Véhicules',
+  },
+}
+
+export const STUDENT_HEADERS = [
+  'N° dossier',
+  'Nom',
+  'Prénom',
+  'Date de naissance',
+  'Adresse',
+  'Code postal',
+  'Ville',
+  'Téléphone',
+  'Email',
+  'NEPH',
+  'Date inscription',
+  'Formule',
+  'Statut',
+  'Enseignant référent',
+  'Date évaluation de départ',
+  'Volume prévisionnel recommandé',
+]
+
+export const TEACHER_HEADERS = [
+  'Nom',
+  'Prénom',
+  'Email',
+  'Téléphone',
+  'N° autorisation d\'enseigner',
+  'Date de validité',
+  'Catégories autorisées',
+  'Date d\'affectation',
+]
+
+export const LESSON_HEADERS = [
+  'Date',
+  'Heure début',
+  'Heure fin',
+  'Élève',
+  'Enseignant',
+  'Véhicule',
+  'Durée',
+  'Compétence REMC travaillée',
+  'Observations',
+]
+
+export const PAYMENT_HEADERS = [
+  'Élève',
+  'Date',
+  'Montant',
+  'Mode de paiement',
+  'N° reçu',
+  'Référence',
+  'Commentaire',
+]
+
+export const CONTRACT_HEADERS = [
+  'N° contrat',
+  'Élève',
+  'Date signature',
+  'Formule',
+  'Montant total',
+  'Statut',
+]
+
+export const VEHICLE_HEADERS = [
+  'Immatriculation',
+  'Marque',
+  'Modèle',
+  'Énergie',
+  'Date mise en circulation',
+  'Assurance',
+  'Date expiration assurance',
+]
 
 function referentTeacherName(student) {
   const assignments = student?.student_assignments || []
@@ -21,37 +133,190 @@ function referentTeacherName(student) {
   return referent?.teacher?.full_name || ''
 }
 
+function studentFullName(student) {
+  if (!student) return ''
+  return `${student.last_name || ''} ${student.first_name || ''}`.trim()
+}
+
 function vehicleLabel(vehicle) {
   if (!vehicle) return ''
   return [vehicle.plate, vehicle.brand, vehicle.model].filter(Boolean).join(' · ')
 }
 
-async function fetchExams(filters) {
+function parseDurationToMinutes(duration = '') {
+  const text = String(duration).trim().toLowerCase()
+  if (!text) return 0
+  const hoursMatch = text.match(/(\d+(?:[.,]\d+)?)\s*h/)
+  const minsMatch = text.match(/(\d+)\s*min/)
+  let total = 0
+  if (hoursMatch) total += Number(hoursMatch[1].replace(',', '.')) * 60
+  if (minsMatch) total += Number(minsMatch[1])
+  if (!hoursMatch && !minsMatch && /^\d+$/.test(text)) total += Number(text)
+  return Math.round(total)
+}
+
+function computeEndTime(startTime, duration) {
+  if (!startTime) return ''
+  const [hours, minutes] = startTime.split(':').map(Number)
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return ''
+  const totalMinutes = hours * 60 + minutes + parseDurationToMinutes(duration)
+  const endHours = Math.floor(totalMinutes / 60) % 24
+  const endMinutes = totalMinutes % 60
+  return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+}
+
+function contractNumber(contract) {
+  if (!contract?.id) return ''
+  return String(contract.id).slice(0, 8).toUpperCase()
+}
+
+function paymentReference(payment) {
+  return payment?.payment_reference || (payment?.id ? String(payment.id).slice(0, 8).toUpperCase() : '')
+}
+
+function receiptNumber(payment) {
+  return payment?.receipt_number || ''
+}
+
+const CONTRACT_STATUS_LABELS = {
+  draft: 'Brouillon',
+  sent: 'Envoyé',
+  signed: 'Signé',
+  cancelled: 'Annulé',
+}
+
+function contractStatus(contract) {
+  if (contract?.status) return CONTRACT_STATUS_LABELS[contract.status] || contract.status
+  if (contract?.signed_at) return 'Signé'
+  return 'Brouillon'
+}
+
+async function logExport(exportType, format, filters) {
+  try {
+    await supabase.rpc('log_audit_event', {
+      p_action: 'export_regulatory',
+      p_entity_type: 'export',
+      p_entity_label: `Export réglementaire ${exportType} ${format}`,
+      p_metadata: { exportType, format, filters },
+    })
+  } catch {
+    // non bloquant
+  }
+}
+
+async function fetchOrgMeta() {
+  const { data } = await supabase
+    .from('organizations')
+    .select('name, siret, prefecture_approval, address, city, postal_code, phone, email')
+    .single()
+  return data
+}
+
+async function fetchTeachers(filters = {}) {
   let query = supabase
-    .from('exams')
+    .from('teachers')
     .select(`
-      id, type, exam_date, exam_time, center, status,
-      student:student_id(first_name, last_name, file_number),
-      teacher:teacher_id(full_name)
+      profile_id, created_at, authorization_number, authorization_expires_at, authorized_categories,
+      profiles:profile_id(full_name, email, phone)
     `)
-    .order('exam_date', { ascending: true })
-  if (filters.dateFrom) query = query.gte('exam_date', filters.dateFrom)
-  if (filters.dateTo) query = query.lte('exam_date', filters.dateTo)
+    .order('created_at')
+
+  if (filters.dateFrom) query = query.gte('created_at', `${filters.dateFrom}T00:00:00`)
+  if (filters.dateTo) query = query.lte('created_at', `${filters.dateTo}T23:59:59`)
+
   const { data, error } = await query
   if (error) throw error
   return data || []
 }
 
-async function fetchContracts(filters) {
+async function fetchInitialAssessmentsMap(studentIds = []) {
+  if (!studentIds.length) return {}
+  const { data, error } = await supabase
+    .from('student_initial_assessments')
+    .select('student_id, completed_at, status, recommended_hours_min, recommended_hours_max')
+    .in('student_id', studentIds)
+  if (error) throw error
+  return Object.fromEntries((data || []).map((row) => [row.student_id, row]))
+}
+
+async function fetchLessonObservations(filters = {}) {
+  let query = supabase
+    .from('student_lesson_observations')
+    .select(`
+      id, student_id, lesson_date, lesson_time, duration, observations, skills, opened_at,
+      student:student_id(id, first_name, last_name),
+      teacher:teacher_id(full_name)
+    `)
+    .order('opened_at', { ascending: true })
+
+  if (filters.dateFrom) query = query.gte('lesson_date', filters.dateFrom)
+  if (filters.dateTo) query = query.lte('lesson_date', filters.dateTo)
+  if (filters.teacherId) query = query.eq('teacher_id', filters.teacherId)
+  if (filters.studentId) query = query.eq('student_id', filters.studentId)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+async function fetchAppointmentVehicleMap(filters = {}) {
+  let query = supabase
+    .from('appointments')
+    .select(`
+      starts_at, student_id,
+      vehicle:vehicle_id(brand, model, plate)
+    `)
+    .order('starts_at', { ascending: true })
+
+  if (filters.dateFrom) query = query.gte('starts_at', `${filters.dateFrom}T00:00:00`)
+  if (filters.dateTo) query = query.lte('starts_at', `${filters.dateTo}T23:59:59`)
+  if (filters.teacherId) query = query.eq('teacher_id', filters.teacherId)
+  if (filters.studentId) query = query.eq('student_id', filters.studentId)
+
+  const { data, error } = await query
+  if (error) throw error
+
+  const map = new Map()
+  ;(data || []).forEach((appointment) => {
+    const dateKey = appointment.starts_at?.slice(0, 10)
+    if (!dateKey || !appointment.student_id) return
+    map.set(`${appointment.student_id}_${dateKey}`, vehicleLabel(appointment.vehicle))
+  })
+  return map
+}
+
+async function fetchPayments(filters = {}) {
+  let query = supabase
+    .from('payments')
+    .select(`
+      id, amount, paid_at, method, comment, receipt_number, payment_reference,
+      student:student_id(first_name, last_name)
+    `)
+    .order('paid_at', { ascending: true })
+
+  if (filters.dateFrom) query = query.gte('paid_at', filters.dateFrom)
+  if (filters.dateTo) query = query.lte('paid_at', filters.dateTo)
+  if (filters.studentId) query = query.eq('student_id', filters.studentId)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+async function fetchContracts(filters = {}) {
   let query = supabase
     .from('contracts')
     .select(`
-      id, contract_total, package_price_ttc, admin_fee_ttc, exam_presentation_ttc,
-      extra_hours, extra_hours_amount_ttc, signed_at, updated_at,
+      id, contract_total, signed_at, updated_at, status,
       student:student_id(first_name, last_name, file_number),
-      package:package_id(name, category)
+      package:package_id(name)
     `)
-    .order('updated_at', { ascending: false })
+    .order('updated_at', { ascending: true })
+
+  if (filters.dateFrom) query = query.gte('signed_at', filters.dateFrom)
+  if (filters.dateTo) query = query.lte('signed_at', filters.dateTo)
+  if (filters.studentId) query = query.eq('student_id', filters.studentId)
+
   const { data, error } = await query
   if (error) throw error
   return data || []
@@ -60,249 +325,313 @@ async function fetchContracts(filters) {
 async function fetchVehicles() {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('id, brand, model, plate, energy, created_at')
+    .select('id, brand, model, plate, energy, details, created_at')
     .order('created_at')
   if (error) throw error
   return data || []
 }
 
-async function fetchPayments(filters) {
-  let query = supabase
-    .from('payments')
-    .select(`
-      id, amount, paid_at, method, nature, comment,
-      student:student_id(first_name, last_name, file_number)
-    `)
-    .order('paid_at', { ascending: false })
-  if (filters.dateFrom) query = query.gte('paid_at', filters.dateFrom)
-  if (filters.dateTo) query = query.lte('paid_at', filters.dateTo)
-  const { data, error } = await query
-  if (error) throw error
-  return data || []
+function mapStudentRows(students, assessmentsMap) {
+  return students.map((student) => {
+    const assessment = assessmentsMap[student.id]
+    return {
+      'N° dossier': student.file_number || '',
+      Nom: student.last_name || '',
+      Prénom: student.first_name || '',
+      'Date de naissance': formatDateFr(student.birth_date),
+      Adresse: [student.street_number, student.street].filter(Boolean).join(' '),
+      'Code postal': student.postal_code || '',
+      Ville: student.city || '',
+      Téléphone: student.phone || '',
+      Email: student.email || '',
+      NEPH: student.neph || '',
+      'Date inscription': formatDateFr(student.registration_date),
+      Formule: student.package_name || '',
+      Statut: student.status || '',
+      'Enseignant référent': referentTeacherName(student),
+      'Date évaluation de départ': assessment?.status === 'completed'
+        ? formatDateFr(assessment.completed_at)
+        : '',
+      'Volume prévisionnel recommandé': assessment?.status === 'completed'
+        ? formatRecommendedHours(assessment)
+        : '',
+    }
+  })
 }
 
-async function fetchTeachersRegulatory(filters) {
-  let query = supabase
-    .from('teachers')
-    .select(`
-      profile_id, created_at, authorization_number, authorization_expires_at, authorized_categories,
-      profiles:profile_id(full_name, email, phone)
-    `)
-    .order('created_at')
-  if (filters.dateFrom) query = query.gte('created_at', `${filters.dateFrom}T00:00:00`)
-  if (filters.dateTo) query = query.lte('created_at', `${filters.dateTo}T23:59:59`)
-  const { data, error } = await query
-  if (error) throw error
-  return data || []
+function mapTeacherRows(teachers) {
+  return teachers.map((teacher) => {
+    const { firstName, lastName } = splitFullName(teacher.profiles?.full_name || '')
+    return {
+      Nom: lastName,
+      Prénom: firstName,
+      Email: teacher.profiles?.email || '',
+      Téléphone: teacher.profiles?.phone || '',
+      'N° autorisation d\'enseigner': teacher.authorization_number || '',
+      'Date de validité': formatDateFr(teacher.authorization_expires_at),
+      'Catégories autorisées': (teacher.authorized_categories || []).join(', '),
+      'Date d\'affectation': formatDateFr(teacher.created_at),
+    }
+  })
 }
 
-async function fetchOrgMeta() {
-  const { data } = await supabase.from('organizations').select('name, siret, prefecture_approval, address, city, postal_code').single()
-  return data
+function mapLessonRows(observations, vehicleMap) {
+  return observations.map((lesson) => {
+    const dateKey = lesson.lesson_date || lesson.opened_at?.slice(0, 10) || ''
+    const vehicle = vehicleMap.get(`${lesson.student_id}_${dateKey}`) || ''
+    return {
+      Date: formatDateFr(lesson.lesson_date || lesson.opened_at),
+      'Heure début': lesson.lesson_time || '',
+      'Heure fin': computeEndTime(lesson.lesson_time, lesson.duration),
+      Élève: studentFullName(lesson.student),
+      Enseignant: lesson.teacher?.full_name || '',
+      Véhicule: vehicle,
+      Durée: lesson.duration || '',
+      'Compétence REMC travaillée': (lesson.skills || []).join(', '),
+      Observations: lesson.observations || '',
+    }
+  })
 }
 
-export async function fetchRegulatoryData(filters = {}) {
-  const [org, students, teachers, lessons, exams, contracts, vehicles, payments] = await Promise.all([
-    fetchOrgMeta(),
+function mapPaymentRows(payments) {
+  return payments.map((payment) => ({
+    Élève: studentFullName(payment.student),
+    Date: formatDateFr(payment.paid_at),
+    Montant: formatAmount(payment.amount),
+    'Mode de paiement': payment.method || '',
+    'N° reçu': receiptNumber(payment),
+    Référence: paymentReference(payment),
+    Commentaire: payment.comment || '',
+  }))
+}
+
+function mapContractRows(contracts) {
+  return contracts.map((contract) => ({
+    'N° contrat': contractNumber(contract),
+    Élève: studentFullName(contract.student),
+    'Date signature': formatDateFr(contract.signed_at),
+    Formule: contract.package?.name || '',
+    'Montant total': formatAmount(contract.contract_total),
+    Statut: contractStatus(contract),
+  }))
+}
+
+function mapVehicleRows(vehicles) {
+  return vehicles.map((vehicle) => {
+    const details = vehicle.details || {}
+    return {
+      Immatriculation: vehicle.plate || '',
+      Marque: vehicle.brand || '',
+      Modèle: vehicle.model || '',
+      Énergie: vehicle.energy || '',
+      'Date mise en circulation': formatDateFr(details.firstRegistrationDate || details.registrationDate || vehicle.created_at),
+      Assurance: details.insuranceCompany || details.insurance || '',
+      'Date expiration assurance': formatDateFr(details.insuranceExpiry || details.insuranceExpiresAt || ''),
+    }
+  })
+}
+
+async function downloadRegulatoryTable({
+  exportType,
+  format,
+  filters,
+  headers,
+  rows,
+  config,
+}) {
+  const stamp = timestampForFilename()
+  const extension = format === 'xlsx' ? 'xlsx' : 'csv'
+  const filename = `${config.filenamePrefix}_${stamp}.${extension}`
+
+  if (format === 'xlsx') {
+    await downloadXlsxSheet({ filename, sheetName: config.sheetName, headers, rows })
+  } else {
+    downloadProfessionalCsv(filename, headers, rows)
+  }
+
+  await logExport(exportType, format, filters)
+}
+
+export async function exportRegulatoryStudents(filters = {}, format = 'csv') {
+  const students = await fetchExportStudents(filters)
+  const assessmentsMap = await fetchInitialAssessmentsMap(students.map((row) => row.id))
+  const rows = mapStudentRows(students, assessmentsMap)
+  await downloadRegulatoryTable({
+    exportType: 'students',
+    format,
+    filters,
+    headers: STUDENT_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.students,
+  })
+}
+
+export async function exportRegulatoryTeachers(filters = {}, format = 'csv') {
+  const teachers = await fetchTeachers(filters)
+  const rows = mapTeacherRows(teachers)
+  await downloadRegulatoryTable({
+    exportType: 'teachers',
+    format,
+    filters,
+    headers: TEACHER_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.teachers,
+  })
+}
+
+export async function exportRegulatoryLessons(filters = {}, format = 'csv') {
+  const [observations, vehicleMap] = await Promise.all([
+    fetchLessonObservations(filters),
+    fetchAppointmentVehicleMap(filters),
+  ])
+  const rows = mapLessonRows(observations, vehicleMap)
+  await downloadRegulatoryTable({
+    exportType: 'lessons',
+    format,
+    filters,
+    headers: LESSON_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.lessons,
+  })
+}
+
+export async function exportRegulatoryPayments(filters = {}, format = 'csv') {
+  const payments = await fetchPayments(filters)
+  const rows = mapPaymentRows(payments)
+  await downloadRegulatoryTable({
+    exportType: 'payments',
+    format,
+    filters,
+    headers: PAYMENT_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.payments,
+  })
+}
+
+export async function exportRegulatoryContracts(filters = {}, format = 'csv') {
+  const contracts = await fetchContracts(filters)
+  const rows = mapContractRows(contracts)
+  await downloadRegulatoryTable({
+    exportType: 'contracts',
+    format,
+    filters,
+    headers: CONTRACT_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.contracts,
+  })
+}
+
+export async function exportRegulatoryVehicles(filters = {}, format = 'csv') {
+  const vehicles = await fetchVehicles()
+  const rows = mapVehicleRows(vehicles)
+  await downloadRegulatoryTable({
+    exportType: 'vehicles',
+    format,
+    filters,
+    headers: VEHICLE_HEADERS,
+    rows,
+    config: REGULATORY_EXPORTS.vehicles,
+  })
+}
+
+function addPdfSection(doc, autoTable, title, headers, rows, pageWidth) {
+  doc.addPage()
+  doc.setFontSize(14)
+  doc.setTextColor(14, 116, 144)
+  doc.text(title, 14, 16)
+  doc.setTextColor(15, 23, 42)
+
+  if (!rows.length) {
+    doc.setFontSize(10)
+    doc.text('Aucune donnée sur la période sélectionnée.', 14, 26)
+    return
+  }
+
+  autoTable(doc, {
+    head: [headers],
+    body: rows.map((row) => headers.map((header) => String(row[header] ?? ''))),
+    startY: 22,
+    margin: { left: 14, right: 14 },
+    tableWidth: pageWidth - 28,
+    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [14, 116, 144], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+  })
+}
+
+export async function exportRegulatoryPdf(filters = {}) {
+  const generatedAt = formatGeneratedAt()
+  const org = await fetchOrgMeta()
+  const [students, teachers, vehicles, payments] = await Promise.all([
     fetchExportStudents(filters),
-    fetchTeachersRegulatory(filters),
-    fetchExportLessons({ ...filters, realizedOnly: true }),
-    fetchExams(filters),
-    fetchContracts(filters),
+    fetchTeachers(filters),
     fetchVehicles(),
     fetchPayments(filters),
   ])
-  return { org, students, teachers, lessons, exams, contracts, vehicles, payments }
-}
 
-async function logExport(format, filters) {
-  try {
-    await supabase.rpc('log_audit_event', {
-      p_action: 'export_regulatory',
-      p_entity_type: 'export',
-      p_entity_label: `Export réglementaire ${format}`,
-      p_metadata: { format, filters },
-    })
-  } catch {
-    // non bloquant
+  const assessmentsMap = await fetchInitialAssessmentsMap(students.map((row) => row.id))
+  const studentRows = mapStudentRows(students, assessmentsMap)
+  const teacherRows = mapTeacherRows(teachers)
+  const vehicleRows = mapVehicleRows(vehicles)
+  const paymentRows = mapPaymentRows(payments)
+
+  const [{ jsPDF }, { autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const orgName = org?.name || 'Auto-école'
+  const orgAddress = [org?.address, org?.postal_code, org?.city].filter(Boolean).join(' ')
+
+  doc.setFontSize(18)
+  doc.setTextColor(15, 23, 42)
+  doc.text('Dossier réglementaire', 14, 18)
+  doc.setFontSize(11)
+  doc.text(orgName, 14, 28)
+  doc.setFontSize(10)
+  doc.setTextColor(71, 85, 105)
+  doc.text(`SIRET : ${org?.siret || '—'}`, 14, 36)
+  doc.text(`Agrément préfectoral : ${org?.prefecture_approval || '—'}`, 14, 42)
+  if (orgAddress) doc.text(`Adresse : ${orgAddress}`, 14, 48)
+  doc.text(`Document généré le ${generatedAt}`, 14, 56)
+  if (filters.dateFrom || filters.dateTo) {
+    doc.text(`Période exportée : ${filters.dateFrom || '…'} au ${filters.dateTo || '…'}`, 14, 62)
   }
+
+  addPdfSection(doc, autoTable, 'Registre des élèves', STUDENT_HEADERS, studentRows, pageWidth)
+  addPdfSection(doc, autoTable, 'Registre des enseignants', TEACHER_HEADERS, teacherRows, pageWidth)
+  addPdfSection(doc, autoTable, 'Parc automobile', VEHICLE_HEADERS, vehicleRows, pageWidth)
+  addPdfSection(doc, autoTable, 'Registre des paiements', PAYMENT_HEADERS, paymentRows, pageWidth)
+
+  const pageCount = doc.getNumberOfPages()
+  doc.setPage(pageCount)
+  let signatureY = (doc.lastAutoTable?.finalY || 180) + 14
+  if (signatureY > doc.internal.pageSize.getHeight() - 30) {
+    doc.addPage()
+    signatureY = 24
+  }
+
+  doc.setFontSize(10)
+  doc.setTextColor(15, 23, 42)
+  doc.text('Signature numérique de l\'établissement', 14, signatureY)
+  doc.setFontSize(9)
+  doc.setTextColor(71, 85, 105)
+  doc.text(`Document certifié conforme — ${orgName}`, 14, signatureY + 6)
+  doc.text(`Édité le ${generatedAt} via PEDAGOGIA DRIVE`, 14, signatureY + 12)
+  doc.text(`Identifiant document : REG-${timestampForFilename()}`, 14, signatureY + 18)
+
+  doc.save(`dossier-reglementaire_${timestampForFilename()}.pdf`)
+  await logExport('pdf', 'pdf', filters)
 }
 
-function rowsStudents(students) {
-  return students.map((s) => ({
-    Nom: s.last_name || '',
-    Prénom: s.first_name || '',
-    Email: s.email || '',
-    Téléphone: s.phone || '',
-    'Date naissance': formatDateFr(s.birth_date),
-    Adresse: [s.street_number, s.street].filter(Boolean).join(' '),
-    'Code postal': s.postal_code || '',
-    Ville: s.city || '',
-    NEPH: s.neph || '',
-    Formule: s.package_name || '',
-    'N° dossier': s.file_number || '',
-    Inscription: formatDateFr(s.registration_date),
-    Statut: s.status || '',
-    'Enseignant référent': referentTeacherName(s),
-  }))
-}
-
-function rowsTeachers(teachers) {
-  return teachers.map((t) => ({
-    Nom: t.profiles?.full_name || '',
-    Email: t.profiles?.email || '',
-    Téléphone: t.profiles?.phone || '',
-    'N° autorisation': t.authorization_number || '',
-    'Validité autorisation': formatDateFr(t.authorization_expires_at),
-    'Catégories autorisées': (t.authorized_categories || []).join(', '),
-    'Date affectation': formatDateFr(t.created_at),
-  }))
-}
-
-function rowsLessons(lessons) {
-  return lessons.map((l) => {
-    const endAt = addMinutes(l.starts_at, l.duration_minutes)
-    const studentName = l.student ? `${l.student.last_name || ''} ${l.student.first_name || ''}`.trim() : ''
-    return {
-      Élève: studentName,
-      Enseignant: l.teacher?.full_name || '',
-      Date: formatDateFr(l.starts_at),
-      Début: formatTimeFr(l.starts_at),
-      Fin: formatTimeFr(endAt),
-      Durée: formatDurationMinutes(l.duration_minutes),
-      Type: l.kind || '',
-      Véhicule: vehicleLabel(l.vehicle),
-      Statut: l.status || '',
-    }
-  })
-}
-
-function rowsExams(exams) {
-  return exams.map((e) => ({
-    Élève: e.student ? `${e.student.last_name || ''} ${e.student.first_name || ''}`.trim() : '',
-    Type: e.type || '',
-    Date: formatDateFr(e.exam_date),
-    Heure: e.exam_time || '',
-    Centre: e.center || '',
-    Statut: e.status || '',
-    Enseignant: e.teacher?.full_name || '',
-  }))
-}
-
-function rowsContracts(contracts) {
-  return contracts.map((c) => ({
-    Élève: c.student ? `${c.student.last_name || ''} ${c.student.first_name || ''}`.trim() : '',
-    Formule: c.package?.name || '',
-    'Prix forfait': c.package_price_ttc ?? '',
-    'Frais admin': c.admin_fee_ttc ?? '',
-    'Présentation examen': c.exam_presentation_ttc ?? '',
-    'Heures supp.': c.extra_hours ?? 0,
-    'Montant heures supp.': c.extra_hours_amount_ttc ?? '',
-    'Total contrat': c.contract_total ?? '',
-    'Date signature': formatDateFr(c.signed_at),
-  }))
-}
-
-function rowsVehicles(vehicles) {
-  return vehicles.map((v) => ({
-    Immatriculation: v.plate || '',
-    Marque: v.brand || '',
-    Modèle: v.model || '',
-    Énergie: v.energy || '',
-  }))
-}
-
-function rowsPayments(payments) {
-  return payments.map((p) => ({
-    Élève: p.student ? `${p.student.last_name || ''} ${p.student.first_name || ''}`.trim() : '',
-    Montant: p.amount ?? '',
-    Date: formatDateFr(p.paid_at),
-    Mode: p.method || '',
-    Nature: p.nature || '',
-    Commentaire: p.comment || '',
-  }))
-}
-
-export async function exportRegulatoryCsv(filters = {}) {
-  const generatedAt = formatGeneratedAt()
-  const data = await fetchRegulatoryData(filters)
-  await logExport('csv', filters)
-
-  const sections = [
-    ['Métadonnées', [{ Auto_école: data.org?.name, SIRET: data.org?.siret, Agrément: data.org?.prefecture_approval, Généré: generatedAt }]],
-    ['Élèves', rowsStudents(data.students)],
-    ['Enseignants', rowsTeachers(data.teachers)],
-    ['Leçons réalisées', rowsLessons(data.lessons)],
-    ['Examens', rowsExams(data.exams)],
-    ['Contrats', rowsContracts(data.contracts)],
-    ['Véhicules', rowsVehicles(data.vehicles)],
-    ['Paiements', rowsPayments(data.payments)],
-  ]
-
-  const lines = [`Export réglementaire PEDAGOGIA DRIVE`, `Généré le;${generatedAt}`, '']
-  sections.forEach(([title, rows]) => {
-    lines.push(`SECTION;${title}`)
-    if (rows.length === 0) {
-      lines.push('(aucune donnée)')
-    } else {
-      const headers = Object.keys(rows[0])
-      lines.push(headers.join(';'))
-      rows.forEach((row) => {
-        lines.push(headers.map((h) => {
-          const text = row[h] == null ? '' : String(row[h])
-          return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-        }).join(';'))
-      })
-    }
-    lines.push('')
-  })
-
-  downloadCsv(`export-reglementaire_${timestampForFilename()}.csv`, `\uFEFF${lines.join('\r\n')}`)
-}
-
-export async function exportRegulatoryXlsx(filters = {}) {
-  const generatedAt = formatGeneratedAt()
-  const data = await fetchRegulatoryData(filters)
-  await logExport('xlsx', filters)
-
-  const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'PEDAGOGIA DRIVE'
-  workbook.created = new Date()
-
-  const meta = workbook.addWorksheet('Métadonnées')
-  meta.addRow(['Auto-école', data.org?.name || ''])
-  meta.addRow(['SIRET', data.org?.siret || ''])
-  meta.addRow(['Agrément préfectoral', data.org?.prefecture_approval || ''])
-  meta.addRow(['Adresse', [data.org?.address, data.org?.postal_code, data.org?.city].filter(Boolean).join(' ')])
-  meta.addRow(['Généré le', generatedAt])
-
-  const sheets = [
-    ['Élèves', rowsStudents(data.students)],
-    ['Enseignants', rowsTeachers(data.teachers)],
-    ['Leçons', rowsLessons(data.lessons)],
-    ['Examens', rowsExams(data.exams)],
-    ['Contrats', rowsContracts(data.contracts)],
-    ['Véhicules', rowsVehicles(data.vehicles)],
-    ['Paiements', rowsPayments(data.payments)],
-  ]
-
-  sheets.forEach(([name, rows]) => {
-    const ws = workbook.addWorksheet(name.slice(0, 31))
-    if (rows.length === 0) {
-      ws.addRow(['Aucune donnée'])
-      return
-    }
-    ws.addRow(Object.keys(rows[0]))
-    rows.forEach((row) => ws.addRow(Object.values(row)))
-    ws.getRow(1).font = { bold: true }
-  })
-
-  const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `export-reglementaire_${timestampForFilename()}.xlsx`
-  link.click()
-  URL.revokeObjectURL(url)
+export const REGULATORY_EXPORT_RUNNERS = {
+  students: exportRegulatoryStudents,
+  teachers: exportRegulatoryTeachers,
+  lessons: exportRegulatoryLessons,
+  payments: exportRegulatoryPayments,
+  contracts: exportRegulatoryContracts,
+  vehicles: exportRegulatoryVehicles,
+  pdf: exportRegulatoryPdf,
 }

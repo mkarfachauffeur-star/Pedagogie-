@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
+import { useConversationFromLocation } from '../../hooks/useConversationFromLocation'
 import { useConversations } from '../../hooks/useConversations'
 import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { ensureStudentSecretaryConversation, sendMessageWithAttachments } from '../../services/messaging'
@@ -21,10 +23,12 @@ function isSecretaryConversation(conversation) {
 }
 
 export default function StudentMessagesPage() {
+  const location = useLocation()
   const { profileId, organizationId } = useAuth()
   const { conversations, refresh } = useConversations()
 
   const [activeId, setActiveId] = useState(null)
+  useConversationFromLocation(setActiveId)
   const [draft, setDraft] = useState('')
   const [files, setFiles] = useState([])
   const [opening, setOpening] = useState(false)
@@ -44,6 +48,7 @@ export default function StudentMessagesPage() {
 
   // Ouvre automatiquement la conversation avec le secrétariat.
   useEffect(() => {
+    if (location.state?.conversationId) return undefined
     if (!profileId || !organizationId) return undefined
     let cancelled = false
 
@@ -82,7 +87,7 @@ export default function StudentMessagesPage() {
     return () => {
       cancelled = true
     }
-  }, [profileId, organizationId, secretaryConversations, refresh])
+  }, [location.state?.conversationId, profileId, organizationId, secretaryConversations, refresh])
 
   const handleSend = async () => {
     const body = draft.trim()

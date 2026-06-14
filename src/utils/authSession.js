@@ -1,5 +1,3 @@
-export const AUTH_ROLE_KEY = 'pedagogia-drive-auth-role'
-
 export const roleDestinations = {
   student: '/student/dashboard',
   teacher: '/teacher/dashboard',
@@ -16,19 +14,27 @@ export const roleLabels = {
   super_admin: 'Super Admin',
 }
 
-export function getStoredRole() {
-  if (typeof window === 'undefined') return null
-  const role = window.localStorage.getItem(AUTH_ROLE_KEY)
-  return roleDestinations[role] ? role : null
-}
-
-export function setStoredRole(role) {
+/** Purge les clés localStorage héritées du mode démo (appelé au démarrage). */
+export function purgeLegacyDemoStorage() {
   if (typeof window === 'undefined') return
-  if (!roleDestinations[role]) return
-  window.localStorage.setItem(AUTH_ROLE_KEY, role)
-}
-
-export function clearStoredRole() {
-  if (typeof window === 'undefined') return
-  window.localStorage.removeItem(AUTH_ROLE_KEY)
+  const keys = [
+    'pedagogia-drive-auth-role',
+    'pedagogia-drive-encaissements-v1',
+  ]
+  keys.forEach((key) => {
+    try {
+      window.localStorage.removeItem(key)
+    } catch {
+      // ignore
+    }
+  })
+  try {
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith('pedagogia:practice-exams:'))
+      .forEach((key) => window.localStorage.removeItem(key))
+  } catch {
+    // ignore
+  }
+  // REMC : pedagogia-drive-student-tracking* et pedagogia:remc-competency:*
+  // sont migrés vers Supabase par remcItems.migrateLocalStorageRemcIfNeeded
 }

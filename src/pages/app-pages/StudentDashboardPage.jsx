@@ -9,7 +9,6 @@ import { useStudentTrack } from '../../hooks/useStudentTrack'
 import { getStudentNavItems } from '../../config/navigation'
 import { getTrackLabel } from '../../lib/studentTrack'
 import {
-  formatAssessmentStatus,
   getStudentHoursSummary,
 } from '../../services/initialAssessment'
 import { listPracticeExamsForStudent } from '../../services/practiceExams'
@@ -28,11 +27,14 @@ function formatDateFr(value) {
   }
 }
 
-function StatCard({ label, value }) {
+function StatCard({ detail, label, value }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <p className="text-2xl font-black text-slate-950">{value}</p>
+        {detail ? <p className="text-sm font-semibold text-slate-500">{detail}</p> : null}
+      </div>
     </article>
   )
 }
@@ -40,7 +42,7 @@ function StatCard({ label, value }) {
 export default function StudentDashboardPage() {
   const { profile, profileId, user } = useAuth()
   const { student, track, isPermisB, loading: trackLoading } = useStudentTrack(profileId)
-  const { studentId, unlockState, globalProgress, isCompetencyValidated, loading: remcLoading } = useRemcUnlock(profileId)
+  const { studentId, unlockState, globalProgress, itemProgress, isCompetencyValidated, loading: remcLoading } = useRemcUnlock(profileId)
   const [teacherName, setTeacherName] = useState('Non assigné')
   const [hoursSummary, setHoursSummary] = useState(null)
   const [practiceExamStats, setPracticeExamStats] = useState(null)
@@ -155,31 +157,49 @@ export default function StudentDashboardPage() {
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <StatCard
-              label="Évaluation de départ réalisée"
+              detail={
+                assessmentDone && assessment?.completed_at
+                  ? `· ${formatDateFr(assessment.completed_at)}`
+                  : null
+              }
+              label="Évaluation de départ"
               value={assessmentDone ? 'Oui' : 'Non'}
             />
-            <StatCard label="Date de réalisation" value={formatDateFr(assessment?.completed_at)} />
             <StatCard
-              label="Heures recommandées"
+              label="Recommandées"
               value={hoursSummary?.recommendedHours ? `${hoursSummary.recommendedHours} h` : '—'}
             />
-            <StatCard label="Heures au contrat" value={`${hoursSummary?.contractHours ?? 0} h`} />
-            <StatCard label="Heures effectuées" value={`${hoursSummary?.completedHours ?? 0} h`} />
-            <StatCard label="Heures restantes" value={`${hoursSummary?.remainingHours ?? 0} h`} />
+            <StatCard label="Effectuées" value={`${hoursSummary?.completedHours ?? 0} h`} />
+            <StatCard
+              detail={
+                hoursSummary?.acceptedTargetHours != null
+                  ? `Sur ${hoursSummary.acceptedTargetHours} h préconisées`
+                  : assessmentDone && assessment?.recommended_hours_response === 'pending'
+                    ? 'Acceptez la proposition pour activer le suivi'
+                    : null
+              }
+              label="Restantes"
+              value={
+                hoursSummary?.remainingHours != null ? `${hoursSummary.remainingHours} h` : '—'
+              }
+            />
           </section>
 
           {!assessmentDone && (
             <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-              Évaluation de départ : {formatAssessmentStatus(assessment?.status || 'pending').toLowerCase()}.
-              Elle doit être réalisée avant le début complet du suivi pédagogique.
+              Votre évaluation de départ sera réalisée par votre enseignant lors de la première heure de conduite.
               <Link className="ml-2 font-black text-amber-950 underline" to="/student/initial-assessment">
-                Consulter
+                En savoir plus
               </Link>
             </p>
           )}
 
           {unlockState && (
-            <RemcProgressOverview globalProgress={globalProgress} unlockState={unlockState} />
+            <RemcProgressOverview
+              globalProgress={globalProgress}
+              itemProgress={itemProgress}
+              unlockState={unlockState}
+            />
           )}
 
           {practiceExamStats?.count > 0 && (

@@ -1,17 +1,45 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
-import { DEMO_STUDENT, isLocalDemoSession } from '../data/demoPracticeExam'
 
-function getDemoStudents() {
-  return [{
-    id: DEMO_STUDENT.id,
-    first_name: DEMO_STUDENT.firstName,
-    last_name: DEMO_STUDENT.lastName,
-    package_name: DEMO_STUDENT.formationType,
-    formation_type: DEMO_STUDENT.formationType,
-    student_assignments: [{ is_referent: true, teacher: { full_name: DEMO_STUDENT.teacher } }],
-  }]
+const STUDENT_SELECT_FIELDS = `
+  id,
+  organization_id,
+  file_number,
+  first_name,
+  last_name,
+  email,
+  phone,
+  birth_date,
+  street,
+  license_category,
+  package_name,
+  extra_hours,
+  formation_type,
+  status,
+  registration_date,
+  profile_id
+`
+
+function mergeStudentsWithAssignments(students, assignments, teacherProfilesById) {
+  const assignmentsByStudent = new Map()
+  for (const assignment of assignments || []) {
+    const bucket = assignmentsByStudent.get(assignment.student_id) || []
+    bucket.push(assignment)
+    assignmentsByStudent.set(assignment.student_id, bucket)
+  }
+
+  return (students || []).map((student) => ({
+    ...student,
+    student_assignments: (assignmentsByStudent.get(student.id) || []).map((assignment) => ({
+      is_referent: assignment.is_referent,
+      teacher_id: assignment.teacher_id,
+      teacher: {
+        id: assignment.teacher_id,
+        full_name: teacherProfilesById.get(assignment.teacher_id)?.full_name ?? null,
+      },
+    })),
+  }))
 }
 
 export const PACKAGE_OPTIONS = [
@@ -25,123 +53,80 @@ export const PACKAGE_OPTIONS = [
   'Passerelle B78 → B',
 ]
 
-function logStudentsQuery(context, payload) {
-  console.group(`[listStudents] ${context}`)
-  Object.entries(payload).forEach(([key, value]) => {
-    if (value instanceof Error) {
-      console.error(key, {
-        message: value.message,
-        code: value.code,
-        details: value.details,
-        hint: value.hint,
-      })
-    } else {
-      console.info(key, value)
-    }
-  })
-  console.groupEnd()
-}
-
-export async function listStudents({ teacherId = null, organizationId = null, logContext = 'default' } = {}) {
-  if (isLocalDemoSession()) {
-    const students = getDemoStudents()
-    logStudentsQuery(logContext, {
-      teacherId,
-      organizationId,
-      mode: 'demo',
-      studentCount: students.length,
-      error: null,
-    })
-    return { students, error: null }
-  }
-
+export async function listStudents({ teacherId = null } = {}) {
   try {
     const { data: sessionData } = await supabase.auth.getSession()
     const authUserId = sessionData.session?.user?.id ?? null
+    const resolvedTeacherId = teacherId || authUserId
 
     let teacherProfile = null
-    if (teacherId || authUserId) {
-      const { data: profileRow, error: profileError } = await supabase
+    if (resolvedTeacherId) {
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, role, organization_id, full_name, email, is_active')
-        .eq('id', teacherId || authUserId)
+        .select('id, role, organization_id, full_name, is_active')
+        .eq('id', resolvedTeacherId)
         .maybeSingle()
+      if (error) throw error
+      teacherProfile = data
+    }
 
-      if (profileError) {
-        logStudentsQuery(logContext, {
-          teacherId: teacherId || authUserId,
-          organizationId,
-          authUserId,
-          profileError: profileError.message,
-          profileErrorCode: profileError.code,
-        })
+    const isTeacherRole = teacherProfile?.role === 'teacher'
+    let assignments = []
+
+    if (isTeacherRole && resolvedTeacherId) {
+      const { data, error } = await supabase
+        .from('student_assignments')
+        .select('student_id, teacher_id, is_referent')
+        .eq('teacher_id', resolvedTeacherId)
+      if (error) throw error
+      assignments = data || []
+
+      if (!assignments.length) {
+        return { students: [], error: null, teacherProfile }
       }
-      teacherProfile = profileRow
     }
 
-    const { data, error } = await supabase
+    const assignedStudentIds = [...new Set(assignments.map((row) => row.student_id))]
+
+    let studentsQuery = supabase
       .from('students')
-      .select(`
-        id,
-        organization_id,
-        file_number,
-        first_name,
-        last_name,
-        email,
-        phone,
-        birth_date,
-        street,
-        license_category,
-        package_name,
-        extra_hours,
-        formation_type,
-        status,
-        registration_date,
-        profile_id,
-        student_assignments(
-          is_referent,
-          teacher_id,
-          teacher:teacher_id(id, full_name)
-        )
-      `)
-      .order('created_at', { ascending: false })
+      .select(STUDENT_SELECT_FIELDS)
+      .order('last_name', { ascending: true })
+      .order('first_name', { ascending: true })
 
-    if (error) {
-      logStudentsQuery(logContext, {
-        teacherId: teacherId || authUserId,
-        organizationId: organizationId ?? teacherProfile?.organization_id ?? null,
-        authUserId,
-        teacherRole: teacherProfile?.role ?? null,
-        teacherProfileFound: Boolean(teacherProfile),
-        teacherIsActive: teacherProfile?.is_active ?? null,
-        studentCount: 0,
-        error,
-      })
-      throw error
+    if (isTeacherRole && assignedStudentIds.length) {
+      studentsQuery = studentsQuery.in('id', assignedStudentIds)
     }
 
-    const students = data || []
-    logStudentsQuery(logContext, {
-      teacherId: teacherId || authUserId,
-      organizationId: organizationId ?? teacherProfile?.organization_id ?? null,
-      authUserId,
-      teacherRole: teacherProfile?.role ?? null,
-      teacherProfileFound: Boolean(teacherProfile),
-      teacherIsActive: teacherProfile?.is_active ?? null,
-      teacherName: teacherProfile?.full_name ?? null,
-      studentCount: students.length,
-      studentIds: students.map((row) => row.id),
-      error: null,
-    })
+    const { data: studentRows, error: studentsError } = await studentsQuery
+    if (studentsError) throw studentsError
 
+    if (!isTeacherRole && (studentRows || []).length) {
+      const studentIds = studentRows.map((row) => row.id)
+      const { data: allAssignments, error: assignmentsError } = await supabase
+        .from('student_assignments')
+        .select('student_id, teacher_id, is_referent')
+        .in('student_id', studentIds)
+      if (assignmentsError) throw assignmentsError
+      assignments = allAssignments || []
+    }
+
+    const teacherIds = [...new Set((assignments || []).map((row) => row.teacher_id).filter(Boolean))]
+    const teacherProfilesById = new Map()
+    if (teacherIds.length) {
+      const { data: teacherProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', teacherIds)
+      if (profilesError) throw profilesError
+      for (const profile of teacherProfiles || []) {
+        teacherProfilesById.set(profile.id, profile)
+      }
+    }
+
+    const students = mergeStudentsWithAssignments(studentRows || [], assignments, teacherProfilesById)
     return { students, error: null, teacherProfile }
   } catch (error) {
-    logStudentsQuery(`${logContext} — échec`, {
-      teacherId,
-      organizationId,
-      studentCount: 0,
-      error,
-    })
     return { students: [], error, teacherProfile: null }
   }
 }
@@ -185,6 +170,7 @@ export function subscribeStudents(onChange) {
     topicBase: 'students-list',
     listeners: [
       { config: { event: '*', schema: 'public', table: 'students' }, callback: onChange },
+      { config: { event: '*', schema: 'public', table: 'student_assignments' }, callback: onChange },
     ],
   })
 }

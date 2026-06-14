@@ -13,6 +13,18 @@ export async function listOrganizationUsers() {
   }
 }
 
+export function staffToSelectOptions(users, { roles } = {}) {
+  const allowedRoles = roles?.length ? new Set(roles) : null
+  return (users || [])
+    .filter((user) => user.is_active !== false)
+    .filter((user) => !allowedRoles || allowedRoles.has(user.role))
+    .map((user) => {
+      const name = user.full_name?.trim() || user.email || 'Utilisateur'
+      return { label: name, value: name }
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
+}
+
 export async function createOrganizationUser({ firstName, lastName, email, phone, role }) {
   const fullName = `${firstName} ${lastName}`.trim()
   const { error: inviteError, userId } = await inviteUser({ email, role, fullName })
@@ -34,13 +46,57 @@ export async function createOrganizationUser({ firstName, lastName, email, phone
   return { user: profile, error: null }
 }
 
-export async function manageUser(action, userId) {
-  const { data, error } = await supabase.functions.invoke('manage-user', {
-    body: { action, user_id: userId },
-  })
+export async function manageUser(action, userId, { newEmail } = {}) {
+  const body = { action, user_id: userId }
+  if (newEmail) body.new_email = newEmail
+  const { data, error } = await supabase.functions.invoke('manage-user', { body })
   if (error) return { error: toUserError(error, 'permission') }
   if (data?.error) return { error: toUserError(data.error, 'permission') }
   return { error: null, message: data?.message || 'Action effectuée.' }
+}
+
+export async function changeUserEmail(userId, newEmail) {
+  return manageUser('change_email', userId, { newEmail })
+}
+
+export async function sendStaffPasswordReset(userId) {
+  try {
+    const { data: email, error: rpcError } = await supabase.rpc('manager_staff_password_reset_target', {
+      p_user_id: userId,
+    })
+    if (rpcError) throw rpcError
+    if (!email) throw new Error('E-mail introuvable pour cet utilisateur.')
+
+    const redirectTo = `${window.location.origin}/accept-invite`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) throw error
+
+    return { error: null, message: 'E-mail de réinitialisation envoyé.' }
+  } catch (error) {
+    return { error: toUserError(error, 'password'), message: null }
+  }
+}
+
+export async function setStaffAccountActive(userId, isActive) {
+  try {
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', userId)
+      .maybeSingle()
+    if (fetchError) throw fetchError
+    if (!profile) throw new Error('Utilisateur introuvable.')
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ is_active: isActive })
+      .eq('id', userId)
+    if (profileError) throw profileError
+
+    return { error: null, message: isActive ? 'Compte réactivé.' : 'Compte désactivé.' }
+  } catch (error) {
+    return { error: toUserError(error, 'permission'), message: null }
+  }
 }
 
 export function subscribeOrganizationUsers(onChange) {

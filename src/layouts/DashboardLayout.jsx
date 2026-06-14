@@ -1,7 +1,8 @@
-import { Bell, ChevronLeft, LogOut, Menu } from 'lucide-react'
+import { ChevronLeft, LogOut, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
+import NotificationBell from '../components/NotificationBell'
 import OrgStatusBanner from '../components/OrgStatusBanner'
 import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
@@ -224,18 +225,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-            >
-              <Bell className="h-4 w-4" />
-              {notificationCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {notificationCount}
-                </span>
-              )}
-            </button>
+            <NotificationBell role={role} unreadCount={notificationCount} />
             {config.user && (
               <div className="hidden items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
                 <span className="text-lg">{config.user.avatar}</span>

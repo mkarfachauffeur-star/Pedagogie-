@@ -34,14 +34,20 @@ export function createEmptyFleetVehicle() {
 
 function mapDbToFleetVehicle(row) {
   const details = row.details || {}
+  const fuelLogs = Array.isArray(details.fuelLogs) ? details.fuelLogs : []
+  const maintenanceLogs = Array.isArray(details.maintenanceLogs) ? details.maintenanceLogs : []
+  const { fuelLogs: _fuelLogs, maintenanceLogs: _maintenanceLogs, ...fleetDetails } = details
+
   return {
     id: row.id,
     brand: row.brand || '',
     model: row.model || '',
     plate: row.plate || '',
     energy: row.energy || 'essence',
+    fuelLogs,
+    maintenanceLogs,
     ...DEFAULT_FLEET_DETAILS,
-    ...details,
+    ...fleetDetails,
   }
 }
 

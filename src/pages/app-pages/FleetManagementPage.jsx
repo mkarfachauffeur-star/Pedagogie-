@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
 import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import PanelTabs from '../../components/ui/PanelTabs'
+import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
+import { useClientPagination } from '../../hooks/useClientPagination'
 import { createEmptyFleetVehicle, listFleetVehicles, saveFleetVehicle } from '../../services/vehicles'
+import { listOrganizationUsers, staffToSelectOptions } from '../../services/users'
 
-const initialFuelLogs = []
-
-const initialMaintenanceLogs = []
-
-const teachers = []
-const fuelTypes = ['SP95', 'SP98', 'Diesel', 'Recharge électrique', 'Hybride']
 const maintenanceTypes = [
   'Lavage intérieur',
   'Lavage extérieur',
@@ -21,11 +19,14 @@ const maintenanceTypes = [
 ]
 
 const emptyFuelForm = {
+  id: null,
   vehicleId: '',
   teacher: '',
   date: new Date().toISOString().slice(0, 10),
   mileage: '',
+  fuelOperation: 'fuel',
   fuelType: 'SP95',
+  chargeLevelAfter: '',
   liters: '',
   kwh: '',
   price: '',
@@ -35,6 +36,7 @@ const emptyFuelForm = {
 }
 
 const emptyMaintenanceForm = {
+  id: null,
   vehicleId: '',
   type: 'Lavage extérieur',
   date: new Date().toISOString().slice(0, 10),
@@ -43,19 +45,74 @@ const emptyMaintenanceForm = {
   photo: '',
 }
 
+function flattenFuelLogs(vehicles) {
+  return vehicles.flatMap((vehicle) =>
+    (vehicle.fuelLogs || []).map((log) => ({ ...log, vehicleId: vehicle.id })),
+  )
+}
+
+function flattenMaintenanceLogs(vehicles) {
+  return vehicles.flatMap((vehicle) =>
+    (vehicle.maintenanceLogs || []).map((log) => ({ ...log, vehicleId: vehicle.id })),
+  )
+}
+
+function applyFuelLogToVehicle(vehicle, log, { isEdit = false } = {}) {
+  const mileage = Number(log.mileage || vehicle?.mileage || 0)
+  const kmDelta = Math.max(1, Number(log.kmDelta || mileage - Number(vehicle?.mileage || mileage - 1)))
+  const liters = Number(log.liters || 0)
+  const kwh = Number(log.kwh || 0)
+  const nextConsumption = liters ? Number(((liters / kmDelta) * 100).toFixed(1)) : vehicle.averageConsumption
+
+  if (isRechargeEntry(vehicle, log.fuelType)) {
+    return {
+      ...vehicle,
+      mileage: isEdit ? vehicle.mileage : mileage,
+      batteryLevel: isEdit ? vehicle.batteryLevel : (Number(log.chargeLevelAfter) || 100),
+      chargingStatus: isEdit
+        ? vehicle.chargingStatus
+        : (Number(log.chargeLevelAfter) >= 100 ? 'Chargé' : 'En charge'),
+      estimatedRange: isEdit
+        ? vehicle.estimatedRange
+        : Math.max(vehicle.estimatedRange, Math.round(kmDelta * 0.9)),
+      monthlyKm: isEdit ? vehicle.monthlyKm : vehicle.monthlyKm + kmDelta,
+    }
+  }
+
+  return {
+    ...vehicle,
+    mileage: isEdit ? vehicle.mileage : mileage,
+    fuelLevel: isEdit ? vehicle.fuelLevel : 100,
+    estimatedRange: isEdit
+      ? vehicle.estimatedRange
+      : Math.round((100 / Math.max(nextConsumption, 1)) * 55),
+    averageConsumption: isEdit ? vehicle.averageConsumption : nextConsumption,
+    monthlyKm: isEdit ? vehicle.monthlyKm : vehicle.monthlyKm + kmDelta,
+  }
+}
+
+function applyMaintenanceLogToVehicle(vehicle, log, { isEdit = false } = {}) {
+  if (isEdit) return vehicle
+  if (log.type.includes('Lavage')) return { ...vehicle, cleanliness: 'propre', interiorState: 'Propre', exteriorState: 'Bon' }
+  if (log.type.includes('pneus')) return { ...vehicle, tires: 'OK' }
+  if (log.type.includes('huile')) return { ...vehicle, oil: 'OK', coolant: 'OK', adblue: 'OK' }
+  if (log.type.includes('Dégâts')) return { ...vehicle, generalState: 'À surveiller', availability: 'Maintenance' }
+  return vehicle
+}
+
 export default function FleetManagementPage({ role = 'secretary' }) {
   const { organizationId, canWrite } = useAuth()
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [saveError, setSaveError] = useState(null)
-  const [fuelLogs, setFuelLogs] = useState(initialFuelLogs)
-  const [maintenanceLogs, setMaintenanceLogs] = useState(initialMaintenanceLogs)
   const [selectedVehicleId, setSelectedVehicleId] = useState('')
   const [modal, setModal] = useState(null)
   const [fuelForm, setFuelForm] = useState(emptyFuelForm)
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenanceForm)
   const [vehicleForm, setVehicleForm] = useState(null)
   const [vehicleFormIsNew, setVehicleFormIsNew] = useState(false)
+  const [teacherOptions, setTeacherOptions] = useState([])
+  const [staffOptions, setStaffOptions] = useState([])
 
   const refreshVehicles = useCallback(async () => {
     setLoading(true)
@@ -69,6 +126,13 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   }, [refreshVehicles])
 
   useEffect(() => {
+    listOrganizationUsers().then(({ users }) => {
+      setStaffOptions(staffToSelectOptions(users, { roles: ['manager', 'secretary', 'teacher'] }))
+      setTeacherOptions(staffToSelectOptions(users, { roles: ['teacher'] }))
+    })
+  }, [])
+
+  useEffect(() => {
     if (!vehicles.length) {
       setSelectedVehicleId('')
       return
@@ -79,6 +143,9 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   }, [vehicles, selectedVehicleId])
 
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) || vehicles[0]
+
+  const fuelLogs = useMemo(() => flattenFuelLogs(vehicles), [vehicles])
+  const maintenanceLogs = useMemo(() => flattenMaintenanceLogs(vehicles), [vehicles])
 
   const stats = useMemo(() => {
     const thermalVehicleIds = vehicles.filter((vehicle) => !isElectric(vehicle)).map((vehicle) => vehicle.id)
@@ -93,10 +160,10 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             .filter((log) => log.vehicleId === vehicle.id)
             .reduce((sum, log) => sum + Number(log.price || 0), 0),
     }))
-    const teacherCosts = teachers.map((teacher) => ({
-      label: teacher,
+    const teacherCosts = teacherOptions.map((teacher) => ({
+      label: teacher.label,
       value: thermalFuelLogs
-        .filter((log) => log.teacher === teacher)
+        .filter((log) => log.teacher === teacher.value)
         .reduce((sum, log) => sum + Number(log.price || 0), 0),
     }))
     const mostUsed = [...vehicles].sort((a, b) => b.monthlyKm - a.monthlyKm)[0]
@@ -113,12 +180,19 @@ export default function FleetManagementPage({ role = 'secretary' }) {
       mostUsed,
       highestConsumption,
     }
-  }, [fuelLogs, vehicles])
+  }, [fuelLogs, teacherOptions, vehicles])
 
-  const selectedFuelLogs = fuelLogs.filter((log) => log.vehicleId === selectedVehicle?.id)
-  const selectedMaintenanceLogs = maintenanceLogs.filter((log) => log.vehicleId === selectedVehicle?.id)
+  const selectedFuelLogs = selectedVehicle?.fuelLogs || []
+  const selectedMaintenanceLogs = selectedVehicle?.maintenanceLogs || []
   const fuelFormVehicle = vehicles.find((vehicle) => vehicle.id === fuelForm.vehicleId) || selectedVehicle
-  const fuelFormIsElectric = isElectric(fuelFormVehicle)
+  const fuelFormIsHybrid = isHybrid(fuelFormVehicle)
+  const fuelFormIsRecharge = isRechargeEntry(fuelFormVehicle, fuelForm.fuelType)
+  const fuelFormFuelTypeOptions = getFuelTypeOptions(
+    fuelFormVehicle,
+    fuelFormIsRecharge ? 'recharge' : 'fuel',
+  )
+  const fuelFormIsEdit = Boolean(fuelForm.id)
+  const maintenanceFormIsEdit = Boolean(maintenanceForm.id)
 
   const openVehicleModal = () => {
     if (!selectedVehicle) return
@@ -135,15 +209,81 @@ export default function FleetManagementPage({ role = 'secretary' }) {
     setModal('vehicle')
   }
 
-  const openFuelModal = (vehicleId = selectedVehicle?.id) => {
+  const openFuelModal = (vehicleId = selectedVehicle?.id, log = null) => {
     const vehicle = vehicles.find((item) => item.id === vehicleId) || selectedVehicle
-    setFuelForm({ ...emptyFuelForm, vehicleId: vehicle?.id ?? '', mileage: vehicle ? String(vehicle.mileage) : '' })
+    if (log) {
+      setFuelForm(alignFuelFormToVehicle({
+        ...emptyFuelForm,
+        ...log,
+        vehicleId: vehicleId ?? log.vehicleId ?? '',
+        mileage: String(log.mileage ?? ''),
+        liters: log.liters != null ? String(log.liters) : '',
+        kwh: log.kwh != null ? String(log.kwh) : '',
+        chargeLevelAfter: log.chargeLevelAfter != null ? String(log.chargeLevelAfter) : '',
+        price: log.price != null ? String(log.price) : '',
+      }, vehicle))
+    } else {
+      setFuelForm(alignFuelFormToVehicle({
+        ...emptyFuelForm,
+        vehicleId: vehicle?.id ?? '',
+        mileage: vehicle ? String(vehicle.mileage) : '',
+      }, vehicle))
+    }
+    setSaveError(null)
     setModal('fuel')
   }
 
-  const openMaintenanceModal = (vehicleId = selectedVehicle?.id) => {
-    setMaintenanceForm({ ...emptyMaintenanceForm, vehicleId: vehicleId ?? '' })
+  const handleFuelVehicleChange = (vehicleId) => {
+    const vehicle = vehicles.find((item) => item.id === vehicleId)
+    setFuelForm((current) => alignFuelFormToVehicle({ ...current, vehicleId }, vehicle))
+  }
+
+  const handleFuelOperationChange = (operation) => {
+    setFuelForm((current) => {
+      const vehicle = vehicles.find((item) => item.id === current.vehicleId) || fuelFormVehicle
+      const fuelType = operation === 'recharge'
+        ? 'Recharge électrique'
+        : getDefaultFuelType(vehicle, 'fuel')
+      return {
+        ...current,
+        fuelOperation: operation,
+        fuelType,
+        kwh: operation === 'recharge' ? current.kwh : '',
+        chargeLevelAfter: operation === 'recharge'
+          ? getDefaultChargeLevelAfter(vehicle, {})
+          : '',
+        liters: operation === 'fuel' ? current.liters : '',
+        price: operation === 'fuel' ? current.price : '',
+      }
+    })
+  }
+
+  const openMaintenanceModal = (vehicleId = selectedVehicle?.id, log = null) => {
+    if (log) {
+      setMaintenanceForm({
+        ...emptyMaintenanceForm,
+        ...log,
+        vehicleId: vehicleId ?? log.vehicleId ?? '',
+      })
+    } else {
+      setMaintenanceForm({ ...emptyMaintenanceForm, vehicleId: vehicleId ?? '' })
+    }
+    setSaveError(null)
     setModal('maintenance')
+  }
+
+  const persistVehicle = async (updatedVehicle) => {
+    if (!canWrite || !organizationId) {
+      setSaveError('Modification impossible : accès en lecture seule.')
+      return null
+    }
+    const { vehicle, error } = await saveFleetVehicle(updatedVehicle, organizationId)
+    if (error) {
+      setSaveError(error)
+      return null
+    }
+    setVehicles((current) => current.map((item) => (item.id === vehicle.id ? vehicle : item)))
+    return vehicle
   }
 
   const saveVehicle = async (event) => {
@@ -180,85 +320,112 @@ export default function FleetManagementPage({ role = 'secretary' }) {
     setVehicleFormIsNew(false)
   }
 
-  const saveFuel = (event) => {
+  const saveFuel = async (event) => {
     event.preventDefault()
     const vehicle = vehicles.find((item) => item.id === fuelForm.vehicleId)
-    const electric = vehicle ? isElectric(vehicle) : false
-    const mileage = Number(fuelForm.mileage || vehicle?.mileage || 0)
-    const kmDelta = Math.max(1, mileage - Number(vehicle?.mileage || mileage - 1))
+    if (!vehicle) return
+
+    const electric = isRechargeEntry(vehicle, fuelForm.fuelType)
+    const mileage = Number(fuelForm.mileage || vehicle.mileage || 0)
+    const kmDelta = Math.max(1, mileage - Number(vehicle.mileage || mileage - 1))
     const liters = Number(fuelForm.liters || 0)
     const kwh = Number(fuelForm.kwh || 0)
     const nextLog = {
       ...fuelForm,
-      id: Date.now(),
+      id: fuelForm.id || Date.now(),
       mileage,
       liters,
       kwh,
+      chargeLevelAfter: electric ? Number(fuelForm.chargeLevelAfter || vehicle.batteryLevel || 0) : undefined,
       price: electric ? 0 : Number(fuelForm.price || 0),
-      kmDelta,
+      kmDelta: fuelForm.id ? Number(fuelForm.kmDelta || kmDelta) : kmDelta,
       ticketPhoto: fuelForm.ticketPhoto || (electric ? 'justificatif-recharge.jpg' : 'ticket-simule.jpg'),
     }
 
-    setFuelLogs((current) => [nextLog, ...current])
-    setVehicles((current) =>
-      current.map((item) => {
-        if (item.id !== fuelForm.vehicleId) return item
-        const nextConsumption = liters ? Number(((liters / kmDelta) * 100).toFixed(1)) : item.averageConsumption
-        if (isElectric(item)) {
-          return {
-            ...item,
-            mileage,
-            batteryLevel: 100,
-            chargingStatus: 'Chargé',
-            estimatedRange: Math.max(item.estimatedRange, Math.round(kmDelta * 0.9)),
-            monthlyKm: item.monthlyKm + kmDelta,
-          }
-        }
-        return {
-          ...item,
-          mileage,
-          fuelLevel: 100,
-          estimatedRange: Math.round((100 / Math.max(nextConsumption, 1)) * 55),
-          averageConsumption: nextConsumption,
-          monthlyKm: item.monthlyKm + kmDelta,
-        }
-      }),
+    const vehicleFuelLogs = vehicle.fuelLogs || []
+    const updatedFuelLogs = fuelForm.id
+      ? vehicleFuelLogs.map((item) => (item.id === fuelForm.id ? nextLog : item))
+      : [nextLog, ...vehicleFuelLogs]
+
+    const updatedVehicle = applyFuelLogToVehicle(
+      { ...vehicle, fuelLogs: updatedFuelLogs },
+      nextLog,
+      { isEdit: Boolean(fuelForm.id) },
     )
+
+    const saved = await persistVehicle(updatedVehicle)
+    if (!saved) return
+
     setSelectedVehicleId(fuelForm.vehicleId)
     setModal(null)
+    setFuelForm(emptyFuelForm)
   }
 
-  const saveMaintenance = (event) => {
+  const saveMaintenance = async (event) => {
     event.preventDefault()
+    const vehicle = vehicles.find((item) => item.id === maintenanceForm.vehicleId)
+    if (!vehicle) return
+
     const nextLog = {
       ...maintenanceForm,
-      id: Date.now(),
+      id: maintenanceForm.id || Date.now(),
       photo: maintenanceForm.photo || '',
     }
 
-    setMaintenanceLogs((current) => [nextLog, ...current])
-    setVehicles((current) =>
-      current.map((vehicle) => {
-        if (vehicle.id !== maintenanceForm.vehicleId) return vehicle
-        if (maintenanceForm.type.includes('Lavage')) return { ...vehicle, cleanliness: 'propre', interiorState: 'Propre', exteriorState: 'Bon' }
-        if (maintenanceForm.type.includes('pneus')) return { ...vehicle, tires: 'OK' }
-        if (maintenanceForm.type.includes('huile')) return { ...vehicle, oil: 'OK', coolant: 'OK', adblue: 'OK' }
-        if (maintenanceForm.type.includes('Dégâts')) return { ...vehicle, generalState: 'À surveiller', availability: 'Maintenance' }
-        return vehicle
-      }),
+    const vehicleMaintenanceLogs = vehicle.maintenanceLogs || []
+    const updatedMaintenanceLogs = maintenanceForm.id
+      ? vehicleMaintenanceLogs.map((item) => (item.id === maintenanceForm.id ? nextLog : item))
+      : [nextLog, ...vehicleMaintenanceLogs]
+
+    const updatedVehicle = applyMaintenanceLogToVehicle(
+      { ...vehicle, maintenanceLogs: updatedMaintenanceLogs },
+      nextLog,
+      { isEdit: Boolean(maintenanceForm.id) },
     )
+
+    const saved = await persistVehicle(updatedVehicle)
+    if (!saved) return
+
     setSelectedVehicleId(maintenanceForm.vehicleId)
     setModal(null)
+    setMaintenanceForm(emptyMaintenanceForm)
+  }
+
+  const deleteFuelLog = async (log) => {
+    if (!canWrite) return
+    if (!window.confirm('Supprimer cet enregistrement carburant ?')) return
+
+    const vehicle = vehicles.find((item) => item.id === selectedVehicle?.id)
+    if (!vehicle) return
+
+    const updatedVehicle = {
+      ...vehicle,
+      fuelLogs: (vehicle.fuelLogs || []).filter((item) => item.id !== log.id),
+    }
+
+    await persistVehicle(updatedVehicle)
+  }
+
+  const deleteMaintenanceLog = async (log) => {
+    if (!canWrite) return
+    if (!window.confirm('Supprimer cette intervention ?')) return
+
+    const vehicle = vehicles.find((item) => item.id === selectedVehicle?.id)
+    if (!vehicle) return
+
+    const updatedVehicle = {
+      ...vehicle,
+      maintenanceLogs: (vehicle.maintenanceLogs || []).filter((item) => item.id !== log.id),
+    }
+
+    await persistVehicle(updatedVehicle)
   }
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <Hero
         canAddVehicle={canWrite}
-        hasVehicles={vehicles.length > 0}
         onAddVehicle={openAddVehicleModal}
-        onFuel={() => openFuelModal()}
-        onMaintenance={() => openMaintenanceModal()}
         role={role}
       />
 
@@ -399,21 +566,39 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             <Info label="Contrôle technique" value={formatDate(selectedVehicle.technicalControl)} />
           </div>
 
+          {canWrite && (
           <div className="mt-5 grid gap-2">
             <button className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => openFuelModal(selectedVehicle.id)} type="button">
-              {isElectric(selectedVehicle) ? 'Ajouter une recharge' : 'Ajouter un plein'}
+            {isElectric(selectedVehicle) ? (
+              '+ Ajouter une recharge'
+            ) : isHybrid(selectedVehicle) ? (
+              '+ Plein / recharge'
+            ) : (
+              '+ Ajouter un plein'
+            )}
             </button>
             <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100" onClick={() => openMaintenanceModal(selectedVehicle.id)} type="button">
-              Ajouter entretien / dégât
+              + Entretien / dégâts
             </button>
           </div>
+          )}
           </>
           )}
         </aside>
       </section>
 
       <section>
-        <HistoryPanel fuelLogs={selectedFuelLogs} maintenanceLogs={selectedMaintenanceLogs} selectedVehicle={selectedVehicle} vehicles={vehicles} />
+        <HistoryPanel
+          canEdit={canWrite}
+          fuelLogs={selectedFuelLogs}
+          maintenanceLogs={selectedMaintenanceLogs}
+          onDeleteFuel={deleteFuelLog}
+          onDeleteMaintenance={deleteMaintenanceLog}
+          onEditFuel={(log) => openFuelModal(selectedVehicle?.id, log)}
+          onEditMaintenance={(log) => openMaintenanceModal(selectedVehicle?.id, log)}
+          selectedVehicle={selectedVehicle}
+          vehicles={vehicles}
+        />
       </section>
 
       <ManagerStats stats={stats} vehicles={vehicles} fuelLogs={fuelLogs} />
@@ -422,31 +607,64 @@ export default function FleetManagementPage({ role = 'secretary' }) {
         open={modal === 'fuel'}
         onClose={() => setModal(null)}
         eyebrow="Gestion flotte"
-        title={fuelFormIsElectric ? 'Ajouter une recharge' : 'Ajouter un plein carburant'}
+        title={fuelFormIsEdit
+          ? (fuelFormIsRecharge ? 'Modifier la recharge' : 'Modifier le plein carburant')
+          : (fuelFormIsRecharge ? 'Ajouter une recharge' : fuelFormIsHybrid ? 'Ajouter un plein ou une recharge' : 'Ajouter un plein carburant')}
         size="xl"
         zIndex={100}
         footer={(
           <AppModalFooter
             onClose={() => setModal(null)}
             submitForm="fleet-fuel-form"
-            submitLabel={fuelFormIsElectric ? 'Enregistrer la recharge' : 'Enregistrer le plein'}
+            submitLabel={fuelFormIsEdit
+              ? (fuelFormIsRecharge ? 'Enregistrer la recharge' : 'Enregistrer le plein')
+              : (fuelFormIsRecharge ? 'Enregistrer la recharge' : 'Enregistrer le plein')}
           />
         )}
       >
         <form id="fleet-fuel-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveFuel}>
-            <Select label="Véhicule" onChange={(value) => setFuelForm((current) => ({ ...current, vehicleId: value }))} options={vehicles.map((vehicle) => ({ label: `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}`, value: vehicle.id }))} value={fuelForm.vehicleId} />
-            <Select label="Enseignant" onChange={(value) => setFuelForm((current) => ({ ...current, teacher: value }))} options={teachers} value={fuelForm.teacher} />
+            {saveError && (
+              <p className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {saveError}
+              </p>
+            )}
+            <Select label="Véhicule" onChange={handleFuelVehicleChange} options={vehicles.map((vehicle) => ({ label: `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}`, value: vehicle.id }))} value={fuelForm.vehicleId} />
+            <Select label="Enseignant" onChange={(value) => setFuelForm((current) => ({ ...current, teacher: value }))} options={[{ label: '— Sélectionner —', value: '' }, ...teacherOptions]} value={fuelForm.teacher} />
             <Field label="Date" onChange={(value) => setFuelForm((current) => ({ ...current, date: value }))} type="date" value={fuelForm.date} />
             <Field label="Kilométrage" onChange={(value) => setFuelForm((current) => ({ ...current, mileage: value }))} type="number" value={fuelForm.mileage} />
-            {fuelFormIsElectric ? (
+            {fuelFormIsHybrid && (
+              <Select
+                label="Type d'opération"
+                onChange={handleFuelOperationChange}
+                options={[
+                  { label: 'Plein carburant (SP95 / SP98)', value: 'fuel' },
+                  { label: 'Recharge électrique', value: 'recharge' },
+                ]}
+                value={fuelForm.fuelOperation || (fuelFormIsRecharge ? 'recharge' : 'fuel')}
+              />
+            )}
+            {fuelFormIsRecharge ? (
               <>
-                <Field label="kWh ajoutés" onChange={(value) => setFuelForm((current) => ({ ...current, kwh: value, fuelType: 'Recharge électrique' }))} type="number" value={fuelForm.kwh} />
-                <Field label="Borne de recharge" onChange={(value) => setFuelForm((current) => ({ ...current, station: value }))} value={fuelForm.station} />
+                <RechargeSlider
+                  currentLevel={fuelFormVehicle?.batteryLevel ?? 0}
+                  onChange={(value) => setFuelForm((current) => ({
+                    ...current,
+                    chargeLevelAfter: value,
+                    fuelType: 'Recharge électrique',
+                  }))}
+                  value={fuelForm.chargeLevelAfter !== '' && fuelForm.chargeLevelAfter != null
+                    ? fuelForm.chargeLevelAfter
+                    : getDefaultChargeLevelAfter(fuelFormVehicle, fuelForm)}
+                />
                 <FileField label="Photo du justificatif de recharge" onChange={(value) => setFuelForm((current) => ({ ...current, ticketPhoto: value }))} value={fuelForm.ticketPhoto} />
               </>
             ) : (
               <>
-                <Select label="Type carburant" onChange={(value) => setFuelForm((current) => ({ ...current, fuelType: value }))} options={fuelTypes.filter((type) => type !== 'Recharge électrique')} value={fuelForm.fuelType} />
+                {fuelFormFuelTypeOptions.length === 1 ? (
+                  <ReadOnlyField label="Type carburant" value={fuelFormFuelTypeOptions[0]} />
+                ) : (
+                  <Select label="Type carburant" onChange={(value) => setFuelForm((current) => ({ ...current, fuelType: value }))} options={fuelFormFuelTypeOptions} value={fuelForm.fuelType} />
+                )}
                 <Field label="Litres ajoutés" onChange={(value) => setFuelForm((current) => ({ ...current, liters: value }))} type="number" value={fuelForm.liters} />
                 <Field label="Prix total payé (EUR)" onChange={(value) => setFuelForm((current) => ({ ...current, price: value }))} type="number" value={fuelForm.price} />
                 <Field label="Station service" onChange={(value) => setFuelForm((current) => ({ ...current, station: value }))} value={fuelForm.station} />
@@ -461,22 +679,27 @@ export default function FleetManagementPage({ role = 'secretary' }) {
         open={modal === 'maintenance'}
         onClose={() => setModal(null)}
         eyebrow="Gestion flotte"
-        title="Ajouter entretien ou dégât"
+        title={maintenanceFormIsEdit ? 'Modifier entretien ou dégât' : 'Ajouter entretien ou dégât'}
         size="xl"
         zIndex={100}
         footer={(
           <AppModalFooter
             onClose={() => setModal(null)}
             submitForm="fleet-maintenance-form"
-            submitLabel="Enregistrer intervention"
+            submitLabel={maintenanceFormIsEdit ? 'Enregistrer les modifications' : 'Enregistrer intervention'}
           />
         )}
       >
         <form id="fleet-maintenance-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveMaintenance}>
+            {saveError && (
+              <p className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {saveError}
+              </p>
+            )}
             <Select label="Véhicule" onChange={(value) => setMaintenanceForm((current) => ({ ...current, vehicleId: value }))} options={vehicles.map((vehicle) => ({ label: `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}`, value: vehicle.id }))} value={maintenanceForm.vehicleId} />
             <Select label="Type intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, type: value }))} options={maintenanceTypes} value={maintenanceForm.type} />
             <Field label="Date intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, date: value }))} type="date" value={maintenanceForm.date} />
-            <Select label="Signalé par" onChange={(value) => setMaintenanceForm((current) => ({ ...current, reporter: value }))} options={teachers} value={maintenanceForm.reporter} />
+            <Select label="Signalé par" onChange={(value) => setMaintenanceForm((current) => ({ ...current, reporter: value }))} options={[{ label: '— Sélectionner —', value: '' }, ...staffOptions]} value={maintenanceForm.reporter} />
             <FileField label="Photos dégâts / intervention" onChange={(value) => setMaintenanceForm((current) => ({ ...current, photo: value }))} value={maintenanceForm.photo} />
             <Field className="md:col-span-2" label="Observations" onChange={(value) => setMaintenanceForm((current) => ({ ...current, observations: value }))} value={maintenanceForm.observations} />
         </form>
@@ -504,7 +727,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             <Field label="Immatriculation *" onChange={(value) => setVehicleForm((current) => ({ ...current, plate: value }))} value={vehicleForm.plate} />
             <Select label="Énergie" onChange={(value) => setVehicleForm((current) => ({ ...current, energy: value }))} options={['essence', 'diesel', 'électrique', 'hybride']} value={vehicleForm.energy} />
             <Field label="Kilométrage actuel" onChange={(value) => setVehicleForm((current) => ({ ...current, mileage: Number(value) || 0 }))} type="number" value={String(vehicleForm.mileage)} />
-            <Select label="Disponibilité véhicule" onChange={(value) => setVehicleForm((current) => ({ ...current, availability: value }))} options={['Disponible', 'En leçon', 'Maintenance', 'Indisponible']} value={vehicleForm.availability} />
+            <Select label="Disponibilité véhicule" onChange={(value) => setVehicleForm((current) => ({ ...current, availability: value }))} options={['Disponible', 'Maintenance', 'Indisponible']} value={vehicleForm.availability} />
             <Select label="Propreté" onChange={(value) => setVehicleForm((current) => ({ ...current, cleanliness: value }))} options={['propre', 'à nettoyer', 'urgent lavage']} value={vehicleForm.cleanliness} />
             <Select label="État pneus" onChange={(value) => setVehicleForm((current) => ({ ...current, tires: value }))} options={['OK', 'À vérifier', 'À remplacer']} value={vehicleForm.tires} />
             {isElectric(vehicleForm) ? (
@@ -528,7 +751,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
   )
 }
 
-function Hero({ canAddVehicle, hasVehicles, onAddVehicle, onFuel, onMaintenance, role }) {
+function Hero({ canAddVehicle, onAddVehicle, role }) {
   const roleLabel = role === 'manager' ? 'Gérant' : role === 'teacher' ? 'Enseignant' : 'Secrétariat'
 
   return (
@@ -544,78 +767,172 @@ function Hero({ canAddVehicle, hasVehicles, onAddVehicle, onFuel, onMaintenance,
               Suivi complet de flotte auto-école : état, carburant, entretien, alertes et coûts.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {canAddVehicle && (
-              <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={onAddVehicle} type="button">
-                + Ajouter un véhicule
-              </button>
-            )}
-            {hasVehicles && (
-              <>
-                <button className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/15" onClick={onFuel} type="button">
-                  + Ajouter un plein
-                </button>
-                <button className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/15" onClick={onMaintenance} type="button">
-                  + Entretien / dégâts
-                </button>
-              </>
-            )}
-          </div>
+          {canAddVehicle && (
+            <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={onAddVehicle} type="button">
+              + Ajouter un véhicule
+            </button>
+          )}
         </div>
       </div>
     </section>
   )
 }
 
-function HistoryPanel({ fuelLogs, maintenanceLogs, selectedVehicle, vehicles }) {
+function HistoryPanel({
+  canEdit,
+  fuelLogs,
+  maintenanceLogs,
+  onDeleteFuel,
+  onDeleteMaintenance,
+  onEditFuel,
+  onEditMaintenance,
+  selectedVehicle,
+  vehicles,
+}) {
+  const [historyTab, setHistoryTab] = useState('fuel')
   const electric = isElectric(selectedVehicle)
+  const hybrid = isHybrid(selectedVehicle)
+  const fuelSectionTitle = electric
+    ? 'Historique de recharge'
+    : hybrid
+      ? 'Pleins et recharges'
+      : 'Pleins carburant'
+
+  const {
+    page: fuelPage,
+    setPage: setFuelPage,
+    totalPages: fuelTotalPages,
+    totalItems: fuelTotalItems,
+    pageItems: fuelPageItems,
+    pageSize: fuelPageSize,
+  } = useClientPagination(fuelLogs, { pageSize: 5 })
+
+  const {
+    page: maintenancePage,
+    setPage: setMaintenancePage,
+    totalPages: maintenanceTotalPages,
+    totalItems: maintenanceTotalItems,
+    pageItems: maintenancePageItems,
+    pageSize: maintenancePageSize,
+  } = useClientPagination(maintenanceLogs, { pageSize: 5 })
 
   return (
     <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
-      <h2 className="text-2xl font-extrabold text-slate-950">Historique du véhicule sélectionné</h2>
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
-        <div>
-          <h3 className="font-black text-slate-900">{electric ? 'Historique de recharge' : 'Pleins carburant'}</h3>
-          <div className="mt-3 space-y-3">
-            {fuelLogs.map((log) => (
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-2xl font-extrabold text-slate-950">Historique du véhicule sélectionné</h2>
+        <PanelTabs
+          activeId={historyTab}
+          onChange={setHistoryTab}
+          tabs={[
+            { id: 'fuel', label: fuelSectionTitle, badge: fuelLogs.length },
+            { id: 'maintenance', label: 'Entretien et dégâts', badge: maintenanceLogs.length },
+          ]}
+        />
+      </div>
+
+      {historyTab === 'fuel' && (
+        <div className="mt-5">
+          <div className="space-y-3">
+            {fuelPageItems.map((log) => {
+              const logIsRecharge = isRechargeEntry(selectedVehicle, log.fuelType)
+              return (
               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={log.id}>
                 <div className="flex justify-between gap-3">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-extrabold text-slate-950">{formatDate(log.date)} · {log.teacher}</p>
                     <p className="text-sm text-slate-500">{log.station} · {log.fuelType} · {log.ticketPhoto}</p>
                   </div>
-                  {!electric && <p className="font-black text-cyan-700">{Number(log.price).toFixed(2)} EUR</p>}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {!logIsRecharge && <p className="font-black text-cyan-700">{Number(log.price).toFixed(2)} EUR</p>}
+                    {canEdit && (
+                      <div className="flex gap-2">
+                        <button
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
+                          onClick={() => onEditFuel(log)}
+                          type="button"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-extrabold text-white transition hover:bg-rose-500"
+                          onClick={() => onDeleteFuel(log)}
+                          type="button"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  {electric
-                    ? `${log.kwh || 0} kWh · ${log.kmDelta} km parcourus`
+                  {logIsRecharge
+                    ? `${log.chargeLevelAfter != null ? `${log.chargeLevelAfter}%` : `${log.kwh || 0} kWh`} · ${log.kmDelta} km parcourus`
                     : `${log.liters} L · ${log.kmDelta} km · ${log.liters ? ((log.liters / log.kmDelta) * 100).toFixed(1) : '0'} L/100`}
                 </p>
               </article>
-            ))}
-            {!fuelLogs.length && <InlineNotice label={electric ? 'Aucune recharge enregistrée pour ce véhicule.' : 'Aucun plein enregistré pour ce véhicule.'} />}
+              )
+            })}
+            {!fuelLogs.length && <InlineNotice label={electric ? 'Aucune recharge enregistrée pour ce véhicule.' : hybrid ? 'Aucun plein ou recharge enregistré pour ce véhicule.' : 'Aucun plein enregistré pour ce véhicule.'} />}
           </div>
+          <PaginationBar
+            className="mt-4"
+            onPageChange={setFuelPage}
+            page={fuelPage}
+            pageSize={fuelPageSize}
+            totalItems={fuelTotalItems}
+            totalPages={fuelTotalPages}
+          />
         </div>
+      )}
 
-        <div>
-          <h3 className="font-black text-slate-900">Entretien et dégâts</h3>
-          <div className="mt-3 space-y-3">
-            {maintenanceLogs.map((log) => (
+      {historyTab === 'maintenance' && (
+        <div className="mt-5">
+          <div className="space-y-3">
+            {maintenancePageItems.map((log) => (
               <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={log.id}>
                 <div className="flex justify-between gap-3">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-extrabold text-slate-950">{log.type}</p>
                     <p className="text-sm text-slate-500">{formatDate(log.date)} · {log.reporter}</p>
                   </div>
-                  {log.photo && <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">photo</span>}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {log.photo && <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">photo</span>}
+                    {canEdit && (
+                      <div className="flex gap-2">
+                        <button
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
+                          onClick={() => onEditMaintenance(log)}
+                          type="button"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-extrabold text-white transition hover:bg-rose-500"
+                          onClick={() => onDeleteMaintenance(log)}
+                          type="button"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-600">{log.observations}</p>
               </article>
             ))}
             {!maintenanceLogs.length && <InlineNotice label="Aucune intervention enregistrée." />}
           </div>
+          <PaginationBar
+            className="mt-4"
+            onPageChange={setMaintenancePage}
+            page={maintenancePage}
+            pageSize={maintenancePageSize}
+            totalItems={maintenanceTotalItems}
+            totalPages={maintenanceTotalPages}
+          />
         </div>
-      </div>
+      )}
+
       <p className="mt-4 text-xs font-semibold text-slate-400">
         Flotte suivie : {vehicles.map((vehicle) => vehicle.plate).join(', ')}
       </p>
@@ -687,6 +1004,57 @@ function MiniInfo({ label, value }) {
     <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
       <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="text-sm font-extrabold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function RechargeSlider({ currentLevel = 0, onChange, value }) {
+  const start = Math.max(0, Math.min(100, Number(currentLevel) || 0))
+  const target = Math.max(0, Math.min(100, Number(value ?? start) || 0))
+  const added = Math.max(0, target - start)
+  const full = target >= 100
+
+  return (
+    <div className="md:col-span-2">
+      <span className="text-sm font-bold text-slate-700">Barre de recharge</span>
+      <p className="mt-1 text-xs font-medium text-slate-500">Glissez vers la droite pour indiquer le niveau atteint après recharge.</p>
+      <div className="mt-3 rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-emerald-50/60 p-4">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="font-bold text-slate-600">{start}% en fiche</span>
+          <span className={`rounded-full px-3 py-1 text-xs font-black ${full ? 'bg-emerald-100 text-emerald-700' : 'bg-cyan-100 text-cyan-700'}`}>
+            {full ? 'Plein — 100%' : `Après recharge : ${target}%`}
+          </span>
+        </div>
+        <div className="relative mt-4 h-5 overflow-hidden rounded-full bg-white shadow-inner">
+          <div
+            aria-hidden
+            className="absolute inset-y-0 left-0 rounded-full bg-slate-200/80"
+            style={{ width: `${start}%` }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-emerald-400 transition-all duration-200"
+            style={{ width: `${target}%` }}
+          />
+        </div>
+        <input
+          aria-label="Niveau de recharge"
+          className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-cyan-100 accent-cyan-600 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-cyan-600 [&::-webkit-slider-thumb]:shadow-md"
+          max={100}
+          min={0}
+          onChange={(event) => onChange(event.target.value)}
+          step={1}
+          type="range"
+          value={target}
+        />
+        {start >= 100 && target < 100 ? (
+          <p className="mt-2 text-xs font-medium text-amber-700">Batterie pleine en fiche — ajustez le curseur au niveau réel après recharge.</p>
+        ) : added > 0 ? (
+          <p className="mt-2 text-xs font-bold text-cyan-700">+{added}% · niveau final {target}%</p>
+        ) : (
+          <p className="mt-2 text-xs font-medium text-slate-500">Déplacez le curseur vers la droite pour enregistrer une recharge.</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -768,6 +1136,20 @@ function Select({ label, onChange, options, value }) {
   )
 }
 
+function ReadOnlyField({ label, value }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <input
+        readOnly
+        className="mt-2 min-h-12 w-full cursor-default rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-600 outline-none"
+        type="text"
+        value={value}
+      />
+    </label>
+  )
+}
+
 function InlineNotice({ label }) {
   return <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">{label}</p>
 }
@@ -778,4 +1160,62 @@ function formatDate(value) {
 
 function isElectric(vehicle) {
   return vehicle?.energy === 'électrique'
+}
+
+function isHybrid(vehicle) {
+  return vehicle?.energy === 'hybride'
+}
+
+function isRechargeEntry(vehicle, fuelType) {
+  return isElectric(vehicle) || fuelType === 'Recharge électrique'
+}
+
+function getDefaultChargeLevelAfter(vehicle, form = {}) {
+  if (form.chargeLevelAfter !== '' && form.chargeLevelAfter != null) {
+    return String(form.chargeLevelAfter)
+  }
+  const level = Number(vehicle?.batteryLevel ?? 0)
+  // Batterie déjà pleine en fiche : curseur à 0 pour pouvoir glisser vers la droite.
+  return level >= 100 ? '0' : String(level)
+}
+
+function getFuelTypeOptions(vehicle, operation = 'fuel') {
+  if (!vehicle || operation === 'recharge') return []
+  if (isHybrid(vehicle)) return ['SP95', 'SP98']
+  const energy = (vehicle.energy || '').toLowerCase()
+  if (energy === 'diesel') return ['Diesel']
+  if (energy === 'essence') return ['SP95']
+  return ['SP95']
+}
+
+function getDefaultFuelType(vehicle, operation = 'fuel') {
+  if (operation === 'recharge') return 'Recharge électrique'
+  return getFuelTypeOptions(vehicle, operation)[0] || 'SP95'
+}
+
+function alignFuelFormToVehicle(form, vehicle) {
+  if (!vehicle) return form
+
+  let fuelOperation = form.fuelOperation
+  if (isHybrid(vehicle)) {
+    fuelOperation = form.fuelType === 'Recharge électrique' || Number(form.kwh) > 0
+      ? 'recharge'
+      : (fuelOperation === 'recharge' ? 'recharge' : 'fuel')
+  } else if (isElectric(vehicle)) {
+    fuelOperation = 'recharge'
+  } else {
+    fuelOperation = 'fuel'
+  }
+
+  const fuelType = fuelOperation === 'recharge'
+    ? 'Recharge électrique'
+    : (getFuelTypeOptions(vehicle, 'fuel').includes(form.fuelType)
+        ? form.fuelType
+        : getDefaultFuelType(vehicle, 'fuel'))
+
+  const chargeLevelAfter = fuelOperation === 'recharge'
+    ? getDefaultChargeLevelAfter(vehicle, form)
+    : ''
+
+  return { ...form, fuelOperation, fuelType, chargeLevelAfter }
 }

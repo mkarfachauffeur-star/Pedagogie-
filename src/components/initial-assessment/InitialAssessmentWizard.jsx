@@ -11,6 +11,8 @@ import { exportInitialAssessmentPdf } from '../../services/initialAssessmentPdf'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { normalizeAssessmentAnswers } from '../../lib/initialAssessmentUtils'
 
+import HoursProposalStatusBadge from './HoursProposalStatusBadge'
+
 const PLACEHOLDER_MESSAGE = 'Cette section sera disponible prochainement.'
 
 function ModuleProgress({ modules, currentIndex }) {
@@ -119,7 +121,22 @@ function ModulePlaceholder() {
   )
 }
 
-function ResultsPanel({ answers, student, assessment, onExportPdf }) {
+function TeacherCommentField({ answers, editable, onChange }) {
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      Commentaire enseignant (visible par l&apos;élève)
+      <textarea
+        className="pd-input mt-2 min-h-28 w-full"
+        disabled={!editable}
+        onChange={(event) => onChange('teacher_comment', event.target.value)}
+        placeholder="Synthèse pédagogique, points forts, axes de travail…"
+        value={answers.teacher_comment || ''}
+      />
+    </label>
+  )
+}
+
+function ResultsPanel({ answers, student, assessment, onExportPdf, exportingPdf, teacherMode, onCommentChange, readOnly }) {
   const scores = useMemo(() => computeAssessmentScores(answers), [answers])
   const recommendation = useMemo(
     () => recommendHoursFromScore({ ...scores, moduleScores: scores.moduleScores }),
@@ -143,7 +160,12 @@ function ResultsPanel({ answers, student, assessment, onExportPdf }) {
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-sm font-semibold text-slate-500">Volume horaire estimé</p>
-          <p className="mt-1 text-2xl font-black text-slate-950">{recommendation.label}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-2xl font-black text-slate-950">{recommendation.label}</p>
+            {assessment?.status === 'completed' && (
+              <HoursProposalStatusBadge assessment={assessment} />
+            )}
+          </div>
         </article>
       </div>
       {moduleRows.length > 0 && (
@@ -168,9 +190,21 @@ function ResultsPanel({ answers, student, assessment, onExportPdf }) {
           </table>
         </div>
       )}
+      {teacherMode && onCommentChange && (
+        <TeacherCommentField
+          answers={answers}
+          editable={teacherMode}
+          onChange={onCommentChange}
+        />
+      )}
       {onExportPdf && (
-        <button className="pd-btn-secondary" onClick={() => onExportPdf({ answers, student, assessment })} type="button">
-          Télécharger le PDF d&apos;évaluation
+        <button
+          className="pd-btn-secondary"
+          disabled={exportingPdf}
+          onClick={() => onExportPdf({ answers, student, assessment })}
+          type="button"
+        >
+          {exportingPdf ? 'Génération du PDF…' : 'Télécharger le PDF d\'évaluation'}
         </button>
       )}
     </div>
@@ -186,6 +220,7 @@ export default function InitialAssessmentWizard({
   readOnly = false,
   teacherMode = false,
   onSaved,
+  onComplete,
 }) {
   const navigableModules = useMemo(
     () => ASSESSMENT_MODULES.filter((m) => !m.readOnly),
@@ -197,6 +232,8 @@ export default function InitialAssessmentWizard({
   const [stepIndex, setStepIndex] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [exportError, setExportError] = useState(null)
+  const [exportingPdf, setExportingPdf] = useState(false)
 
   const currentModule = ASSESSMENT_MODULES[stepIndex] ?? null
   const isResultsStep = currentModule?.readOnly === true
@@ -220,6 +257,7 @@ export default function InitialAssessmentWizard({
   const persist = async (markCompleted = false) => {
     setSaving(true)
     setError(null)
+    const alreadyCompleted = assessment?.status === 'completed'
     const { assessment: saved, error: saveError } = await saveInitialAssessmentStep({
       assessmentId: assessment?.id,
       studentId,
@@ -227,7 +265,8 @@ export default function InitialAssessmentWizard({
       answers,
       completedBy,
       markCompleted,
-      status: markCompleted ? 'completed' : 'in_progress',
+      updateCompleted: alreadyCompleted && !markCompleted,
+      status: markCompleted || alreadyCompleted ? 'completed' : 'in_progress',
     })
     setSaving(false)
     if (saveError) {
@@ -253,13 +292,27 @@ export default function InitialAssessmentWizard({
     if (ok) setStepIndex(resultsIndex)
   }
 
-  const handleExportPdf = (payload) => {
-    exportInitialAssessmentPdf({
+  const handleSaveAssessment = async () => {
+    const alreadyCompleted = assessment?.status === 'completed'
+    const ok = await persist(!alreadyCompleted)
+    if (ok) {
+      onComplete?.()
+    }
+  }
+
+  const handleExportPdf = async (payload) => {
+    setExportError(null)
+    setExportingPdf(true)
+    const result = await exportInitialAssessmentPdf({
       ...payload,
       answers: payload.answers || answers,
       student: payload.student || student || {},
       assessment: payload.assessment || assessment,
     })
+    setExportingPdf(false)
+    if (result?.ok === false) {
+      setExportError(result.error || 'Téléchargement impossible.')
+    }
   }
 
   if (!currentModule) {
@@ -296,8 +349,12 @@ export default function InitialAssessmentWizard({
             <ResultsPanel
               answers={answers}
               assessment={assessment}
+              exportingPdf={exportingPdf}
+              onCommentChange={updateAnswer}
               onExportPdf={teacherMode || assessment?.status === 'completed' ? handleExportPdf : null}
+              readOnly={readOnly}
               student={student}
+              teacherMode={teacherMode}
             />
           ) : (
             <>
@@ -326,9 +383,9 @@ export default function InitialAssessmentWizard({
         </div>
       </section>
 
-      {error && (
+      {(error || exportError) && (
         <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-          {error}
+          {error || exportError}
         </p>
       )}
 
@@ -355,6 +412,15 @@ export default function InitialAssessmentWizard({
         {!readOnly && teacherMode && isLastNavStep && (
           <button className="pd-btn-primary" disabled={saving} onClick={handleFinalize} type="button">
             {saving ? 'Finalisation…' : 'Finaliser l\'évaluation'}
+          </button>
+        )}
+        {teacherMode && isResultsStep && (
+          <button className="pd-btn-primary" disabled={saving} onClick={handleSaveAssessment} type="button">
+            {saving
+              ? 'Enregistrement…'
+              : assessment?.status === 'completed'
+                ? 'Enregistrer l\'évaluation'
+                : 'Enregistrer et finaliser l\'évaluation'}
           </button>
         )}
       </div>

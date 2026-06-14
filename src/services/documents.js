@@ -76,7 +76,19 @@ export async function listDocuments({ studentId } = {}) {
 }
 
 // Dépôt direct d'un document (téléversement + ligne documents).
-export async function uploadStudentDocument({ organizationId, studentId, type, status, folder, reference, comment, file, createdBy }) {
+export async function uploadStudentDocument({
+  organizationId,
+  studentId,
+  type,
+  status,
+  folder,
+  reference,
+  comment,
+  file,
+  createdBy,
+  source = 'direct',
+  senderName = null,
+}) {
   if (!file) return { error: new Error('Un fichier est requis.') }
   const safeName = file.name.replace(/[^\w.-]+/g, '_')
   const storagePath = `${studentId}/${Date.now()}-${safeName}`
@@ -96,13 +108,44 @@ export async function uploadStudentDocument({ organizationId, studentId, type, s
     file_name: file?.name || null,
     storage_path: storagePath,
     storage_bucket: 'student-documents',
-    source: 'direct',
+    source,
     sent_at: nowIso,
+    sender_name: senderName,
     classified_at: nowIso,
     created_by: createdBy,
   })
-  if (error) return { error: toUserError(error, 'document') }
+  if (error) {
+    await supabase.storage.from('student-documents').remove([storagePath])
+    return { error: toUserError(error, 'document') }
+  }
   return { error: null }
+}
+
+export async function uploadDocumentFromStudent({
+  organizationId,
+  studentId,
+  documentType,
+  documentName,
+  file,
+  createdBy,
+  senderName,
+}) {
+  const type = documentType?.trim()
+  if (!type) return { error: new Error('Le type de document est requis.') }
+  const reference = documentName?.trim() || type
+  return uploadStudentDocument({
+    organizationId,
+    studentId,
+    type,
+    status: 'À vérifier',
+    folder: 'Dépôt élève',
+    reference,
+    comment: null,
+    file,
+    createdBy,
+    source: 'eleve',
+    senderName,
+  })
 }
 
 // Temps réel sur les documents : déclenche onChange à chaque évènement.

@@ -1,19 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useStudentTrackingStore } from '../../data/studentTrackingStore'
 import { useAuth } from '../../context/AuthContext'
+import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
-import { isPermisBStudent } from '../../lib/studentTrack'
-import { normalizeInitialAssessment } from '../../lib/initialAssessmentUtils'
-import { getInitialAssessmentForStudent } from '../../services/initialAssessment'
-import { listStudents } from '../../services/students'
+import { isPermisBStudent, resolveStudentTrack, STUDENT_TRACKS } from '../../lib/studentTrack'
+import { normalizeInitialAssessment, formatRecommendedHours } from '../../lib/initialAssessmentUtils'
+import { formatAssessmentStatus, getInitialAssessmentForStudent } from '../../services/initialAssessment'
+import { listStudents, subscribeStudents } from '../../services/students'
 import {
   createLessonObservation,
+  formatLessonClosingLabel,
+  formatLessonDateFr,
+  formatLessonOpeningLabel,
   listLessonObservationsForStudent,
   updateLessonObservation,
 } from '../../services/studentLessonObservations'
 import RemcTeacherValidationPanel from '../../components/remc/RemcTeacherValidationPanel'
 import PracticeExamTeacherPanel from '../../components/practice-exam/PracticeExamTeacherPanel'
+import PreRegistrationFormModal from '../../components/pre-registration/PreRegistrationFormModal'
 import EmptyState from '../../components/ui/EmptyState'
+import PanelTabs from '../../components/ui/PanelTabs'
+import PaginationBar from '../../components/ui/PaginationBar'
+import { useClientPagination } from '../../hooks/useClientPagination'
+import HoursProposalStatusBadge from '../../components/initial-assessment/HoursProposalStatusBadge'
+import {
+  PRE_REGISTRATION_STATUS_LABELS,
+  preRegistrationStatusClass,
+} from '../../data/preRegistration'
+import {
+  listPreRegistrations,
+  subscribePreRegistrations,
+} from '../../services/preRegistrations'
 
 function StudentPanelTab({ active, children, onClick }) {
   return (
@@ -31,7 +47,6 @@ function StudentPanelTab({ active, children, onClick }) {
   )
 }
 
-const lessonStatuses = ['Débuté', 'En cours', 'Terminé']
 const lessonDurations = ['45 MIN', '1h', '2H']
 
 function nowDateTime() {
@@ -39,6 +54,36 @@ function nowDateTime() {
   const date = now.toISOString().slice(0, 10)
   const time = now.toTimeString().slice(0, 5)
   return { date, time }
+}
+
+function normalizeStudentSearch(value = '') {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+}
+
+function studentMatchesSearch(student, query) {
+  if (!query) return true
+  const haystack = normalizeStudentSearch(`${student.firstName} ${student.lastName}`)
+  return query.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))
+}
+
+function inferGearboxLabel(student) {
+  const haystack = `${student.package_name || ''} ${student.formation_type || ''}`.toLowerCase()
+  if (haystack.includes('automatique')) return 'Boîte automatique'
+  if (haystack.includes('manuelle')) return 'Boîte manuelle'
+  return 'Boîte manuelle'
+}
+
+function formatStudentPermisSummary(apiStudent) {
+  const license = String(apiStudent?.license_category || 'Permis B').trim()
+  if (resolveStudentTrack(apiStudent) !== STUDENT_TRACKS.PERMIS_B) {
+    return license
+  }
+  const gearbox = inferGearboxLabel(apiStudent)
+  return `${license} — ${gearbox}`
 }
 
 function mapApiStudentToTracking(student) {
@@ -49,6 +94,7 @@ function mapApiStudentToTracking(student) {
     lastName: student.last_name,
     teacher: referent?.full_name || 'Non assigné',
     formationType: student.package_name || student.formation_type || 'Permis B traditionnel',
+    permisSummary: formatStudentPermisSummary(student),
     licenseCategory: student.license_category,
     codeStatus: 'Non obtenu',
   }
@@ -79,7 +125,6 @@ export default function TeacherStudentsPage() {
     return `${day}/${month}/${year}`
   }
 
-  const { students, updateRemcStatus, addLesson, updateLesson, upsertStudents } = useStudentTrackingStore()
   const { profileId, organizationId, role, loading: authLoading, profile, isAuthenticated } = useAuth()
   const currentTeacherName = useMemo(() => {
     const name = profile?.full_name?.trim()
@@ -90,8 +135,10 @@ export default function TeacherStudentsPage() {
   const [studentsLoading, setStudentsLoading] = useState(true)
   const [studentsError, setStudentsError] = useState(null)
   const [selectedStudentId, setSelectedStudentId] = useState(null)
+  const [studentSearchQuery, setStudentSearchQuery] = useState('')
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
-  const [studentPanelTab, setStudentPanelTab] = useState('remc')
+  const [lessonSessionTab, setLessonSessionTab] = useState('lesson')
+  const [studentPanelTab, setStudentPanelTab] = useState('lessons')
   const [initialAssessment, setInitialAssessment] = useState(null)
   const [lessonObservations, setLessonObservations] = useState([])
   const [lessonsLoading, setLessonsLoading] = useState(false)
@@ -101,9 +148,11 @@ export default function TeacherStudentsPage() {
     time: '',
     duration: '2H',
     observations: '',
-    status: 'Débuté',
     sharedWithStudent: false,
   })
+  const [preRegModalOpen, setPreRegModalOpen] = useState(false)
+  const [preRegistrations, setPreRegistrations] = useState([])
+  const [preRegLoading, setPreRegLoading] = useState(false)
 
   useEffect(() => {
     if (authLoading) return undefined
@@ -120,85 +169,68 @@ export default function TeacherStudentsPage() {
       setStudentsLoading(true)
       setStudentsError(null)
 
-      console.group('[TeacherStudentsPage] Chargement des élèves')
-      console.info('teacherId', profileId)
-      console.info('organizationId', organizationId ?? null)
-      console.info('role', role ?? null)
-      console.info('profileLoaded', Boolean(profile))
-
       try {
-        const { students: rows, error, teacherProfile } = await listStudents({
-          teacherId: profileId,
-          organizationId,
-          logContext: 'TeacherStudentsPage',
-        })
+        const { students: rows, error } = await listStudents({ teacherId: profileId })
 
         if (cancelled) return
 
         if (error) {
-          const message = error.message || String(error)
-          console.error('[TeacherStudentsPage] Erreur Supabase', {
-            message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-          })
-          setStudentsError(message)
+          setStudentsError(error.message || String(error))
           setApiStudents([])
           return
         }
 
-        console.info('[TeacherStudentsPage] Élèves trouvés', rows.length)
-        console.info('[TeacherStudentsPage] Profil enseignant', teacherProfile ?? profile ?? null)
         setApiStudents(rows)
       } finally {
-        if (!cancelled) {
-          setStudentsLoading(false)
-          console.groupEnd()
-        }
+        if (!cancelled) setStudentsLoading(false)
       }
     }
 
     void loadStudents()
+    const unsubscribe = subscribeStudents(() => {
+      void loadStudents()
+    })
+
     return () => {
       cancelled = true
+      unsubscribe?.()
     }
-  }, [authLoading, isAuthenticated, profileId, organizationId])
+  }, [authLoading, isAuthenticated, profileId])
 
   useEffect(() => {
-    if (!apiStudents.length) return
-    upsertStudents(apiStudents.map(mapApiStudentToTracking))
-  }, [apiStudents, upsertStudents])
-
-  const displayStudents = useMemo(() => {
-    if (!apiStudents.length) return students
-    return apiStudents.map((row) => {
-      const tracked = students.find((student) => student.id === row.id)
-      const mapped = mapApiStudentToTracking(row)
-      if (tracked) {
-        return {
-          ...tracked,
-          firstName: mapped.firstName,
-          lastName: mapped.lastName,
-          teacher: mapped.teacher,
-          formationType: mapped.formationType,
-        }
-      }
-      return mapped
-    })
-  }, [apiStudents, students])
-
-  useEffect(() => {
-    if (!displayStudents.length) return
-    if (!selectedStudentId || !displayStudents.some((student) => student.id === selectedStudentId)) {
-      setSelectedStudentId(displayStudents[0].id)
+    if (!apiStudents.length) {
+      setSelectedStudentId(null)
+      return
     }
-  }, [displayStudents, selectedStudentId])
+    if (selectedStudentId && !apiStudents.some((student) => student.id === selectedStudentId)) {
+      setSelectedStudentId(null)
+    }
+  }, [apiStudents, selectedStudentId])
+
+  const displayStudents = useMemo(
+    () => apiStudents.map(mapApiStudentToTracking),
+    [apiStudents],
+  )
+
+  const filteredStudents = useMemo(() => {
+    const query = normalizeStudentSearch(studentSearchQuery)
+    if (!query) return displayStudents
+    return displayStudents.filter((student) => studentMatchesSearch(student, query))
+  }, [displayStudents, studentSearchQuery])
 
   const selectedStudent = useMemo(
-    () => displayStudents.find((student) => student.id === selectedStudentId) || displayStudents[0],
+    () => displayStudents.find((student) => student.id === selectedStudentId) || null,
     [selectedStudentId, displayStudents],
   )
+
+  const {
+    remc: selectedStudentRemc,
+    updateStatus: updateRemcStatus,
+    progress: selectedRemcProgress,
+  } = useStudentRemcProgress(selectedStudent?.id, {
+    organizationId,
+    teacherId: profileId,
+  })
 
   const selectedApiStudent = useMemo(
     () => apiStudents.find((student) => student.id === selectedStudent?.id) || null,
@@ -206,6 +238,8 @@ export default function TeacherStudentsPage() {
   )
 
   const selectedIsPermisB = isPermisBStudent(selectedApiStudent || selectedStudent)
+
+  const initialAssessmentCompleted = initialAssessment?.status === 'completed'
 
   useEffect(() => {
     if (!selectedStudent?.id || !selectedIsPermisB) {
@@ -233,26 +267,92 @@ export default function TeacherStudentsPage() {
   }, [refreshLessonObservations])
 
   useEffect(() => {
-    setStudentPanelTab('remc')
+    setStudentPanelTab('lessons')
+    setLessonFormOpen(false)
+    setLessonSessionTab('lesson')
   }, [selectedStudentId])
 
+  const refreshPreRegistrations = useCallback(async () => {
+    if (!profileId) {
+      setPreRegistrations([])
+      return
+    }
+    setPreRegLoading(true)
+    const { preRegistrations: rows } = await listPreRegistrations({ teacherId: profileId })
+    setPreRegistrations(rows)
+    setPreRegLoading(false)
+  }, [profileId])
+
+  useEffect(() => {
+    void refreshPreRegistrations()
+  }, [refreshPreRegistrations])
+
+  useEffect(() => {
+    if (!profileId) return undefined
+    return subscribePreRegistrations(refreshPreRegistrations)
+  }, [profileId, refreshPreRegistrations])
+
+  const lessonHistoryItems = useMemo(() => {
+    const lessons = lessonObservations
+
+    const items = lessons.map((lesson) => ({
+      type: 'lesson',
+      sortAt: lesson.openedAt || `${lesson.date || '1970-01-01'}T${lesson.time || '00:00'}`,
+      data: lesson,
+    }))
+
+    if (
+      initialAssessment
+      && ['in_progress', 'completed'].includes(initialAssessment.status)
+    ) {
+      items.push({
+        type: 'initial-assessment',
+        sortAt: initialAssessment.completed_at
+          || initialAssessment.updated_at
+          || initialAssessment.created_at
+          || new Date(0).toISOString(),
+        data: initialAssessment,
+      })
+    }
+
+    return items.sort((a, b) => new Date(b.sortAt) - new Date(a.sortAt))
+  }, [initialAssessment, lessonObservations])
+
+  const {
+    page: historyPage,
+    setPage: setHistoryPage,
+    totalPages: historyTotalPages,
+    totalItems: historyTotalItems,
+    pageItems: historyPageItems,
+    pageSize: historyPageSize,
+  } = useClientPagination(lessonHistoryItems, { pageSize: 5 })
+
+  const handleRemcStatusChange = useCallback(
+    async (_studentId, competencyCode, itemId, status) => {
+      await updateRemcStatus(competencyCode, itemId, status)
+    },
+    [updateRemcStatus],
+  )
+
   const openLesson = () => {
+    setStudentPanelTab('lessons')
+    if (lessonFormOpen) return
     const { date, time } = nowDateTime()
     setNewLesson({
       date,
       time,
       duration: '2H',
       observations: '',
-      status: 'Débuté',
       sharedWithStudent: false,
     })
+    setLessonSessionTab('lesson')
     setLessonFormOpen(true)
   }
 
   const handleCreateLesson = async (event) => {
     event.preventDefault()
     if (!selectedStudent || !organizationId || !profileId) return
-    const selectedSkills = (selectedStudent.remc || [])
+    const selectedSkills = (selectedStudentRemc || [])
       .flatMap((competency) => competency.items)
       .filter((item) => item.status !== 'Non commencé')
       .map((item) => item.label)
@@ -266,7 +366,6 @@ export default function TeacherStudentsPage() {
       date: newLesson.date,
       time: newLesson.time,
       duration: newLesson.duration,
-      status: newLesson.status,
       observations: newLesson.observations,
       skills: selectedSkills,
       sharedWithStudent: newLesson.sharedWithStudent,
@@ -274,18 +373,11 @@ export default function TeacherStudentsPage() {
     setLessonSaving(false)
 
     if (lesson) {
-      addLesson(selectedStudent.id, lesson)
       await refreshLessonObservations()
       setLessonFormOpen(false)
       return
     }
 
-    addLesson(selectedStudent.id, {
-      ...newLesson,
-      openedBy: currentTeacherName,
-      skills: selectedSkills,
-      sharedWithStudent: newLesson.sharedWithStudent,
-    })
     setLessonFormOpen(false)
     if (error) {
       console.error('[TeacherStudentsPage] createLessonObservation', error)
@@ -298,30 +390,8 @@ export default function TeacherStudentsPage() {
     })
     if (updated) {
       setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
-      updateLesson(selectedStudent.id, lesson.id, { sharedWithStudent: updated.sharedWithStudent })
     } else if (error) {
       console.error('[TeacherStudentsPage] updateLessonObservation share', error)
-    }
-  }
-
-  const handleLessonStatusChange = async (lesson, status) => {
-    updateLesson(selectedStudent.id, lesson.id, { status })
-    const { lesson: updated } = await updateLessonObservation(lesson.id, { status })
-    if (updated) {
-      setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
-    }
-  }
-
-  const handleCloseLesson = async (lesson) => {
-    const patch = {
-      status: 'Terminé',
-      closedBy: currentTeacherName,
-      closedAt: new Date().toISOString(),
-    }
-    updateLesson(selectedStudent.id, lesson.id, patch)
-    const { lesson: updated } = await updateLessonObservation(lesson.id, patch)
-    if (updated) {
-      setLessonObservations((rows) => rows.map((row) => (row.id === updated.id ? updated : row)))
     }
   }
 
@@ -358,7 +428,7 @@ export default function TeacherStudentsPage() {
     )
   }
 
-  if (!selectedStudent) {
+  if (!displayStudents.length) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
@@ -380,24 +450,42 @@ export default function TeacherStudentsPage() {
         </p>
         <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">Suivi REMC et leçons terrain</h1>
         <p className="mt-3 max-w-4xl text-sm leading-7 text-blue-50">
-          Cliquez un élève, ouvrez une leçon, cochez les compétences et ajoutez vos observations en quelques secondes.
+          Ouvrez une leçon, validez les compétences REMC travaillées sur le terrain, puis enregistrez vos observations.
         </p>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <aside className="card-panel">
-          <h2 className="text-lg font-extrabold text-slate-900">Liste élèves</h2>
-          <div className="mt-4 grid gap-3">
-            {displayStudents.map((student) => (
+        <aside className="card-panel flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-900">Liste élèves</h2>
+            <label className="mt-3 block text-sm font-bold text-slate-700">
+              Rechercher par nom ou prénom
+              <input
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                onChange={(event) => setStudentSearchQuery(event.target.value)}
+                type="search"
+                value={studentSearchQuery}
+              />
+            </label>
+          </div>
+
+          <div className="grid max-h-[min(420px,50vh)] gap-3 overflow-y-auto pr-1">
+            {filteredStudents.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
+                Aucun élève ne correspond à « {studentSearchQuery} ».
+              </p>
+            ) : (
+              filteredStudents.map((student) => (
               <button
                 key={student.id}
                 type="button"
                 onClick={() => {
                   setSelectedStudentId(student.id)
                   setLessonFormOpen(false)
+                  setStudentPanelTab('lessons')
                 }}
                 className={`card-list-item ${
-                  selectedStudent.id === student.id
+                  selectedStudentId === student.id
                     ? 'border-cyan-300 bg-cyan-50 ring-2 ring-cyan-100'
                     : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:shadow-sm'
                 }`}
@@ -405,29 +493,81 @@ export default function TeacherStudentsPage() {
                 <p className="font-extrabold text-slate-900">
                   {student.firstName} {student.lastName}
                 </p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{student.formationType}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{student.permisSummary}</p>
                 {student.aacTracking && (
                   <p className="mt-1 text-[11px] font-bold text-cyan-700">
                     AAC début : {formatDateFr(student.aacTracking.startDate)} · Min fin : {formatDateFr(student.aacTracking.minimumEndDate)}
                   </p>
                 )}
-                {student.progress && (
+                {selectedStudentId === student.id && selectedRemcProgress?.global > 0 && (
                   <>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
-                    style={{ width: `${student.progress.global}%` }}
+                    style={{ width: `${selectedRemcProgress.global}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs font-black text-cyan-700">Progression sous-compétences : {student.progress.global}%</p>
+                <p className="mt-2 text-xs font-black text-cyan-700">Progression sous-compétences : {selectedRemcProgress.global}%</p>
                   </>
                 )}
               </button>
-            ))}
+              ))
+            )}
+          </div>
+
+          {selectedStudent && selectedIsPermisB && (
+            <button
+              className="w-full rounded-xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+              onClick={openLesson}
+              type="button"
+            >
+              {lessonFormOpen ? 'Leçon en cours' : 'Ouvrir une leçon'}
+            </button>
+          )}
+
+          <button
+            className="w-full rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-900 transition hover:border-cyan-300"
+            onClick={() => setPreRegModalOpen(true)}
+            type="button"
+          >
+            Pré-inscrire un élève
+          </button>
+
+          <div className="border-t border-slate-200 pt-4">
+            <h3 className="text-sm font-extrabold text-slate-900">Mes pré-inscriptions</h3>
+            {preRegLoading ? (
+              <p className="mt-2 text-xs font-semibold text-slate-500">Chargement…</p>
+            ) : preRegistrations.length === 0 ? (
+              <p className="mt-2 text-xs font-semibold text-slate-500">Aucune demande pour le moment.</p>
+            ) : (
+              <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto">
+                {preRegistrations.slice(0, 8).map((row) => (
+                  <article className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2" key={row.id}>
+                    <p className="text-sm font-bold text-slate-900">
+                      {row.first_name} {row.last_name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">{row.desired_training}</p>
+                    <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${preRegistrationStatusClass(row.status)}`}>
+                      {PRE_REGISTRATION_STATUS_LABELS[row.status]}
+                    </span>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
         <main className="grid gap-6">
+          {!selectedStudent ? (
+            <section className="card-panel-lg">
+              <EmptyState
+                icon="👆"
+                message="Recherchez un élève par nom ou prénom, puis cliquez sur sa fiche pour ouvrir une leçon."
+                title="Sélectionnez un élève"
+              />
+            </section>
+          ) : (
+          <>
           <section className="card-panel-lg">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -435,8 +575,10 @@ export default function TeacherStudentsPage() {
                   {selectedStudent.firstName} {selectedStudent.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Formation {selectedStudent.formationType}
-                  {selectedStudent.progress ? ` · Sous-compétences ${selectedStudent.progress.global}%` : ''}
+                  {selectedStudent.permisSummary}
+                  {selectedRemcProgress?.global
+                    ? ` · Sous-compétences ${selectedRemcProgress.global}%`
+                    : ''}
                 </p>
                 {selectedStudent.aacTracking && (
                   <p className="mt-1 text-xs font-bold text-cyan-700">
@@ -444,66 +586,40 @@ export default function TeacherStudentsPage() {
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {studentPanelTab === 'remc' && (
-                  <>
-                <button
-                  type="button"
-                  onClick={openLesson}
-                  className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-cyan-700"
-                >
-                  Ouvrir une leçon
-                </button>
-                  </>
-                )}
-              </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {selectedIsPermisB ? (
-                <>
-                  <StudentPanelTab active={studentPanelTab === 'initial-assessment'} onClick={() => setStudentPanelTab('initial-assessment')}>
-                    Évaluation de départ
-                  </StudentPanelTab>
-                  <StudentPanelTab active={studentPanelTab === 'remc'} onClick={() => setStudentPanelTab('remc')}>
-                    Suivi REMC
-                  </StudentPanelTab>
-                  <StudentPanelTab active={studentPanelTab === 'examen-blanc'} onClick={() => setStudentPanelTab('examen-blanc')}>
-                    Examen blanc
-                  </StudentPanelTab>
-                </>
-              ) : (
-                <StudentPanelTab active onClick={() => {}}>
-                  Suivi Moto / AM
-                </StudentPanelTab>
-              )}
-            </div>
-
-            <div className="card-muted mt-4">
-              <label className="text-sm font-bold text-slate-700">
-                Sélectionner un élève
-                <select
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
-                  value={selectedStudent.id}
-                  onChange={(event) => {
-                    setSelectedStudentId(event.target.value)
+            {selectedIsPermisB && !initialAssessmentCompleted && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <StudentPanelTab
+                  active={studentPanelTab === 'initial-assessment'}
+                  onClick={() => {
+                    setStudentPanelTab('initial-assessment')
                     setLessonFormOpen(false)
                   }}
                 >
-                  {displayStudents.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.firstName} {student.lastName} · {student.formationType}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                  Évaluation de départ
+                </StudentPanelTab>
+              </div>
+            )}
 
-            {studentPanelTab === 'remc' && lessonFormOpen && (
-              <form
-                className="mt-4 grid gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 p-4 md:grid-cols-2"
-                onSubmit={handleCreateLesson}
-              >
+            {studentPanelTab === 'lessons' && lessonFormOpen && selectedIsPermisB && (
+              <div className="mt-4">
+                <PanelTabs
+                  activeId={lessonSessionTab}
+                  className="sticky top-0 z-10 rounded-2xl border border-slate-100 bg-white/95 p-2 backdrop-blur"
+                  onChange={setLessonSessionTab}
+                  tabs={[
+                    { id: 'lesson', label: 'Leçon' },
+                    { id: 'remc', label: 'REMC' },
+                    { id: 'exam', label: 'Examen blanc' },
+                  ]}
+                />
+
+                {lessonSessionTab === 'lesson' && (
+                <form
+                  className="mt-4 grid gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 p-4 md:grid-cols-2"
+                  onSubmit={handleCreateLesson}
+                >
                 <label className="text-sm font-bold text-slate-700">
                   Enseignant
                   <input
@@ -554,20 +670,9 @@ export default function TeacherStudentsPage() {
                     ))}
                   </select>
                 </label>
-                <label className="text-sm font-bold text-slate-700">
-                  État
-                  <select
-                    className="mt-2 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={newLesson.status}
-                    onChange={(event) => setNewLesson((current) => ({ ...current, status: event.target.value }))}
-                  >
-                    {lessonStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <p className="text-xs font-semibold text-cyan-800 md:col-span-2">
+                  La leçon est enregistrée et comptabilisée dès l&apos;enregistrement ({newLesson.duration}).
+                </p>
                 <label className="text-sm font-bold text-slate-700 md:col-span-2">
                   Observations pour la prochaine leçon
                   <textarea
@@ -577,7 +682,7 @@ export default function TeacherStudentsPage() {
                     placeholder="Ex : retravailler priorités à droite, manque d’anticipation, revoir installation poste."
                   />
                 </label>
-                <div className="md:col-span-2 flex flex-col gap-2">
+                <div className="md:col-span-2 flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <ShareToggle
                       active={newLesson.sharedWithStudent}
@@ -590,43 +695,147 @@ export default function TeacherStudentsPage() {
                     />
                     <p className="text-xs font-semibold text-slate-500">
                       {newLesson.sharedWithStudent
-                        ? 'Visible par l\'élève dans son espace Observations.'
+                        ? 'Visible par l\'élève dans Historique des leçons.'
                         : 'Visible uniquement par enseignants, secrétariat et gérant.'}
                     </p>
                   </div>
+                  <div className="flex flex-wrap items-center gap-3">
                   <button
                     disabled={lessonSaving}
                     type="submit"
-                    className="w-fit rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:opacity-60"
+                    className="rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:opacity-60"
                   >
-                    {lessonSaving ? 'Enregistrement…' : 'Enregistrer'}
+                    {lessonSaving ? 'Enregistrement…' : 'Enregistrer la leçon'}
                   </button>
+                  <button
+                    className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:border-slate-300"
+                    onClick={() => setLessonFormOpen(false)}
+                    type="button"
+                  >
+                    Annuler
+                  </button>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Passez à l’onglet REMC pour valider les sous-compétences de cette leçon.
+                  </p>
+                  </div>
                 </div>
-              </form>
+                </form>
+                )}
+
+                {lessonSessionTab === 'remc' && (
+                <div className="mt-4">
+                <RemcTeacherValidationPanel
+                  embedded
+                  onRemcStatusChange={handleRemcStatusChange}
+                  organizationId={organizationId}
+                  remcCompetencies={selectedStudentRemc || []}
+                  studentId={selectedStudent.id}
+                  teacherId={profileId}
+                />
+                </div>
+                )}
+
+                {lessonSessionTab === 'exam' && (
+                <div className="mt-4">
+                <PracticeExamTeacherPanel
+                  embedded
+                  organizationId={organizationId}
+                  student={selectedStudent}
+                  teacherId={profileId}
+                />
+                </div>
+                )}
+              </div>
             )}
+
           </section>
 
-          {selectedIsPermisB && studentPanelTab === 'remc' && (
-            <>
-          <RemcTeacherValidationPanel
-            onRemcStatusChange={updateRemcStatus}
-            organizationId={organizationId}
-            remcCompetencies={selectedStudent.remc || []}
-            studentId={selectedStudent.id}
-            teacherId={profileId}
-          />
-
+          {selectedIsPermisB && studentPanelTab === 'lessons' && !lessonFormOpen && (
           <section className="card-panel-lg">
-            <h2 className="text-2xl font-extrabold text-slate-900">Historique des leçons</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-2xl font-extrabold text-slate-900">Historique des leçons</h2>
+              {historyTotalItems > 0 && (
+                <p className="text-xs font-semibold text-slate-500">{historyTotalItems} entrée(s)</p>
+              )}
+            </div>
             {lessonsLoading ? (
               <p className="mt-4 text-sm font-semibold text-slate-500">Chargement…</p>
+            ) : lessonHistoryItems.length === 0 ? (
+              <EmptyState
+                className="mt-4"
+                icon="📓"
+                message="Les leçons enregistrées et l'évaluation de départ apparaîtront ici."
+                title="Aucun historique"
+              />
             ) : (
+            <>
             <div className="mt-4 grid gap-3">
-              {(lessonObservations.length ? lessonObservations : selectedStudent.lessonHistory || []).map((lesson) => (
+              {historyPageItems.map((item) => {
+                if (item.type === 'initial-assessment') {
+                  const assessment = item.data
+                  const teacherComment = (assessment.answers?.teacher_comment || '').trim()
+                  return (
+                    <article
+                      className="card-muted border border-cyan-200 bg-cyan-50/30"
+                      key={`assessment-${assessment.id}`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-extrabold text-slate-900">
+                          Évaluation de départ
+                          {assessment.completed_at
+                            ? ` · ${formatDateFr(assessment.completed_at.slice(0, 10))}`
+                            : ''}
+                        </h3>
+                        <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-800">
+                          {formatAssessmentStatus(assessment.status)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Réalisée par : <strong>{assessment.teacherName || 'Enseignant'}</strong>
+                        {assessment.completed_at
+                          ? ` · ${new Date(assessment.completed_at).toLocaleString('fr-FR')}`
+                          : ''}
+                      </p>
+                      {assessment.status === 'completed' && (
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-700">
+                          {assessment.final_score != null && (
+                            <span>Score : <strong>{assessment.final_score} %</strong></span>
+                          )}
+                          <span className="inline-flex flex-wrap items-center gap-2">
+                            Volume préconisé : <strong>{formatRecommendedHours(assessment)}</strong>
+                            <HoursProposalStatusBadge assessment={assessment} />
+                          </span>
+                        </div>
+                      )}
+                      {teacherComment && (
+                        <p className="mt-2 text-sm text-slate-700">
+                          Commentaire : {teacherComment}
+                        </p>
+                      )}
+                      <button
+                        className="mt-3 rounded-xl border border-cyan-200 bg-white px-4 py-2 text-xs font-extrabold text-cyan-800 transition hover:border-cyan-300"
+                        onClick={() => setStudentPanelTab('initial-assessment')}
+                        type="button"
+                      >
+                        {assessment.status === 'completed' ? 'Consulter l\'évaluation' : 'Continuer l\'évaluation'}
+                      </button>
+                    </article>
+                  )
+                }
+
+                const lesson = item.data
+                const teacherName = lesson.openedBy || 'Enseignant'
+                const closingTeacher = lesson.closedBy || lesson.openedBy || ''
+                const sameTeacher = !closingTeacher || closingTeacher === lesson.openedBy
+                const openingLabel = formatLessonOpeningLabel(lesson.date, lesson.time)
+                const closingLabel = formatLessonClosingLabel(lesson.date, lesson.time, lesson.duration)
+                const closingTime = closingLabel.includes(' · ') ? closingLabel.split(' · ').pop() : closingLabel
+
+                return (
                 <article key={lesson.id} className="card-muted">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-extrabold text-slate-900">
-                      Leçon du {lesson.date || 'date non renseignée'} · {lesson.time || '--:--'}
+                      Leçon du {formatLessonDateFr(lesson.date) || 'date non renseignée'} · {lesson.time || '--:--'}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">
                       <ShareToggle
@@ -634,17 +843,28 @@ export default function TeacherStudentsPage() {
                         compact
                         onClick={() => handleToggleLessonShare(lesson)}
                       />
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{lesson.status}</span>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-emerald-700">
+                        Terminée · {lesson.duration}
+                      </span>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Ouverture : <strong>{lesson.openedBy}</strong> · {new Date(lesson.openedAt).toLocaleString('fr-FR')}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    Clôture : <strong>{lesson.closedBy || 'Non clôturée'}</strong>{' '}
-                    {lesson.closedAt ? `· ${new Date(lesson.closedAt).toLocaleString('fr-FR')}` : ''}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-600">Durée : {lesson.duration}</p>
+                  {sameTeacher ? (
+                    <p className="mt-2 text-sm text-slate-600">
+                      <strong>{teacherName}</strong>
+                      {' · '}
+                      {openingLabel}
+                      {closingTime && closingTime !== '--:--' ? ` → ${closingTime}` : ''}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Ouverture : <strong>{teacherName}</strong> · {openingLabel}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Clôture : <strong>{closingTeacher}</strong> · {closingLabel}
+                      </p>
+                    </>
+                  )}
                   <p className="mt-2 text-sm text-slate-700">
                     Observations pour la prochaine leçon : {lesson.observations || 'Aucune'}
                   </p>
@@ -655,54 +875,34 @@ export default function TeacherStudentsPage() {
                       </span>
                     ))}
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <select
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
-                      value={lesson.status}
-                      onChange={(event) => handleLessonStatusChange(lesson, event.target.value)}
-                    >
-                      {lessonStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                    {lesson.status !== 'Terminé' && (
-                      <button
-                        type="button"
-                        className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-extrabold text-white"
-                        onClick={() => handleCloseLesson(lesson)}
-                      >
-                        Clôturer la leçon
-                      </button>
-                    )}
-                  </div>
                 </article>
-              ))}
+                )
+              })}
             </div>
+            <PaginationBar
+              className="mt-4"
+              onPageChange={setHistoryPage}
+              page={historyPage}
+              pageSize={historyPageSize}
+              totalItems={historyTotalItems}
+              totalPages={historyTotalPages}
+            />
+            </>
             )}
           </section>
-            </>
           )}
 
           {studentPanelTab === 'initial-assessment' && selectedIsPermisB && (
             <InitialAssessmentWizard
               assessment={initialAssessment}
               completedBy={profileId}
+              onComplete={() => setStudentPanelTab('lessons')}
               onSaved={(saved) => setInitialAssessment(normalizeInitialAssessment(saved))}
               organizationId={organizationId}
               readOnly={initialAssessment?.status === 'completed'}
               student={selectedApiStudent || selectedStudent}
               studentId={selectedStudent.id}
               teacherMode
-            />
-          )}
-
-          {studentPanelTab === 'examen-blanc' && selectedIsPermisB && (
-            <PracticeExamTeacherPanel
-              organizationId={organizationId}
-              student={selectedStudent}
-              teacherId={profileId}
             />
           )}
 
@@ -715,8 +915,20 @@ export default function TeacherStudentsPage() {
               />
             </section>
           )}
+          </>
+          )}
         </main>
       </div>
+
+      <PreRegistrationFormModal
+        onClose={() => setPreRegModalOpen(false)}
+        onCreated={() => {
+          void refreshPreRegistrations()
+        }}
+        open={preRegModalOpen}
+        organizationId={organizationId}
+        teacherId={profileId}
+      />
     </div>
   )
 }

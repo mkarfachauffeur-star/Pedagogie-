@@ -5,7 +5,7 @@ const PERMIS_B_ITEMS = [
   { href: '/student/planning', icon: '\u{1F4C5}', label: 'Planning' },
   { href: '/student/initial-assessment', icon: '\u{1F4CB}', label: 'Évaluation de départ', track: 'permis_b' },
   { href: '/student/lessons', icon: '\u{1F4DA}', label: 'Compétences', track: 'permis_b' },
-  { href: '/student/competency-reports', icon: '\u{1F4C8}', label: 'Bilans de compétences', track: 'permis_b' },
+  { href: '/student/competency-reports', icon: '\u{1F4D3}', label: 'Historique des leçons', track: 'permis_b' },
   {
     href: '/student/pedagogical-appointments',
     icon: '\u{1F697}',
@@ -13,20 +13,14 @@ const PERMIS_B_ITEMS = [
     track: 'permis_b',
     aacOnly: true,
   },
-  { href: '/student/observations', icon: '\u{1F4AC}', label: 'Observations' },
   { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
-  { href: '/student/contract', icon: '\u{1F4C4}', label: 'Contrat' },
-  { href: '/student/payments', icon: '\u{1F4B3}', label: 'Paiements' },
 ]
 
 const MOTO_AM_ITEMS = [
   { href: '/student/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
   { href: '/student/planning', icon: '\u{1F4C5}', label: 'Planning' },
   { href: '/student/next-lesson', icon: '\u{1F3CD}\uFE0F', label: 'Prochaine leçon', track: 'moto_am' },
-  { href: '/student/observations', icon: '\u{1F4AC}', label: 'Observations' },
   { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
-  { href: '/student/contract', icon: '\u{1F4C4}', label: 'Contrat' },
-  { href: '/student/payments', icon: '\u{1F4B3}', label: 'Paiements' },
 ]
 
 export function getStudentNavItems(track, student = null) {
@@ -44,13 +38,14 @@ export const NAVIGATION = {
       { href: '/manager/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/manager/teachers', icon: '\u{1F468}\u200D\u{1F3EB}', label: 'Enseignants' },
       { href: '/manager/students', icon: '\u{1F465}', label: 'Élèves' },
+      { href: '/manager/pre-registrations', icon: '\u{1F4DD}', label: 'Pré-inscriptions' },
       { href: '/manager/users', icon: '\u{1F510}', label: 'Utilisateurs' },
       { href: '/manager/planning', icon: '\u{1F4C5}', label: 'Planning global' },
       { href: '/manager/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
       { href: '/manager/contracts', icon: '\u{1F4C4}', label: 'Contrats' },
       { href: '/manager/payments', icon: '\u{1F4B0}', label: 'Paiements' },
       { href: '/manager/packages', icon: '\u{1F4B8}', label: 'Formules & tarifs' },
-      { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports' },
+      { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports réglementaires' },
       { href: '/manager/messages', icon: '\u{1F4AC}', label: 'Messages' },
       { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Évolution du CA' },
       { href: '/manager/settings', icon: '\u2699\uFE0F', label: 'Paramètres' },
@@ -75,6 +70,7 @@ export const NAVIGATION = {
     items: [
       { href: '/secretary/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/secretary/inscriptions', icon: '\u{1F4DD}', label: 'Inscriptions' },
+      { href: '/secretary/pre-registrations', icon: '\u{1F4CB}', label: 'Pré-inscriptions' },
       { href: '/secretary/planning', icon: '\u{1F4C5}', label: 'Planning global' },
       { href: '/secretary/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
       { href: '/secretary/paiements', icon: '\u{1F4B0}', label: 'Paiements' },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { REMC_COMPETENCY_ORDER, REMC_COMPETENCIES } from '../../data/remcCompetencies'
 import {
   areAllSubCompetenciesValidated,
@@ -81,7 +82,7 @@ function RemcCompetencyCard({
           )}
         </div>
 
-        <div className="shrink-0 sm:text-right">
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:text-right">
           {!unlocked ? (
             <p className="text-xs font-semibold text-slate-500">
               🔒 Validez la compétence précédente
@@ -89,7 +90,7 @@ function RemcCompetencyCard({
           ) : effectivelyValidated && entry?.validatedAt ? (
             <>
               <p className="text-xs font-extrabold text-emerald-700">✅ Compétence validée</p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">
+              <p className="text-xs font-semibold text-slate-500">
                 Validée le {new Date(entry.validatedAt).toLocaleDateString('fr-FR')}
                 {entry.teacherName ? ` · ${entry.teacherName}` : ''}
               </p>
@@ -97,18 +98,20 @@ function RemcCompetencyCard({
           ) : allSubsValidated ? (
             <p className="text-xs font-semibold text-cyan-700">Validation en cours…</p>
           ) : (
-            <p className="text-xs font-semibold text-slate-500">
-              Cliquez pour valider les sous-compétences
+            <p className="text-xs font-bold text-cyan-800">
+              {expanded ? 'Masquer les sous-compétences' : 'Ouvrir les sous-compétences'}
             </p>
           )}
           {unlocked && (
             <span
               aria-hidden="true"
-              className={`mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm text-slate-500 transition-transform ${
-                expanded ? 'rotate-180' : ''
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-sm transition-all ${
+                expanded
+                  ? 'rotate-180 border-cyan-400 bg-cyan-100 text-cyan-800'
+                  : 'border-cyan-300 bg-cyan-50 text-cyan-700'
               }`}
             >
-              ▾
+              <ChevronDown className="h-5 w-5 stroke-[2.5]" />
             </span>
           )}
         </div>
@@ -161,6 +164,7 @@ export default function RemcTeacherValidationPanel({
   remcCompetencies = [],
   onRemcStatusChange,
   onUnlockStateChange,
+  embedded = false,
 }) {
   const [unlockState, setUnlockState] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -218,6 +222,15 @@ export default function RemcTeacherValidationPanel({
           config: {
             event: '*',
             schema: 'public',
+            table: 'student_remc_item_progress',
+            filter: `student_id=eq.${studentId}`,
+          },
+          callback: refresh,
+        },
+        {
+          config: {
+            event: '*',
+            schema: 'public',
             table: 'student_competency_validations',
             filter: `student_id=eq.${studentId}`,
           },
@@ -243,18 +256,22 @@ export default function RemcTeacherValidationPanel({
 
   if (!studentId) return null
 
+  const title = embedded
+    ? 'Compétences travaillées pendant la leçon'
+    : 'Validation des compétences REMC'
+  const description = embedded
+    ? 'Validez manuellement les sous-compétences abordées avec l\'élève. Les changements sont enregistrés immédiatement.'
+    : 'Cliquez une compétence pour afficher ses sous-compétences. Lorsque toutes sont « Validé », la compétence est validée automatiquement.'
+
   return (
-    <section className="card-panel-lg">
+    <section className={embedded ? 'rounded-2xl border border-cyan-200 bg-white p-4 sm:p-5' : 'card-panel-lg'}>
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Validation des compétences REMC</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Cliquez une compétence pour afficher ses sous-compétences. Lorsque toutes sont « Validé »,
-            la compétence est validée automatiquement.
-          </p>
+          <h2 className={`font-extrabold text-slate-900 ${embedded ? 'text-lg' : 'text-2xl'}`}>{title}</h2>
+          <p className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
         {!loading && (
-          <p className="text-3xl font-black text-cyan-700">{globalProgress} %</p>
+          <p className={`font-black text-cyan-700 ${embedded ? 'text-2xl' : 'text-3xl'}`}>{globalProgress} %</p>
         )}
       </div>
 

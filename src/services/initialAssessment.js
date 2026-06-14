@@ -5,12 +5,42 @@ import {
 } from '../data/initialAssessmentForm'
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
+import { resolveAcceptedRecommendedHours } from '../lib/initialAssessmentUtils'
+import { sumCompletedLessonHours } from './studentLessonObservations'
+
+const COMPLETED_APPOINTMENT_STATUSES = ['Réalisé', 'Realise', 'Confirmé', 'completed', 'done', 'Terminé']
 
 export function formatAssessmentStatus(status) {
   const label = ASSESSMENT_STATUS_LABELS[status]
   if (label) return label
   if (typeof status === 'string') return status
   return ASSESSMENT_STATUS_LABELS.pending
+}
+
+export async function respondToRecommendedHours(assessmentId, response) {
+  if (!assessmentId || !['accepted', 'declined'].includes(response)) {
+    return { assessment: null, error: new Error('Réponse invalide') }
+  }
+  try {
+    const { error } = await supabase.rpc('student_respond_recommended_hours', {
+      p_assessment_id: assessmentId,
+      p_response: response,
+    })
+    if (error) throw error
+
+    const { data, error: fetchError } = await supabase
+      .from('student_initial_assessments')
+      .select(`
+        *,
+        teacher:completed_by(full_name)
+      `)
+      .eq('id', assessmentId)
+      .maybeSingle()
+    if (fetchError) throw fetchError
+    return { assessment: data, error: null }
+  } catch (error) {
+    return { assessment: null, error: toUserError(error, 'save') }
+  }
 }
 
 export async function getInitialAssessmentForStudent(studentId) {
@@ -39,24 +69,43 @@ export async function saveInitialAssessmentStep({
   status = 'in_progress',
   completedBy = null,
   markCompleted = false,
+  commentOnly = false,
+  updateCompleted = false,
 }) {
   try {
+    const now = new Date().toISOString()
+
+    if (commentOnly && assessmentId) {
+      const { data, error } = await supabase
+        .from('student_initial_assessments')
+        .update({ answers, updated_at: now })
+        .eq('id', assessmentId)
+        .select(`
+          *,
+          teacher:completed_by(full_name)
+        `)
+        .single()
+      if (error) throw error
+      return { assessment: data, error: null }
+    }
+
     const scores = computeAssessmentScores(answers)
     const recommendation = recommendHoursFromScore(scores)
-    const now = new Date().toISOString()
 
     const row = {
       answers,
       positive_score: scores.positiveScore,
       negative_score: scores.negativeScore,
       final_score: scores.finalScore,
-      status: markCompleted ? 'completed' : status,
+      result_level: recommendation.resultLevel,
+      recommended_hours_min: recommendation.recommendedHoursMin,
+      recommended_hours_max: recommendation.recommendedHoursMax,
+      status: markCompleted || updateCompleted ? 'completed' : status,
       updated_at: now,
       ...(markCompleted
         ? {
-          result_level: recommendation.resultLevel,
-          recommended_hours_min: recommendation.recommendedHoursMin,
-          recommended_hours_max: recommendation.recommendedHoursMax,
+          recommended_hours_response: 'pending',
+          recommended_hours_responded_at: null,
           completed_at: now,
           completed_by: completedBy,
         }
@@ -124,21 +173,27 @@ export async function getStudentHoursSummary(studentId) {
   }
 
   try {
-    const [studentRes, contractRes, appointmentsRes, assessmentRes] = await Promise.all([
+    const [studentRes, contractRes, appointmentsRes, assessmentRes, lessonHoursRes, lessonsRes] =
+      await Promise.all([
       supabase.from('students').select('extra_hours, package_id').eq('id', studentId).maybeSingle(),
       supabase
         .from('contracts')
         .select('extra_hours, package:package_id(included_hours)')
         .eq('student_id', studentId)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabase
         .from('appointments')
-        .select('duration_minutes, status')
+        .select('duration_minutes, status, kind, starts_at')
         .eq('student_id', studentId)
-        .in('status', ['Réalisé', 'Realise', 'completed', 'done']),
+        .in('status', COMPLETED_APPOINTMENT_STATUSES),
       getInitialAssessmentForStudent(studentId),
+      supabase.rpc('student_completed_lesson_hours', { p_student_id: studentId }),
+      supabase
+        .from('student_lesson_observations')
+        .select('duration, status')
+        .eq('student_id', studentId),
     ])
 
     const student = studentRes.data
@@ -149,21 +204,44 @@ export async function getStudentHoursSummary(studentId) {
     const packageHours = Number(contract?.package?.included_hours || 0)
     const extraHours = Number(contract?.extra_hours ?? student?.extra_hours ?? 0)
     const contractHours = packageHours + extraHours
-    const completedMinutes = (appointments || []).reduce(
-      (sum, row) => sum + Number(row.duration_minutes || 60),
-      0,
-    )
-    const completedHours = Math.round((completedMinutes / 60) * 10) / 10
+
+    let completedHours = Number(lessonHoursRes.data)
+    if (lessonHoursRes.error || Number.isNaN(completedHours)) {
+      completedHours = sumCompletedLessonHours(lessonsRes.data || [])
+    }
+
+    const appointmentMinutes = (appointments || [])
+      .filter((row) => {
+        const kind = String(row.kind || '').toLowerCase()
+        return !kind || kind.includes('leçon') || kind.includes('lecon') || kind === 'lesson'
+      })
+      .reduce((sum, row) => sum + Number(row.duration_minutes || 60), 0)
+    const appointmentHours = Math.round((appointmentMinutes / 60) * 10) / 10
+
+    if (appointmentHours > completedHours) {
+      completedHours = appointmentHours
+    }
+
+    completedHours = Math.round(completedHours * 10) / 10
     const recommended = assessment?.status === 'completed'
       ? assessment.recommended_hours_max === assessment.recommended_hours_min
         ? assessment.recommended_hours_min
         : `${assessment.recommended_hours_min} à ${assessment.recommended_hours_max}`
       : null
 
+    const acceptedTargetHours = resolveAcceptedRecommendedHours(assessment)
+    const remainingHours =
+      acceptedTargetHours != null
+        ? Math.max(Math.round((acceptedTargetHours - completedHours) * 10) / 10, 0)
+        : contractHours > 0
+          ? Math.max(Math.round((contractHours - completedHours) * 10) / 10, 0)
+          : null
+
     return {
       contractHours,
       completedHours,
-      remainingHours: Math.max(contractHours - completedHours, 0),
+      remainingHours,
+      acceptedTargetHours,
       recommendedHours: recommended,
       assessment: assessment || null,
     }
@@ -171,7 +249,8 @@ export async function getStudentHoursSummary(studentId) {
     return {
       contractHours: 0,
       completedHours: 0,
-      remainingHours: 0,
+      remainingHours: null,
+      acceptedTargetHours: null,
       recommendedHours: null,
       assessment: null,
     }

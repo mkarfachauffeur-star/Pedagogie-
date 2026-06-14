@@ -6,7 +6,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const ACTIONS = ['reset_password', 'resend_invite', 'disable', 'enable', 'delete'] as const
+const ACTIONS = ['reset_password', 'resend_invite', 'disable', 'enable', 'delete', 'change_email'] as const
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -46,6 +46,9 @@ Deno.serve(async (req) => {
     if (userId === caller.id && action === 'delete') {
       return json({ error: 'Vous ne pouvez pas supprimer votre propre compte.' }, 400)
     }
+    if (userId === caller.id && action === 'disable') {
+      return json({ error: 'Vous ne pouvez pas désactiver votre propre compte.' }, 400)
+    }
 
     const { data: targetProfile } = await admin
       .from('profiles')
@@ -66,17 +69,11 @@ Deno.serve(async (req) => {
 
     if (action === 'disable') {
       await admin.from('profiles').update({ is_active: false }).eq('id', userId)
-      if (targetProfile.role === 'teacher') {
-        await admin.from('teachers').update({ is_active: false }).eq('profile_id', userId)
-      }
       return json({ ok: true, message: 'Compte désactivé.' })
     }
 
     if (action === 'enable') {
       await admin.from('profiles').update({ is_active: true }).eq('id', userId)
-      if (targetProfile.role === 'teacher') {
-        await admin.from('teachers').update({ is_active: true }).eq('profile_id', userId)
-      }
       return json({ ok: true, message: 'Compte réactivé.' })
     }
 
@@ -84,6 +81,25 @@ Deno.serve(async (req) => {
       const { error } = await admin.auth.admin.deleteUser(userId)
       if (error) return json({ error: error.message }, 400)
       return json({ ok: true, message: 'Compte supprimé.' })
+    }
+
+    if (action === 'change_email') {
+      const newEmail = String(body.new_email || '').trim().toLowerCase()
+      if (!newEmail || !newEmail.includes('@')) {
+        return json({ error: 'Nouvel e-mail invalide.' }, 400)
+      }
+      if (newEmail === targetProfile.email?.toLowerCase()) {
+        return json({ error: 'Le nouvel e-mail est identique à l\'actuel.' }, 400)
+      }
+
+      const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+        email: newEmail,
+        email_confirm: true,
+      })
+      if (authError) return json({ error: authError.message }, 400)
+
+      await admin.from('profiles').update({ email: newEmail }).eq('id', userId)
+      return json({ ok: true, message: 'E-mail mis à jour.' })
     }
 
     const email = targetProfile.email
