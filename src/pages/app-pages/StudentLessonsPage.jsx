@@ -2205,11 +2205,11 @@ export default function StudentLessonsPage() {
                   const itemDone = itemProgress.completed
                   const isExpanded = Boolean(expandedModuleIds[item.id])
                   const lessonValue = lessonModule
-                    ? (itemProgress.completed ? 'Validée' : 'Disponible')
+                    ? (itemProgress.completed ? 'Validée' : 'Ouvrir')
                     : item.video
                   const qcmValue = lessonModule && qcmAvailable && itemProgress.percentage !== null
                     ? `${itemProgress.score}/${qcmTotal}`
-                    : (lessonModule && qcmAvailable ? 'Disponible' : item.qcm)
+                    : (lessonModule && qcmAvailable ? 'Ouvrir' : item.qcm)
                   const lessonComplete = lessonModule ? itemProgress.completed : false
                   const qcmComplete = lessonModule && qcmAvailable ? itemProgress.completed : false
 
