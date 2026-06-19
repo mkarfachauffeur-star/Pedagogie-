@@ -43,6 +43,47 @@ function buildSaveTeachingResourceParams(profileId, payload, { isActive = true }
   }
 }
 
+async function saveTeachingResourceDirect(profileId, teacherPayload, options = {}) {
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', profileId)
+    .maybeSingle()
+  if (profileError) return { error: toUserError(profileError, 'save') }
+  if (!profile?.organization_id) return { error: new Error('Profil simulateur introuvable.') }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('teachers')
+    .select('profile_id')
+    .eq('profile_id', profileId)
+    .maybeSingle()
+  if (existingError) return { error: toUserError(existingError, 'save') }
+
+  const row = {
+    ...teacherPayload,
+    is_active: options.isActive ?? true,
+  }
+
+  if (existing?.profile_id) {
+    const { error: updateError } = await supabase
+      .from('teachers')
+      .update(row)
+      .eq('profile_id', profileId)
+    if (updateError) return { error: toUserError(updateError, 'save') }
+    return { error: null }
+  }
+
+  const { error: insertError } = await supabase
+    .from('teachers')
+    .insert({
+      profile_id: profileId,
+      organization_id: profile.organization_id,
+      ...row,
+    })
+  if (insertError) return { error: toUserError(insertError, 'save') }
+  return { error: null }
+}
+
 async function saveTeachingResource(profileId, payload, options = {}) {
   const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
   if (validationError) return { error: validationError }
@@ -52,23 +93,11 @@ async function saveTeachingResource(profileId, payload, options = {}) {
 
   if (!rpcError) return { error: null }
 
-  const rpcMissing = rpcError.code === 'PGRST202'
-    || /save_teaching_resource/i.test(rpcError.message || '')
-    || /could not find the function/i.test(rpcError.message || '')
+  const direct = await saveTeachingResourceDirect(profileId, teacherPayload, options)
+  if (!direct.error) return { error: null }
 
-  if (rpcMissing) {
-    const { error: updateError } = await supabase
-      .from('teachers')
-      .update({
-        ...teacherPayload,
-        is_active: options.isActive ?? true,
-      })
-      .eq('profile_id', profileId)
-    if (updateError) return { error: toUserError(updateError, 'save') }
-    return { error: null }
-  }
-
-  return { error: toUserError(rpcError, 'save') }
+  if (rpcError) return { error: toUserError(rpcError, 'save') }
+  return direct
 }
 
 function teacherRecordPayload(payload) {
@@ -309,13 +338,8 @@ export async function createTeacher(payload) {
   if (resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR) {
     const { error: createError, userId } = await createSimulatorResource(fullName)
     if (createError) return { teacher: null, error: createError }
+    if (!userId) return { teacher: null, error: new Error('Création simulateur incomplète.') }
     profileId = userId
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ full_name: fullName })
-      .eq('id', profileId)
-    if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
   } else if (profileId) {
     const { error: ensureError } = await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
     if (ensureError) return { teacher: null, error: toUserError(ensureError, 'save') }

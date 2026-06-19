@@ -58,8 +58,8 @@ const CONTAINS_RULES = [
     message: 'Le mot de passe doit contenir au moins 8 caractères.',
   },
   {
-    pattern: /resource_type|save_teaching_resource|teaching_resource_type|simulator_sessions|list_organization_simulator_sessions/i,
-    message: 'La base de données doit être mise à jour. Appliquez les dernières migrations Supabase.',
+    pattern: /resource_type|save_teaching_resource|teaching_resource_type|simulator_sessions|list_organization_simulator_sessions|fiche ressource introuvable|column .* does not exist/i,
+    message: 'La base de données doit être mise à jour. Contactez le support ou réessayez après migration Supabase.',
   },
   {
     pattern: /sqlstate|pgrst|postgres|duplicate key value|violates unique constraint|violates foreign key|syntax error at/i,

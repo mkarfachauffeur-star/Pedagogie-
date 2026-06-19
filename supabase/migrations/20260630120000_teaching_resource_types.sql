@@ -130,6 +130,8 @@ $$;
 revoke all on function app.list_organization_teachers() from public;
 grant execute on function app.list_organization_teachers() to authenticated;
 
+drop function if exists public.list_organization_teachers();
+
 create or replace function public.list_organization_teachers()
 returns table (
   profile_id uuid,
