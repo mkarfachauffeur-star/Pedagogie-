@@ -8,6 +8,7 @@ import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
 import { useStudentTrack } from '../hooks/useStudentTrack'
 import { useUnreadCount } from '../hooks/useUnreadCount'
+import { runExpirationRemindersCheck } from '../services/expirationReminders'
 import { getTrackLabel } from '../lib/studentTrack'
 
 export default function DashboardLayout({ role, children, fullWidth = false }) {
@@ -27,6 +28,11 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!profileId || !['manager', 'secretary'].includes(role)) return
+    runExpirationRemindersCheck()
+  }, [profileId, role])
 
   useEffect(() => {
     if (!sidebarOpen) return undefined

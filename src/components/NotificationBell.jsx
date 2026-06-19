@@ -2,7 +2,7 @@ import { Bell } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getMessagesRoute, getPreRegistrationsRoute } from '../lib/messagesRoutes'
+import { getExpiryReminderRoute, getMessagesRoute, getPreRegistrationsRoute } from '../lib/messagesRoutes'
 import {
   getNotificationPreview,
   getNotificationTitle,
@@ -100,6 +100,14 @@ export default function NotificationBell({ role, unreadCount }) {
       }
       if (role === 'teacher') {
         navigate('/teacher/students')
+        return
+      }
+    }
+
+    if (notification.notification_type === 'expiry_reminder') {
+      const route = getExpiryReminderRoute(role, notification.expiry_kind)
+      if (route) {
+        navigate(route)
         return
       }
     }

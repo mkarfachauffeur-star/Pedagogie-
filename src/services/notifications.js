@@ -99,7 +99,7 @@ export async function listUnreadNotifications(profileId, limit = 10) {
   try {
     const { data: rows, error } = await supabase
       .from('notifications')
-      .select('id, conversation_id, message_id, notification_type, title, body, pre_registration_id, is_read, created_at')
+      .select('id, conversation_id, message_id, notification_type, title, body, pre_registration_id, expiry_kind, resource_id, is_read, created_at')
       .eq('profile_id', profileId)
       .eq('is_read', false)
       .order('created_at', { ascending: false })
@@ -116,7 +116,7 @@ export async function listRecentNotifications(profileId, limit = 15) {
   try {
     const { data: rows, error } = await supabase
       .from('notifications')
-      .select('id, conversation_id, message_id, notification_type, title, body, pre_registration_id, is_read, created_at')
+      .select('id, conversation_id, message_id, notification_type, title, body, pre_registration_id, expiry_kind, resource_id, is_read, created_at')
       .eq('profile_id', profileId)
       .order('created_at', { ascending: false })
       .limit(limit)
