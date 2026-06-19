@@ -4,6 +4,25 @@ export const ASSESSMENT_STATUS_LABELS = {
   completed: 'Réalisée',
 }
 
+export const ASSESSMENT_STATUS_STYLES = {
+  pending: {
+    container: 'border-amber-200 bg-amber-50',
+    summary: 'text-amber-900',
+  },
+  in_progress: {
+    container: 'border-blue-200 bg-blue-50',
+    summary: 'text-blue-900',
+  },
+  completed: {
+    container: 'border-emerald-200 bg-emerald-50',
+    summary: 'text-emerald-900',
+  },
+}
+
+export function getAssessmentStatusStyles(status) {
+  return ASSESSMENT_STATUS_STYLES[status] || ASSESSMENT_STATUS_STYLES.pending
+}
+
 export const FSB_OPTIONS = [
   { value: 'F', label: 'F — Faible', points: 0 },
   { value: 'S', label: 'S — Satisfaisant', points: 1 },

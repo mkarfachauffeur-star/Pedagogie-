@@ -6,6 +6,7 @@ import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
 import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
 import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
+import { getAssessmentStatusStyles } from '../../data/initialAssessmentForm'
 import { formatPersonName } from '../../lib/staffAccounts'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
 import { listStudents, resendStudentAccessEmail, subscribeStudents } from '../../services/students'
@@ -163,6 +164,8 @@ export default function AdminStudentsPage() {
               const track = resolveStudentTrack(student)
               const assessment = assessmentsByStudent[student.id]
               const formationLabel = student.package_name || student.formation_type || getTrackLabel(track)
+              const assessmentStatus = assessment?.status || 'pending'
+              const assessmentStyles = getAssessmentStatusStyles(assessmentStatus)
               return (
               <article key={student.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
@@ -178,9 +181,9 @@ export default function AdminStudentsPage() {
                     )}
                     <p className="mt-3 text-sm"><span className="font-bold text-slate-500">Formation :</span> {formationLabel}</p>
                     {track === 'permis_b' && (
-                      <details className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                        <summary className="cursor-pointer text-sm font-bold text-cyan-800">
-                          Évaluation de départ · {formatAssessmentStatus(assessment?.status || 'pending')}
+                      <details className={`mt-3 rounded-xl border px-3 py-2 ${assessmentStyles.container}`}>
+                        <summary className={`cursor-pointer text-sm font-bold ${assessmentStyles.summary}`}>
+                          Évaluation de départ · {formatAssessmentStatus(assessmentStatus)}
                         </summary>
                         <div className="mt-3 grid gap-2 pb-2 text-sm sm:grid-cols-2">
                           <p><span className="font-bold text-slate-500">Date :</span> {assessment?.completed_at ? formatDateFr(assessment.completed_at) : '—'}</p>
