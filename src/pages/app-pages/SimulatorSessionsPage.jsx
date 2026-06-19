@@ -89,6 +89,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   const [saving, setSaving] = useState(false)
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
+  const [formAlert, setFormAlert] = useState(null)
 
   const applyFormOptions = useCallback((formOptions) => {
     if (!formOptions || formOptions.error) return false
@@ -140,6 +141,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   const openCreate = async () => {
     setForm(emptyForm(canManage && role !== 'teacher' ? profileId : ''))
     setErrors({})
+    setFormAlert(null)
     setModalOpen(true)
     await ensureFormOptions()
   }
@@ -148,6 +150,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     if (!canManage || session.status === SIMULATOR_SESSION_STATUSES.COMPLETED) return
     setForm(sessionToForm(session))
     setErrors({})
+    setFormAlert(null)
     setModalOpen(true)
     await ensureFormOptions()
   }
@@ -155,16 +158,28 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: null }))
+    setFormAlert(null)
   }
 
   const saveSession = async (event) => {
-    event.preventDefault()
-    if (!canManage || !organizationId) return
+    event?.preventDefault()
+    if (!canManage) {
+      setFormAlert('Vous n’avez pas les droits pour enregistrer une séance simulateur.')
+      return
+    }
+    if (!organizationId) {
+      setFormAlert('Organisation introuvable. Reconnectez-vous puis réessayez.')
+      return
+    }
 
     const nextErrors = validateSimulatorSessionForm(form, options.supervisorMode)
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length) return
+    if (Object.keys(nextErrors).length) {
+      setFormAlert('Complétez les champs obligatoires avant de valider la séance.')
+      return
+    }
 
+    setFormAlert(null)
     setSaving(true)
     setFeedback(null)
 
@@ -363,13 +378,25 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
         footer={(
           <AppModalFooter
             onClose={() => setModalOpen(false)}
-            submitForm={FORM_ID}
-            submitLabel={saving ? 'Enregistrement…' : form.id ? 'Enregistrer' : 'Créer la séance'}
-            submitDisabled={saving}
-          />
+            hideSubmit
+          >
+            <button
+              type="button"
+              disabled={saving}
+              onClick={saveSession}
+              className="pd-btn-primary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? 'Enregistrement…' : form.id ? 'Enregistrer' : 'Valider la séance'}
+            </button>
+          </AppModalFooter>
         )}
       >
         <form id={FORM_ID} className="space-y-5" onSubmit={saveSession}>
+          {formAlert && (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              {formAlert}
+            </p>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Élève</span>
