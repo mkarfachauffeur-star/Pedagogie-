@@ -241,7 +241,18 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           <select
             className={inputClass}
             value={form.resourceType}
-            onChange={(e) => update('resourceType', e.target.value)}
+            onChange={(e) => {
+              const nextType = normalizeTeachingResourceType(e.target.value)
+              setForm((current) => ({
+                ...current,
+                resourceType: nextType,
+                ...(nextType === TEACHING_RESOURCE_TYPES.SIMULATOR
+                  ? { phone: '', firstName: '', birthDate: '', categories: [], employmentStatus: 'Salarié' }
+                  : {}),
+              }))
+              setErrors({})
+              setSubmitError(null)
+            }}
             disabled={readOnly || !canWrite || busy || isEdit}
           >
             {TEACHING_RESOURCE_TYPE_OPTIONS.map((option) => (
@@ -300,7 +311,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={`grid gap-4 ${isSimulator ? '' : 'sm:grid-cols-2'}`}>
           <label className="block">
             <span className="text-sm font-bold text-slate-700">
               E-mail{isSimulator ? ' (optionnel)' : ''}
@@ -315,21 +326,23 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
             />
             {errors.email && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.email}</p>}
           </label>
-          <label className="block">
-            <span className="text-sm font-bold text-slate-700">Téléphone</span>
-            <input
-              className={inputClass}
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              maxLength={10}
-              placeholder="10 chiffres"
-              value={form.phone}
-              onChange={(e) => update('phone', normalizePhoneDigits(e.target.value))}
-              disabled={readOnly || !canWrite || busy}
-            />
-            {errors.phone && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.phone}</p>}
-          </label>
+          {!isSimulator && (
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Téléphone</span>
+              <input
+                className={inputClass}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                maxLength={10}
+                placeholder="10 chiffres"
+                value={form.phone}
+                onChange={(e) => update('phone', normalizePhoneDigits(e.target.value))}
+                disabled={readOnly || !canWrite || busy}
+              />
+              {errors.phone && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.phone}</p>}
+            </label>
+          )}
         </div>
 
         {!isSimulator && (
