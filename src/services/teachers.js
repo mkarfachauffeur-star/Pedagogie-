@@ -215,6 +215,15 @@ export async function listTeacherRoleProfilesWithoutRecord() {
   }
 }
 
+export async function createSimulatorResource(fullName) {
+  const { data, error } = await supabase.functions.invoke('create-simulator-resource', {
+    body: { full_name: fullName },
+  })
+  if (error) return { error: toUserError(error, 'save'), userId: null }
+  if (data?.error) return { error: toUserError(data.error, 'save'), userId: null }
+  return { error: null, userId: data?.user_id || null }
+}
+
 export async function createTeacher(payload) {
   const resourceType = normalizeTeachingResourceType(payload.resourceType)
   const firstName = String(payload.firstName || '').trim()
@@ -229,7 +238,17 @@ export async function createTeacher(payload) {
 
   let profileId = payload.linkProfileId || null
 
-  if (profileId) {
+  if (resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR) {
+    const { error: createError, userId } = await createSimulatorResource(fullName)
+    if (createError) return { teacher: null, error: createError }
+    profileId = userId
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', profileId)
+    if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
+  } else if (profileId) {
     const { error: ensureError } = await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
     if (ensureError) return { teacher: null, error: toUserError(ensureError, 'save') }
 

@@ -24,6 +24,9 @@ verify_jwt = true
 [functions.check-expiration-reminders]
 verify_jwt = false
 
+[functions.create-simulator-resource]
+verify_jwt = true
+
 [auth]
 site_url = "https://pedagogia-drive.vercel.app"
 additional_redirect_urls = [

@@ -1,0 +1,69 @@
+// Crée une ressource simulateur (compte technique sans e-mail d'invitation).
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+
+  try {
+    const authHeader = req.headers.get('Authorization') || ''
+    const url = Deno.env.get('SUPABASE_URL')!
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const asCaller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: userData } = await asCaller.auth.getUser()
+    const caller = userData?.user
+    if (!caller) return json({ error: 'Non authentifié' }, 401)
+
+    const admin = createClient(url, serviceKey)
+
+    const { data: callerProfile } = await admin
+      .from('profiles')
+      .select('role, organization_id')
+      .eq('id', caller.id)
+      .maybeSingle()
+
+    if (!callerProfile || !['manager', 'secretary'].includes(callerProfile.role)) {
+      return json({ error: 'Action réservée au gérant ou au secrétariat' }, 403)
+    }
+
+    const body = await req.json()
+    const fullName = String(body.full_name || '').trim()
+    if (!fullName) {
+      return json({ error: 'Le nom du simulateur est obligatoire.' }, 400)
+    }
+
+    const technicalEmail = `simulator.${crypto.randomUUID()}@resources.pedagogia-drive.app`
+
+    const { data, error } = await admin.auth.admin.createUser({
+      email: technicalEmail,
+      email_confirm: true,
+      user_metadata: {
+        organization_id: callerProfile.organization_id,
+        role: 'teacher',
+        full_name: fullName,
+        resource_type: 'simulator',
+      },
+    })
+
+    if (error) return json({ error: error.message }, 400)
+
+    return json({ ok: true, user_id: data.user?.id })
+  } catch (err) {
+    return json({ error: String(err?.message || err) }, 500)
+  }
+})
+
+function json(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  })
+}
