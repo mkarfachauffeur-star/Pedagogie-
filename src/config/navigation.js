@@ -36,7 +36,7 @@ export const NAVIGATION = {
     user: { avatar: '\u{1F4BC}', name: 'Gérant', role: 'Gérant' },
     items: [
       { href: '/manager/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
-      { href: '/manager/teachers', icon: '\u{1F468}\u200D\u{1F3EB}', label: 'Enseignants & simulateurs' },
+      { href: '/manager/teachers', icon: '\u{1F468}\u200D\u{1F3EB}', label: 'Enseignants' },
       { href: '/manager/simulator-sessions', icon: '\u{1F5A5}\uFE0F', label: 'Séances simulateur' },
       { href: '/manager/students', icon: '\u{1F465}', label: 'Élèves' },
       { href: '/manager/pre-registrations', icon: '\u{1F4DD}', label: 'Pré-inscriptions' },

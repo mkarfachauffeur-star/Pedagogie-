@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase'
 import { formatPersonName } from '../lib/staffAccounts'
 import { inviteUser } from './invitations'
 import { subscribePostgresChanges } from './realtime'
@@ -9,6 +10,23 @@ export async function listOrganizationUsers() {
     if (error) throw error
     return { users: data || [], error: null }
   } catch (error) {
+    const rpcMissing = error?.code === 'PGRST202'
+      || /list_organization_users/i.test(error?.message || '')
+
+    if (rpcMissing) {
+      try {
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, phone, role, is_active')
+          .in('role', ['manager', 'teacher', 'secretary'])
+          .order('full_name')
+        if (profileError) throw profileError
+        return { users: data || [], error: null }
+      } catch (fallbackError) {
+        return { users: [], error: fallbackError }
+      }
+    }
+
     return { users: [], error }
   }
 }
