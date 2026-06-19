@@ -215,13 +215,55 @@ export async function listTeacherRoleProfilesWithoutRecord() {
   }
 }
 
+function isEdgeFunctionUnavailable(error) {
+  const message = extractInvokeErrorMessage(error)
+  return /edge function|non-2xx status|functionsfetcherror|functionsrelayerror|failed to send a request to the edge function|404|not found/i.test(message)
+}
+
+function extractInvokeErrorMessage(error) {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  if (typeof error.message === 'string') return error.message
+  return String(error)
+}
+
+async function invokeEdgeFunction(functionName, body) {
+  const { data, error } = await supabase.functions.invoke(functionName, { body })
+  if (data?.user_id) {
+    return { userId: data.user_id, error: null }
+  }
+  if (data?.error) {
+    return { userId: null, error: new Error(String(data.error)) }
+  }
+  if (error) {
+    return { userId: null, error, unavailable: isEdgeFunctionUnavailable(error) }
+  }
+  return { userId: null, error: new Error('Réponse serveur invalide.') }
+}
+
 export async function createSimulatorResource(fullName) {
-  const { data, error } = await supabase.functions.invoke('create-simulator-resource', {
-    body: { full_name: fullName },
-  })
-  if (error) return { error: toUserError(error, 'save'), userId: null }
-  if (data?.error) return { error: toUserError(data.error, 'save'), userId: null }
-  return { error: null, userId: data?.user_id || null }
+  const attempts = [
+    ['invite-user', {
+      email: '',
+      role: 'teacher',
+      full_name: fullName,
+      resource_type: TEACHING_RESOURCE_TYPES.SIMULATOR,
+    }],
+    ['create-simulator-resource', { full_name: fullName }],
+  ]
+
+  let lastError = null
+  for (const [functionName, body] of attempts) {
+    const result = await invokeEdgeFunction(functionName, body)
+    if (result.userId) return { error: null, userId: result.userId }
+    lastError = result.error
+    if (result.error && !result.unavailable) break
+  }
+
+  return {
+    error: toUserError(lastError || new Error('Création simulateur impossible.'), 'saveSimulator'),
+    userId: null,
+  }
 }
 
 export async function createTeacher(payload) {

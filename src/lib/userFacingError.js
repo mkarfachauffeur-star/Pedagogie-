@@ -9,6 +9,7 @@ export const ERROR_CONTEXT = {
   document: 'Le document n\'a pas pu être enregistré. Veuillez réessayer.',
   export: 'L\'export a échoué. Veuillez réessayer.',
   save: 'Enregistrement impossible. Veuillez réessayer.',
+  saveSimulator: 'Le simulateur n\'a pas pu être enregistré. Réessayez dans quelques instants.',
   load: 'Chargement impossible. Veuillez réessayer.',
   password: 'Le mot de passe n\'a pas pu être mis à jour. Veuillez réessayer.',
   permission: 'Vous n\'avez pas les autorisations nécessaires pour effectuer cette action.',
@@ -82,6 +83,7 @@ const EDGE_FUNCTION_MESSAGES = {
   signup: ERROR_CONTEXT.signup,
   invite: ERROR_CONTEXT.invite,
   createStudent: ERROR_CONTEXT.createStudent,
+  saveSimulator: ERROR_CONTEXT.saveSimulator,
   default: 'Le service est momentanément indisponible. Veuillez réessayer dans quelques instants.',
 }
 
