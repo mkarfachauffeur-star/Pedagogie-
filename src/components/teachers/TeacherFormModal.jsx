@@ -68,9 +68,6 @@ function validate(form, isEdit) {
     if (!form.email.trim()) errors.email = "L'e-mail est obligatoire."
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
   }
-  if (!isEdit && !form.linkProfileId && isSimulator && form.email.trim()) {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
-  }
   if (!isSimulator && !form.categories.length) errors.categories = 'Sélectionnez au moins une catégorie.'
 
   const authorizationError = validateTeachingResourceAuthorization(resourceType, form.authorizationNumber)
@@ -247,7 +244,14 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
                 ...current,
                 resourceType: nextType,
                 ...(nextType === TEACHING_RESOURCE_TYPES.SIMULATOR
-                  ? { phone: '', firstName: '', birthDate: '', categories: [], employmentStatus: 'Salarié' }
+                  ? {
+                    phone: '',
+                    email: '',
+                    firstName: '',
+                    birthDate: '',
+                    categories: [],
+                    employmentStatus: 'Salarié',
+                  }
                   : {}),
               }))
               setErrors({})
@@ -311,39 +315,36 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           )}
         </div>
 
-        <div className={`grid gap-4 ${isSimulator ? '' : 'sm:grid-cols-2'}`}>
+        {!isSimulator && (
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">
-              E-mail{isSimulator ? ' (optionnel)' : ''}
-            </span>
+            <span className="text-sm font-bold text-slate-700">E-mail</span>
             <input
               className={inputClass}
               type="email"
               value={form.email}
               onChange={(e) => update('email', e.target.value)}
               disabled={readOnly || !canWrite || busy || Boolean(form.linkProfileId)}
-              placeholder={isSimulator ? 'Laisser vide pour un compte technique interne' : undefined}
             />
             {errors.email && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.email}</p>}
           </label>
-          {!isSimulator && (
-            <label className="block">
-              <span className="text-sm font-bold text-slate-700">Téléphone</span>
-              <input
-                className={inputClass}
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                maxLength={10}
-                placeholder="10 chiffres"
-                value={form.phone}
-                onChange={(e) => update('phone', normalizePhoneDigits(e.target.value))}
-                disabled={readOnly || !canWrite || busy}
-              />
-              {errors.phone && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.phone}</p>}
-            </label>
-          )}
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">Téléphone</span>
+            <input
+              className={inputClass}
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              maxLength={10}
+              placeholder="10 chiffres"
+              value={form.phone}
+              onChange={(e) => update('phone', normalizePhoneDigits(e.target.value))}
+              disabled={readOnly || !canWrite || busy}
+            />
+            {errors.phone && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.phone}</p>}
+          </label>
         </div>
+        )}
 
         {!isSimulator && (
           <label className="block">
