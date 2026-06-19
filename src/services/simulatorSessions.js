@@ -186,6 +186,28 @@ export async function createSimulatorSession({
   supervisorMode,
 }) {
   try {
+    const { data: sessionId, error: rpcError } = await supabase.rpc('create_simulator_session', {
+      p_student_id: payload.studentId,
+      p_simulator_id: payload.simulatorId,
+      p_supervisor_id: payload.supervisorId,
+      p_session_date: payload.sessionDate,
+      p_start_time: payload.startTime,
+      p_end_time: payload.endTime,
+      p_notes: payload.notes?.trim() || null,
+    })
+
+    if (!rpcError && sessionId) {
+      return { sessionId, error: null }
+    }
+
+    if (rpcError) {
+      const rpcMissing = rpcError.code === 'PGRST202'
+        || /create_simulator_session/i.test(rpcError.message || '')
+        || /could not find the function/i.test(rpcError.message || '')
+
+      if (!rpcMissing) throw rpcError
+    }
+
     const { data, error } = await supabase
       .from('simulator_sessions')
       .insert(sessionInsertPayload(organizationId, profileId, payload, supervisorMode))

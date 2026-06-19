@@ -126,6 +126,8 @@ export function getUserFacingError(error, context = 'generic') {
 
   if (!raw) return fallback
 
+  if (isLikelyUserFrenchMessage(raw)) return raw
+
   for (const rule of EXACT_RULES) {
     if (rule.pattern.test(raw)) return rule.message
   }
@@ -136,11 +138,8 @@ export function getUserFacingError(error, context = 'generic') {
       return EDGE_FUNCTION_MESSAGES[context] || EDGE_FUNCTION_MESSAGES.default
     }
     if (rule.message) return rule.message
-    if (isLikelyUserFrenchMessage(raw)) return raw
     continue
   }
-
-  if (isLikelyUserFrenchMessage(raw)) return raw
 
   return fallback
 }

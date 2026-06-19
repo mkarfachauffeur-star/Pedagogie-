@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AppModal from '../../components/ui/AppModal'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
@@ -90,6 +90,13 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [formAlert, setFormAlert] = useState(null)
+  const formAlertRef = useRef(null)
+
+  useEffect(() => {
+    if (formAlert && formAlertRef.current) {
+      formAlertRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [formAlert])
 
   const applyFormOptions = useCallback((formOptions) => {
     if (!formOptions || formOptions.error) return false
@@ -385,14 +392,6 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
         size="lg"
       >
         <form id={FORM_ID} className="space-y-5" onSubmit={saveSession}>
-          {formAlert && (
-            <p
-              role="alert"
-              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
-            >
-              {formAlert}
-            </p>
-          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Élève</span>
@@ -466,6 +465,16 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
               onChange={(e) => updateField('notes', e.target.value)}
             />
           </label>
+
+          {formAlert && (
+            <p
+              ref={formAlertRef}
+              role="alert"
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+            >
+              {formAlert}
+            </p>
+          )}
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
             <button
