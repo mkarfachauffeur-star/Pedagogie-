@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { formatPersonName } from '../lib/staffAccounts'
 import { fetchExportStudents } from './adminExports'
 import { formatRecommendedHours } from '../lib/initialAssessmentUtils'
+import { getResourceTypeLabel } from '../lib/teachingResources'
 import {
   downloadProfessionalCsv,
   downloadXlsxSheet,
@@ -217,7 +218,7 @@ async function fetchTeachers(filters = {}) {
   let query = supabase
     .from('teachers')
     .select(`
-      profile_id, created_at, authorization_number, authorization_expires_at, authorized_categories,
+      profile_id, created_at, resource_type, authorization_number, authorization_expires_at, authorized_categories,
       profiles:profile_id(full_name, email, phone)
     `)
     .order('created_at')
@@ -364,11 +365,12 @@ function mapTeacherRows(teachers) {
   return teachers.map((teacher) => {
     const { firstName, lastName } = splitFullName(teacher.profiles?.full_name || '')
     return {
+      Type: getResourceTypeLabel(teacher.resource_type),
       Nom: lastName,
       Prénom: firstName,
       Email: teacher.profiles?.email || '',
       Téléphone: teacher.profiles?.phone || '',
-      'N° autorisation d\'enseigner': teacher.authorization_number || '',
+      'N° autorisation': teacher.authorization_number || '',
       'Date de validité': formatDateFr(teacher.authorization_expires_at),
       'Catégories autorisées': (teacher.authorized_categories || []).join(', '),
       'Date d\'affectation': formatDateFr(teacher.created_at),

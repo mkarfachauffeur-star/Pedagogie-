@@ -13,6 +13,15 @@ import { getUserFacingError } from '../../lib/userFacingError'
 import { teacherAddressFromRecord } from '../../lib/address'
 import { normalizePhoneDigits, validatePhoneDigits } from '../../lib/phone'
 import { splitFullName } from '../../lib/staffAccounts'
+import {
+  AUTHORIZATION_NUMBER_HINTS,
+  getAuthorizationFieldLabel,
+  normalizeAuthorizationNumber,
+  normalizeTeachingResourceType,
+  TEACHING_RESOURCE_TYPE_OPTIONS,
+  TEACHING_RESOURCE_TYPES,
+  validateTeachingResourceAuthorization,
+} from '../../lib/teachingResources'
 import AppModal, { AppModalFooter } from '../ui/AppModal'
 import ImageUploadField from '../ui/ImageUploadField'
 
@@ -25,6 +34,7 @@ function teacherToForm(teacher) {
   const address = teacherAddressFromRecord(teacher)
   return {
     linkProfileId: teacher?.profile_id || '',
+    resourceType: normalizeTeachingResourceType(teacher?.resource_type),
     firstName,
     lastName,
     email: teacher?.email || '',
@@ -47,15 +57,27 @@ function emptyForm() {
 
 function validate(form, isEdit) {
   const errors = {}
-  if (!form.firstName.trim()) errors.firstName = 'Le prénom est obligatoire.'
-  if (!form.lastName.trim()) errors.lastName = 'Le nom est obligatoire.'
+  const resourceType = normalizeTeachingResourceType(form.resourceType)
+  const isSimulator = resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR
+
+  if (!form.lastName.trim()) {
+    errors.lastName = isSimulator ? 'Le nom du simulateur est obligatoire.' : 'Le nom est obligatoire.'
+  }
+  if (!isSimulator && !form.firstName.trim()) errors.firstName = 'Le prénom est obligatoire.'
   if (!isEdit && !form.linkProfileId) {
     if (!form.email.trim()) errors.email = "L'e-mail est obligatoire."
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
   }
-  if (!form.categories.length) errors.categories = 'Sélectionnez au moins une catégorie.'
-  const phoneError = validatePhoneDigits(form.phone)
-  if (phoneError) errors.phone = phoneError
+  if (!isSimulator && !form.categories.length) errors.categories = 'Sélectionnez au moins une catégorie.'
+
+  const authorizationError = validateTeachingResourceAuthorization(resourceType, form.authorizationNumber)
+  if (authorizationError) errors.authorizationNumber = authorizationError
+
+  if (!isSimulator) {
+    const phoneError = validatePhoneDigits(form.phone)
+    if (phoneError) errors.phone = phoneError
+  }
+
   return errors
 }
 
@@ -182,7 +204,14 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
     onClose?.()
   }
 
-  const title = readOnly ? 'Fiche enseignant' : isEdit ? 'Modifier l\'enseignant' : 'Ajouter un enseignant'
+  const title = readOnly
+    ? (form.resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR ? 'Fiche simulateur' : 'Fiche enseignant')
+    : isEdit
+      ? (form.resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR ? 'Modifier le simulateur' : 'Modifier l\'enseignant')
+      : 'Ajouter une ressource pédagogique'
+
+  const isSimulator = form.resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR
+  const authorizationHint = AUTHORIZATION_NUMBER_HINTS[form.resourceType]
 
   return (
     <AppModal
@@ -196,7 +225,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
         <AppModalFooter
           onClose={onClose}
           submitForm={FORM_ID}
-          submitLabel={busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer l\'enseignant'}
+          submitLabel={busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : isSimulator ? 'Créer le simulateur' : 'Créer l\'enseignant'}
           submitDisabled={!canWrite || busy}
         />
       ) : (
@@ -204,7 +233,21 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
       )}
     >
       <form id={FORM_ID} className="space-y-5" onSubmit={handleSubmit}>
-        {!isEdit && !readOnly && linkableProfiles.length > 0 && (
+        <label className="block">
+          <span className="text-sm font-bold text-slate-700">Type de ressource</span>
+          <select
+            className={inputClass}
+            value={form.resourceType}
+            onChange={(e) => update('resourceType', e.target.value)}
+            disabled={readOnly || !canWrite || busy || isEdit}
+          >
+            {TEACHING_RESOURCE_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+
+        {!isEdit && !readOnly && !isSimulator && linkableProfiles.length > 0 && (
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Lier à un compte enseignant existant (optionnel)</span>
             <select
@@ -241,15 +284,17 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">Nom</span>
+            <span className="text-sm font-bold text-slate-700">{isSimulator ? 'Nom du simulateur' : 'Nom'}</span>
             <input className={inputClass} value={form.lastName} onChange={(e) => update('lastName', e.target.value)} disabled={readOnly || !canWrite || busy} />
             {errors.lastName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.lastName}</p>}
           </label>
-          <label className="block">
-            <span className="text-sm font-bold text-slate-700">Prénom</span>
-            <input className={inputClass} value={form.firstName} onChange={(e) => update('firstName', e.target.value)} disabled={readOnly || !canWrite || busy} />
-            {errors.firstName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.firstName}</p>}
-          </label>
+          {!isSimulator && (
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Prénom</span>
+              <input className={inputClass} value={form.firstName} onChange={(e) => update('firstName', e.target.value)} disabled={readOnly || !canWrite || busy} />
+              {errors.firstName && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.firstName}</p>}
+            </label>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -275,11 +320,14 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           </label>
         </div>
 
-        <label className="block">
-          <span className="text-sm font-bold text-slate-700">Date de naissance</span>
-          <input className={inputClass} type="date" value={form.birthDate} onChange={(e) => update('birthDate', e.target.value)} disabled={readOnly || !canWrite || busy} />
-        </label>
+        {!isSimulator && (
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">Date de naissance</span>
+            <input className={inputClass} type="date" value={form.birthDate} onChange={(e) => update('birthDate', e.target.value)} disabled={readOnly || !canWrite || busy} />
+          </label>
+        )}
 
+        {!isSimulator && (
         <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
           <legend className="px-1 text-sm font-bold text-slate-700">Adresse</legend>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -331,11 +379,20 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
             </label>
           </div>
         </fieldset>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">N° autorisation d&apos;enseigner</span>
-            <input className={inputClass} value={form.authorizationNumber} onChange={(e) => update('authorizationNumber', e.target.value)} disabled={readOnly || !canWrite || busy} />
+            <span className="text-sm font-bold text-slate-700">{getAuthorizationFieldLabel(form.resourceType)}</span>
+            <input
+              className={inputClass}
+              value={form.authorizationNumber}
+              onChange={(e) => update('authorizationNumber', normalizeAuthorizationNumber(e.target.value))}
+              disabled={readOnly || !canWrite || busy}
+              placeholder={authorizationHint}
+              maxLength={11}
+            />
+            {errors.authorizationNumber && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.authorizationNumber}</p>}
           </label>
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Validité de l&apos;autorisation</span>
@@ -343,6 +400,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           </label>
         </div>
 
+        {!isSimulator && (
         <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <legend className="px-1 text-sm font-bold text-slate-700">Autorisation d&apos;enseigner — dossier</legend>
           <p className="mt-1 text-xs font-medium text-slate-500">
@@ -367,7 +425,9 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
             />
           </div>
         </fieldset>
+        )}
 
+        {!isSimulator && (
         <fieldset>
           <legend className="text-sm font-bold text-slate-700">Catégories enseignées</legend>
           <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1 [-webkit-overflow-scrolling:touch]">
@@ -390,13 +450,16 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
           </div>
           {errors.categories && <p className="mt-2 text-xs font-semibold text-rose-600">{errors.categories}</p>}
         </fieldset>
+        )}
 
+        {!isSimulator && (
         <label className="block">
           <span className="text-sm font-bold text-slate-700">Statut</span>
           <select className={inputClass} value={form.employmentStatus} onChange={(e) => update('employmentStatus', e.target.value)} disabled={readOnly || !canWrite || busy}>
             {EMPLOYMENT_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
+        )}
 
         {submitError && (
           <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">

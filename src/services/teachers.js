@@ -5,10 +5,44 @@ import { toUserError } from '../lib/userFacingError'
 import { joinFullName } from '../lib/staffAccounts'
 import { teacherAddressPayload } from '../lib/address'
 import { normalizePhoneDigits } from '../lib/phone'
+import {
+  normalizeAuthorizationNumber,
+  normalizeTeachingResourceType,
+  TEACHING_RESOURCE_TYPES,
+  validateTeachingResourceAuthorization,
+} from '../lib/teachingResources'
 
 export const TEACHER_CATEGORY_OPTIONS = ['A', 'B', 'C', 'D']
 
 export const EMPLOYMENT_STATUS_OPTIONS = ['Salarié', 'Indépendant']
+
+export { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
+
+function teacherRecordPayload(payload) {
+  const resourceType = normalizeTeachingResourceType(payload.resourceType)
+  const authorizationNumber = normalizeAuthorizationNumber(payload.authorizationNumber) || null
+  const authorizationError = validateTeachingResourceAuthorization(resourceType, authorizationNumber)
+  if (authorizationError) {
+    return { payload: null, error: new Error(authorizationError) }
+  }
+
+  return {
+    payload: {
+      resource_type: resourceType,
+      authorization_number: authorizationNumber,
+      authorization_expires_at: payload.authorizationExpiresAt || null,
+      authorized_categories: resourceType === TEACHING_RESOURCE_TYPES.TEACHER
+        ? (payload.categories || [])
+        : [],
+      ...teacherAddressPayload(payload),
+      birth_date: payload.birthDate || null,
+      employment_status: resourceType === TEACHING_RESOURCE_TYPES.TEACHER
+        ? (payload.employmentStatus || null)
+        : null,
+    },
+    error: null,
+  }
+}
 
 const TEACHER_DOCS_BUCKET = 'teacher-documents'
 
@@ -129,9 +163,12 @@ export async function listTeacherRoleProfilesWithoutRecord() {
 }
 
 export async function createTeacher(payload) {
+  const resourceType = normalizeTeachingResourceType(payload.resourceType)
   const firstName = String(payload.firstName || '').trim()
   const lastName = String(payload.lastName || '').trim()
-  const fullName = joinFullName(firstName, lastName)
+  const fullName = resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR
+    ? lastName
+    : joinFullName(firstName, lastName)
   const email = String(payload.email || '').trim().toLowerCase()
 
   let profileId = payload.linkProfileId || null
@@ -153,15 +190,13 @@ export async function createTeacher(payload) {
     await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
   }
 
+  const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
+  if (validationError) return { teacher: null, error: validationError }
+
   const { data: teacher, error: teacherError } = await supabase
     .from('teachers')
     .update({
-      authorization_number: payload.authorizationNumber?.trim() || null,
-      authorization_expires_at: payload.authorizationExpiresAt || null,
-      authorized_categories: payload.categories || [],
-      ...teacherAddressPayload(payload),
-      birth_date: payload.birthDate || null,
-      employment_status: payload.employmentStatus || null,
+      ...teacherPayload,
       is_active: true,
     })
     .eq('profile_id', profileId)
@@ -175,9 +210,12 @@ export async function createTeacher(payload) {
 }
 
 export async function updateTeacher(profileId, payload) {
+  const resourceType = normalizeTeachingResourceType(payload.resourceType)
   const firstName = String(payload.firstName || '').trim()
   const lastName = String(payload.lastName || '').trim()
-  const fullName = joinFullName(firstName, lastName)
+  const fullName = resourceType === TEACHING_RESOURCE_TYPES.SIMULATOR
+    ? lastName
+    : joinFullName(firstName, lastName)
 
   const { error: profileError } = await supabase
     .from('profiles')
@@ -189,16 +227,12 @@ export async function updateTeacher(profileId, payload) {
     .eq('id', profileId)
   if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
 
+  const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
+  if (validationError) return { teacher: null, error: validationError }
+
   const { error: teacherError } = await supabase
     .from('teachers')
-    .update({
-      authorization_number: payload.authorizationNumber?.trim() || null,
-      authorization_expires_at: payload.authorizationExpiresAt || null,
-      authorized_categories: payload.categories || [],
-      ...teacherAddressPayload(payload),
-      birth_date: payload.birthDate || null,
-      employment_status: payload.employmentStatus || null,
-    })
+    .update(teacherPayload)
     .eq('profile_id', profileId)
   if (teacherError) return { teacher: null, error: toUserError(teacherError, 'save') }
 

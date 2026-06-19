@@ -136,6 +136,7 @@ export async function listOrganizationTeachers() {
     const { data, error } = await supabase
       .from('teachers')
       .select('profile_id, profiles:profile_id(id, full_name)')
+      .eq('resource_type', 'teacher')
       .order('created_at', { ascending: true })
     if (error) throw error
     return (data || []).map((row) => ({

@@ -95,7 +95,7 @@ export async function loadPlanningOptions() {
     const [{ data: students, error: studentsError }, { data: teachers, error: teachersError }, { data: vehicles, error: vehiclesError }] =
       await Promise.all([
         supabase.from('students').select('id, first_name, last_name, file_number').order('last_name'),
-        supabase.from('teachers').select('profile_id, profiles:profile_id(full_name)').order('created_at'),
+        supabase.from('teachers').select('profile_id, profiles:profile_id(full_name)').eq('resource_type', 'teacher').order('created_at'),
         supabase.from('vehicles').select('id, brand, model, plate').order('created_at'),
       ])
 

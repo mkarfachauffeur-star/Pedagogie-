@@ -8,6 +8,7 @@ import {
   formatDateFr,
   STATUS_BADGE,
 } from '../../lib/staffAccounts'
+import { getResourceTypeLabel } from '../../lib/teachingResources'
 import { getUserFacingError } from '../../lib/userFacingError'
 import {
   deleteTeacher,
@@ -102,13 +103,13 @@ export default function AdminTeachersPage() {
         </p>
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold sm:text-4xl">Enseignants</h1>
+            <h1 className="text-3xl font-extrabold sm:text-4xl">Enseignants & simulateurs</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-50">
-              Fiches métier des moniteurs : autorisations, catégories et lien avec les comptes utilisateurs.
+              Fiches métier des moniteurs et simulateurs : autorisations RdvPermis, catégories et comptes utilisateurs.
             </p>
           </div>
           <button type="button" onClick={openCreate} className="pd-btn-primary shrink-0" disabled={!canWrite}>
-            Ajouter un enseignant
+            Ajouter une ressource
           </button>
         </div>
       </section>
@@ -127,16 +128,17 @@ export default function AdminTeachersPage() {
         ) : loadError ? (
           <div className="p-5"><EmptyState title="Erreur de chargement" message={loadError} icon="⚠️" /></div>
         ) : teachers.length === 0 ? (
-          <div className="p-5"><EmptyState title="Aucun enseignant" message="Ajoutez votre premier enseignant." icon="👨‍🏫" /></div>
+          <div className="p-5"><EmptyState title="Aucune ressource" message="Ajoutez un enseignant ou un simulateur." icon="👨‍🏫" /></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Nom</th>
+                  <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3">Téléphone</th>
                   <th className="px-4 py-3">E-mail</th>
-                  <th className="px-4 py-3">Autorisation</th>
+                  <th className="px-4 py-3">N° autorisation</th>
                   <th className="px-4 py-3">Validité</th>
                   <th className="px-4 py-3">Statut</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -152,6 +154,7 @@ export default function AdminTeachersPage() {
                   return (
                     <tr key={teacher.profile_id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-3 font-extrabold text-slate-900">{teacher.full_name}</td>
+                      <td className="px-4 py-3 text-slate-600">{getResourceTypeLabel(teacher.resource_type)}</td>
                       <td className="px-4 py-3 text-slate-600">{teacher.phone || '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{teacher.email || '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{teacher.authorization_number || '—'}</td>

@@ -9,6 +9,11 @@ import {
   USER_ROLE_LABELS,
 } from '../../lib/staffAccounts'
 import { getTeacherAuthorizationSignedUrls } from '../../services/teachers'
+import {
+  getAuthorizationFieldLabel,
+  getResourceTypeLabel,
+  TEACHING_RESOURCE_TYPES,
+} from '../../lib/teachingResources'
 import AppModal, { AppModalFooter } from '../ui/AppModal'
 
 export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
@@ -38,6 +43,7 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
     isActive: teacher.is_active,
     employmentStatus: teacher.employment_status,
   })
+  const isSimulator = teacher.resource_type === TEACHING_RESOURCE_TYPES.SIMULATOR
 
   return (
     <AppModal
@@ -81,8 +87,12 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
       </section>
 
       <dl className="mt-6 grid gap-4 sm:grid-cols-2 text-sm">
+        <div><dt className="font-bold text-slate-500">Type</dt><dd className="mt-1 font-semibold">{getResourceTypeLabel(teacher.resource_type)}</dd></div>
         <div><dt className="font-bold text-slate-500">Téléphone</dt><dd className="mt-1 font-semibold">{teacher.phone || '—'}</dd></div>
-        <div><dt className="font-bold text-slate-500">Date de naissance</dt><dd className="mt-1 font-semibold">{formatDateFr(teacher.birth_date)}</dd></div>
+        {!isSimulator && (
+          <div><dt className="font-bold text-slate-500">Date de naissance</dt><dd className="mt-1 font-semibold">{formatDateFr(teacher.birth_date)}</dd></div>
+        )}
+        {!isSimulator && (
         <div className="sm:col-span-2">
           <dt className="font-bold text-slate-500">Adresse</dt>
           <dd className="mt-1 font-semibold">
@@ -95,9 +105,10 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
             })}
           </dd>
         </div>
-        <div><dt className="font-bold text-slate-500">N° autorisation</dt><dd className="mt-1 font-semibold">{teacher.authorization_number || '—'}</dd></div>
+        )}
+        <div><dt className="font-bold text-slate-500">{getAuthorizationFieldLabel(teacher.resource_type)}</dt><dd className="mt-1 font-semibold">{teacher.authorization_number || '—'}</dd></div>
         <div><dt className="font-bold text-slate-500">Validité autorisation</dt><dd className="mt-1 font-semibold">{formatDateFr(teacher.authorization_expires_at)}</dd></div>
-        {(authorizationUrls.rectoUrl || authorizationUrls.versoUrl) && (
+        {!isSimulator && (authorizationUrls.rectoUrl || authorizationUrls.versoUrl) && (
           <div className="sm:col-span-2">
             <dt className="font-bold text-slate-500">Autorisation d&apos;enseigner</dt>
             <dd className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -116,6 +127,7 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
             </dd>
           </div>
         )}
+        {!isSimulator && (
         <div>
           <dt className="font-bold text-slate-500">Statut métier</dt>
           <dd className="mt-1">
@@ -124,6 +136,8 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
             </span>
           </dd>
         </div>
+        )}
+        {!isSimulator && (
         <div className="sm:col-span-2">
           <dt className="font-bold text-slate-500">Catégories enseignées</dt>
           <dd className="mt-2 flex flex-wrap gap-2">
@@ -134,6 +148,7 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
               : '—'}
           </dd>
         </div>
+        )}
       </dl>
     </AppModal>
   )
