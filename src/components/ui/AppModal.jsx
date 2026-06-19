@@ -89,7 +89,7 @@ export default function AppModal({
       />
 
       <div
-        className={`relative flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
+        className={`relative z-10 flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:px-5">
@@ -120,7 +120,7 @@ export default function AppModal({
         </div>
 
         {footer && (
-          <footer className="shrink-0 border-t border-slate-100 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
+          <footer className="relative z-10 shrink-0 border-t border-slate-100 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
             {footer}
           </footer>
         )}

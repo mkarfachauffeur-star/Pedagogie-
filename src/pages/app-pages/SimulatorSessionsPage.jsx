@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
+import AppModal from '../../components/ui/AppModal'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
 import { formatDateFr } from '../../lib/staffAccounts'
@@ -121,6 +121,14 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   }, [profileId, dateFrom, dateTo, canManage, applyFormOptions])
 
   useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => {
+    if (!modalOpen || form.supervisorId || !profileId) return
+    if (options.supervisors.some((supervisor) => supervisor.id === profileId)) {
+      setForm((current) => ({ ...current, supervisorId: profileId }))
+    }
+  }, [modalOpen, form.supervisorId, profileId, options.supervisors])
+
   useEffect(() => {
     if (!profileId) return undefined
     return subscribeSimulatorSessions(refresh)
@@ -175,7 +183,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     const nextErrors = validateSimulatorSessionForm(form, options.supervisorMode)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) {
-      setFormAlert('Complétez les champs obligatoires avant de valider la séance.')
+      setFormAlert(Object.values(nextErrors).join(' · '))
       return
     }
 
@@ -196,7 +204,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     setSaving(false)
 
     if (error) {
-      setFeedback({ type: 'error', text: getUserFacingError(error, 'save') })
+      setFormAlert(getUserFacingError(error, 'save'))
       return
     }
 
@@ -370,30 +378,18 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
 
       <AppModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => !saving && setModalOpen(false)}
         disableClose={saving}
         eyebrow="Séance simulateur"
         title={form.id ? 'Modifier la séance' : 'Nouvelle séance simulateur'}
         size="lg"
-        footer={(
-          <AppModalFooter
-            onClose={() => setModalOpen(false)}
-            hideSubmit
-          >
-            <button
-              type="button"
-              disabled={saving}
-              onClick={saveSession}
-              className="pd-btn-primary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? 'Enregistrement…' : form.id ? 'Enregistrer' : 'Valider la séance'}
-            </button>
-          </AppModalFooter>
-        )}
       >
         <form id={FORM_ID} className="space-y-5" onSubmit={saveSession}>
           {formAlert && (
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            <p
+              role="alert"
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+            >
               {formAlert}
             </p>
           )}
@@ -470,6 +466,24 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
               onChange={(e) => updateField('notes', e.target.value)}
             />
           </label>
+
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => setModalOpen(false)}
+              className="pd-btn-secondary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="pd-btn-primary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? 'Enregistrement…' : form.id ? 'Enregistrer' : 'Valider la séance'}
+            </button>
+          </div>
         </form>
       </AppModal>
     </div>
