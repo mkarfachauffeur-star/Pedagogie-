@@ -90,6 +90,17 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
 
+  const applyFormOptions = useCallback((formOptions) => {
+    if (!formOptions || formOptions.error) return false
+    setOptions({
+      supervisorMode: formOptions.supervisorMode,
+      simulators: formOptions.simulators,
+      students: formOptions.students,
+      supervisors: formOptions.supervisors,
+    })
+    return true
+  }, [])
+
   const refresh = useCallback(async () => {
     if (!profileId) {
       setSessions([])
@@ -104,16 +115,9 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     ])
     if (error) setLoadError('Impossible de charger les séances simulateur.')
     setSessions(rows)
-    if (formOptions && !formOptions.error) {
-      setOptions({
-        supervisorMode: formOptions.supervisorMode,
-        simulators: formOptions.simulators,
-        students: formOptions.students,
-        supervisors: formOptions.supervisors,
-      })
-    }
+    if (formOptions) applyFormOptions(formOptions)
     setLoading(false)
-  }, [profileId, dateFrom, dateTo, canManage])
+  }, [profileId, dateFrom, dateTo, canManage, applyFormOptions])
 
   useEffect(() => { refresh() }, [refresh])
   useEffect(() => {
@@ -126,17 +130,26 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     [form.startTime, form.endTime],
   )
 
-  const openCreate = () => {
+  const ensureFormOptions = useCallback(async () => {
+    if (!canManage) return
+    if (options.students.length && options.simulators.length && options.supervisors.length) return
+    const formOptions = await loadSimulatorSessionFormOptions()
+    applyFormOptions(formOptions)
+  }, [canManage, options.students.length, options.simulators.length, options.supervisors.length, applyFormOptions])
+
+  const openCreate = async () => {
     setForm(emptyForm(canManage && role !== 'teacher' ? profileId : ''))
     setErrors({})
     setModalOpen(true)
+    await ensureFormOptions()
   }
 
-  const openEdit = (session) => {
+  const openEdit = async (session) => {
     if (!canManage || session.status === SIMULATOR_SESSION_STATUSES.COMPLETED) return
     setForm(sessionToForm(session))
     setErrors({})
     setModalOpen(true)
+    await ensureFormOptions()
   }
 
   const updateField = (field, value) => {
@@ -369,6 +382,11 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
                 ))}
               </select>
               {errors.studentId && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.studentId}</p>}
+              {!options.students.length && (
+                <p className="mt-1 text-xs font-medium text-amber-700">
+                  Aucun élève disponible. Créez d&apos;abord un dossier élève depuis Inscriptions.
+                </p>
+              )}
             </label>
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Simulateur</span>

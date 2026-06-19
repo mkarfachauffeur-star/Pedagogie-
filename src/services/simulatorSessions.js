@@ -2,6 +2,83 @@ import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
 import { normalizeSupervisorMode } from '../lib/simulatorSessions'
+import { fetchOrganization } from './organization'
+import { listStudents } from './students'
+
+function mapStudentOption(student) {
+  const label = `${student.last_name || ''} ${student.first_name || ''}`.trim()
+    || student.file_number
+    || 'Élève'
+  return {
+    id: student.id,
+    label,
+    file_number: student.file_number || null,
+  }
+}
+
+async function loadSimulatorSessionFormOptionsFallback() {
+  const [
+    orgRes,
+    studentsRes,
+    simulatorsRes,
+    teacherSupervisorsRes,
+    adminSupervisorsRes,
+  ] = await Promise.all([
+    fetchOrganization(),
+    listStudents(),
+    supabase
+      .from('teachers')
+      .select('profile_id, authorization_number, is_active, profiles:profile_id(full_name, is_active)')
+      .eq('resource_type', 'simulator')
+      .eq('is_active', true),
+    supabase
+      .from('teachers')
+      .select('profile_id, is_active, profiles:profile_id(full_name, is_active)')
+      .eq('resource_type', 'teacher')
+      .eq('is_active', true),
+    supabase
+      .from('profiles')
+      .select('id, full_name, role, is_active')
+      .in('role', ['manager', 'secretary'])
+      .eq('is_active', true),
+  ])
+
+  const supervisorMode = normalizeSupervisorMode(
+    orgRes.organization?.simulator_session_supervisor_mode,
+  )
+
+  const students = (studentsRes.students || []).map(mapStudentOption)
+
+  const simulators = (simulatorsRes.data || [])
+    .filter((row) => row.is_active !== false && row.profiles?.is_active !== false)
+    .map((row) => ({
+      id: row.profile_id,
+      label: row.profiles?.full_name?.trim() || 'Simulateur',
+      authorization_number: row.authorization_number || null,
+    }))
+
+  const supervisors = supervisorMode === 'teacher'
+    ? (teacherSupervisorsRes.data || [])
+      .filter((row) => row.is_active !== false && row.profiles?.is_active !== false)
+      .map((row) => ({
+        id: row.profile_id,
+        label: row.profiles?.full_name?.trim() || 'Enseignant',
+      }))
+    : (adminSupervisorsRes.data || [])
+      .map((row) => ({
+        id: row.id,
+        label: row.full_name?.trim() || 'Encadrant',
+        role: row.role,
+      }))
+
+  return {
+    supervisorMode,
+    simulators,
+    students,
+    supervisors,
+    error: null,
+  }
+}
 
 function mapSessionRow(row) {
   if (!row) return null
@@ -59,12 +136,16 @@ export async function loadSimulatorSessionFormOptions() {
       error: null,
     }
   } catch (error) {
-    return {
-      supervisorMode: normalizeSupervisorMode('admin_supervisor'),
-      simulators: [],
-      students: [],
-      supervisors: [],
-      error,
+    try {
+      return await loadSimulatorSessionFormOptionsFallback()
+    } catch (fallbackError) {
+      return {
+        supervisorMode: normalizeSupervisorMode('admin_supervisor'),
+        simulators: [],
+        students: [],
+        supervisors: [],
+        error: fallbackError,
+      }
     }
   }
 }
