@@ -16,7 +16,6 @@ import {
 import { getUserFacingError } from '../../lib/userFacingError'
 import {
   cancelSimulatorSession,
-  closeSimulatorSession,
   createSimulatorSession,
   deleteSimulatorSession,
   listSimulatorSessions,
@@ -216,21 +215,8 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
     }
 
     setModalOpen(false)
-    setFeedback({ type: 'ok', text: form.id ? 'Séance mise à jour.' : 'Séance simulateur créée.' })
+    setFeedback({ type: 'ok', text: form.id ? 'Séance mise à jour.' : 'Séance simulateur enregistrée.' })
     refresh()
-  }
-
-  const runClose = async (session) => {
-    if (!canManage) return
-    if (!window.confirm('Clôturer cette séance simulateur ?')) return
-    setActionBusy(session.id)
-    const { error } = await closeSimulatorSession(session.id)
-    setActionBusy(null)
-    if (error) setFeedback({ type: 'error', text: getUserFacingError(error, 'save') })
-    else {
-      setFeedback({ type: 'ok', text: 'Séance clôturée.' })
-      refresh()
-    }
   }
 
   const runCancel = async (session) => {
@@ -362,9 +348,6 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap justify-end gap-2">
                             {editable && <ActionBtn label="Modifier" onClick={() => openEdit(session)} disabled={busy} />}
-                            {editable && session.status !== SIMULATOR_SESSION_STATUSES.IN_PROGRESS && (
-                              <ActionBtn label="Clôturer" tone="emerald" onClick={() => runClose(session)} disabled={busy} />
-                            )}
                             {editable && (
                               <ActionBtn label="Annuler" tone="amber" onClick={() => runCancel(session)} disabled={busy} />
                             )}

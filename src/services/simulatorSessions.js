@@ -161,8 +161,10 @@ function sessionInsertPayload(organizationId, profileId, payload, supervisorMode
     start_time: payload.startTime,
     end_time: payload.endTime,
     notes: payload.notes?.trim() || null,
-    status: payload.status || 'planned',
+    status: 'completed',
     created_by: profileId,
+    closed_at: new Date().toISOString(),
+    closed_by: profileId,
   }
 }
 
