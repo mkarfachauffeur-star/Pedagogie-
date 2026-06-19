@@ -215,11 +215,6 @@ export async function listTeacherRoleProfilesWithoutRecord() {
   }
 }
 
-function isEdgeFunctionUnavailable(error) {
-  const message = extractInvokeErrorMessage(error)
-  return /edge function|non-2xx status|functionsfetcherror|functionsrelayerror|failed to send a request to the edge function|404|not found/i.test(message)
-}
-
 function extractInvokeErrorMessage(error) {
   if (!error) return ''
   if (typeof error === 'string') return error
@@ -227,18 +222,49 @@ function extractInvokeErrorMessage(error) {
   return String(error)
 }
 
+function parseFunctionResponseBody(error, data) {
+  if (data && typeof data === 'object') return data
+  try {
+    if (error?.context && typeof error.context.json === 'function') {
+      return error.context.json()
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const body = error?.context?.body
+    if (typeof body === 'string' && body.trim()) return JSON.parse(body)
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function isEdgeFunctionMissing(error) {
+  const status = error?.context?.status ?? error?.status
+  if (status === 404) return true
+  const message = extractInvokeErrorMessage(error)
+  return /404|not found/i.test(message) && /function|edge/i.test(message)
+}
+
 async function invokeEdgeFunction(functionName, body) {
   const { data, error } = await supabase.functions.invoke(functionName, { body })
-  if (data?.user_id) {
-    return { userId: data.user_id, error: null }
+  const payload = parseFunctionResponseBody(error, data) || data
+
+  if (payload?.user_id) {
+    return { userId: payload.user_id, error: null }
   }
-  if (data?.error) {
-    return { userId: null, error: new Error(String(data.error)) }
+  if (payload?.error) {
+    return { userId: null, error: new Error(String(payload.error)), unavailable: false }
   }
   if (error) {
-    return { userId: null, error, unavailable: isEdgeFunctionUnavailable(error) }
+    return {
+      userId: null,
+      error,
+      unavailable: isEdgeFunctionMissing(error),
+    }
   }
-  return { userId: null, error: new Error('Réponse serveur invalide.') }
+  return { userId: null, error: new Error('Réponse serveur invalide.'), unavailable: false }
 }
 
 export async function createSimulatorResource(fullName) {
