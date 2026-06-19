@@ -67,6 +67,7 @@ import SecretaryDocumentsPage from './pages/app-pages/SecretaryDocumentsPage'
 import SecretaryExamsPage from './pages/app-pages/SecretaryExamsPage'
 import SecretaryMessagesPage from './pages/app-pages/SecretaryMessagesPage'
 import PreRegistrationsPage from './pages/app-pages/PreRegistrationsPage'
+import SimulatorSessionsPage from './pages/app-pages/SimulatorSessionsPage'
 
 function withProtectedLayout(role, Page, fullWidth = false) {
   return (
@@ -108,6 +109,7 @@ function App() {
         <Route path="/manager/students" element={withProtectedLayout('manager', ManagerStudentsPage)} />
         <Route path="/manager/pre-registrations" element={withProtectedLayout('manager', () => <PreRegistrationsPage roleLabel="Gérant" />)} />
         <Route path="/manager/teachers" element={withProtectedLayout('manager', ManagerTeachersPage)} />
+        <Route path="/manager/simulator-sessions" element={withProtectedLayout('manager', SimulatorSessionsPage)} />
         <Route path="/manager/users" element={withProtectedLayout('manager', ManagerUsersPage)} />
         <Route path="/manager/planning" element={withProtectedLayout('manager', ManagerPlanningPage)} />
         <Route path="/manager/vehicles" element={withProtectedLayout('manager', ManagerVehiclesPage)} />
@@ -161,6 +163,10 @@ function App() {
         <Route path="/teacher/dashboard" element={withProtectedLayout('teacher', TeacherDashboardPage)} />
         <Route path="/teacher/planning" element={withProtectedLayout('teacher', TeacherPlanningPage)} />
         <Route path="/teacher/students" element={withProtectedLayout('teacher', TeacherStudentsPage)} />
+        <Route
+          path="/teacher/simulator-sessions"
+          element={withProtectedLayout('teacher', () => <SimulatorSessionsPage readOnly />)}
+        />
         <Route path="/teacher/lessons" element={withProtectedLayout('teacher', TeacherLessonsPage)} />
         <Route path="/teacher/vehicles" element={withProtectedLayout('teacher', TeacherVehiclesPage)} />
         <Route path="/teacher/messages" element={withProtectedLayout('teacher', TeacherMessagesPage)} />
@@ -182,6 +188,10 @@ function App() {
         <Route
           path="/secretary/planning"
           element={withProtectedLayout('secretary', SecretaryPlanningPage)}
+        />
+        <Route
+          path="/secretary/simulator-sessions"
+          element={withProtectedLayout('secretary', SimulatorSessionsPage)}
         />
         <Route
           path="/secretary/vehicles"

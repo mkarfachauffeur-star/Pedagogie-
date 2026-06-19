@@ -57,6 +57,10 @@ const CONTAINS_RULES = [
     message: 'Le mot de passe doit contenir au moins 8 caractères.',
   },
   {
+    pattern: /resource_type|save_teaching_resource|teaching_resource_type|simulator_sessions|list_organization_simulator_sessions/i,
+    message: 'La base de données doit être mise à jour. Appliquez les dernières migrations Supabase.',
+  },
+  {
     pattern: /sqlstate|pgrst|postgres|duplicate key value|violates unique constraint|violates foreign key|syntax error at/i,
     message: ERROR_CONTEXT.generic,
   },
@@ -129,7 +133,9 @@ export function getUserFacingError(error, context = 'generic') {
     if (rule.edgeFunction) {
       return EDGE_FUNCTION_MESSAGES[context] || EDGE_FUNCTION_MESSAGES.default
     }
-    return rule.message
+    if (rule.message) return rule.message
+    if (isLikelyUserFrenchMessage(raw)) return raw
+    continue
   }
 
   if (isLikelyUserFrenchMessage(raw)) return raw

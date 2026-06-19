@@ -4,14 +4,7 @@
 // l'invite par e-mail. La création de comptes nécessite la clé service_role :
 // elle ne peut donc PAS être faite côté navigateur -> cette fonction serveur.
 //
-// Sécurité :
-//  - Le demandeur doit être authentifié (JWT) ET avoir le rôle 'manager' ou
-//    'secretary' DANS son organisation.
-//  - Le nouvel utilisateur est rattaché à l'organisation du demandeur.
-//
-// Déploiement : `supabase functions deploy invite-user`
-// Secrets requis : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (configurés par
-// Supabase automatiquement pour les Edge Functions).
+// Simulateurs : compte technique sans invitation e-mail (createUser).
 // -----------------------------------------------------------------------------
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -31,7 +24,6 @@ Deno.serve(async (req) => {
     const url = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Client "as caller" pour identifier le demandeur via son JWT.
     const asCaller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     })
@@ -39,7 +31,6 @@ Deno.serve(async (req) => {
     const caller = userData?.user
     if (!caller) return json({ error: 'Non authentifié' }, 401)
 
-    // Client admin (service role) pour les opérations privilégiées.
     const admin = createClient(url, serviceKey)
 
     const { data: callerProfile } = await admin
@@ -53,14 +44,43 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const email = String(body.email || '').trim().toLowerCase()
     const role = String(body.role || '')
-    const fullName = String(body.full_name || '')
-    if (!email || !ALLOWED_ROLES.includes(role)) {
+    const fullName = String(body.full_name || '').trim()
+    const resourceType = String(body.resource_type || 'teacher').trim().toLowerCase()
+    const isSimulator = resourceType === 'simulator'
+    let email = String(body.email || '').trim().toLowerCase()
+
+    if (!ALLOWED_ROLES.includes(role)) {
+      return json({ error: 'Paramètres invalides (role)' }, 400)
+    }
+
+    if (isSimulator) {
+      if (!fullName) {
+        return json({ error: 'Le nom du simulateur est obligatoire.' }, 400)
+      }
+      if (!email) {
+        email = `simulator.${crypto.randomUUID()}@resources.pedagogia-drive.app`
+      }
+
+      const { data, error } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: {
+          organization_id: callerProfile.organization_id,
+          role,
+          full_name: fullName,
+          resource_type: 'simulator',
+        },
+      })
+      if (error) return json({ error: error.message }, 400)
+
+      return json({ ok: true, user_id: data.user?.id, email })
+    }
+
+    if (!email) {
       return json({ error: 'Paramètres invalides (email, role)' }, 400)
     }
 
-    // Invitation par e-mail + métadonnées (org + rôle) -> profil créé par trigger.
     const appUrl = (Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'http://localhost:5173')
       .replace(/\/$/, '')
     const redirectTo = `${appUrl}/accept-invite`

@@ -10,6 +10,10 @@ import {
   updateOrganization,
   uploadOrgLogo,
 } from '../../services/organization'
+import {
+  SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS,
+  normalizeSupervisorMode,
+} from '../../lib/simulatorSessions'
 
 export default function AdminSettingsPage() {
   const { profileId, user, organizationId, organization, canWrite, refreshOrg } = useAuth()
@@ -23,6 +27,7 @@ export default function AdminSettingsPage() {
     website: '',
     siret: '',
     prefecture_approval: '',
+    simulator_session_supervisor_mode: 'admin_supervisor',
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
@@ -39,6 +44,7 @@ export default function AdminSettingsPage() {
       website: organization.website || '',
       siret: organization.siret || '',
       prefecture_approval: organization.prefecture_approval || '',
+      simulator_session_supervisor_mode: organization.simulator_session_supervisor_mode || 'admin_supervisor',
     })
   }, [organization])
 
@@ -88,7 +94,48 @@ export default function AdminSettingsPage() {
             </Link>
           </section>
 
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <h2 className="text-lg font-extrabold text-slate-950">Séances simulateur</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Paramètre enregistré avec le formulaire ci-dessous — compatible RdvPermis.
+            </p>
+          </section>
+
       <form className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6" onSubmit={save}>
+        <div>
+          <h3 className="text-sm font-extrabold text-slate-900">Mode d&apos;encadrement simulateur</h3>
+          <div className="mt-4 space-y-3">
+            {SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${
+                  normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value
+                    ? 'border-cyan-300 bg-cyan-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                } ${!canWrite ? 'cursor-default opacity-80' : ''}`}
+              >
+                <input
+                  checked={normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value}
+                  className="mt-1"
+                  disabled={!canWrite}
+                  name="simulator_session_supervisor_mode"
+                  onChange={() => setForm((current) => ({
+                    ...current,
+                    simulator_session_supervisor_mode: option.value,
+                  }))}
+                  type="radio"
+                  value={option.value}
+                />
+                <span>
+                  <span className="block text-sm font-extrabold text-slate-900">{option.label}</span>
+                  <span className="mt-1 block text-sm text-slate-600">{option.description}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <hr className="border-slate-200" />
         <div className="flex items-center gap-4">
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="h-16 w-16 rounded-xl object-cover" />

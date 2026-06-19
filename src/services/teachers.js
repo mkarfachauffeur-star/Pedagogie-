@@ -18,6 +18,59 @@ export const EMPLOYMENT_STATUS_OPTIONS = ['Salarié', 'Indépendant']
 
 export { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
 
+function buildSaveTeachingResourceParams(profileId, payload, { isActive = true } = {}) {
+  const resourceType = normalizeTeachingResourceType(payload.resourceType)
+  const addressFields = teacherAddressPayload(payload)
+
+  return {
+    p_profile_id: profileId,
+    p_resource_type: resourceType,
+    p_authorization_number: normalizeAuthorizationNumber(payload.authorizationNumber),
+    p_authorization_expires_at: payload.authorizationExpiresAt || null,
+    p_authorized_categories: resourceType === TEACHING_RESOURCE_TYPES.TEACHER
+      ? (payload.categories || [])
+      : [],
+    p_birth_date: payload.birthDate || null,
+    p_employment_status: resourceType === TEACHING_RESOURCE_TYPES.TEACHER
+      ? (payload.employmentStatus || null)
+      : null,
+    p_address: addressFields.address,
+    p_street_number: addressFields.street_number,
+    p_street: addressFields.street,
+    p_postal_code: addressFields.postal_code,
+    p_city: addressFields.city,
+    p_is_active: isActive,
+  }
+}
+
+async function saveTeachingResource(profileId, payload, options = {}) {
+  const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
+  if (validationError) return { error: validationError }
+
+  const rpcParams = buildSaveTeachingResourceParams(profileId, payload, options)
+  const { error: rpcError } = await supabase.rpc('save_teaching_resource', rpcParams)
+
+  if (!rpcError) return { error: null }
+
+  const rpcMissing = rpcError.code === 'PGRST202'
+    || /save_teaching_resource/i.test(rpcError.message || '')
+    || /could not find the function/i.test(rpcError.message || '')
+
+  if (rpcMissing) {
+    const { error: updateError } = await supabase
+      .from('teachers')
+      .update({
+        ...teacherPayload,
+        is_active: options.isActive ?? true,
+      })
+      .eq('profile_id', profileId)
+    if (updateError) return { error: toUserError(updateError, 'save') }
+    return { error: null }
+  }
+
+  return { error: toUserError(rpcError, 'save') }
+}
+
 function teacherRecordPayload(payload) {
   const resourceType = normalizeTeachingResourceType(payload.resourceType)
   const authorizationNumber = normalizeAuthorizationNumber(payload.authorizationNumber) || null
@@ -171,39 +224,42 @@ export async function createTeacher(payload) {
     : joinFullName(firstName, lastName)
   const email = String(payload.email || '').trim().toLowerCase()
 
+  const { error: validationError } = teacherRecordPayload(payload)
+  if (validationError) return { teacher: null, error: validationError }
+
   let profileId = payload.linkProfileId || null
 
   if (profileId) {
-    await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
-    await supabase
+    const { error: ensureError } = await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
+    if (ensureError) return { teacher: null, error: toUserError(ensureError, 'save') }
+
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ phone: normalizePhoneDigits(payload.phone) || null, full_name: fullName })
       .eq('id', profileId)
+    if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
   } else {
-    const { error: inviteError, userId } = await inviteUser({ email, role: 'teacher', fullName })
+    const { error: inviteError, userId } = await inviteUser({
+      email,
+      role: 'teacher',
+      fullName,
+      resourceType,
+    })
     if (inviteError) return { teacher: null, error: inviteError }
     profileId = userId
-    await supabase
+
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ phone: normalizePhoneDigits(payload.phone) || null, full_name: fullName })
       .eq('id', profileId)
-    await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
+    if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
+
+    const { error: ensureError } = await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
+    if (ensureError) return { teacher: null, error: toUserError(ensureError, 'save') }
   }
 
-  const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
-  if (validationError) return { teacher: null, error: validationError }
-
-  const { data: teacher, error: teacherError } = await supabase
-    .from('teachers')
-    .update({
-      ...teacherPayload,
-      is_active: true,
-    })
-    .eq('profile_id', profileId)
-    .select('profile_id')
-    .single()
-
-  if (teacherError) return { teacher: null, error: toUserError(teacherError, 'save') }
+  const { error: saveError } = await saveTeachingResource(profileId, payload, { isActive: true })
+  if (saveError) return { teacher: null, error: saveError }
 
   const { teacher: row } = await getTeacher(profileId)
   return { teacher: row, error: null }
@@ -230,11 +286,8 @@ export async function updateTeacher(profileId, payload) {
   const { payload: teacherPayload, error: validationError } = teacherRecordPayload(payload)
   if (validationError) return { teacher: null, error: validationError }
 
-  const { error: teacherError } = await supabase
-    .from('teachers')
-    .update(teacherPayload)
-    .eq('profile_id', profileId)
-  if (teacherError) return { teacher: null, error: toUserError(teacherError, 'save') }
+  const { error: saveError } = await saveTeachingResource(profileId, payload)
+  if (saveError) return { teacher: null, error: saveError }
 
   const { teacher } = await getTeacher(profileId)
   return { teacher, error: null }

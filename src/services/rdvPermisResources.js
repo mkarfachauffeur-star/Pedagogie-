@@ -4,7 +4,9 @@ import {
   TEACHING_RESOURCE_TYPES,
   toRdvPermisTeachingResourceExport,
 } from '../lib/teachingResources'
+import { listRdvPermisExportableSimulatorSessions } from '../lib/simulatorSessions'
 import { listTeachers } from './teachers'
+import { listSimulatorSessions } from './simulatorSessions'
 
 /**
  * Point d'entrée futur pour la synchronisation RdvPermis.
@@ -37,3 +39,28 @@ export async function getRdvPermisTeachingResource(profileId) {
 }
 
 export { TEACHING_RESOURCE_TYPES, toRdvPermisTeachingResourceExport }
+
+/** Séances simulateur exportables vers RdvPermis (future API). */
+export async function listRdvPermisSimulatorSessions(filters = {}) {
+  const { sessions, error } = await listSimulatorSessions(filters)
+  if (error) return { sessions: [], error }
+  return {
+    sessions: listRdvPermisExportableSimulatorSessions(
+      (sessions || []).map((session) => ({
+        id: session.id,
+        student_id: session.studentId,
+        simulator_authorization_number: session.simulatorAuthorizationNumber,
+        supervisor_id: session.supervisorId,
+        supervisor_mode: session.supervisorMode,
+        session_date: session.sessionDate,
+        start_time: session.startTime,
+        end_time: session.endTime,
+        duration_minutes: session.durationMinutes,
+        status: session.status,
+        rdv_permis_external_id: session.rdvPermisExternalId,
+        rdv_permis_sync_status: session.rdvPermisSyncStatus,
+      })),
+    ),
+    error: null,
+  }
+}

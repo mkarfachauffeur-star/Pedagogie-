@@ -64,9 +64,12 @@ function validate(form, isEdit) {
     errors.lastName = isSimulator ? 'Le nom du simulateur est obligatoire.' : 'Le nom est obligatoire.'
   }
   if (!isSimulator && !form.firstName.trim()) errors.firstName = 'Le prénom est obligatoire.'
-  if (!isEdit && !form.linkProfileId) {
+  if (!isEdit && !form.linkProfileId && !isSimulator) {
     if (!form.email.trim()) errors.email = "L'e-mail est obligatoire."
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
+  }
+  if (!isEdit && !form.linkProfileId && isSimulator && form.email.trim()) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
   }
   if (!isSimulator && !form.categories.length) errors.categories = 'Sélectionnez au moins une catégorie.'
 
@@ -299,8 +302,17 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">E-mail</span>
-            <input className={inputClass} type="email" value={form.email} onChange={(e) => update('email', e.target.value)} disabled={readOnly || !canWrite || busy || Boolean(form.linkProfileId)} />
+            <span className="text-sm font-bold text-slate-700">
+              E-mail{isSimulator ? ' (optionnel)' : ''}
+            </span>
+            <input
+              className={inputClass}
+              type="email"
+              value={form.email}
+              onChange={(e) => update('email', e.target.value)}
+              disabled={readOnly || !canWrite || busy || Boolean(form.linkProfileId)}
+              placeholder={isSimulator ? 'Laisser vide pour un compte technique interne' : undefined}
+            />
             {errors.email && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.email}</p>}
           </label>
           <label className="block">

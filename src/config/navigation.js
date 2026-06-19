@@ -37,6 +37,7 @@ export const NAVIGATION = {
     items: [
       { href: '/manager/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/manager/teachers', icon: '\u{1F468}\u200D\u{1F3EB}', label: 'Enseignants & simulateurs' },
+      { href: '/manager/simulator-sessions', icon: '\u{1F5A5}\uFE0F', label: 'Séances simulateur' },
       { href: '/manager/students', icon: '\u{1F465}', label: 'Élèves' },
       { href: '/manager/pre-registrations', icon: '\u{1F4DD}', label: 'Pré-inscriptions' },
       { href: '/manager/users', icon: '\u{1F510}', label: 'Utilisateurs' },
@@ -61,6 +62,7 @@ export const NAVIGATION = {
       { href: '/teacher/dashboard', icon: '\u{1F4CA}', label: 'Tableau de bord' },
       { href: '/teacher/planning', icon: '\u{1F4C5}', label: 'Mon planning' },
       { href: '/teacher/students', icon: '\u{1F465}', label: 'Mes élèves' },
+      { href: '/teacher/simulator-sessions', icon: '\u{1F5A5}\uFE0F', label: 'Séances simulateur' },
       { href: '/teacher/messages', icon: '\u{1F4AC}', label: 'Messagerie' },
       { href: '/teacher/finance', icon: '\u{1F4B8}', label: 'Finances' },
     ],
@@ -72,6 +74,7 @@ export const NAVIGATION = {
       { href: '/secretary/inscriptions', icon: '\u{1F4DD}', label: 'Inscriptions' },
       { href: '/secretary/pre-registrations', icon: '\u{1F4CB}', label: 'Pré-inscriptions' },
       { href: '/secretary/planning', icon: '\u{1F4C5}', label: 'Planning global' },
+      { href: '/secretary/simulator-sessions', icon: '\u{1F5A5}\uFE0F', label: 'Séances simulateur' },
       { href: '/secretary/vehicles', icon: '\u{1F698}', label: 'Gestion des véhicules' },
       { href: '/secretary/paiements', icon: '\u{1F4B0}', label: 'Paiements' },
       { href: '/secretary/documents', icon: '\u{1F4C1}', label: 'Documents' },
