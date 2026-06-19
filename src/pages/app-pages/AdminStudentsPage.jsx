@@ -8,7 +8,8 @@ import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPa
 import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
 import { formatPersonName } from '../../lib/staffAccounts'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
-import { listStudents, subscribeStudents } from '../../services/students'
+import { listStudents, resendStudentAccessEmail, subscribeStudents } from '../../services/students'
+import { getUserFacingError } from '../../lib/userFacingError'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -26,13 +27,15 @@ function referentTeacher(student) {
 }
 
 export default function AdminStudentsPage() {
-  const { profileId } = useAuth()
+  const { profileId, canWrite } = useAuth()
   const [students, setStudents] = useState([])
   const [assessmentsByStudent, setAssessmentsByStudent] = useState({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [actionBusy, setActionBusy] = useState(null)
+  const [feedback, setFeedback] = useState(null)
 
   const {
     page,
@@ -80,6 +83,27 @@ export default function AdminStudentsPage() {
     if (params.get('new') === '1') setModalOpen(true)
   }, [])
 
+  const runResendAccess = async (student) => {
+    if (!canWrite || !student.profile_id || !student.email) return
+    const name = formatPersonName(student)
+    if (!window.confirm(`Renvoyer un e-mail d'accès avec mot de passe provisoire à ${name} ?`)) return
+
+    setActionBusy(student.id)
+    setFeedback(null)
+    const { error, message, emailSent } = await resendStudentAccessEmail(student.id)
+    setActionBusy(null)
+
+    if (error) {
+      setFeedback({ type: 'error', text: getUserFacingError(error, 'invite') })
+      return
+    }
+
+    setFeedback({
+      type: emailSent ? 'ok' : 'warn',
+      text: message || 'Accès renvoyé.',
+    })
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
@@ -98,6 +122,18 @@ export default function AdminStudentsPage() {
           </button>
         </div>
       </section>
+
+      {feedback && (
+        <p className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
+          feedback.type === 'ok'
+            ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+            : feedback.type === 'warn'
+              ? 'border border-amber-200 bg-amber-50 text-amber-800'
+              : 'border border-rose-200 bg-rose-50 text-rose-700'
+        }`}>
+          {feedback.text}
+        </p>
+      )}
 
       <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
         {!profileId ? (
@@ -155,16 +191,28 @@ export default function AdminStudentsPage() {
                       </details>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
-                      {getTrackLabel(track)}
-                    </span>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-                      {student.status || 'En attente'}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                      Inscrit le {formatDateFr(student.registration_date)}
-                    </span>
+                  <div className="flex flex-col items-start gap-3 lg:items-end">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
+                        {getTrackLabel(track)}
+                      </span>
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                        {student.status || 'En attente'}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                        Inscrit le {formatDateFr(student.registration_date)}
+                      </span>
+                    </div>
+                    {canWrite && student.profile_id && student.email && (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 disabled:opacity-50"
+                        disabled={actionBusy === student.id}
+                        onClick={() => runResendAccess(student)}
+                      >
+                        {actionBusy === student.id ? 'Envoi…' : 'Renvoyer l\'accès par e-mail'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>

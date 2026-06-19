@@ -166,6 +166,20 @@ export async function createStudent(payload) {
   }
 }
 
+export async function resendStudentAccessEmail(studentId) {
+  const { data, error } = await supabase.functions.invoke('resend-student-access', {
+    body: { student_id: studentId },
+  })
+  if (error) return { error: toUserError(error, 'invite'), message: null, tempPassword: null, emailSent: false }
+  if (data?.error) return { error: toUserError(data.error, 'invite'), message: null, tempPassword: null, emailSent: false }
+  return {
+    error: null,
+    message: data.message,
+    tempPassword: data.temp_password,
+    emailSent: data.email_sent,
+  }
+}
+
 export function subscribeStudents(onChange) {
   return subscribePostgresChanges({
     topicBase: 'students-list',
