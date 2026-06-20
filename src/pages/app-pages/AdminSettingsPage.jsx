@@ -14,6 +14,7 @@ import {
   SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS,
   normalizeSupervisorMode,
 } from '../../lib/simulatorSessions'
+import StudentCharterAdminSection from '../../components/students/StudentCharterAdminSection'
 
 export default function AdminSettingsPage() {
   const { profileId, user, organizationId, organization, canWrite, refreshOrg } = useAuth()
@@ -82,6 +83,8 @@ export default function AdminSettingsPage() {
         <EmptyState title="Connexion requise" message="Connectez-vous en tant que gérant." icon="⚙️" />
       ) : (
         <>
+          <StudentCharterAdminSection canWrite={canWrite} />
+
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-lg font-extrabold text-slate-950">Formules & tarifs</h2>
             <p className="mt-1 text-sm text-slate-500">Forfaits, heures incluses et tarifs AAC / CS de votre auto-école.</p>

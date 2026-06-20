@@ -42,11 +42,13 @@ import StudentInitialAssessmentPage from './pages/app-pages/StudentInitialAssess
 import StudentPlanningPage from './pages/app-pages/StudentPlanningPage'
 import StudentDocumentsPage from './pages/app-pages/StudentDocumentsPage'
 import StudentContractPage from './pages/app-pages/StudentContractPage'
+import StudentCharterPage from './pages/app-pages/StudentCharterPage'
 import StudentNextLessonPage from './pages/app-pages/StudentNextLessonPage'
 import StudentCompetencyReportsPage from './pages/app-pages/StudentCompetencyReportsPage'
 import StudentPedagogicalAppointmentsPage from './pages/app-pages/StudentPedagogicalAppointmentsPage'
 import StudentTrackRoute from './components/StudentTrackRoute'
 import StudentAccountGate from './components/StudentAccountGate'
+import StudentCharterGate from './components/students/StudentCharterGate'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 
 import TeacherDashboardPage from './pages/app-pages/TeacherDashboardPage'
@@ -85,9 +87,11 @@ function withStudentLayout(Page, fullWidth = false) {
       <DashboardLayout role="student" fullWidth={fullWidth}>
         <RouteErrorBoundary>
           <StudentAccountGate>
-            <StudentTrackRoute>
-              <Page />
-            </StudentTrackRoute>
+            <StudentCharterGate>
+              <StudentTrackRoute>
+                <Page />
+              </StudentTrackRoute>
+            </StudentCharterGate>
           </StudentAccountGate>
         </RouteErrorBoundary>
       </DashboardLayout>
@@ -145,6 +149,7 @@ function App() {
         <Route path="/student/observations" element={<Navigate replace to="/student/competency-reports" />} />
         <Route path="/student/documents" element={withStudentLayout(StudentDocumentsPage)} />
         <Route path="/student/contract" element={withStudentLayout(StudentContractPage)} />
+        <Route path="/student/charter" element={withStudentLayout(StudentCharterPage)} />
         <Route path="/student/payments" element={<Navigate replace to="/student/contract" />} />
         <Route path="/student/next-lesson" element={withStudentLayout(StudentNextLessonPage)} />
         <Route path="/student/lexicon" element={withStudentLayout(StudentLexiconPage)} />

@@ -14,6 +14,7 @@ const PERMIS_B_ITEMS = [
     aacOnly: true,
   },
   { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
+  { href: '/student/charter', icon: '\u{1F4DC}', label: 'Charte d\'engagement' },
 ]
 
 const MOTO_AM_ITEMS = [
@@ -21,6 +22,7 @@ const MOTO_AM_ITEMS = [
   { href: '/student/planning', icon: '\u{1F4C5}', label: 'Planning' },
   { href: '/student/next-lesson', icon: '\u{1F3CD}\uFE0F', label: 'Prochaine leçon', track: 'moto_am' },
   { href: '/student/documents', icon: '\u{1F4C1}', label: 'Documents' },
+  { href: '/student/charter', icon: '\u{1F4DC}', label: 'Charte d\'engagement' },
 ]
 
 export function getStudentNavItems(track, student = null) {

@@ -21,6 +21,7 @@ import LessonModuleQcuProgressPanel from '../../components/lessons/LessonModuleQ
 import PracticeExamTeacherPanel from '../../components/practice-exam/PracticeExamTeacherPanel'
 import PreRegistrationFormModal from '../../components/pre-registration/PreRegistrationFormModal'
 import EmptyState from '../../components/ui/EmptyState'
+import StudentCharterStatusBadge from '../../components/students/StudentCharterStatusBadge'
 import PanelTabs from '../../components/ui/PanelTabs'
 import PaginationBar from '../../components/ui/PaginationBar'
 import { useClientPagination } from '../../hooks/useClientPagination'
@@ -598,6 +599,9 @@ export default function TeacherStudentsPage() {
                     AAC {selectedStudent.aacTracking.kilometersCurrent}/{selectedStudent.aacTracking.kilometersTarget} km · Début {formatDateFr(selectedStudent.aacTracking.startDate)}
                   </p>
                 )}
+                <div className="mt-2">
+                  <StudentCharterStatusBadge studentId={selectedStudent.id} />
+                </div>
               </div>
             </div>
 

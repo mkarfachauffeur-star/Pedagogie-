@@ -11,6 +11,7 @@ import { formatPersonName } from '../../lib/staffAccounts'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
 import { listStudents, resendStudentAccessEmail, subscribeStudents } from '../../services/students'
 import { getUserFacingError } from '../../lib/userFacingError'
+import StudentCharterStatusBadge from '../../components/students/StudentCharterStatusBadge'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -199,6 +200,7 @@ export default function AdminStudentsPage() {
                       <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-700">
                         {getTrackLabel(track)}
                       </span>
+                      <StudentCharterStatusBadge studentId={student.id} />
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                         {student.status || 'En attente'}
                       </span>
