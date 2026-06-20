@@ -767,9 +767,9 @@ export default function TeacherStudentsPage() {
           <section className="card-panel-lg">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">QCU en ligne</h2>
+                <h2 className="text-2xl font-extrabold text-slate-900">Dernier QCU en ligne</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Validations après lecture complète du cours (seuil 80 %, minimum 8/10).
+                  Dernier QCU travaillé et réussi par l&apos;élève (seuil 80 %, minimum 8/10).
                 </p>
               </div>
             </div>

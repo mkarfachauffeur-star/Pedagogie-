@@ -56,6 +56,15 @@ export async function listLessonModuleProgressForStudent(studentId) {
   }
 }
 
+export async function fetchLatestPassedQcu(studentId) {
+  const { progress, error } = await listLessonModuleProgressForStudent(studentId)
+  if (error) return { latest: null, error }
+  const latest = progress
+    .filter((row) => row.qcuPassed)
+    .sort((a, b) => String(b.qcuValidatedAt || '').localeCompare(String(a.qcuValidatedAt || '')))[0] || null
+  return { latest, error: null }
+}
+
 export async function fetchLessonModuleProgressMap(studentId) {
   const { progress, error } = await listLessonModuleProgressForStudent(studentId)
   if (error) return { progressByModuleId: {}, error }

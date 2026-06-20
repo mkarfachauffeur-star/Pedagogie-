@@ -1,32 +1,26 @@
 import { useEffect, useState } from 'react'
 import {
-  fetchLessonModuleProgressMap,
+  fetchLatestPassedQcu,
   formatQcuValidatedAt,
   QCU_PASS_PERCENTAGE,
 } from '../../services/lessonModuleProgress'
 
 export default function LessonModuleQcuProgressPanel({ studentId }) {
-  const [rows, setRows] = useState([])
+  const [latest, setLatest] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!studentId) {
-      setRows([])
+      setLatest(null)
       setLoading(false)
       return undefined
     }
 
     let cancelled = false
     setLoading(true)
-    fetchLessonModuleProgressMap(studentId).then(({ progressByModuleId }) => {
+    fetchLatestPassedQcu(studentId).then(({ latest: row }) => {
       if (cancelled) return
-      const nextRows = Object.entries(progressByModuleId).map(([moduleId, row]) => ({
-        ...row,
-        moduleId: row.moduleId || moduleId,
-      }))
-        .filter((row) => row.qcuPassed || row.courseReadComplete)
-        .sort((a, b) => String(b.qcuValidatedAt || b.courseReadAt || '').localeCompare(String(a.qcuValidatedAt || a.courseReadAt || '')))
-      setRows(nextRows)
+      setLatest(row)
       setLoading(false)
     })
 
@@ -36,47 +30,46 @@ export default function LessonModuleQcuProgressPanel({ studentId }) {
   }, [studentId])
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Chargement des QCU en ligne…</p>
+    return <p className="text-sm text-slate-500">Chargement du dernier QCU…</p>
   }
 
-  const validatedRows = rows.filter((row) => row.qcuPassed)
-
-  if (!validatedRows.length) {
+  if (!latest) {
     return (
       <p className="text-sm text-slate-500">
-        Aucun QCU validé en ligne pour le moment (seuil {QCU_PASS_PERCENTAGE} %, minimum 8/10).
+        Aucun QCU validé pour le moment (seuil {QCU_PASS_PERCENTAGE} %, minimum 8/10).
       </p>
     )
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wide text-slate-500">
-            <th className="px-3 py-2">Module</th>
-            <th className="px-3 py-2">Score</th>
-            <th className="px-3 py-2">Validé le</th>
-            <th className="px-3 py-2">Lecture</th>
-          </tr>
-        </thead>
-        <tbody>
-          {validatedRows.map((row) => (
-            <tr key={`${row.moduleId}-${row.qcuValidatedAt}`} className="border-b border-slate-100 last:border-0">
-              <td className="px-3 py-3 font-bold text-slate-900">{row.moduleId || '—'}</td>
-              <td className="px-3 py-3 text-slate-700">
-                {row.score}/{row.total ?? '—'} ({row.percentage ?? '—'} %)
-              </td>
-              <td className="px-3 py-3 font-semibold text-emerald-700">
-                {formatQcuValidatedAt(row.qcuValidatedAt)}
-              </td>
-              <td className="px-3 py-3 text-slate-600">
-                {row.courseReadComplete ? formatQcuValidatedAt(row.courseReadAt) : '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 sm:p-5">
+      <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+        Dernier QCU travaillé et réussi
+      </p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-lg font-extrabold text-slate-900">
+            {latest.moduleTitle || latest.moduleId || 'Module'}
+          </p>
+          {latest.moduleTitle && latest.moduleId && (
+            <p className="mt-0.5 text-sm font-semibold text-slate-500">{latest.moduleId}</p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Score</p>
+            <p className="mt-1 font-extrabold text-slate-900">
+              {latest.score}/{latest.total ?? '—'} ({latest.percentage ?? '—'} %)
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Validé le</p>
+            <p className="mt-1 font-extrabold text-emerald-800">
+              {formatQcuValidatedAt(latest.qcuValidatedAt)}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
