@@ -36,7 +36,7 @@ const navLinks = (privateBeta) => [
 ]
 
 const headerActionSizeClass =
-  'inline-flex h-11 w-[13.75rem] shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-4 text-sm font-black xl:w-[14.5rem]'
+  'inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-5 text-sm font-black xl:min-w-[9.5rem] xl:px-6 2xl:min-w-[10.5rem]'
 
 const platformHighlights = [
   {
@@ -311,13 +311,13 @@ export default function ProfileSelection() {
       <div className={skin.ambient} />
 
       <header className={skin.header}>
-        <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-6 lg:px-8">
-          <a className="shrink-0 justify-self-start" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 xl:gap-6 xl:px-8 2xl:gap-8">
+          <a className="inline-flex shrink-0 items-center" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
             <BrandLogo isDark={isDark} />
           </a>
           <nav
             aria-label="Navigation principale"
-            className="hidden items-center justify-center gap-0.5 lg:flex xl:gap-1"
+            className="hidden min-w-0 flex-1 items-center justify-center gap-8 xl:flex 2xl:gap-10"
           >
             {links.map((item, index) => (
               <a
@@ -327,14 +327,13 @@ export default function ProfileSelection() {
               >
                 {item.label}
                 {index === 0 ? (
-                  <span className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] xl:inset-x-3" />
+                  <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] 2xl:inset-x-4" />
                 ) : null}
               </a>
             ))}
           </nav>
-          <div className="flex shrink-0 items-center justify-self-end gap-2 sm:gap-3">
-            <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
-            <div className="hidden items-stretch gap-2.5 lg:flex">
+          <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-5">
+            <div className="hidden items-center gap-5 xl:flex 2xl:gap-6">
               <Link
                 to="/login"
                 className={`${headerActionSizeClass} ${skin.loginBtn}`}
@@ -351,6 +350,7 @@ export default function ProfileSelection() {
                 </Link>
               )}
             </div>
+            <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
             <button
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
@@ -364,7 +364,7 @@ export default function ProfileSelection() {
         </div>
         {mobileOpen && (
           <div className={skin.mobileMenu}>
-            <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-2" initial={{ opacity: 0, y: -6 }}>
+            <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-5" initial={{ opacity: 0, y: -6 }}>
               {links.map((item) => (
                 <a
                   className={skin.mobileNav}
@@ -375,7 +375,7 @@ export default function ProfileSelection() {
                   {item.label}
                 </a>
               ))}
-              <div className={`mt-2 grid gap-2.5 border-t pt-4 ${skin.mobileDivider}`}>
+              <div className={`mt-4 grid gap-5 border-t pt-5 sm:gap-6 ${skin.mobileDivider}`}>
                 <Link
                   className={`inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl px-4 text-sm font-black transition ${skin.mobileLogin}`}
                   to="/login"
