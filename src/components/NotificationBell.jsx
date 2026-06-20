@@ -112,6 +112,15 @@ export default function NotificationBell({ role, unreadCount }) {
       }
     }
 
+    if (notification.notification_type === 'qcu_validated') {
+      if (role === 'teacher') {
+        navigate('/teacher/students', {
+          state: notification.student_id ? { studentId: notification.student_id } : undefined,
+        })
+        return
+      }
+    }
+
     if (!messagesRoute || !notification?.conversation_id) return
     navigate(messagesRoute, { state: { conversationId: notification.conversation_id } })
   }

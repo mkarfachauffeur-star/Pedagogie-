@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
@@ -16,6 +17,7 @@ import {
   updateLessonObservation,
 } from '../../services/studentLessonObservations'
 import RemcTeacherValidationPanel from '../../components/remc/RemcTeacherValidationPanel'
+import LessonModuleQcuProgressPanel from '../../components/lessons/LessonModuleQcuProgressPanel'
 import PracticeExamTeacherPanel from '../../components/practice-exam/PracticeExamTeacherPanel'
 import PreRegistrationFormModal from '../../components/pre-registration/PreRegistrationFormModal'
 import EmptyState from '../../components/ui/EmptyState'
@@ -129,6 +131,7 @@ export default function TeacherStudentsPage() {
   }
 
   const { profileId, organizationId, role, loading: authLoading, profile, isAuthenticated } = useAuth()
+  const location = useLocation()
   const currentTeacherName = useMemo(() => {
     const name = profile?.full_name?.trim()
     if (name) return name
@@ -139,6 +142,13 @@ export default function TeacherStudentsPage() {
   const [studentsError, setStudentsError] = useState(null)
   const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [studentSearchQuery, setStudentSearchQuery] = useState('')
+
+  useEffect(() => {
+    if (location.state?.studentId) {
+      setSelectedStudentId(location.state.studentId)
+      setStudentPanelTab('lessons')
+    }
+  }, [location.state?.studentId])
   const [lessonFormOpen, setLessonFormOpen] = useState(false)
   const [lessonSessionTab, setLessonSessionTab] = useState('lesson')
   const [studentPanelTab, setStudentPanelTab] = useState('lessons')
@@ -752,6 +762,22 @@ export default function TeacherStudentsPage() {
             )}
 
           </section>
+
+          {selectedIsPermisB && studentPanelTab === 'lessons' && !lessonFormOpen && (
+          <section className="card-panel-lg">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-extrabold text-slate-900">QCU en ligne</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Validations après lecture complète du cours (seuil 80 %, minimum 8/10).
+                </p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <LessonModuleQcuProgressPanel studentId={selectedStudent.id} />
+            </div>
+          </section>
+          )}
 
           {selectedIsPermisB && studentPanelTab === 'lessons' && !lessonFormOpen && (
           <section className="card-panel-lg">

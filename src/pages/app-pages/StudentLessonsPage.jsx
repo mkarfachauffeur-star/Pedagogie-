@@ -1,11 +1,19 @@
 import { CheckCircle2, XCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useRemcUnlock } from '../../hooks/useRemcUnlock'
 import { useClientPagination } from '../../hooks/useClientPagination'
 import RemcLockedBanner from '../../components/remc/RemcLockedBanner'
 import PaginationBar from '../../components/ui/PaginationBar'
 import { REMC_COMPETENCY_ORDER } from '../../data/remcCompetencies'
+import {
+  fetchLessonModuleProgressMap,
+  isQcuPassed,
+  markCourseReadComplete,
+  normalizeModuleProgress,
+  QCU_PASS_PERCENTAGE,
+  recordQcuResult,
+} from '../../services/lessonModuleProgress'
 import { competencyStatusIcon } from '../../services/remcProgress'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import LessonImage from '../../components/ui/LessonImage'
@@ -1813,7 +1821,7 @@ function buildEmptyModuleProgress() {
   return Object.fromEntries(
     Object.values(lessonModules).map((module) => [
       module.id,
-      { completed: false, score: null, percentage: null },
+      normalizeModuleProgress({ completed: false, score: null, percentage: null }),
     ]),
   )
 }
@@ -1824,7 +1832,7 @@ function lessonProgressStorageKey(storageKey, ownerId) {
 }
 
 function getSavedModuleProgress(storageKey, ownerId) {
-  const empty = { completed: false, score: null, percentage: null }
+  const empty = normalizeModuleProgress({ completed: false, score: null, percentage: null })
   if (!ownerId || typeof window === 'undefined') return empty
 
   const scopedKey = lessonProgressStorageKey(storageKey, ownerId)
@@ -1832,10 +1840,26 @@ function getSavedModuleProgress(storageKey, ownerId) {
 
   try {
     const saved = window.localStorage.getItem(scopedKey)
-    return saved ? JSON.parse(saved) : empty
+    return saved ? normalizeModuleProgress(JSON.parse(saved)) : empty
   } catch {
     return empty
   }
+}
+
+function mergeModuleProgress(localProgress, remoteProgress) {
+  const local = normalizeModuleProgress(localProgress)
+  const remote = normalizeModuleProgress(remoteProgress)
+  const qcuPassed = local.qcuPassed || remote.qcuPassed
+  return normalizeModuleProgress({
+    courseReadComplete: local.courseReadComplete || remote.courseReadComplete,
+    courseReadAt: remote.courseReadAt || local.courseReadAt,
+    qcuPassed,
+    score: qcuPassed ? (remote.score ?? local.score) : (local.score ?? remote.score),
+    total: qcuPassed ? (remote.total ?? local.total) : (local.total ?? remote.total),
+    percentage: qcuPassed ? (remote.percentage ?? local.percentage) : (local.percentage ?? remote.percentage),
+    qcuValidatedAt: remote.qcuValidatedAt || local.qcuValidatedAt,
+    completed: qcuPassed,
+  })
 }
 
 function ChoiceButton({ checked, children, disabled, onClick, status }) {
@@ -1889,6 +1913,7 @@ export default function StudentLessonsPage() {
   const [validatedByModule, setValidatedByModule] = useState({})
   const [moduleProgressById, setModuleProgressById] = useState(buildEmptyModuleProgress)
   const [expandedModuleIds, setExpandedModuleIds] = useState({})
+  const lessonScrollRef = useRef(null)
   const activeCompetency =
     competencies.find((competency) => competency.id === activeCompetencyId) || competencies[0]
   const activeSubcompetencies = subcompetenciesByCompetency[activeCompetency.id] || []
@@ -1905,11 +1930,12 @@ export default function StudentLessonsPage() {
   const currentQuizQuestion = currentQuestions[currentQuizIndex]
   const currentQuizAnswer = currentAnswers[currentQuizIndex]
   const currentQuizAnswered = currentQuizAnswer !== undefined
-  const currentProgress = moduleProgressById[openedModuleId] || {
+  const currentProgress = moduleProgressById[openedModuleId] || normalizeModuleProgress({
     completed: false,
     score: null,
     percentage: null,
-  }
+  })
+  const openedCourseReadComplete = Boolean(currentProgress.courseReadComplete)
   const score = currentQuestions.reduce(
     (total, question, index) => total + (currentAnswers[index] === question.answer ? 1 : 0),
     0,
@@ -1955,15 +1981,38 @@ export default function StudentLessonsPage() {
       return
     }
 
-    setModuleProgressById(
-      Object.fromEntries(
+    let cancelled = false
+
+    const loadProgress = async () => {
+      const localProgress = Object.fromEntries(
         Object.values(lessonModules).map((module) => [
           module.id,
           getSavedModuleProgress(module.storageKey, progressOwnerId),
         ]),
-      ),
-    )
-  }, [progressOwnerId])
+      )
+
+      const { progressByModuleId } = studentId
+        ? await fetchLessonModuleProgressMap(studentId)
+        : { progressByModuleId: {} }
+
+      if (cancelled) return
+
+      setModuleProgressById(
+        Object.fromEntries(
+          Object.values(lessonModules).map((module) => [
+            module.id,
+            mergeModuleProgress(localProgress[module.id], progressByModuleId[module.id]),
+          ]),
+        ),
+      )
+    }
+
+    loadProgress()
+
+    return () => {
+      cancelled = true
+    }
+  }, [progressOwnerId, studentId])
 
   useEffect(() => {
     if (!unlockState) return
@@ -1974,6 +2023,62 @@ export default function StudentLessonsPage() {
     }
   }, [unlockState, activeCompetencyId, isCompetencyUnlocked])
 
+  const persistLocalProgress = useCallback((module, nextProgress) => {
+    const scopedKey = lessonProgressStorageKey(module.storageKey, progressOwnerId)
+    if (scopedKey) {
+      window.localStorage.setItem(scopedKey, JSON.stringify(nextProgress))
+    }
+  }, [progressOwnerId])
+
+  const applyModuleProgress = useCallback((moduleId, nextProgress) => {
+    setModuleProgressById((current) => ({ ...current, [moduleId]: nextProgress }))
+    const module = lessonModules[moduleId]
+    if (module) persistLocalProgress(module, nextProgress)
+  }, [persistLocalProgress])
+
+  const canAccessQcu = useCallback((moduleId) => {
+    return Boolean(moduleProgressById[moduleId]?.courseReadComplete)
+  }, [moduleProgressById])
+
+  const completeCourseRead = useCallback(async (moduleId) => {
+    const module = lessonModules[moduleId]
+    if (!module || moduleProgressById[moduleId]?.courseReadComplete) return
+
+    const optimistic = normalizeModuleProgress({
+      ...moduleProgressById[moduleId],
+      courseReadComplete: true,
+      courseReadAt: new Date().toISOString(),
+    })
+    applyModuleProgress(moduleId, optimistic)
+
+    if (!studentId) return
+    const { progress, error } = await markCourseReadComplete({
+      moduleId,
+      moduleTitle: module.title,
+    })
+    if (progress && !error) {
+      applyModuleProgress(moduleId, mergeModuleProgress(optimistic, progress))
+    }
+  }, [applyModuleProgress, moduleProgressById, studentId])
+
+  const checkLessonScrollComplete = useCallback(() => {
+    if (!openedModuleId || moduleMode !== 'lesson') return
+    const container = lessonScrollRef.current
+    if (!container) return
+    const threshold = 48
+    const reachedBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold
+    const shortContent = container.scrollHeight <= container.clientHeight + threshold
+    if (reachedBottom || shortContent) {
+      completeCourseRead(openedModuleId)
+    }
+  }, [completeCourseRead, moduleMode, openedModuleId])
+
+  useEffect(() => {
+    if (!openedModuleId || moduleMode !== 'lesson') return undefined
+    const timerId = window.setTimeout(checkLessonScrollComplete, 120)
+    return () => window.clearTimeout(timerId)
+  }, [checkLessonScrollComplete, moduleMode, openedModuleId, openedLesson?.id])
+
   const openLesson = (moduleId) => {
     if (!isCompetencyUnlocked(activeCompetencyId)) return
     setOpenedModuleId(moduleId)
@@ -1982,6 +2087,7 @@ export default function StudentLessonsPage() {
 
   const openQuiz = (moduleId) => {
     if (!isCompetencyUnlocked(activeCompetencyId)) return
+    if (!canAccessQcu(moduleId)) return
     setOpenedModuleId(moduleId)
     setModuleMode('quiz')
     const lesson = lessonModules[moduleId]
@@ -2061,22 +2167,34 @@ export default function StudentLessonsPage() {
     }
   }, [openedModule])
 
-  const validateModule = () => {
+  const validateModule = async () => {
     if (!canValidate || !openedLesson) return
 
-    const completed = percentage >= 80
-    const nextProgress = {
-      completed,
+    const passed = isQcuPassed(score, currentQuestions.length)
+    const nextProgress = normalizeModuleProgress({
+      ...moduleProgressById[openedLesson.id],
+      courseReadComplete: true,
+      qcuPassed: passed,
+      completed: passed,
       score,
+      total: currentQuestions.length,
       percentage,
-      validatedAt: new Date().toISOString(),
-    }
+      qcuValidatedAt: passed ? new Date().toISOString() : null,
+    })
 
     setValidatedByModule((current) => ({ ...current, [openedLesson.id]: true }))
-    setModuleProgressById((current) => ({ ...current, [openedLesson.id]: nextProgress }))
-    const scopedKey = lessonProgressStorageKey(openedLesson.storageKey, progressOwnerId)
-    if (scopedKey) {
-      window.localStorage.setItem(scopedKey, JSON.stringify(nextProgress))
+    applyModuleProgress(openedLesson.id, nextProgress)
+
+    if (studentId) {
+      const { progress } = await recordQcuResult({
+        moduleId: openedLesson.id,
+        moduleTitle: openedLesson.title,
+        score,
+        total: currentQuestions.length,
+      })
+      if (progress) {
+        applyModuleProgress(openedLesson.id, mergeModuleProgress(nextProgress, progress))
+      }
     }
   }
 
@@ -2201,17 +2319,21 @@ export default function StudentLessonsPage() {
                   const lessonPool = getLessonQuestionPool(lessonModule)
                   const qcmAvailable = lessonPool.length > 0
                   const qcmTotal = getExpectedQuizCount(lessonModule) || lessonPool.length
-                  const itemProgress = moduleProgressById[item.id] || { completed: false, score: null, percentage: null }
-                  const itemDone = itemProgress.completed
+                  const itemProgress = moduleProgressById[item.id] || normalizeModuleProgress({ completed: false })
+                  const itemDone = itemProgress.qcuPassed
                   const isExpanded = Boolean(expandedModuleIds[item.id])
+                  const courseReadComplete = Boolean(itemProgress.courseReadComplete)
                   const lessonValue = lessonModule
-                    ? (itemProgress.completed ? 'Validée' : 'Ouvrir')
+                    ? (courseReadComplete ? 'Lue' : 'À lire')
                     : item.video
-                  const qcmValue = lessonModule && qcmAvailable && itemProgress.percentage !== null
-                    ? `${itemProgress.score}/${qcmTotal}`
-                    : (lessonModule && qcmAvailable ? 'Ouvrir' : item.qcm)
-                  const lessonComplete = lessonModule ? itemProgress.completed : false
-                  const qcmComplete = lessonModule && qcmAvailable ? itemProgress.completed : false
+                  const qcmValue = !courseReadComplete && lessonModule && qcmAvailable
+                    ? 'Lisez d\'abord'
+                    : lessonModule && qcmAvailable && itemProgress.percentage !== null
+                      ? `${itemProgress.score}/${qcmTotal}`
+                      : (lessonModule && qcmAvailable ? 'Ouvrir' : item.qcm)
+                  const lessonComplete = lessonModule ? courseReadComplete : false
+                  const qcmComplete = lessonModule && qcmAvailable ? itemProgress.qcuPassed : false
+                  const qcuLocked = Boolean(lessonModule && qcmAvailable && !courseReadComplete)
 
                   return (
                     <article
@@ -2251,7 +2373,7 @@ export default function StudentLessonsPage() {
                         </button>
                         <button
                           className="text-left disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={Boolean(lessonModule) && !qcmAvailable}
+                          disabled={Boolean(lessonModule) && (!qcmAvailable || qcuLocked)}
                           onClick={() => openQuiz(item.id)}
                           type="button"
                         >
@@ -2300,8 +2422,10 @@ export default function StudentLessonsPage() {
                     Leçon
                   </button>
                   <button
-                    className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition ${moduleMode === 'quiz' ? 'bg-navy-950 text-white' : 'border border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                    className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${moduleMode === 'quiz' ? 'bg-navy-950 text-white' : 'border border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                    disabled={!openedCourseReadComplete}
                     onClick={() => openQuiz(openedModule.id)}
+                    title={openedCourseReadComplete ? 'Accéder au QCU' : 'Lisez la leçon en entier pour débloquer le QCU'}
                     type="button"
                   >
                     QCU
@@ -2317,10 +2441,25 @@ export default function StudentLessonsPage() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div
+              ref={lessonScrollRef}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+              onScroll={checkLessonScrollComplete}
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
             {moduleMode === 'lesson' ? (
               <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
                 <div className="space-y-5">
+                  {!openedCourseReadComplete && (
+                    <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                      Faites défiler la leçon jusqu&apos;en bas pour débloquer le QCU (minimum {QCU_PASS_PERCENTAGE} % soit 8/10 pour valider).
+                    </p>
+                  )}
+                  {openedCourseReadComplete && (
+                    <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                      Leçon lue en entier — le QCU est débloqué.
+                    </p>
+                  )}
                   <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
                     <p className="text-sm font-semibold text-cyan-100">Contenu de leçon</p>
                     <h3 className="mt-2 text-2xl font-black">
@@ -2439,11 +2578,12 @@ export default function StudentLessonsPage() {
                       </div>
                       <div className="border-t border-slate-100 bg-cyan-50/50 p-4">
                         <button
-                          className="w-full rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 active:scale-[0.98]"
+                          className="w-full rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300"
+                          disabled={!openedCourseReadComplete}
                           onClick={() => openQuiz(openedModule.id)}
                           type="button"
                         >
-                          Lancer le QCU voyants du tableau de bord
+                          {openedCourseReadComplete ? 'Lancer le QCU voyants du tableau de bord' : 'Lisez la leçon pour débloquer le QCU'}
                         </button>
                       </div>
                     </section>
@@ -2514,26 +2654,40 @@ export default function StudentLessonsPage() {
                   <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Progression</p>
                   <div className="mt-4 rounded-2xl bg-white p-4">
                     <p className="text-3xl font-black text-slate-950">
-                      {openedLesson && currentProgress.completed ? '100%' : '35%'}
+                      {currentProgress.qcuPassed ? '100%' : openedCourseReadComplete ? '65%' : '20%'}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {openedLesson && currentProgress.completed ? 'Module validé' : 'Leçon ouverte'}
+                      {currentProgress.qcuPassed
+                        ? 'Module validé'
+                        : openedCourseReadComplete
+                          ? 'QCU disponible'
+                          : 'Lecture en cours'}
                     </p>
                     <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-300"
-                        style={{ width: openedLesson && currentProgress.completed ? '100%' : '35%' }}
+                        style={{
+                          width: currentProgress.qcuPassed
+                            ? '100%'
+                            : openedCourseReadComplete
+                              ? '65%'
+                              : '20%',
+                        }}
                       />
                     </div>
                   </div>
                   <div className="mt-4 grid gap-2">
                     <button
                       className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      disabled={!lessonQuestionPool.length}
+                      disabled={!lessonQuestionPool.length || !openedCourseReadComplete}
                       onClick={() => openQuiz(openedModule.id)}
                       type="button"
                     >
-                      {lessonQuestionPool.length ? 'Ouvrir le QCU' : 'QCU bientôt disponible'}
+                      {!lessonQuestionPool.length
+                        ? 'QCU bientôt disponible'
+                        : openedCourseReadComplete
+                          ? 'Ouvrir le QCU'
+                          : 'Lisez la leçon d\'abord'}
                     </button>
                     <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" disabled={!hasNextModule} onClick={openNextModule} type="button">
                       Module suivant
