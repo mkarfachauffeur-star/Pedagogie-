@@ -27,16 +27,22 @@ import { isPrivateBeta } from '../config/beta'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
 import { marketingSkin } from '../lib/marketingTheme'
 
-const navLinks = (privateBeta) => [
+const primaryNavLinks = [
   { label: 'Accueil', href: '#accueil' },
   { label: 'Plateforme', href: '#plateforme' },
   { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
-  { label: privateBeta ? 'Démonstration' : 'Contact', href: privateBeta ? '#demonstration' : '#contact' },
 ]
 
+function menuLinks(privateBeta) {
+  if (privateBeta) {
+    return [...primaryNavLinks, { label: 'Démonstration', href: '#demonstration' }]
+  }
+  return [...primaryNavLinks, { label: 'Contact', href: '#contact' }]
+}
+
 const headerActionSizeClass =
-  'inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-5 text-sm font-black xl:min-w-[9.5rem] xl:px-6 2xl:min-w-[10.5rem]'
+  'inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-5 text-sm font-black 2xl:px-6'
 
 const platformHighlights = [
   {
@@ -301,7 +307,8 @@ export default function ProfileSelection() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, isDark, toggleTheme } = useMarketingTheme()
   const skin = marketingSkin(theme)
-  const links = navLinks(isPrivateBeta)
+  const links = menuLinks(isPrivateBeta)
+  const desktopNavLinks = isPrivateBeta ? primaryNavLinks : links
   const demoCtaClass =
     `${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`
   const heroCtaClass =
@@ -311,15 +318,15 @@ export default function ProfileSelection() {
       <div className={skin.ambient} />
 
       <header className={skin.header}>
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 xl:gap-6 xl:px-8 2xl:gap-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 2xl:grid 2xl:grid-cols-[auto_minmax(0,1fr)_auto] 2xl:items-center 2xl:gap-8 2xl:px-8">
           <a className="inline-flex shrink-0 items-center" href="#accueil" aria-label="PEDAGOGIA DRIVE - Accueil">
             <BrandLogo isDark={isDark} />
           </a>
           <nav
             aria-label="Navigation principale"
-            className="hidden min-w-0 flex-1 items-center justify-center gap-8 xl:flex 2xl:gap-10"
+            className="hidden shrink-0 items-center justify-center gap-8 2xl:flex 2xl:gap-10"
           >
-            {links.map((item, index) => (
+            {desktopNavLinks.map((item, index) => (
               <a
                 className={skin.navLink(index === 0)}
                 href={item.href}
@@ -327,13 +334,13 @@ export default function ProfileSelection() {
               >
                 {item.label}
                 {index === 0 ? (
-                  <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] 2xl:inset-x-4" />
+                  <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
                 ) : null}
               </a>
             ))}
           </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-5">
-            <div className="hidden items-center gap-5 xl:flex 2xl:gap-6">
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4 2xl:justify-self-end 2xl:gap-5">
+            <div className="hidden items-center gap-5 2xl:flex 2xl:gap-6">
               <Link
                 to="/login"
                 className={`${headerActionSizeClass} ${skin.loginBtn}`}

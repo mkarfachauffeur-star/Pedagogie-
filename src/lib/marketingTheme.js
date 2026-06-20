@@ -14,7 +14,7 @@ export function marketingSkin(theme) {
       : 'sticky top-0 z-50 border-b border-slate-200/90 bg-white/90 backdrop-blur-2xl shadow-sm',
     navLink: (active) =>
       [
-        'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition xl:px-3.5 2xl:px-4',
+        'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition 2xl:px-3.5',
         isDark ? 'hover:bg-white/5 hover:text-white' : 'hover:bg-slate-100 hover:text-slate-900',
         active
           ? isDark
@@ -28,14 +28,14 @@ export function marketingSkin(theme) {
       ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 text-amber-300 transition hover:bg-white/10'
       : 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-300 text-slate-600 transition hover:bg-slate-100',
     menuToggle: isDark
-      ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 xl:hidden'
-      : 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-300 text-slate-700 xl:hidden',
+      ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 2xl:hidden'
+      : 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-300 text-slate-700 2xl:hidden',
     loginBtn: isDark
       ? 'border border-white/15 bg-white/[0.04] text-white backdrop-blur transition hover:bg-white/10'
       : 'border border-slate-300 bg-slate-50 text-slate-900 transition hover:bg-slate-100',
     mobileMenu: isDark
-      ? 'border-t border-white/10 bg-[#030712]/95 px-4 py-5 sm:px-6 xl:hidden'
-      : 'border-t border-slate-200 bg-white px-4 py-5 shadow-lg sm:px-6 xl:hidden',
+      ? 'border-t border-white/10 bg-[#030712]/95 px-4 py-5 sm:px-6 2xl:hidden'
+      : 'border-t border-slate-200 bg-white px-4 py-5 shadow-lg sm:px-6 2xl:hidden',
     mobileNav: isDark
       ? 'flex min-h-11 items-center rounded-2xl px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/10'
       : 'flex min-h-11 items-center rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100',
