@@ -83,7 +83,7 @@ function Hero({ hero, onAction }) {
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.45 }}
     >
-      <div className="relative grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_auto] md:p-8">
+      <div className="relative grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-4 text-white sm:p-6 md:grid-cols-[1fr_auto] md:p-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(239,68,68,0.18),transparent_42%),radial-gradient(circle_at_10%_90%,rgba(59,130,246,0.14),transparent_38%)]" />
         <div className="relative">
           {hero.eyebrow && (
@@ -124,7 +124,7 @@ function Hero({ hero, onAction }) {
         </div>
 
         {hero.focus && (
-          <aside className="relative min-w-64 rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
+          <aside className="relative w-full min-w-0 rounded-[1.5rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl md:min-w-64">
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               {hero.focus.label}
             </p>
@@ -606,7 +606,7 @@ export default function ModernPage({ config, actionHandlers = {} }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="pd-page-content">
       <Hero hero={config.hero} onAction={handleAction} />
       <Metrics activeDetail={activeDetail} metrics={config.metrics} onSelect={setActiveDetail} />
       <DetailPanel detail={activeDetail} onClose={() => setActiveDetail(null)} />

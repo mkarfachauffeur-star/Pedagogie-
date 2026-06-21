@@ -81,7 +81,13 @@ function withProtectedLayout(role, Page, fullWidth = false) {
   )
 }
 
-function withStudentLayout(Page, fullWidth = false) {
+function StudentRouteShell({ children, fullWidth = false, suspenseLabel = null }) {
+  const content = suspenseLabel ? (
+    <Suspense fallback={<LoadingSpinner label={suspenseLabel} />}>
+      {children}
+    </Suspense>
+  ) : children
+
   return (
     <ProtectedRoute role="student">
       <DashboardLayout role="student" fullWidth={fullWidth}>
@@ -89,13 +95,25 @@ function withStudentLayout(Page, fullWidth = false) {
           <StudentAccountGate>
             <StudentCharterGate>
               <StudentTrackRoute>
-                <Page />
+                {content}
               </StudentTrackRoute>
             </StudentCharterGate>
           </StudentAccountGate>
         </RouteErrorBoundary>
       </DashboardLayout>
     </ProtectedRoute>
+  )
+}
+
+function withStudentLayout(Page, fullWidth = false) {
+  return <StudentRouteShell fullWidth={fullWidth}><Page /></StudentRouteShell>
+}
+
+function withStudentLayoutLazy(LazyPage, fullWidth = false, suspenseLabel = 'Chargement…') {
+  return (
+    <StudentRouteShell fullWidth={fullWidth} suspenseLabel={suspenseLabel}>
+      <LazyPage />
+    </StudentRouteShell>
   )
 }
 
@@ -130,17 +148,7 @@ function App() {
         <Route path="/student/dashboard" element={withStudentLayout(StudentDashboardPage)} />
         <Route
           path="/student/lessons"
-          element={
-            <ProtectedRoute role="student">
-              <DashboardLayout role="student">
-                <StudentTrackRoute>
-                  <Suspense fallback={<LoadingSpinner label="Chargement des leçons…" />}>
-                    <StudentLessonsPage />
-                  </Suspense>
-                </StudentTrackRoute>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
+          element={withStudentLayoutLazy(StudentLessonsPage, false, 'Chargement des leçons…')}
         />
         <Route path="/student/planning" element={withStudentLayout(StudentPlanningPage)} />
         <Route path="/student/initial-assessment" element={withStudentLayout(StudentInitialAssessmentPage)} />

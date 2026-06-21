@@ -84,7 +84,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   }
 
   return (
-    <div className="pd-shell relative flex min-h-screen">
+    <div className="pd-shell relative min-h-screen w-full lg:flex">
       {sidebarOpen && (
         <button
           type="button"
@@ -95,7 +95,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
       )}
 
       <aside
-        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] shrink-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'} w-[280px]
+        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen lg:shrink-0 ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'} w-[min(280px,100vw)]
           border-r border-blue-100/90 bg-white text-slate-800 shadow-[var(--shadow-sidebar)]
           transition-all duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
@@ -208,7 +208,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
         </div>
       </aside>
 
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
+      <div className="pd-main-content">
         <header className="pd-topbar">
           <div className="flex items-center gap-3">
             <button
@@ -241,9 +241,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           </div>
         </header>
 
-        <main className="pd-main flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8">
+        <main className="pd-main flex-1 overflow-x-hidden px-4 py-4 sm:px-5 md:px-6 lg:px-8">
           <OrgStatusBanner />
-          <div className="page-shell" key={location.pathname}>
+          <div className="page-shell w-full min-w-0" key={location.pathname}>
             {children}
           </div>
         </main>

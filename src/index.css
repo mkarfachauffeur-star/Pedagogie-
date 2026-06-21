@@ -761,12 +761,26 @@
 
 @layer components {
   .pd-shell {
-    @apply relative min-h-screen text-slate-900;
+    @apply relative min-h-screen w-full text-slate-900;
     background-color: #f0f7ff;
     background-image:
       radial-gradient(circle at 14% 10%, rgba(59, 130, 246, 0.08), transparent 38%),
       radial-gradient(circle at 86% 14%, rgba(125, 211, 252, 0.1), transparent 34%),
       linear-gradient(180deg, #f0f7ff 0%, #e8f2ff 50%, #eef6ff 100%);
+  }
+
+  @media (max-width: 767px) {
+    .pd-shell {
+      display: block;
+    }
+  }
+
+  .pd-main-content {
+    @apply relative z-10 flex min-w-0 w-full flex-1 flex-col;
+  }
+
+  .pd-page-content {
+    @apply flex w-full min-w-0 max-w-none flex-col gap-6 md:mx-auto md:max-w-7xl;
   }
 
   .pd-page {
@@ -1013,7 +1027,7 @@
   }
 
   .pd-topbar {
-    @apply sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-6 py-3.5 backdrop-blur-xl;
+    @apply sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white/95 py-3.5 backdrop-blur-xl px-4 sm:px-5 md:px-6;
   }
 
   .pd-road-line {
