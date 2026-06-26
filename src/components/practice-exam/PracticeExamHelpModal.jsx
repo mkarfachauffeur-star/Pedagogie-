@@ -28,7 +28,7 @@ export default function PracticeExamHelpModal({ open, onClose, onStart }) {
     >
       <ul className="space-y-3">
         {PRACTICE_EXAM_HELP_ITEMS.map((item) => (
-          <li className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700" key={item}>
+          <li className="flex gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700" key={item}>
             <span aria-hidden="true">•</span>
             <span>{item}</span>
           </li>
@@ -65,14 +65,14 @@ export function PracticeExamGridEditor({ form, onChangeScore, onCommentChange, o
   return (
     <div className="space-y-5">
       {PRACTICE_EXAM_SECTIONS.map((section) => (
-        <section className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm" key={section.id}>
-          <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
+        <section className="overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-sm" key={section.id}>
+          <div className="border-b-2 border-slate-200 bg-slate-50 px-5 py-4">
             <h3 className="text-lg font-black text-slate-950">{section.title}</h3>
             <p className="mt-1 text-xs font-semibold text-slate-500">
               Notes : {section.scale === 'autonomy' ? AUTONOMY_NOTE_OPTIONS.join(' / ') : STANDARD_NOTE_OPTIONS.join(' / ')}
             </p>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-200">
             {section.items.map((item) => (
               <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" key={item.id}>
                 <p className="text-sm font-semibold text-slate-700">{item.label}</p>
@@ -84,7 +84,7 @@ export function PracticeExamGridEditor({ form, onChangeScore, onCommentChange, o
                         className={`min-w-10 rounded-xl px-3 py-2 text-sm font-black transition ${
                           active
                             ? 'bg-navy-950 text-white shadow-md'
-                            : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50'
+                            : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50'
                         }`}
                         key={option}
                         onClick={() => onChangeScore(item.id, option)}
@@ -142,11 +142,11 @@ export function PracticeExamGridEditor({ form, onChangeScore, onCommentChange, o
         </div>
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5">
         <label className="block text-sm font-black text-slate-900">
           Commentaire final
           <textarea
-            className="mt-2 min-h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+            className="mt-2 min-h-28 w-full rounded-2xl border-2 border-slate-300 px-4 py-3 text-sm outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
             onChange={(event) => onCommentChange(event.target.value)}
             placeholder="Observations, axes de travail, consignes pour la prochaine séance..."
             value={form.comment}

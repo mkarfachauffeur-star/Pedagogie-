@@ -30,7 +30,7 @@ function formatDateFr(value) {
 
 function StatCard({ detail, label, value }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-2xl border-2 border-slate-300 bg-white p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-500">{label}</p>
       <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <p className="text-2xl font-black text-slate-950">{value}</p>

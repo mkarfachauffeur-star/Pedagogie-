@@ -16,7 +16,7 @@ export default function PlatformSubscriptionsPage() {
         title="Abonnements"
         subtitle="Gestion manuelle V1 — Stripe désactivé."
       />
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border-2 border-slate-300 bg-white">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b bg-slate-50 text-xs font-black uppercase text-slate-400">

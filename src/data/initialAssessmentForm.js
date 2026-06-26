@@ -10,7 +10,7 @@ export const ASSESSMENT_STATUS_STYLES = {
     summary: 'text-amber-900',
   },
   in_progress: {
-    container: 'border-blue-200 bg-blue-50',
+    container: 'border-blue-300 bg-blue-50',
     summary: 'text-blue-900',
   },
   completed: {

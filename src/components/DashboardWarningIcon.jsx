@@ -142,7 +142,7 @@ export default function DashboardWarningIcon({
     <div
       className={[
         'dashboard-voyant-icon grid shrink-0 place-items-center overflow-visible rounded-2xl bg-white p-[10px] shadow-sm ring-1',
-        severityRing[light?.severity] || 'ring-slate-200/80',
+        severityRing[light?.severity] || 'ring-slate-300/80',
         interactive ? 'transition duration-300 ease-out hover:shadow-md' : '',
         pulse ? 'motion-safe:animate-[voyant-pulse_2s_ease-in-out_infinite]' : '',
         className,

@@ -124,7 +124,7 @@ export default function InitialAssessmentStudentResults({ assessment, onAssessme
         </article>
       </section>
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-sm">
         <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Commentaire de l&apos;enseignant</p>
         {teacherComment ? (
           <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">{teacherComment}</p>
@@ -138,9 +138,9 @@ export default function InitialAssessmentStudentResults({ assessment, onAssessme
       </section>
 
       {moduleRows.length > 0 && (
-        <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-black text-slate-950">Résultats par module</h2>
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
+          <div className="mt-4 overflow-x-auto rounded-2xl border-2 border-slate-300">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-500">
                 <tr>
@@ -151,7 +151,7 @@ export default function InitialAssessmentStudentResults({ assessment, onAssessme
               </thead>
               <tbody>
                 {moduleRows.map((row) => (
-                  <tr className="border-t border-slate-100" key={row.moduleNumber}>
+                  <tr className="border-t-2 border-slate-200" key={row.moduleNumber}>
                     <td className="px-4 py-3 font-semibold">{row.moduleNumber}. {row.title}</td>
                     <td className="px-4 py-3">{row.score}</td>
                     <td className="px-4 py-3 text-slate-500">{row.max}</td>
@@ -163,7 +163,7 @@ export default function InitialAssessmentStudentResults({ assessment, onAssessme
         </section>
       )}
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
+      <section className="rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-5">
         <h2 className="text-lg font-black text-slate-950">Détail de votre évaluation</h2>
         <p className="mt-1 text-sm text-slate-500">Réponses enregistrées par votre enseignant lors de la première heure.</p>
         <div className="mt-4 space-y-4">
@@ -178,7 +178,7 @@ export default function InitialAssessmentStudentResults({ assessment, onAssessme
             if (!fieldRows.length && !ratingRows.length) return null
 
             return (
-              <article className="rounded-2xl border border-slate-200 bg-white p-4" key={module.id}>
+              <article className="rounded-2xl border-2 border-slate-300 bg-white p-4" key={module.id}>
                 <h3 className="font-extrabold text-slate-900">Module {module.moduleNumber} — {module.title}</h3>
                 <dl className="mt-3 space-y-2">
                   {[...fieldRows, ...ratingRows].map((row) => (

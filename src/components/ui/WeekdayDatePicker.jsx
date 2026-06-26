@@ -63,7 +63,7 @@ export default function WeekdayDatePicker({ label, value, onChange, disableSunda
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 text-left text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+          className="flex min-h-12 w-full items-center justify-between rounded-2xl border-2 border-slate-300 bg-white px-4 text-left text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
         >
           <span className={selected ? '' : 'text-slate-400'}>{displayValue}</span>
           <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -75,7 +75,7 @@ export default function WeekdayDatePicker({ label, value, onChange, disableSunda
         {open && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 z-20 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="absolute left-0 z-20 mt-2 w-72 rounded-2xl border-2 border-slate-300 bg-white p-4 shadow-2xl">
               <div className="flex items-center justify-between">
                 <button
                   type="button"

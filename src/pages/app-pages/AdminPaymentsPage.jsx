@@ -103,7 +103,7 @@ export default function AdminPaymentsPage() {
         </section>
       )}
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FilterField label="Du" type="date" value={dateFrom} onChange={setDateFrom} />
@@ -123,7 +123,7 @@ export default function AdminPaymentsPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         <h2 className="text-xl font-extrabold text-slate-950">Journal des opérations</h2>
         {loading ? (
           <p className="mt-4 text-sm text-slate-500">Chargement…</p>
@@ -133,7 +133,7 @@ export default function AdminPaymentsPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wide text-slate-400">
+                <tr className="border-b-2 border-slate-300 text-xs font-black uppercase tracking-wide text-slate-400">
                   <th className="py-3 pr-4">Date</th>
                   <th className="py-3 pr-4">Type</th>
                   <th className="py-3 pr-4">Libellé</th>
@@ -143,7 +143,7 @@ export default function AdminPaymentsPage() {
               </thead>
               <tbody>
                 {ledger.map((row) => (
-                  <tr className="border-b border-slate-100" key={row.id}>
+                  <tr className="border-b-2 border-slate-200" key={row.id}>
                     <td className="py-3 pr-4 font-medium text-slate-600">{formatDateFr(row.date)}</td>
                     <td className="py-3 pr-4">
                       <span
@@ -185,7 +185,7 @@ export default function AdminPaymentsPage() {
 function Kpi({ label, tone = 'cyan', value }) {
   const color = tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-cyan-600'
   return (
-    <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
     </article>
@@ -198,7 +198,7 @@ function FilterField({ label, type, value, onChange, as, options }) {
       <span className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</span>
       {as === 'select' ? (
         <select
-          className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-800"
+          className="mt-2 min-h-11 w-full rounded-xl border-2 border-slate-300 px-3 text-sm font-medium text-slate-800"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         >
@@ -208,7 +208,7 @@ function FilterField({ label, type, value, onChange, as, options }) {
         </select>
       ) : (
         <input
-          className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-800"
+          className="mt-2 min-h-11 w-full rounded-xl border-2 border-slate-300 px-3 text-sm font-medium text-slate-800"
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -224,7 +224,7 @@ function BreakdownCard({ title, items, tone }) {
   const barColor = tone === 'income' ? 'bg-emerald-500' : 'bg-rose-500'
 
   return (
-    <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
       {entries.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">Aucune donnée sur la période.</p>

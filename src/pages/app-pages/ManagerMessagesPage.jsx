@@ -115,7 +115,7 @@ export default function ManagerMessagesPage() {
 
             <div className="mt-4 grid gap-3">
               {conversations.length === 0 ? (
-                <p className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-5 text-center text-sm font-medium text-slate-500">
+                <p className="rounded-2xl border-2 border-slate-300 bg-slate-50/80 px-4 py-5 text-center text-sm font-medium text-slate-500">
                   Aucune conversation enregistrée.
                 </p>
               ) : (
@@ -156,7 +156,7 @@ export default function ManagerMessagesPage() {
                   ))}
                 </div>
 
-                <form className="mt-4 border-t border-slate-200 pt-4" onSubmit={handleSend}>
+                <form className="mt-4 border-t-2 border-slate-300 pt-4" onSubmit={handleSend}>
                   <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} />

@@ -28,7 +28,7 @@ function ModuleProgress({ modules, currentIndex }) {
                 ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
                 : done
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-slate-200 bg-white text-slate-500'
+                  : 'border-slate-300 bg-white text-slate-500'
             }`}
             key={step.id}
           >
@@ -85,7 +85,7 @@ function RatingFields({ ratings, answers, onChange, readOnly, teacherOnly }) {
         </ul>
       </div>
       {ratings.map((rating) => (
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3" key={rating.id}>
+        <div className="rounded-2xl border-2 border-slate-300 bg-white px-4 py-3" key={rating.id}>
           <p className="text-sm font-bold text-slate-800">{rating.label}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {FSB_OPTIONS.map((opt) => {
@@ -99,7 +99,7 @@ function RatingFields({ ratings, answers, onChange, readOnly, teacherOnly }) {
                   className={`rounded-xl border px-4 py-2 text-sm font-bold transition ${
                     selected
                       ? 'border-cyan-500 bg-cyan-50 text-cyan-900'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
+                      : 'border-slate-300 bg-white text-slate-600 hover:border-cyan-200'
                   } ${readOnly ? 'cursor-default opacity-90' : ''}`}
                 >
                   {opt.value}
@@ -115,7 +115,7 @@ function RatingFields({ ratings, answers, onChange, readOnly, teacherOnly }) {
 
 function ModulePlaceholder() {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
       <p className="text-sm font-semibold text-slate-600">{PLACEHOLDER_MESSAGE}</p>
     </div>
   )
@@ -158,7 +158,7 @@ function ResultsPanel({ answers, student, assessment, onExportPdf, exportingPdf,
           <p className="text-sm font-semibold text-indigo-700">Profil élève</p>
           <p className="mt-1 text-2xl font-black text-indigo-950">{recommendation.profileLabel}</p>
         </article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-2xl border-2 border-slate-300 bg-white p-4">
           <p className="text-sm font-semibold text-slate-500">Volume horaire estimé</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className="text-2xl font-black text-slate-950">{recommendation.label}</p>
@@ -169,7 +169,7 @@ function ResultsPanel({ answers, student, assessment, onExportPdf, exportingPdf,
         </article>
       </div>
       {moduleRows.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-2xl border-2 border-slate-300">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-500">
               <tr>
@@ -180,7 +180,7 @@ function ResultsPanel({ answers, student, assessment, onExportPdf, exportingPdf,
             </thead>
             <tbody>
               {moduleRows.map((row) => (
-                <tr className="border-t border-slate-100" key={row.moduleNumber}>
+                <tr className="border-t-2 border-slate-200" key={row.moduleNumber}>
                   <td className="px-4 py-3 font-semibold">{row.moduleNumber}. {row.title}</td>
                   <td className="px-4 py-3">{row.score}</td>
                   <td className="px-4 py-3 text-slate-500">{row.max}</td>
@@ -330,7 +330,7 @@ export default function InitialAssessmentWizard({
         modules={navigableModules}
       />
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-sm">
         <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
           {currentModule.readOnly ? 'Synthèse' : `Module ${currentModule.moduleNumber} / ${navigableModules.length}`}
         </p>

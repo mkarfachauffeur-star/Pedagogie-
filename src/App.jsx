@@ -5,7 +5,6 @@ import LoginPage from './pages/LoginPage'
 import MentionsLegalesPage from './pages/MentionsLegalesPage'
 import ConfidentialitePage from './pages/ConfidentialitePage'
 import ContactPage from './pages/ContactPage'
-import SignupPage from './pages/SignupPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
@@ -126,7 +125,7 @@ function App() {
       <AuthHashRedirect />
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup" element={<Navigate replace to="/#demonstration" />} />
         <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
         <Route path="/confidentialite" element={<ConfidentialitePage />} />
         <Route path="/contact" element={<ContactPage />} />

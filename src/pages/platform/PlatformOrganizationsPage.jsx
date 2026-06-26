@@ -34,7 +34,7 @@ export default function PlatformOrganizationsPage() {
       {loading ? (
         <p className="text-sm text-slate-500">Chargement…</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-2xl border-2 border-slate-300 bg-white">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-xs font-black uppercase text-slate-400">
@@ -47,7 +47,7 @@ export default function PlatformOrganizationsPage() {
             </thead>
             <tbody>
               {organizations.map((org) => (
-                <tr key={org.id} className="border-b border-slate-100">
+                <tr key={org.id} className="border-b-2 border-slate-200">
                   <td className="p-4 font-bold">{org.name}</td>
                   <td className="p-4 text-slate-600">{org.email || '—'}</td>
                   <td className="p-4">

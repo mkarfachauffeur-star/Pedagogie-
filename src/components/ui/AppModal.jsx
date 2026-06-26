@@ -89,10 +89,10 @@ export default function AppModal({
       />
 
       <div
-        className={`relative z-10 flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
+        className={`relative z-10 flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:px-5">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b-2 border-slate-200 bg-white px-4 py-4 sm:px-5">
           <div className="min-w-0 pr-2">
             {eyebrow && (
               <p className="text-xs font-bold uppercase tracking-wide text-cyan-700">{eyebrow}</p>
@@ -108,7 +108,7 @@ export default function AppModal({
             type="button"
             onClick={onClose}
             disabled={disableClose}
-            className="shrink-0 rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-xl border-2 border-slate-300 p-2 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Fermer"
           >
             <X className="h-5 w-5" />
@@ -120,7 +120,7 @@ export default function AppModal({
         </div>
 
         {footer && (
-          <footer className="relative z-10 shrink-0 border-t border-slate-100 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
+          <footer className="relative z-10 shrink-0 border-t-2 border-slate-200 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
             {footer}
           </footer>
         )}

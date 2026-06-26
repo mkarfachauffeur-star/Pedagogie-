@@ -14,7 +14,7 @@ import {
 } from '../services/pricing'
 
 export const inputClass =
-  'mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
+  'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 function Field({ label, required, children, error, hint, className = '' }) {
   return (
@@ -32,7 +32,7 @@ function Field({ label, required, children, error, hint, className = '' }) {
 
 function FormSection({ title, children }) {
   return (
-    <section className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-5">
+    <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white/80 p-5">
       <h3 className="mb-4 text-lg font-extrabold text-slate-950">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{children}</div>
     </section>
@@ -207,7 +207,7 @@ export default function StudentRegistrationFormFields({
                 className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
                   form.documents.includes(documentName)
                     ? 'border-cyan-300 bg-cyan-50 text-cyan-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-cyan-50'
+                    : 'border-slate-300 bg-white text-slate-600 hover:bg-cyan-50'
                 }`}
               >
                 {form.documents.includes(documentName) ? '✓ ' : '+ '}
@@ -218,7 +218,7 @@ export default function StudentRegistrationFormFields({
         </div>
       </FormSection>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
         <input
           type="checkbox"
           className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"

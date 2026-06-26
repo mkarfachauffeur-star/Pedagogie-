@@ -15,7 +15,7 @@ export default function ImageUploadField({
       <span className="text-sm font-bold text-slate-700">{label}</span>
       {hint && <span className="mt-0.5 block text-xs font-medium text-slate-500">{hint}</span>}
       {previewUrl && (
-        <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+        <div className="mt-2 overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-50">
           <img alt={label} className="mx-auto max-h-36 w-full object-contain p-2" src={previewUrl} />
         </div>
       )}

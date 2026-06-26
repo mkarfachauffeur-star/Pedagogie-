@@ -6,10 +6,10 @@ export default function PublicFooter({ isDark = true, compact = false }) {
     ? 'text-sm font-semibold text-slate-400 transition hover:text-white'
     : 'text-sm font-semibold text-slate-600 transition hover:text-slate-900'
   const copyClass = isDark ? 'text-xs text-slate-600' : 'text-xs text-slate-500'
-  const borderClass = isDark ? 'border-white/10' : 'border-slate-200'
+  const borderClass = isDark ? 'border-white/10' : 'border-slate-300'
   const shellClass = isDark
     ? 'border-t border-white/10 bg-[#020817] px-4 py-10 sm:px-6 lg:px-8'
-    : 'border-t border-slate-200 bg-slate-100 px-4 py-10 sm:px-6 lg:px-8'
+    : 'border-t-2 border-slate-300 bg-slate-100 px-4 py-10 sm:px-6 lg:px-8'
 
   return (
     <footer className={shellClass}>

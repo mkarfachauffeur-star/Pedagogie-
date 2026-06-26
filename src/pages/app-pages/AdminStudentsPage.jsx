@@ -108,7 +108,7 @@ export default function AdminStudentsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Gérant
         </p>
@@ -137,7 +137,7 @@ export default function AdminStudentsPage() {
         </p>
       )}
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         {!profileId ? (
           <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="🎓" />
         ) : loading ? (
@@ -168,7 +168,7 @@ export default function AdminStudentsPage() {
               const assessmentStatus = assessment?.status || 'pending'
               const assessmentStyles = getAssessmentStatusStyles(assessmentStatus)
               return (
-              <article key={student.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article key={student.id} className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                 <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                   <div className="min-w-0">
                     <h2 className="text-lg font-extrabold text-slate-900">

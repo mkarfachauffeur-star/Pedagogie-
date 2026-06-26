@@ -138,7 +138,7 @@ function StaffContractUploadForm({ staff, disabled, organizationId, profileId, o
       </label>
 
       {selectedMember && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
           <p>
             <span className="font-bold text-slate-800">Fonction :</span>{' '}
             {USER_ROLE_LABELS[selectedMember.role] || selectedMember.role}
@@ -251,7 +251,7 @@ function StaffContractsList({ contracts, disabled, onRefresh }) {
         return (
           <article
             key={contract.id}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -359,7 +359,7 @@ export default function AdminContractsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Contrats
@@ -382,7 +382,7 @@ export default function AdminContractsPage() {
         <EmptyState icon="⚠️" message={loadError} title="Erreur de chargement" />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
-          <article className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)]">
+          <article className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="mb-5 flex items-start gap-4">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-cyan-50 text-cyan-700">
                 <Upload className="h-6 w-6" />
@@ -403,7 +403,7 @@ export default function AdminContractsPage() {
             />
           </article>
 
-          <article className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)]">
+          <article className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <div className="grid h-12 w-12 place-items-center rounded-2xl bg-cyan-50 text-cyan-700">

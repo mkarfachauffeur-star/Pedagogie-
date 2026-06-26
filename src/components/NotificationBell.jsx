@@ -133,7 +133,7 @@ export default function NotificationBell({ role, unreadCount }) {
         onMouseDown={(event) => event.stopPropagation()}
         onClick={() => setOpen((current) => !current)}
         className={`relative inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white text-slate-500 shadow-sm transition hover:text-blue-600 ${
-          open ? 'border-blue-300 text-blue-600' : 'border-blue-100 hover:border-blue-200'
+          open ? 'border-blue-300 text-blue-600' : 'border-blue-100 hover:border-blue-300'
         }`}
       >
         <Bell className="h-4 w-4" />

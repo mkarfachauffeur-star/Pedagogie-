@@ -59,7 +59,7 @@ export default function StudentObservationsPage() {
       ) : (
         <section className="grid gap-4">
           {lessons.map((lesson) => (
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" key={lesson.id}>
+            <article className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-sm" key={lesson.id}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Leçon partagée</p>

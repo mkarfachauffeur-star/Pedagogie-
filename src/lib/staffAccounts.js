@@ -74,5 +74,5 @@ export const STATUS_BADGE = {
   amber: 'bg-amber-50 text-amber-800 ring-amber-200',
   rose: 'bg-rose-50 text-rose-700 ring-rose-200',
   cyan: 'bg-cyan-50 text-cyan-700 ring-cyan-200',
-  slate: 'bg-slate-100 text-slate-700 ring-slate-200',
+  slate: 'bg-slate-100 text-slate-700 ring-slate-300',
 }

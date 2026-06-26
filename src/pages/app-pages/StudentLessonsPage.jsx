@@ -1870,7 +1870,7 @@ function ChoiceButton({ checked, children, disabled, onClick, status }) {
         ? 'border-rose-300 bg-rose-50 text-rose-900 ring-2 ring-rose-100'
         : checked
           ? 'border-cyan-300 bg-cyan-50 text-cyan-950 ring-2 ring-cyan-100'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/50'
+          : 'border-slate-300 bg-white text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/50'
 
   return (
     <button
@@ -2236,7 +2236,7 @@ export default function StudentLessonsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white md:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
@@ -2269,7 +2269,7 @@ export default function StudentLessonsPage() {
                       ? 'cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-400 opacity-60'
                       : isActive
                         ? 'bg-navy-950 text-white shadow-md'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
+                        : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200'
                   }`}
                   disabled={!unlocked}
                   key={competency.id}
@@ -2399,7 +2399,7 @@ export default function StudentLessonsPage() {
 
       {openedModule && activeCompetencyUnlocked && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
-          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-2xl">
+          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white/95 shadow-2xl backdrop-blur-2xl">
             <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                 <div>
@@ -2431,7 +2431,7 @@ export default function StudentLessonsPage() {
                     QCU
                   </button>
                   <button
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                    className="rounded-2xl border-2 border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
                     onClick={closeModule}
                     type="button"
                   >
@@ -2460,7 +2460,7 @@ export default function StudentLessonsPage() {
                       Leçon lue en entier — le QCU est débloqué.
                     </p>
                   )}
-                  <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
+                  <section className="overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
                     <p className="text-sm font-semibold text-cyan-100">Contenu de leçon</p>
                     <h3 className="mt-2 text-2xl font-black">
                       {openedLesson?.title || openedModule.title}
@@ -2472,7 +2472,7 @@ export default function StudentLessonsPage() {
 
                   {openedLesson?.images?.length > 0 && (
                     <section className="overflow-hidden rounded-[1.75rem] border border-cyan-100 bg-white shadow-xl">
-                      <div className="border-b border-slate-100 bg-cyan-50/70 p-5">
+                      <div className="border-b-2 border-slate-200 bg-cyan-50/70 p-5">
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
                           {openedLesson.schemaSection?.kicker || 'Schémas pédagogiques'}
                         </p>
@@ -2485,7 +2485,7 @@ export default function StudentLessonsPage() {
                       <div className="grid gap-4 p-4">
                         {openedLesson.images.map((image) => (
                           <figure
-                            className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50"
+                            className="overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-slate-50"
                             key={image.src}
                           >
                             <button
@@ -2502,7 +2502,7 @@ export default function StudentLessonsPage() {
                               />
                             </button>
                             {image.caption && (
-                              <figcaption className="border-t border-slate-100 p-4">
+                              <figcaption className="border-t-2 border-slate-200 p-4">
                                 <p className="text-sm font-semibold leading-6 text-slate-500">{image.caption}</p>
                               </figcaption>
                             )}
@@ -2514,7 +2514,7 @@ export default function StudentLessonsPage() {
 
                   {openedLesson?.dashboardSection && (
                     <section className="rounded-[1.75rem] border border-amber-100 bg-white shadow-xl">
-                      <div className="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-cyan-50/80 p-5">
+                      <div className="border-b-2 border-slate-200 bg-gradient-to-r from-amber-50 to-cyan-50/80 p-5">
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
                           {openedLesson.dashboardSection.kicker}
                         </p>
@@ -2545,14 +2545,14 @@ export default function StudentLessonsPage() {
                             src={openedLesson.dashboardSection.image.src}
                           />
                         </div>
-                        <p className="border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-500">
+                        <p className="border-t-2 border-slate-200 px-4 py-3 text-sm font-semibold text-slate-500">
                           {openedLesson.dashboardSection.image.caption}
                         </p>
                       </button>
                       <div className="grid gap-3 p-4 sm:grid-cols-2">
                         {openedLesson.dashboardSection.lights.map((light) => (
                           <article
-                            className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition hover:border-cyan-200 hover:bg-white"
+                            className="flex gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-4 transition hover:border-cyan-200 hover:bg-white"
                             key={light.id}
                           >
                             <DashboardWarningIcon alt={light.title} type={light.id} />
@@ -2576,7 +2576,7 @@ export default function StudentLessonsPage() {
                           </article>
                         ))}
                       </div>
-                      <div className="border-t border-slate-100 bg-cyan-50/50 p-4">
+                      <div className="border-t-2 border-slate-200 bg-cyan-50/50 p-4">
                         <button
                           className="w-full rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300"
                           disabled={!openedCourseReadComplete}
@@ -2609,7 +2609,7 @@ export default function StudentLessonsPage() {
                     </div>
                   </section>
 
-                  <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+                  <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résumé de leçon</p>
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
                       {openedLesson ? 'Résumé pédagogique complet' : openedModule.title}
@@ -2621,7 +2621,7 @@ export default function StudentLessonsPage() {
                     )}
                     <div className="mt-4 grid gap-3">
                       {(openedLesson?.summary || [{ title: openedModule.title, description: openedModule.description }]).map((item, index) => (
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={item.title}>
+                        <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={item.title}>
                           <div className="flex gap-3">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sm font-black text-cyan-700">
                               {index + 1}
@@ -2650,7 +2650,7 @@ export default function StudentLessonsPage() {
                   )}
                 </div>
 
-                <aside className="h-fit rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
+                <aside className="h-fit rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-5">
                   <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Progression</p>
                   <div className="mt-4 rounded-2xl bg-white p-4">
                     <p className="text-3xl font-black text-slate-950">
@@ -2698,7 +2698,7 @@ export default function StudentLessonsPage() {
             ) : (
               <div className="p-4 sm:p-5 lg:p-6">
                 {openedLesson ? (
-                  <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
+                  <div className="rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-4 md:p-5">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
@@ -2822,7 +2822,7 @@ export default function StudentLessonsPage() {
                       ) : null}
                   </div>
                 ) : (
-                  <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-center">
+                  <div className="rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-6 text-center">
                     <p className="text-sm font-black uppercase tracking-wide text-cyan-700">QCU interactif</p>
                     <h3 className="mt-2 text-2xl font-black text-slate-950">QCU en préparation</h3>
                     <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
@@ -2882,7 +2882,7 @@ export default function StudentLessonsPage() {
           {openedGalleryImage && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-navy-950/80 p-4 backdrop-blur-md">
               <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl">
-                <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3 border-b-2 border-slate-300 p-4">
                   <div>
                     <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
                       Galerie photo
@@ -2890,7 +2890,7 @@ export default function StudentLessonsPage() {
                     <h3 className="text-lg font-black text-slate-950">{openedGalleryImage.title}</h3>
                   </div>
                   <button
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                    className="rounded-2xl border-2 border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
                     onClick={() => setOpenedGalleryImage(null)}
                     type="button"
                   >

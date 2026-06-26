@@ -98,7 +98,7 @@ export default function SecretaryExamsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Examens
@@ -124,14 +124,14 @@ export default function SecretaryExamsPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-2xl font-extrabold text-slate-950">Sessions à venir</h2>
           <div className="mt-5 grid gap-3">
             {exams.length === 0 ? (
               <EmptyState title="Aucun résultat disponible" message="Aucun résultat disponible pour le moment." icon="🎫" />
             ) : (
               exams.map((exam) => (
-                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-slate-50'}`} key={exam.id} onClick={() => openEdit(exam)} type="button">
+                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-300 bg-slate-50'}`} key={exam.id} onClick={() => openEdit(exam)} type="button">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <h3 className="font-extrabold text-slate-950">{exam.student}</h3>
@@ -146,7 +146,7 @@ export default function SecretaryExamsPage() {
         </div>
 
         {selectedExam && (
-          <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+          <aside className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche examen</p>
             <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{selectedExam.student}</h2>
             <p className="mt-2 text-sm text-slate-500">{selectedExam.type} · {selectedExam.center}</p>
@@ -205,7 +205,7 @@ export default function SecretaryExamsPage() {
 function Kpi({ label, tone = 'cyan', value }) {
   const color = tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-cyan-600'
   return (
-    <article className="rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
     </article>
@@ -214,7 +214,7 @@ function Kpi({ label, tone = 'cyan', value }) {
 
 function Info({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+    <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-3">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="font-extrabold text-slate-900">{value}</p>
     </div>
@@ -225,7 +225,7 @@ function Field({ label, onChange, type = 'text', value }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} type={type} value={value} />
+      <input className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} type={type} value={value} />
     </label>
   )
 }
@@ -234,7 +234,7 @@ function Select({ label, onChange, options, value }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <select className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value}>
+      <select className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => <option key={option}>{option}</option>)}
       </select>
     </label>

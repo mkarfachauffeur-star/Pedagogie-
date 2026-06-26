@@ -5,7 +5,7 @@ export default function RemcLockedBanner({ competencyCode }) {
   const previousLabel = previous ? REMC_COMPETENCIES[previous]?.shortTitle : null
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50 p-8 text-center shadow-[var(--shadow-card)]">
+    <div className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-slate-50 p-8 text-center shadow-[var(--shadow-card)]">
       <span className="text-4xl" aria-hidden="true">🔒</span>
       <h3 className="mt-4 text-2xl font-black text-slate-950">Compétence verrouillée</h3>
       <p className="mx-auto mt-3 max-w-lg text-sm font-semibold leading-7 text-slate-600">

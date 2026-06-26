@@ -158,7 +158,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                   onClick={closeSidebar}
                   className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
                     active
-                      ? 'border border-blue-200 bg-blue-50 text-blue-700 shadow-sm shadow-blue-500/10'
+                      ? 'border-2 border-blue-300 bg-blue-50 text-blue-700 shadow-sm shadow-blue-500/10'
                       : 'border border-transparent text-slate-600 hover:border-blue-100 hover:bg-blue-50/80 hover:text-slate-900'
                   }`}
                 >
@@ -166,7 +166,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                     <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-400" />
                   )}
                   <span
-                    className={`pd-nav-icon relative ${active ? 'border-blue-200 bg-blue-50 text-blue-600' : 'group-hover:border-blue-200 group-hover:bg-white'}`}
+                    className={`pd-nav-icon relative ${active ? 'border-blue-300 bg-blue-50 text-blue-600' : 'group-hover:border-blue-300 group-hover:bg-white'}`}
                   >
                     {item.icon}
                     {showMessagesBadge && sidebarCollapsed && (
@@ -214,7 +214,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-white text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600 lg:hidden"
               aria-label="Ouvrir le menu"
             >
               <Menu className="h-4 w-4" />

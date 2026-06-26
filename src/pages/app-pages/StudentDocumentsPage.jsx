@@ -166,7 +166,7 @@ export default function StudentDocumentsPage() {
 
         {showAddForm && (
           <form
-            className="mt-5 grid scroll-mt-24 gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-5"
+            className="mt-5 grid scroll-mt-24 gap-4 rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-5"
             onSubmit={handleSubmit}
             ref={formRef}
           >
@@ -180,7 +180,7 @@ export default function StudentDocumentsPage() {
             <label className="grid gap-2 text-sm font-bold text-slate-700">
               Type de document
               <select
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                className="rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                 onChange={(event) => {
                   setDocumentType(event.target.value)
                   if (event.target.value !== 'Autres documents') setDocumentName('')
@@ -200,7 +200,7 @@ export default function StudentDocumentsPage() {
               <label className="grid gap-2 text-sm font-bold text-slate-700">
                 Nom du document
                 <input
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                  className="rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                   onChange={(event) => setDocumentName(event.target.value)}
                   placeholder="Ex : Attestation de stage"
                   required
@@ -242,7 +242,7 @@ export default function StudentDocumentsPage() {
                 {submitting ? 'Envoi en cours…' : 'Insérer le document'}
               </button>
               <button
-                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-xl border-2 border-slate-300 bg-white px-5 py-3 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
                 disabled={submitting}
                 onClick={closeForm}
                 type="button"
@@ -263,7 +263,7 @@ export default function StudentDocumentsPage() {
         ) : !showAddForm ? (
           <div className="mt-4 grid gap-3">
             {uploadedDocuments.map((document) => (
-              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={document.id}>
+              <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={document.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="font-extrabold text-slate-950">{document.type || document.reference}</h3>

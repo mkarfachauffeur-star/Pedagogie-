@@ -20,7 +20,7 @@ function SummaryCard({ hint, label, tone = 'default', value }) {
         ? 'border-amber-200 bg-amber-50 text-amber-800'
         : tone === 'emerald'
           ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-          : 'border-slate-200 bg-white text-slate-950'
+          : 'border-slate-300 bg-white text-slate-950'
 
   return (
     <article className={`rounded-2xl border p-4 ${toneClass}`}>
@@ -112,18 +112,18 @@ export default function StudentContractPage() {
           <section className="pd-section-card pd-section-card-body">
             <h2 className="text-xl font-extrabold text-slate-950">Votre formule</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-500">Formule choisie</p>
                 <p className="mt-1 text-lg font-extrabold text-slate-950">{formuleLabel || '—'}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-500">Permis visé</p>
                 <p className="mt-1 text-lg font-extrabold text-slate-950">
                   {overview.student?.license_category || '—'}
                 </p>
               </div>
               {Number(overview.student?.extra_hours) > 0 && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Heures supplémentaires</p>
                   <p className="mt-1 text-lg font-extrabold text-slate-950">
                     {overview.student.extra_hours} h
@@ -131,7 +131,7 @@ export default function StudentContractPage() {
                 </div>
               )}
               {overview.student?.registration_date && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Date d'inscription</p>
                   <p className="mt-1 text-lg font-extrabold text-slate-950">
                     {formatDateFr(overview.student.registration_date)}
@@ -139,13 +139,13 @@ export default function StudentContractPage() {
                 </div>
               )}
               {overview.student?.file_number && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">N° de dossier</p>
                   <p className="mt-1 text-lg font-extrabold text-slate-950">{overview.student.file_number}</p>
                 </div>
               )}
               {contractStatus && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Statut du contrat</p>
                   <p className="mt-1 text-lg font-extrabold text-slate-950">{contractStatus}</p>
                   {overview.contract?.signed_at ? (
@@ -197,7 +197,7 @@ export default function StudentContractPage() {
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wide text-slate-400">
+                    <tr className="border-b-2 border-slate-300 text-xs font-black uppercase tracking-wide text-slate-400">
                       <th className="px-3 py-3">Date</th>
                       <th className="px-3 py-3">Montant</th>
                       <th className="px-3 py-3">Nature</th>
@@ -206,7 +206,7 @@ export default function StudentContractPage() {
                   </thead>
                   <tbody>
                     {overview.payments.map((payment) => (
-                      <tr className="border-b border-slate-100" key={payment.id}>
+                      <tr className="border-b-2 border-slate-200" key={payment.id}>
                         <td className="px-3 py-3 font-semibold text-slate-700">
                           {formatDateFr(payment.paid_at)}
                         </td>

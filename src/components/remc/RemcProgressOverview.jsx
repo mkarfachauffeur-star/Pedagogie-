@@ -31,7 +31,7 @@ export default function RemcProgressOverview({
   const showCompetencyBars = Boolean(itemProgress)
 
   return (
-    <section className={compact ? 'space-y-3' : 'rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]'}>
+    <section className={compact ? 'space-y-3' : 'rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]'}>
       {!compact && (
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -61,7 +61,7 @@ export default function RemcProgressOverview({
               key={code}
               className={`rounded-2xl border px-4 py-3 ${
                 isUnlocked
-                  ? 'border-slate-200 bg-slate-50'
+                  ? 'border-slate-300 bg-slate-50'
                   : 'border-slate-100 bg-slate-50/60 opacity-80'
               }`}
             >

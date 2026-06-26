@@ -16,7 +16,7 @@ export default function PlatformAuditPage() {
         title="Journaux d'audit"
         subtitle="Conservation 7 ans — création, modification, suppression, connexion, exports."
       />
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border-2 border-slate-300 bg-white">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>
             <tr className="border-b bg-slate-50 text-xs font-black uppercase text-slate-400">

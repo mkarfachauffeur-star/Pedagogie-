@@ -107,7 +107,7 @@ export default function PracticeExamTeacherPanel({
     : `${formatPersonName(student)} · grille officielle sur 31 points`
 
   return (
-    <section className={embedded ? 'rounded-2xl border border-slate-200 bg-white p-4 sm:p-5' : 'card-panel-lg'}>
+    <section className={embedded ? 'rounded-2xl border-2 border-slate-300 bg-white p-4 sm:p-5' : 'card-panel-lg'}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className={`font-extrabold text-slate-900 ${embedded ? 'text-lg' : 'text-2xl'}`}>{title}</h2>
@@ -129,7 +129,7 @@ export default function PracticeExamTeacherPanel({
           <aside className="space-y-3">
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Historique</p>
             {exams.length === 0 && (
-              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-semibold text-slate-500">
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-semibold text-slate-500">
                 Aucun examen blanc enregistré pour cet élève.
               </p>
             )}
@@ -138,7 +138,7 @@ export default function PracticeExamTeacherPanel({
                 className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                   selectedExam?.id === exam.id
                     ? 'border-cyan-300 bg-cyan-50 ring-2 ring-cyan-100'
-                    : 'border-slate-200 bg-white hover:border-cyan-200'
+                    : 'border-slate-300 bg-white hover:border-cyan-200'
                 }`}
                 key={exam.id}
                 onClick={() => {
@@ -168,7 +168,7 @@ export default function PracticeExamTeacherPanel({
                 <label className="block text-sm font-bold text-slate-700">
                   Date de l&apos;examen
                   <input
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    className="mt-2 w-full rounded-xl border-2 border-slate-300 px-3 py-2 text-sm"
                     onChange={(event) => setForm((current) => ({ ...current, examDate: event.target.value }))}
                     type="date"
                     value={form.examDate}
@@ -208,7 +208,7 @@ export default function PracticeExamTeacherPanel({
                     {saving ? 'Enregistrement…' : 'Enregistrer l\'examen blanc'}
                   </button>
                   <button
-                    className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600"
+                    className="rounded-xl border-2 border-slate-300 px-5 py-3 text-sm font-bold text-slate-600"
                     onClick={() => setFormOpen(false)}
                     type="button"
                   >
@@ -219,7 +219,7 @@ export default function PracticeExamTeacherPanel({
             ) : selectedExam ? (
               <PracticeExamDetail exam={selectedExam} exams={exams} />
             ) : (
-              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500">
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500">
                 Lancez un nouvel examen blanc ou sélectionnez un examen dans l&apos;historique.
               </p>
             )}

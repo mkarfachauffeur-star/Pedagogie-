@@ -437,7 +437,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <div className="rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl">
+        <div className="rounded-[2rem] border-2 border-slate-300 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <h2 className="text-2xl font-extrabold text-slate-950">Flotte auto-école</h2>
@@ -493,7 +493,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
                 className={`rounded-[1.5rem] border p-4 text-left transition hover:-translate-y-1 hover:shadow-xl ${
                   selectedVehicleId === vehicle.id
                     ? 'border-cyan-300 bg-cyan-50 shadow-lg ring-4 ring-cyan-100'
-                    : 'border-slate-200 bg-white'
+                    : 'border-slate-300 bg-white'
                 }`}
                 key={vehicle.id}
                 onClick={() => setSelectedVehicleId(vehicle.id)}
@@ -527,7 +527,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
           )}
         </div>
 
-        <aside className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <aside className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche véhicule</p>
           {!selectedVehicle ? (
             <EmptyState
@@ -755,7 +755,7 @@ function Hero({ canAddVehicle, onAddVehicle, role }) {
   const roleLabel = role === 'manager' ? 'Gérant' : role === 'teacher' ? 'Enseignant' : 'Secrétariat'
 
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+    <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
         <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           {roleLabel}
@@ -817,7 +817,7 @@ function HistoryPanel({
   } = useClientPagination(maintenanceLogs, { pageSize: 5 })
 
   return (
-    <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+    <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-2xl font-extrabold text-slate-950">Historique du véhicule sélectionné</h2>
         <PanelTabs
@@ -836,7 +836,7 @@ function HistoryPanel({
             {fuelPageItems.map((log) => {
               const logIsRecharge = isRechargeEntry(selectedVehicle, log.fuelType)
               return (
-              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={log.id}>
+              <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={log.id}>
                 <div className="flex justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-extrabold text-slate-950">{formatDate(log.date)} · {log.teacher}</p>
@@ -847,7 +847,7 @@ function HistoryPanel({
                     {canEdit && (
                       <div className="flex gap-2">
                         <button
-                          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
+                          className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
                           onClick={() => onEditFuel(log)}
                           type="button"
                         >
@@ -889,7 +889,7 @@ function HistoryPanel({
         <div className="mt-5">
           <div className="space-y-3">
             {maintenancePageItems.map((log) => (
-              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={log.id}>
+              <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={log.id}>
                 <div className="flex justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-extrabold text-slate-950">{log.type}</p>
@@ -900,7 +900,7 @@ function HistoryPanel({
                     {canEdit && (
                       <div className="flex gap-2">
                         <button
-                          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
+                          className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100"
                           onClick={() => onEditMaintenance(log)}
                           type="button"
                         >
@@ -942,7 +942,7 @@ function HistoryPanel({
 
 function ManagerStats({ fuelLogs, stats, vehicles }) {
   return (
-    <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+    <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-950">Statistiques Gérant</h2>
@@ -970,7 +970,7 @@ function ManagerStats({ fuelLogs, stats, vehicles }) {
 function BarChart({ items, suffix, title }) {
   const max = Math.max(...items.map((item) => item.value), 1)
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+    <div className="rounded-[1.5rem] border-2 border-slate-300 bg-slate-50 p-4">
       <h3 className="font-black text-slate-950">{title}</h3>
       <div className="mt-4 space-y-3">
         {items.map((item) => (
@@ -992,7 +992,7 @@ function BarChart({ items, suffix, title }) {
 function Kpi({ label, tone = 'cyan', value }) {
   const color = tone === 'emerald' ? 'text-emerald-600' : tone === 'amber' ? 'text-amber-600' : 'text-cyan-600'
   return (
-    <article className="rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
     </article>
@@ -1001,7 +1001,7 @@ function Kpi({ label, tone = 'cyan', value }) {
 
 function MiniInfo({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
+    <div className="rounded-2xl border-2 border-slate-300 bg-white px-3 py-2">
       <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="text-sm font-extrabold text-slate-900">{value}</p>
     </div>
@@ -1088,7 +1088,7 @@ function FuelLevelBar({ compact = false, value = 0 }) {
 
 function Info({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+    <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-3">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-1 font-extrabold text-slate-900">{value}</p>
     </div>
@@ -1104,7 +1104,7 @@ function Field({ className = '', label, onChange, type = 'text', value }) {
   return (
     <label className={`block ${className}`}>
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} type={type} value={value} />
+      <input className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} type={type} value={value} />
     </label>
   )
 }
@@ -1127,7 +1127,7 @@ function Select({ label, onChange, options, value }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <select className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value}>
+      <select className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" onChange={(event) => onChange(event.target.value)} value={value}>
         {normalizedOptions.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
@@ -1142,7 +1142,7 @@ function ReadOnlyField({ label, value }) {
       <span className="text-sm font-bold text-slate-700">{label}</span>
       <input
         readOnly
-        className="mt-2 min-h-12 w-full cursor-default rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-600 outline-none"
+        className="mt-2 min-h-12 w-full cursor-default rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 outline-none"
         type="text"
         value={value}
       />
@@ -1151,7 +1151,7 @@ function ReadOnlyField({ label, value }) {
 }
 
 function InlineNotice({ label }) {
-  return <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">{label}</p>
+  return <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-bold text-slate-500">{label}</p>
 }
 
 function formatDate(value) {

@@ -4,7 +4,7 @@ export default function BetaDevelopmentBanner({ isDark = true }) {
       className={
         isDark
           ? 'border-b border-white/10 bg-[#07111f]/95 backdrop-blur-sm'
-          : 'border-b border-slate-200 bg-slate-50'
+          : 'border-b-2 border-slate-300 bg-slate-50'
       }
       role="status"
     >

@@ -60,7 +60,7 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
         </AppModalFooter>
       )}
     >
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <section className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
         <h3 className="text-sm font-extrabold text-slate-900">Compte associé</h3>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
           <div>
@@ -113,15 +113,15 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
             <dt className="font-bold text-slate-500">Autorisation d&apos;enseigner</dt>
             <dd className="mt-2 grid gap-3 sm:grid-cols-2">
               {authorizationUrls.rectoUrl && (
-                <a className="block overflow-hidden rounded-2xl border border-slate-200 bg-white" href={authorizationUrls.rectoUrl} rel="noreferrer" target="_blank">
+                <a className="block overflow-hidden rounded-2xl border-2 border-slate-300 bg-white" href={authorizationUrls.rectoUrl} rel="noreferrer" target="_blank">
                   <img alt="Recto autorisation d'enseigner" className="max-h-44 w-full object-contain p-2" src={authorizationUrls.rectoUrl} />
-                  <span className="block border-t border-slate-100 px-3 py-2 text-xs font-bold text-cyan-700">Recto — ouvrir</span>
+                  <span className="block border-t-2 border-slate-200 px-3 py-2 text-xs font-bold text-cyan-700">Recto — ouvrir</span>
                 </a>
               )}
               {authorizationUrls.versoUrl && (
-                <a className="block overflow-hidden rounded-2xl border border-slate-200 bg-white" href={authorizationUrls.versoUrl} rel="noreferrer" target="_blank">
+                <a className="block overflow-hidden rounded-2xl border-2 border-slate-300 bg-white" href={authorizationUrls.versoUrl} rel="noreferrer" target="_blank">
                   <img alt="Verso autorisation d'enseigner" className="max-h-44 w-full object-contain p-2" src={authorizationUrls.versoUrl} />
-                  <span className="block border-t border-slate-100 px-3 py-2 text-xs font-bold text-cyan-700">Verso — ouvrir</span>
+                  <span className="block border-t-2 border-slate-200 px-3 py-2 text-xs font-bold text-cyan-700">Verso — ouvrir</span>
                 </a>
               )}
             </dd>

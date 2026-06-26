@@ -27,7 +27,7 @@ import ImageUploadField from '../ui/ImageUploadField'
 
 const FORM_ID = 'teacher-form'
 const inputClass =
-  'mt-2 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
+  'mt-2 min-h-11 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 function teacherToForm(teacher) {
   const { firstName, lastName } = splitFullName(teacher?.full_name || '')
@@ -354,7 +354,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
         )}
 
         {!isSimulator && (
-        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+        <fieldset className="rounded-2xl border-2 border-slate-300 bg-slate-50/50 p-4">
           <legend className="px-1 text-sm font-bold text-slate-700">Adresse</legend>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <label className="block">
@@ -427,7 +427,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
         </div>
 
         {!isSimulator && (
-        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+        <fieldset className="rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-4">
           <legend className="px-1 text-sm font-bold text-slate-700">Autorisation d&apos;enseigner — dossier</legend>
           <p className="mt-1 text-xs font-medium text-slate-500">
             Ajoutez le recto et le verso de la carte pour archivage dans le dossier moniteur.
@@ -466,7 +466,7 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
                   onClick={() => toggleCategory(category)}
                   disabled={readOnly || !canWrite || busy}
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
-                    selected ? 'bg-cyan-600 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'
+                    selected ? 'bg-cyan-600 text-white' : 'border-2 border-slate-300 bg-slate-50 text-slate-700'
                   }`}
                 >
                   {category}

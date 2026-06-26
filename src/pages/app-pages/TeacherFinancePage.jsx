@@ -197,7 +197,7 @@ export default function TeacherFinancePage() {
           emptyMessage="Enregistrez un plein de carburant ou autre frais."
           items={expenses}
           renderItem={(item) => (
-            <article className="rounded-2xl border border-slate-200 bg-white p-4" key={item.id}>
+            <article className="rounded-2xl border-2 border-slate-300 bg-white p-4" key={item.id}>
               <div className="flex justify-between gap-3">
                 <div>
                   <p className="font-extrabold text-slate-950">{item.category}</p>
@@ -218,7 +218,7 @@ export default function TeacherFinancePage() {
           emptyMessage="Enregistrez un paiement reçu d'un élève."
           items={myPayments}
           renderItem={(item) => (
-            <article className="rounded-2xl border border-slate-200 bg-white p-4" key={item.id}>
+            <article className="rounded-2xl border-2 border-slate-300 bg-white p-4" key={item.id}>
               <div className="flex justify-between gap-3">
                 <div>
                   <p className="font-extrabold text-slate-950">{studentLabel(item.students)}</p>
@@ -254,7 +254,7 @@ export default function TeacherFinancePage() {
           <Field label="Date *" type="date" value={expenseForm.date} onChange={(v) => setExpenseForm((c) => ({ ...c, date: v }))} />
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Véhicule</span>
-            <select className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm" value={expenseForm.vehicleId} onChange={(e) => setExpenseForm((c) => ({ ...c, vehicleId: e.target.value }))}>
+            <select className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 px-4 text-sm" value={expenseForm.vehicleId} onChange={(e) => setExpenseForm((c) => ({ ...c, vehicleId: e.target.value }))}>
               <option value="">—</option>
               {vehicles.map((v) => <option key={v.id} value={v.id}>{vehicleLabel(v)}</option>)}
             </select>
@@ -282,7 +282,7 @@ export default function TeacherFinancePage() {
           <label className="block sm:col-span-2">
             <span className="text-sm font-bold text-slate-700">Élève *</span>
             <select
-              className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm"
+              className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 px-4 text-sm"
               value={paymentForm.studentId}
               onChange={(e) => setPaymentForm((c) => ({ ...c, studentId: e.target.value }))}
             >
@@ -315,7 +315,7 @@ function TabButton({ active, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl px-4 py-2 text-sm font-black ${active ? 'bg-navy-950 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}
+      className={`rounded-2xl px-4 py-2 text-sm font-black ${active ? 'bg-navy-950 text-white' : 'border-2 border-slate-300 bg-white text-slate-600'}`}
     >
       {children}
     </button>
@@ -325,7 +325,7 @@ function TabButton({ active, children, onClick }) {
 function Kpi({ label, tone = 'cyan', value }) {
   const color = tone === 'rose' ? 'text-rose-600' : 'text-cyan-600'
   return (
-    <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className={`mt-2 text-2xl font-black ${color}`}>{value}</p>
     </article>
@@ -348,7 +348,7 @@ function Field({ label, type, value, onChange }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm" type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 px-4 text-sm" type={type} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   )
 }
@@ -357,7 +357,7 @@ function Textarea({ label, value, onChange }) {
   return (
     <label className="block sm:col-span-2">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <textarea className="mt-2 min-h-20 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)} />
+      <textarea className="mt-2 min-h-20 w-full rounded-2xl border-2 border-slate-300 px-4 py-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   )
 }
@@ -366,7 +366,7 @@ function Select({ label, options, value, onChange }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <select className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 px-4 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((opt) => <option key={opt}>{opt}</option>)}
       </select>
     </label>

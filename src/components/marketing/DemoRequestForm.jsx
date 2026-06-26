@@ -13,10 +13,10 @@ const ACTIVE_STUDENT_OPTIONS = [
 export default function DemoRequestForm({ id = 'demonstration', isDark = true }) {
   const inputClass = isDark
     ? 'mt-2 min-h-12 w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 text-sm font-medium text-white outline-none placeholder:text-slate-500 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-500/20'
-    : 'mt-2 min-h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+    : 'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
   const selectClass = isDark
     ? 'min-h-12 w-full appearance-none rounded-2xl border border-white/15 bg-white/[0.06] py-3 pl-4 pr-12 text-sm font-medium text-white outline-none focus:border-blue-400/50 focus:ring-2 focus:ring-blue-500/20'
-    : 'min-h-12 w-full appearance-none rounded-2xl border border-slate-300 bg-white py-3 pl-4 pr-12 text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+    : 'min-h-12 w-full appearance-none rounded-2xl border-2 border-slate-300 bg-white py-3 pl-4 pr-12 text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
 
   const [form, setForm] = useState({
     schoolName: '',
@@ -71,7 +71,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
         className={
           isDark
             ? 'rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-blue-950/20 sm:p-8'
-            : 'rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-xl sm:p-8'
+            : 'rounded-[1.75rem] border-2 border-slate-300 bg-white p-6 shadow-xl sm:p-8'
         }
       >
         <div className="mx-auto max-w-2xl text-center">

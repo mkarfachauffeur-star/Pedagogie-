@@ -16,7 +16,7 @@ export default function PlatformLayout() {
 
   return (
     <div className="flex min-h-screen bg-slate-100">
-      <aside className="w-64 shrink-0 border-r border-slate-200 bg-navy-950 p-5 text-white">
+      <aside className="w-64 shrink-0 border-r-2 border-slate-300 bg-navy-950 p-5 text-white">
         <BrandLogo />
         <p className="mt-2 text-xs font-bold uppercase tracking-wide text-cyan-300">Super Admin</p>
         <nav className="mt-8 space-y-1">

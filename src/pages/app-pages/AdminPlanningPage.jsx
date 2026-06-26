@@ -6,10 +6,10 @@ import { getUserFacingError } from '../../lib/userFacingError'
 import { createAppointment, listAppointments, loadPlanningOptions } from '../../services/appointments'
 
 const STATUS_STYLES = {
-  Planifié: 'border-blue-200 bg-blue-50 text-blue-800',
+  Planifié: 'border-blue-300 bg-blue-50 text-blue-800',
   Confirmé: 'border-emerald-200 bg-emerald-50 text-emerald-800',
   Annulé: 'border-rose-200 bg-rose-50 text-rose-800',
-  Effectué: 'border-slate-200 bg-slate-100 text-slate-700',
+  Effectué: 'border-slate-300 bg-slate-100 text-slate-700',
 }
 
 const emptyForm = () => ({
@@ -140,7 +140,7 @@ export default function AdminPlanningPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Planning global
         </p>
@@ -175,13 +175,13 @@ export default function AdminPlanningPage() {
         <Kpi label="Enseignants actifs" value={options.teachers.length} tone="cyan" />
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-2 border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 onClick={() => {
                   const next = new Date(weekAnchor)
                   next.setDate(next.getDate() - 7)
@@ -192,14 +192,14 @@ export default function AdminPlanningPage() {
               </button>
               <button
                 type="button"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-2 border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 onClick={() => setWeekAnchor(new Date())}
               >
                 Cette semaine
               </button>
               <button
                 type="button"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-2 border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 onClick={() => {
                   const next = new Date(weekAnchor)
                   next.setDate(next.getDate() + 7)
@@ -243,7 +243,7 @@ export default function AdminPlanningPage() {
               {appointments.map((item) => (
                 <article
                   key={item.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{formatSlotTime(item.starts_at)}</p>
@@ -357,7 +357,7 @@ function Kpi({ label, value, tone = 'slate' }) {
     cyan: 'text-cyan-700',
   }
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-2 text-3xl font-black ${tones[tone] || tones.slate}`}>{value}</p>
     </div>

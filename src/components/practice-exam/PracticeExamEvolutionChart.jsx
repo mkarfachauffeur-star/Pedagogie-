@@ -12,14 +12,14 @@ export default function PracticeExamEvolutionChart({ exams = [] }) {
   if (history.length < 2) return null
 
   return (
-    <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h4 className="text-lg font-black text-slate-950">Évolution des examens blancs</h4>
           <p className="mt-1 text-sm text-slate-500">{history.length} examens · objectif {25}/{PRACTICE_EXAM_MAX_SCORE}</p>
         </div>
       </div>
-      <div className="mt-6 flex h-48 items-end gap-3 border-b border-slate-200 pb-2">
+      <div className="mt-6 flex h-48 items-end gap-3 border-b-2 border-slate-300 pb-2">
         {history.map((point) => {
           const height = Math.max(8, (point.score / PRACTICE_EXAM_MAX_SCORE) * 100)
           const tone =

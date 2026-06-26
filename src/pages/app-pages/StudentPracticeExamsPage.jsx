@@ -123,7 +123,7 @@ export default function StudentPracticeExamsPage() {
                     className={`rounded-2xl border px-4 py-3 text-left transition ${
                       selectedExam?.id === exam.id
                         ? 'border-cyan-300 bg-cyan-50 ring-2 ring-cyan-100'
-                        : 'border-slate-200 bg-slate-50 hover:border-cyan-200'
+                        : 'border-slate-300 bg-slate-50 hover:border-cyan-200'
                     }`}
                     key={exam.id}
                     onClick={() => setSelectedExamId(exam.id)}

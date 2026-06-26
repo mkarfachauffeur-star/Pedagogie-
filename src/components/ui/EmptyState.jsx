@@ -6,7 +6,7 @@ export default function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50/60 px-6 py-12 text-center ${className}`}
+      className={`flex flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center ${className}`}
       role="status"
       aria-live="polite"
     >

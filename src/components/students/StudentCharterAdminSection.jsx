@@ -70,7 +70,7 @@ export default function StudentCharterAdminSection({ canWrite }) {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <h2 className="text-lg font-extrabold text-slate-950">Charte d&apos;engagement élève</h2>
       <p className="mt-1 text-sm text-slate-500">
         Obligatoire à la première connexion. Publier une nouvelle version demande une nouvelle acceptation.

@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Utilisateurs
         </p>
@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
         </p>
       )}
 
-      <section className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[var(--shadow-soft)]">
+      <section className="overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)]">
         {!profileId ? (
           <div className="p-5"><EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="🔐" /></div>
         ) : loading ? (
@@ -156,13 +156,13 @@ export default function AdminUsersPage() {
           <div className="p-5"><EmptyState title="Aucun utilisateur" message="Créez le premier compte staff de votre auto-école." icon="👤" /></div>
         ) : (
           <>
-          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-b-2 border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
             <ListSearchField onChange={setSearchQuery} value={searchQuery} />
             <p className="text-xs font-semibold text-slate-500">{totalItems} utilisateur(s)</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <thead className="border-b-2 border-slate-300 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Nom complet</th>
                   <th className="px-4 py-3">E-mail</th>
@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
                   const isSelf = user.id === profileId
                   const isRegistered = status.label === 'Actif'
                   return (
-                    <tr key={user.id} className="border-b border-slate-100 last:border-0">
+                    <tr key={user.id} className="border-b-2 border-slate-200 last:border-0">
                       <td className="px-4 py-3 font-extrabold text-slate-900">
                         {user.full_name || '—'}
                         {isSelf && (
@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
 
 function ActionBtn({ label, onClick, disabled, tone = 'slate' }) {
   const tones = {
-    slate: 'border-slate-200 text-slate-700 hover:bg-slate-50',
+    slate: 'border-slate-300 text-slate-700 hover:bg-slate-50',
     amber: 'border-amber-200 text-amber-800 hover:bg-amber-50',
     emerald: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50',
     rose: 'border-rose-200 text-rose-700 hover:bg-rose-50',

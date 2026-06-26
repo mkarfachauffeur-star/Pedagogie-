@@ -160,7 +160,7 @@ export default function StudentCompetencyReportsPage() {
             Aucune leçon enregistrée pour le moment.
           </p>
         ) : (
-          <ul className="mt-4 divide-y divide-slate-100">
+          <ul className="mt-4 divide-y divide-slate-200">
             {historyPageItems.map((item) => {
               const lesson = item.lesson
               const lessonTitle = [

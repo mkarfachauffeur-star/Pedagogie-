@@ -71,7 +71,7 @@ export default function StudentExamsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Examen élève · Banque officielle
@@ -98,11 +98,11 @@ export default function StudentExamsPage() {
         ))}
       </section>
 
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
         <label className="block">
           <span className="text-sm font-bold text-slate-700">Recherche intelligente</span>
           <input
-            className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+            className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 text-sm font-bold text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="feux, premiers secours, triangle, huile, frein..."
             value={search}
@@ -122,7 +122,7 @@ export default function StudentExamsPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Mode apprentissage</p>
@@ -140,12 +140,12 @@ export default function StudentExamsPage() {
           {filteredQuestions.map((question, index) => {
             const opened = Boolean(openedAnswers[question.id])
             return (
-              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-lg" key={question.id}>
+              <article className="rounded-[1.5rem] border-2 border-slate-300 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-lg" key={question.id}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
                     {index + 1}
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-300">
                     {question.source}
                   </span>
                 </div>
@@ -168,7 +168,7 @@ export default function StudentExamsPage() {
         </div>
 
         {!filteredQuestions.length && (
-          <p className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
             Aucune question ne correspond à cette recherche dans la catégorie sélectionnée.
           </p>
         )}

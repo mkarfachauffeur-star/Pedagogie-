@@ -37,10 +37,10 @@ export const SIMULATOR_SESSION_STATUS_LABELS = {
 }
 
 export const SIMULATOR_SESSION_STATUS_BADGE = {
-  planned: 'border-blue-200 bg-blue-50 text-blue-800',
+  planned: 'border-blue-300 bg-blue-50 text-blue-800',
   in_progress: 'border-amber-200 bg-amber-50 text-amber-800',
   completed: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  cancelled: 'border-slate-200 bg-slate-100 text-slate-600',
+  cancelled: 'border-slate-300 bg-slate-100 text-slate-600',
 }
 
 export function normalizeSupervisorMode(value) {

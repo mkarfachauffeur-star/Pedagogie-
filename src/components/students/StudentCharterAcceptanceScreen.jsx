@@ -40,7 +40,7 @@ export default function StudentCharterAcceptanceScreen({ charter, onAccepted }) 
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-[#f0f7ff]">
-      <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+      <div className="border-b-2 border-slate-300 bg-white px-4 py-4 sm:px-6">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-700">
           Première connexion
         </p>
@@ -57,13 +57,13 @@ export default function StudentCharterAcceptanceScreen({ charter, onAccepted }) 
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6"
         onScroll={checkScroll}
       >
-        <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)] sm:p-8">
+        <div className="mx-auto max-w-3xl rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)] sm:p-8">
           <CharterContentView content={charter?.content} />
         </div>
       </div>
 
       <form
-        className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6"
+        className="border-t-2 border-slate-300 bg-white px-4 py-4 sm:px-6"
         onSubmit={submit}
       >
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -73,7 +73,7 @@ export default function StudentCharterAcceptanceScreen({ charter, onAccepted }) 
             </p>
           )}
 
-          <label className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${scrolledToEnd ? 'border-slate-200 bg-slate-50' : 'border-slate-100 bg-slate-50 opacity-70'}`}>
+          <label className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${scrolledToEnd ? 'border-slate-300 bg-slate-50' : 'border-slate-100 bg-slate-50 opacity-70'}`}>
             <input
               checked={acceptedChecked}
               className="mt-1"

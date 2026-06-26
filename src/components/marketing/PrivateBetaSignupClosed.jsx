@@ -32,7 +32,7 @@ export default function PrivateBetaSignupClosed() {
             <Link className="pd-btn-primary text-center" to="/login">
               Se connecter
             </Link>
-            <a className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-50" href="/#demonstration">
+            <a className="inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-50" href="/#demonstration">
               Demander une démonstration
             </a>
           </div>

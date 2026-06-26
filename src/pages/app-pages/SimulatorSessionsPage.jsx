@@ -26,7 +26,7 @@ import {
 
 const FORM_ID = 'simulator-session-form'
 const inputClass =
-  'mt-2 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
+  'mt-2 min-h-11 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 function emptyForm(profileId = '') {
   return {
@@ -247,7 +247,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Simulateur
         </p>
@@ -274,7 +274,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
         </p>
       )}
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
@@ -294,7 +294,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[var(--shadow-soft)]">
+      <section className="overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)]">
         {!profileId ? (
           <div className="p-5"><EmptyState title="Connexion requise" message="Connectez-vous pour accéder aux séances simulateur." icon="🖥️" /></div>
         ) : loading ? (
@@ -306,7 +306,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <thead className="border-b-2 border-slate-300 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Horaires</th>
@@ -329,7 +329,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
                     && session.status !== SIMULATOR_SESSION_STATUSES.CANCELLED
 
                   return (
-                    <tr key={session.id} className="border-b border-slate-100 last:border-0">
+                    <tr key={session.id} className="border-b-2 border-slate-200 last:border-0">
                       <td className="px-4 py-3 font-semibold text-slate-900">{formatDateFr(session.sessionDate)}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {formatTimeFr(session.startTime)} – {formatTimeFr(session.endTime)}
@@ -459,7 +459,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
             </p>
           )}
 
-          <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t-2 border-slate-200 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               disabled={saving}
@@ -484,7 +484,7 @@ export default function SimulatorSessionsPage({ readOnly = false }) {
 
 function ActionBtn({ label, onClick, disabled, tone = 'slate' }) {
   const tones = {
-    slate: 'border-slate-200 text-slate-700 hover:bg-slate-50',
+    slate: 'border-slate-300 text-slate-700 hover:bg-slate-50',
     amber: 'border-amber-200 text-amber-800 hover:bg-amber-50',
     emerald: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50',
     rose: 'border-rose-200 text-rose-700 hover:bg-rose-50',

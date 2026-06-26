@@ -495,7 +495,7 @@ export default function StudentLexiconPage() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">{labels.studentOnly}</span>
           <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">{labels.title}</h1>
@@ -505,7 +505,7 @@ export default function StudentLexiconPage() {
 
       <PanelTabs
         activeId={sectionTab}
-        className="sticky top-0 z-10 rounded-2xl border border-white/70 bg-white/95 p-3 shadow-sm backdrop-blur"
+        className="sticky top-0 z-10 rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-sm backdrop-blur"
         onChange={setSectionTab}
         tabs={[
           { id: 'vocab', label: 'Vocabulaire' },
@@ -516,7 +516,7 @@ export default function StudentLexiconPage() {
 
       {sectionTab === 'vocab' && (
       <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="min-w-0 overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Définitions du lexique</p>
@@ -534,7 +534,7 @@ export default function StudentLexiconPage() {
                   className={`snap-start shrink-0 w-[17.5rem] rounded-[1.5rem] border p-4 text-left transition hover:-translate-y-1 hover:shadow-lg sm:w-[19rem] ${
                     isActive
                       ? 'border-cyan-300 bg-cyan-50/80 shadow-md'
-                      : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/60'
+                      : 'border-slate-300 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/60'
                   }`}
                   key={term.word}
                   onClick={() => {
@@ -555,7 +555,7 @@ export default function StudentLexiconPage() {
             })}
           </HorizontalCarousel>
         </div>
-        <aside className="h-fit rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <aside className="h-fit rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Carte sélectionnée</p>
           <h3 className="mt-2 text-3xl font-black text-slate-950">{activeTerm.word}</h3>
           <p className="mt-4 rounded-2xl bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">{activeTerm.definition}</p>
@@ -565,7 +565,7 @@ export default function StudentLexiconPage() {
       )}
 
       {sectionTab === 'signs' && (
-      <section className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
+      <section className="min-w-0 overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Panneaux de signalisation</p>
@@ -580,7 +580,7 @@ export default function StudentLexiconPage() {
             <article
               key={sign.type}
               lang="fr"
-              className="group flex w-[16.5rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)] sm:w-[18rem]"
+              className="group flex w-[16.5rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_-18px_rgba(15,23,42,0.35)] sm:w-[18rem]"
             >
               <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
                 <div
@@ -591,7 +591,7 @@ export default function StudentLexiconPage() {
                       'radial-gradient(circle at 18% 22%, rgba(15,23,42,0.18) 0, transparent 38%), radial-gradient(circle at 82% 78%, rgba(15,23,42,0.12) 0, transparent 45%)',
                   }}
                 />
-                <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-200">
+                <span className="absolute left-3 top-3 inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm ring-1 ring-slate-300">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <span
@@ -616,7 +616,7 @@ export default function StudentLexiconPage() {
       )}
 
       {sectionTab === 'quiz' && (
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7" lang="fr">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7" lang="fr">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Quiz aléatoire</p>
@@ -629,7 +629,7 @@ export default function StudentLexiconPage() {
         </div>
 
         {!session && (
-          <div className="mt-6 grid place-items-center rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/60 px-6 py-12 text-center">
+          <div className="mt-6 grid place-items-center rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-cyan-100 text-3xl">🎯</div>
             <h3 className="mt-5 text-xl font-black text-slate-950">Prêt pour le défi ?</h3>
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">Vocabulaire auto-école et panneaux mélangés. {QUIZ_SAMPLE_SIZE} questions à choix unique, ordre et propositions aléatoires.</p>
@@ -649,7 +649,7 @@ export default function StudentLexiconPage() {
               <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500 transition-all duration-500" style={{ width: `${progress}%` }} />
             </div>
 
-            <article className="rounded-[1.75rem] border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+            <article className="rounded-[1.75rem] border-2 border-slate-300 bg-slate-50/70 p-5 sm:p-6">
               {currentQuestion.visualType && (
                 <div className="mb-5 grid place-items-center rounded-[1.5rem] bg-white p-5 shadow-inner">
                   <SignVisual type={currentQuestion.visualType} size="lg" />
@@ -667,11 +667,11 @@ export default function StudentLexiconPage() {
                   const isSelected = selectedChoice === choice
                   const isCorrect = choice === currentQuestion.answer
                   const showResult = Boolean(selectedChoice)
-                  let style = 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
+                  let style = 'border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
                   if (showResult) {
                     if (isCorrect) style = 'border-emerald-300 bg-emerald-50 text-emerald-900'
                     else if (isSelected) style = 'border-rose-300 bg-rose-50 text-rose-900'
-                    else style = 'border-slate-200 bg-white text-slate-500'
+                    else style = 'border-slate-300 bg-white text-slate-500'
                   }
                   return (
                     <button
@@ -711,7 +711,7 @@ export default function StudentLexiconPage() {
         )}
 
         {finished && session && (
-          <div className="mt-6 grid place-items-center rounded-[1.75rem] border border-slate-200 bg-gradient-to-br from-cyan-50 via-white to-sky-50 px-6 py-10 text-center">
+          <div className="mt-6 grid place-items-center rounded-[1.75rem] border-2 border-slate-300 bg-gradient-to-br from-cyan-50 via-white to-sky-50 px-6 py-10 text-center">
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Score final</p>
             <p className="mt-3 text-5xl font-black text-slate-950">{score} <span className="text-slate-400">/ {session.length}</span></p>
             <p className="mt-2 text-base font-bold text-slate-600">{percentage} % de bonnes réponses</p>

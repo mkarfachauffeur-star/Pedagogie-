@@ -11,7 +11,7 @@ import {
 import { roleDestinations } from '../utils/authSession'
 
 const inputClass =
-  'mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
+  'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 export default function AcceptInvitePage() {
   const navigate = useNavigate()

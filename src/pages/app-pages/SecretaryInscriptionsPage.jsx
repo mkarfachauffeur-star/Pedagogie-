@@ -91,7 +91,7 @@ export default function SecretaryInscriptionsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Secrétariat
@@ -116,7 +116,7 @@ export default function SecretaryInscriptionsPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-950">Dossiers enregistrés</h2>
@@ -146,7 +146,7 @@ export default function SecretaryInscriptionsPage() {
             pageItems.map((student) => {
               const summary = getStudentSummary(student.id, payments, contractTotals)
               return (
-                <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={student.id}>
+                <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={student.id}>
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <h3 className="font-extrabold text-slate-950">

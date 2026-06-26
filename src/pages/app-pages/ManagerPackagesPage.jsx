@@ -98,7 +98,7 @@ function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
   const rvpSummary = formatRvpSummary(pkg)
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/80 hover:shadow-lg">
+    <article className="group flex flex-col overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/80 hover:shadow-lg">
       <div className={`h-1.5 bg-gradient-to-r ${meta.accent}`} />
 
       <div className="flex flex-1 flex-col p-5">
@@ -116,7 +116,7 @@ function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${
               isActive
                 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
-                : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
+                : 'bg-slate-100 text-slate-500 ring-1 ring-slate-300'
             }`}
           >
             {isActive ? 'Actif' : 'Inactif'}
@@ -151,7 +151,7 @@ function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
         )}
 
         {canWrite && (
-          <div className="mt-auto flex gap-2 border-t border-slate-100 pt-4">
+          <div className="mt-auto flex gap-2 border-t-2 border-slate-200 pt-4">
             <button
               className="pd-btn-secondary inline-flex flex-1 items-center justify-center gap-2 text-sm"
               onClick={() => onEdit(pkg)}
@@ -371,7 +371,7 @@ export default function ManagerPackagesPage() {
             className={`rounded-full px-4 py-2 text-sm font-bold transition ${
               filter === option.value
                 ? 'bg-navy-950 text-white shadow-sm'
-                : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
+                : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
             }`}
             onClick={() => setFilter(option.value)}
             type="button"
@@ -519,7 +519,7 @@ export default function ManagerPackagesPage() {
               <Field label="Montant présentation examen TTC (€)" type="number" value={form.examPresentationTtc} onChange={(v) => setForm((c) => ({ ...c, examPresentationTtc: v }))} />
             )}
             {form.packageFamily === 'permis_b' && form.formation === 'aac' && (
-            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <fieldset className="rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-4">
               <legend className="px-1 text-sm font-bold text-slate-700">Rendez-vous préalable (AAC)</legend>
               <p className="mb-3 text-xs font-medium text-slate-500">
                 Cochez « inclus » si le rendez-vous est compris dans la formule. Sinon, indiquez le tarif TTC facturé à part.
@@ -579,7 +579,7 @@ function Field({ label, value, onChange, type = 'text' }) {
 
 function RvpField({ label, included, price, onIncludedChange, onPriceChange }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+    <div className="rounded-2xl border-2 border-slate-300 bg-white p-3">
       <label className="flex items-start gap-2 text-sm font-bold text-slate-700">
         <input
           checked={included}

@@ -97,7 +97,7 @@ export default function AdminTeachersPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Équipe pédagogique
         </p>
@@ -120,7 +120,7 @@ export default function AdminTeachersPage() {
         </p>
       )}
 
-      <section className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[var(--shadow-soft)]">
+      <section className="overflow-hidden rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)]">
         {!profileId ? (
           <div className="p-5"><EmptyState title="Connexion requise" message="Connectez-vous avec votre compte gérant." icon="👨‍🏫" /></div>
         ) : loading ? (
@@ -132,7 +132,7 @@ export default function AdminTeachersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <thead className="border-b-2 border-slate-300 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Nom</th>
                   <th className="px-4 py-3">Type</th>
@@ -152,7 +152,7 @@ export default function AdminTeachersPage() {
                   })
                   const busy = actionBusy === teacher.profile_id || actionBusy === teacher.profile_id + 'del'
                   return (
-                    <tr key={teacher.profile_id} className="border-b border-slate-100 last:border-0">
+                    <tr key={teacher.profile_id} className="border-b-2 border-slate-200 last:border-0">
                       <td className="px-4 py-3 font-extrabold text-slate-900">{teacher.full_name}</td>
                       <td className="px-4 py-3 text-slate-600">{getResourceTypeLabel(teacher.resource_type)}</td>
                       <td className="px-4 py-3 text-slate-600">{teacher.phone || '—'}</td>
@@ -205,7 +205,7 @@ export default function AdminTeachersPage() {
 
 function ActionBtn({ label, onClick, disabled, tone = 'slate' }) {
   const tones = {
-    slate: 'border-slate-200 text-slate-700 hover:bg-slate-50',
+    slate: 'border-slate-300 text-slate-700 hover:bg-slate-50',
     amber: 'border-amber-200 text-amber-800 hover:bg-amber-50',
     emerald: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50',
     rose: 'border-rose-200 text-rose-700 hover:bg-rose-50',

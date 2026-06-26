@@ -31,7 +31,7 @@ export default function PracticeExamDetail({ exam, exams = [], remcValidatedCoun
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Examen blanc</p>
@@ -46,7 +46,7 @@ export default function PracticeExamDetail({ exam, exams = [], remcValidatedCoun
               {exam.teacher?.full_name ? ` · ${exam.teacher.full_name}` : ''}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+          <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
             {readinessEmoji(readiness)} {readinessLabel(readiness)}
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function PracticeExamDetail({ exam, exams = [], remcValidatedCoun
           <div className="mt-3 grid gap-2">
             {report.recommendedLessons.map((lesson) => (
               <Link
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-cyan-800 transition hover:border-cyan-200 hover:bg-cyan-50"
+                className="rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold text-cyan-800 transition hover:border-cyan-200 hover:bg-cyan-50"
                 key={lesson.moduleId}
                 to={lesson.href}
               >
@@ -106,7 +106,7 @@ export default function PracticeExamDetail({ exam, exams = [], remcValidatedCoun
         </section>
       )}
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5">
         <h4 className="text-lg font-black text-slate-950">Grille détaillée</h4>
         <div className="mt-4 space-y-4">
           {PRACTICE_EXAM_SECTIONS.map((section) => (
@@ -126,7 +126,7 @@ export default function PracticeExamDetail({ exam, exams = [], remcValidatedCoun
       </section>
 
       {exam.comment && (
-        <section className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+        <section className="rounded-[1.5rem] border-2 border-slate-300 bg-slate-50 p-5">
           <h4 className="text-lg font-black text-slate-950">Commentaire enseignant</h4>
           <p className="mt-3 text-sm leading-7 text-slate-700">{exam.comment}</p>
         </section>

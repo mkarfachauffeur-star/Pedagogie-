@@ -17,14 +17,13 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
 import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
 import StorePlatformBadges from '../components/StorePlatformBadges'
-import { isPrivateBeta } from '../config/beta'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
 import { marketingSkin } from '../lib/marketingTheme'
 
@@ -35,13 +34,12 @@ const primaryNavLinks = [
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
 ]
 
-function menuLinks(privateBeta) {
-  const items = [...primaryNavLinks]
-  if (privateBeta) {
-    items.push({ label: 'Démonstration', href: '#demonstration' })
-  }
-  items.push({ label: 'Contact', href: '/contact', route: true })
-  return items
+function menuLinks() {
+  return [
+    ...primaryNavLinks,
+    { label: 'Démonstration', href: '#demonstration' },
+    { label: 'Contact', href: '/contact', route: true },
+  ]
 }
 
 function MarketingNavItem({ item, className, onNavigate, children }) {
@@ -320,10 +318,18 @@ export default function ProfileSelection() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, isDark, toggleTheme } = useMarketingTheme()
   const skin = marketingSkin(theme)
-  const links = menuLinks(isPrivateBeta)
+  const links = menuLinks()
   const desktopNavLinks = links
   const demoCtaClass =
     `${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`
+
+  useEffect(() => {
+    if (window.location.hash !== '#demonstration') return
+    const timer = window.setTimeout(() => {
+      document.getElementById('demonstration')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+    return () => window.clearTimeout(timer)
+  }, [])
   const heroCtaClass =
     'inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto'
   return (
@@ -359,9 +365,9 @@ export default function ProfileSelection() {
               >
                 Se connecter
               </Link>
-              <Link className={demoCtaClass} to="/signup">
-                Pré-inscription
-              </Link>
+              <a className={demoCtaClass} href="#demonstration">
+                Demander une démo
+              </a>
             </div>
             <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
             <button
@@ -394,13 +400,13 @@ export default function ProfileSelection() {
                 >
                   Se connecter
                 </Link>
-                <Link
+                <a
                   className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
+                  href="#demonstration"
                   onClick={() => setMobileOpen(false)}
-                  to="/signup"
                 >
-                  Pré-inscription
-                </Link>
+                  Demander une démo
+                </a>
               </div>
             </motion.div>
           </div>
@@ -433,18 +439,11 @@ export default function ProfileSelection() {
                 l&apos;apprentissage bien au-delà des heures de conduite.
               </p>
               <ul className="mt-6 space-y-2.5">
-                {(isPrivateBeta
-                  ? [
-                      'Conçu sur le terrain, pas depuis un bureau',
-                      'QCU Compétence 1 déjà disponible pour les élèves',
-                      'Accès sur invitation — bêta privée en cours',
-                    ]
-                  : [
-                      'Conçu sur le terrain, pas depuis un bureau',
-                      'QCU Compétence 1 déjà disponible pour les élèves',
-                      'Essai gratuit 30 jours · 20 élèves inclus',
-                    ]
-                ).map((point) => (
+                {[
+                  'Conçu sur le terrain, pas depuis un bureau',
+                  'QCU Compétence 1 déjà disponible pour les élèves',
+                  'Accès sur invitation — demandez une démonstration',
+                ].map((point) => (
                   <li className={`flex items-center gap-2.5 text-sm font-semibold ${skin.listItem}`} key={point}>
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
                     {point}
@@ -452,10 +451,10 @@ export default function ProfileSelection() {
                 ))}
               </ul>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:hidden">
-                <Link className={heroCtaClass} to="/signup">
-                  Pré-inscription
+                <a className={heroCtaClass} href="#demonstration">
+                  Demander une démo
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
                 <Link
                   to="/login"
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black backdrop-blur sm:w-auto ${skin.loginBtn}`}
@@ -494,7 +493,7 @@ export default function ProfileSelection() {
                     className={`${skin.card} p-5`}
                     key={item.title}
                   >
-                    <div className={`inline-flex rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
+                    <div className={`inline-flex rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-300 bg-blue-50 text-blue-600'}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <h3 className={`mt-4 text-base font-black ${skin.heading}`}>{item.title}</h3>
@@ -530,7 +529,7 @@ export default function ProfileSelection() {
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-blue-400 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
                     <div className="flex items-start gap-4">
-                      <div className={`inline-flex shrink-0 rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-600'}`}>
+                      <div className={`inline-flex shrink-0 rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-300 bg-blue-50 text-blue-600'}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
@@ -615,45 +614,21 @@ export default function ProfileSelection() {
         <section className="relative overflow-hidden py-16 lg:py-24" id="contact">
           <div className={skin.contactGlow} />
           <div className="relative mx-auto max-w-7xl space-y-12 px-4 sm:px-6 lg:px-8">
-            {isPrivateBeta ? (
-              <>
-                <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-                  <p className={skin.eyebrowBlue}>Bêta privée</p>
-                  <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>Pourquoi une bêta privée ?</h2>
-                  <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-                    Nous préférons tester et perfectionner Pedagogia Drive avec un nombre limité
-                    d&apos;établissements avant l&apos;ouverture officielle.
-                  </p>
-                  <p className={`mt-3 text-base leading-8 ${skin.bodyMuted}`}>
-                    Notre objectif est de proposer un logiciel fiable, moderne et adapté aux besoins
-                    réels des auto-écoles.
-                  </p>
-                </motion.div>
-                <motion.div {...reveal(shouldReduceMotion, 0.06)}>
-                  <DemoRequestForm isDark={isDark} />
-                </motion.div>
-              </>
-            ) : (
-              <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-                <h2 className={`text-3xl font-black sm:text-4xl ${skin.heading}`}>
-                  Remettez la pédagogie au centre
-                </h2>
-                <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-                  Rejoignez les auto-écoles qui modernisent leur livret d&apos;apprentissage avec une plateforme
-                  conçue par un enseignant de la conduite, pour des enseignants et leurs élèves.
-                </p>
-                <p className={`mt-2 text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
-                  Essai gratuit 30 jours · 20 élèves inclus · Sans engagement
-                </p>
-                <Link
-                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
-                  to="/signup"
-                >
-                  Pré-inscription
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </motion.div>
-            )}
+            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
+              <p className={skin.eyebrowBlue}>Bêta privée</p>
+              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>Pourquoi une bêta privée ?</h2>
+              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
+                Nous préférons tester et perfectionner Pedagogia Drive avec un nombre limité
+                d&apos;établissements avant l&apos;ouverture officielle.
+              </p>
+              <p className={`mt-3 text-base leading-8 ${skin.bodyMuted}`}>
+                Notre objectif est de proposer un logiciel fiable, moderne et adapté aux besoins
+                réels des auto-écoles.
+              </p>
+            </motion.div>
+            <motion.div {...reveal(shouldReduceMotion, 0.06)}>
+              <DemoRequestForm isDark={isDark} />
+            </motion.div>
           </div>
         </section>
 

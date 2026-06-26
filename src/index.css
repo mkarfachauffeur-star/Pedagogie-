@@ -40,7 +40,8 @@
   --pd-surface: rgba(255, 255, 255, 0.94);
   --pd-surface-muted: #dbeafe;
   --pd-surface-elevated: #ffffff;
-  --pd-border: rgba(226, 232, 240, 0.95);
+  --pd-border: #cbd5e1;
+  --pd-border-strong: #94a3b8;
   --pd-border-glow: rgba(59, 130, 246, 0.25);
   --pd-accent: #2563eb;
   --pd-accent-red: #ef4444;
@@ -61,12 +62,11 @@
   }
 
   body.login-page-active {
-    background-color: #030712 !important;
     overflow-x: hidden;
   }
 
   body.login-page-active #root {
-    background-color: #030712;
+    background-color: transparent;
   }
 
   #root {
@@ -122,7 +122,7 @@
 
   /* Page header */
   .archive-page-content .page-header {
-    @apply flex flex-wrap items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-200;
+    @apply flex flex-wrap items-start justify-between gap-4 mb-6 pb-6 border-b-2 border-slate-300;
   }
 
   .archive-page-content .page-header h1 {
@@ -151,14 +151,14 @@
 
   .archive-page-content .btn-secondary {
     @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm
-      text-navy-800 bg-white border border-slate-200 shadow-sm
-      hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 cursor-pointer;
+      text-navy-800 bg-white border-2 border-slate-300 shadow-sm
+      hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 cursor-pointer;
   }
 
   .archive-page-content .btn-relance,
   .archive-page-content .icon-btn {
     @apply inline-flex items-center justify-center p-2 rounded-lg text-sm
-      bg-slate-100 text-navy-800 border border-slate-200 hover:bg-cyan-50 hover:border-cyan-200
+      bg-slate-100 text-navy-800 border-2 border-slate-300 hover:bg-cyan-50 hover:border-cyan-200
       transition-colors cursor-pointer;
   }
 
@@ -170,7 +170,7 @@
 
   .archive-page-content .kpi-card,
   .archive-page-content .stat-card {
-    @apply flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200/80
+    @apply flex items-center gap-4 p-5 rounded-2xl bg-white border-2 border-slate-300
       shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-shadow duration-300;
   }
 
@@ -201,7 +201,7 @@
   }
 
   .archive-page-content .card {
-    @apply rounded-2xl border border-slate-200/75 bg-[var(--pd-surface)] p-5 shadow-[var(--shadow-card)]
+    @apply rounded-2xl border-2 border-slate-300 bg-[var(--pd-surface)] p-5 shadow-[var(--shadow-card)]
       hover:shadow-[var(--shadow-card-hover)] transition-shadow duration-300;
   }
 
@@ -226,7 +226,7 @@
 
   /* Tables */
   .archive-page-content .table-container {
-    @apply overflow-x-auto rounded-xl border border-slate-200;
+    @apply overflow-x-auto rounded-xl border-2 border-slate-300;
   }
 
   .archive-page-content table {
@@ -235,11 +235,11 @@
 
   .archive-page-content th {
     @apply text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500
-      bg-slate-50 border-b border-slate-200;
+      bg-slate-50 border-b-2 border-slate-300;
   }
 
   .archive-page-content td {
-    @apply px-4 py-3 text-slate-700 border-b border-slate-100;
+    @apply px-4 py-3 text-slate-700 border-b-2 border-slate-200;
   }
 
   .archive-page-content tr:hover td {
@@ -293,7 +293,7 @@
   .archive-page-content .upcoming-item,
   .archive-page-content .reminder-item {
     @apply flex justify-between items-center gap-3 p-4 rounded-xl bg-slate-50
-      border border-slate-200/80 border-l-4 border-l-cyan-500 transition-colors hover:bg-cyan-50/30;
+      border-2 border-slate-300 border-l-4 border-l-cyan-500 transition-colors hover:bg-cyan-50/30;
   }
 
   /* Charts → modern placeholder cards */
@@ -466,7 +466,7 @@
   .archive-page-content .theme-card,
   .archive-page-content .subcomp-card,
   .archive-page-content .student-card {
-    @apply rounded-2xl bg-white border border-slate-200 p-5 shadow-[var(--shadow-card)];
+    @apply rounded-2xl bg-white border-2 border-slate-300 p-5 shadow-[var(--shadow-card)];
   }
 
   /* Search & filters */
@@ -475,7 +475,7 @@
   }
 
   .archive-page-content .search-box input {
-    @apply w-full px-4 py-2.5 pl-10 rounded-xl border border-slate-200 bg-white
+    @apply w-full px-4 py-2.5 pl-10 rounded-xl border-2 border-slate-300 bg-white
       text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400;
   }
 
@@ -486,7 +486,7 @@
 
   .archive-page-content .filter-btn,
   .archive-page-content .filter-btn-status {
-    @apply px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-200 bg-white text-slate-600
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-slate-300 bg-white text-slate-600
       hover:bg-slate-50 cursor-pointer transition-colors;
   }
 
@@ -519,7 +519,7 @@
   /* Select */
   .archive-page-content .select-period,
   .archive-page-content select {
-    @apply px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm
+    @apply px-3 py-2 rounded-xl border-2 border-slate-300 bg-white text-slate-700 text-sm
       focus:outline-none focus:ring-2 focus:ring-cyan-400/50 cursor-pointer;
   }
 
@@ -530,7 +530,7 @@
   .archive-page-content input[type='number'],
   .archive-page-content input[type='date'],
   .archive-page-content textarea {
-    @apply w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800
+    @apply w-full px-3 py-2 rounded-xl border-2 border-slate-300 text-slate-800
       focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400;
   }
 
@@ -541,14 +541,14 @@
   }
 
   .archive-page-content .modal-content {
-    @apply w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200;
+    @apply w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border-2 border-slate-300;
   }
 
   /* Tabs */
   .archive-page-content .tabs,
   .archive-page-content .competencies-nav,
   .archive-page-content .modal-tabs {
-    @apply flex flex-wrap gap-2 mb-4 border-b border-slate-200 pb-2;
+    @apply flex flex-wrap gap-2 mb-4 border-b-2 border-slate-300 pb-2;
   }
 
   .archive-page-content .comp-tab,
@@ -578,7 +578,7 @@
 
   .archive-page-content .day-cell,
   .archive-page-content .day-column {
-    @apply rounded-xl border border-slate-200 bg-white p-2 min-h-[80px];
+    @apply rounded-xl border-2 border-slate-300 bg-white p-2 min-h-[80px];
   }
 
   .archive-page-content .day-cell.today,
@@ -700,7 +700,7 @@
 
   .full-width-page .chat-header,
   .archive-page-content .messaging-app .chat-header {
-    @apply flex items-center gap-3 p-4 border-b border-slate-200 bg-white;
+    @apply flex items-center gap-3 p-4 border-b-2 border-slate-300 bg-white;
   }
 
   .full-width-page .messages-area,
@@ -710,7 +710,7 @@
 
   .full-width-page .message-input-area,
   .archive-page-content .messaging-app .message-input-area {
-    @apply p-4 border-t border-slate-200 bg-white;
+    @apply p-4 border-t-2 border-slate-300 bg-white;
   }
 
   .full-width-page .send-form,
@@ -720,7 +720,7 @@
 
   .full-width-page .send-form input,
   .archive-page-content .messaging-app .send-form input {
-    @apply flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-cyan-400/50 focus:outline-none;
+    @apply flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 focus:ring-2 focus:ring-cyan-400/50 focus:outline-none;
   }
 
   .full-width-page .send-btn,
@@ -741,11 +741,11 @@
   }
 
   .archive-page-content .conversations-list {
-    @apply w-full lg:w-80 shrink-0 rounded-2xl border border-slate-200 bg-white overflow-hidden;
+    @apply w-full lg:w-80 shrink-0 rounded-2xl border-2 border-slate-300 bg-white overflow-hidden;
   }
 
   .archive-page-content .conversation-item {
-    @apply flex gap-3 p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors;
+    @apply flex gap-3 p-4 border-b-2 border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors;
   }
 
   .archive-page-content .conversation-item.unread {
@@ -802,31 +802,31 @@
 
   /* Fond clair (shell élève / enseignant) — ne pas @apply card-base (TW v4) */
   .card-surface {
-    @apply rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300;
+    @apply rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300;
     @apply p-5 sm:p-6;
   }
 
   .card-tile {
-    @apply rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300;
+    @apply rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300;
     @apply p-5 sm:p-6 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)];
   }
 
   .card-panel {
-    @apply rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm transition-all duration-300;
+    @apply rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm transition-all duration-300;
     @apply p-4 sm:p-5;
   }
 
   .card-panel-lg {
-    @apply rounded-[1.5rem] border border-slate-200/90 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm transition-all duration-300;
+    @apply rounded-[1.5rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm transition-all duration-300;
     @apply p-5 sm:p-6;
   }
 
   .card-inner {
-    @apply rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm;
+    @apply rounded-2xl border-2 border-slate-300 bg-white px-3 py-2 shadow-sm;
   }
 
   .card-muted {
-    @apply rounded-2xl border border-slate-200 bg-slate-50 p-4;
+    @apply rounded-2xl border-2 border-slate-300 bg-slate-50 p-4;
   }
 
   .card-list-item {
@@ -854,11 +854,11 @@
   }
 
   .pd-card {
-    @apply rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300 hover:shadow-[var(--shadow-card-hover)] sm:p-6 md:p-7;
+    @apply rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300 hover:shadow-[var(--shadow-card-hover)] sm:p-6 md:p-7;
   }
 
   .pd-section-card {
-    @apply overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)];
+    @apply overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)];
   }
 
   .pd-section-card-body {
@@ -875,7 +875,7 @@
   }
 
   .pd-card-dark {
-    @apply relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
+    @apply relative overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
   }
 
   .pd-card-dark-bg {
@@ -883,7 +883,7 @@
   }
 
   .pd-eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700;
+    @apply inline-flex items-center gap-2 rounded-full border-2 border-blue-300 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700;
   }
 
   .pd-title-page {
@@ -939,7 +939,7 @@
   }
 
   .pd-msg-sidebar {
-    @apply border-b border-slate-200 bg-blue-50/70 p-4 md:p-5 lg:border-b-0 lg:border-r;
+    @apply border-b-2 border-slate-300 bg-blue-50/70 p-4 md:p-5 lg:border-b-0 lg:border-r;
   }
 
   .pd-msg-sidebar-title {
@@ -955,7 +955,7 @@
   }
 
   .pd-msg-chat-header {
-    @apply border-b border-slate-200 bg-white p-5;
+    @apply border-b-2 border-slate-300 bg-white p-5;
   }
 
   .pd-msg-chat-body {
@@ -963,7 +963,7 @@
   }
 
   .pd-msg-chat-footer {
-    @apply border-t border-slate-200 bg-white p-4;
+    @apply border-t-2 border-slate-300 bg-white p-4;
   }
 
   .pd-btn-primary {
@@ -971,15 +971,15 @@
   }
 
   .pd-btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50;
   }
 
   .pd-btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900;
   }
 
   .pd-input {
-    @apply min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
+    @apply min-h-11 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
   }
 
   /* Montants / heures : saisie libre sans flèches du navigateur */
@@ -995,7 +995,7 @@
   }
 
   .pd-badge {
-    @apply inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700;
+    @apply inline-flex items-center rounded-full border-2 border-blue-300 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700;
   }
 
   .pd-badge-red {
@@ -1015,7 +1015,7 @@
   }
 
   .pd-table tbody {
-    @apply divide-y divide-slate-100;
+    @apply divide-y divide-slate-200;
   }
 
   .pd-table tr {
@@ -1027,7 +1027,7 @@
   }
 
   .pd-topbar {
-    @apply sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white/95 py-3.5 backdrop-blur-xl px-4 sm:px-5 md:px-6;
+    @apply sticky top-0 z-30 flex items-center justify-between border-b border-slate-300 bg-white/95 py-3.5 backdrop-blur-xl px-4 sm:px-5 md:px-6;
   }
 
   .pd-road-line {
@@ -1035,43 +1035,43 @@
   }
 
   .pd-stat-pill {
-    @apply rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md;
+    @apply rounded-2xl border-2 border-slate-300 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md;
   }
 
   .pd-insight-card {
-    @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md;
+    @apply rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md;
   }
 
   .pd-nav-icon {
-    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-lg leading-none shadow-sm transition-all duration-200;
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-slate-300 bg-slate-50 text-lg leading-none shadow-sm transition-all duration-200;
   }
 
   .pd-msg-bubble-sent {
-    @apply rounded-[1.35rem] rounded-br-md border border-blue-200 bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-2.5 text-sm text-white shadow-md shadow-blue-500/20;
+    @apply rounded-[1.35rem] rounded-br-md border-2 border-blue-300 bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-2.5 text-sm text-white shadow-md shadow-blue-500/20;
   }
 
   .pd-msg-bubble-received {
-    @apply rounded-[1.35rem] rounded-bl-md border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 shadow-sm;
+    @apply rounded-[1.35rem] rounded-bl-md border-2 border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 shadow-sm;
   }
 
   .pd-input-dark {
-    @apply min-h-12 flex-1 rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
+    @apply min-h-12 flex-1 rounded-full border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
   }
 
   .pd-msg-chip {
-    @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600;
+    @apply inline-flex items-center rounded-full border-2 border-slate-300 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600;
   }
 
   .pd-msg-panel {
-    @apply overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
+    @apply overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
   }
 
   .pd-msg-thread-active {
-    @apply border-blue-200 bg-blue-50 text-slate-900 shadow-sm ring-1 ring-blue-100;
+    @apply border-blue-300 bg-blue-50 text-slate-900 shadow-sm ring-1 ring-blue-100;
   }
 
   .pd-msg-thread {
-    @apply border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/50;
+    @apply border-slate-300 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/50;
   }
 
   .pd-msg-btn-accent {
@@ -1091,7 +1091,7 @@
   }
 
   .pd-msg-picker {
-    @apply grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm;
+    @apply grid gap-2 rounded-2xl border-2 border-slate-300 bg-white p-3 shadow-sm;
   }
 
   .pd-msg-contact-name {
@@ -1099,15 +1099,15 @@
   }
 
   .pd-msg-close-btn {
-    @apply rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+    @apply rounded-full border-2 border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900;
   }
 
   .pd-msg-chat-divider {
-    @apply border-b border-slate-200 pb-4;
+    @apply border-b-2 border-slate-300 pb-4;
   }
 
   .pd-msg-empty {
-    @apply flex h-full min-h-[420px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-6 text-center text-sm font-medium text-slate-500;
+    @apply flex h-full min-h-[420px] items-center justify-center rounded-2xl border-2 border-slate-300 bg-slate-50 px-6 text-center text-sm font-medium text-slate-500;
   }
 }
 

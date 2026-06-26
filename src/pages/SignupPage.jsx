@@ -8,7 +8,7 @@ import { submitOrganizationSignupRequest } from '../services/organizationSignupR
 import { getUserFacingError } from '../lib/userFacingError'
 
 const inputClass =
-  'mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
+  'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 function validatePreRegistrationForm(form) {
   const requiredFields = [
@@ -71,7 +71,7 @@ function SiretInput({ value, onChange, invalid }) {
             ? 'border-rose-300 ring-4 ring-rose-100'
             : focused
               ? 'border-cyan-300 ring-4 ring-cyan-100'
-              : 'border-slate-200'
+              : 'border-slate-300'
         }`}
         onClick={() => inputRef.current?.focus()}
         onKeyDown={() => inputRef.current?.focus()}

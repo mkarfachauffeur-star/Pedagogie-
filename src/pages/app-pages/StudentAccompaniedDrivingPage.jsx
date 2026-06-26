@@ -88,7 +88,7 @@ function rvpStatusClasses(status) {
   if (status === 'À planifier') {
     return 'border-amber-200 bg-amber-50 text-amber-800'
   }
-  return 'border-slate-200 bg-slate-50 text-slate-600'
+  return 'border-slate-300 bg-slate-50 text-slate-600'
 }
 
 export default function StudentAccompaniedDrivingPage() {
@@ -178,7 +178,7 @@ export default function StudentAccompaniedDrivingPage() {
   if (!isAccompaniedFormation(student.formationType)) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+        <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
           <div className="grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_320px] md:p-8">
             <div>
               <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
@@ -210,7 +210,7 @@ export default function StudentAccompaniedDrivingPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="grid gap-6 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:grid-cols-[1fr_320px] md:p-8">
           <div className="flex flex-col justify-between gap-8">
             <div>
@@ -294,7 +294,7 @@ export default function StudentAccompaniedDrivingPage() {
 
       <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-5">
-          <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+          <div className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
@@ -314,7 +314,7 @@ export default function StudentAccompaniedDrivingPage() {
                     className={`min-h-36 rounded-[1.5rem] border p-4 text-left transition hover:-translate-y-1 hover:shadow-lg ${
                       isActive
                         ? 'border-cyan-300/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 text-white shadow-2xl shadow-cyan-950/20'
-                        : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/60'
+                        : 'border-slate-300 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/60'
                     }`}
                     key={appointment.id}
                     onClick={() => setActiveRvpId(appointment.id)}
@@ -339,7 +339,7 @@ export default function StudentAccompaniedDrivingPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
+          <div className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)] sm:p-7">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
@@ -360,7 +360,7 @@ export default function StudentAccompaniedDrivingPage() {
                   className={`flex min-h-32 items-start gap-3 rounded-[1.5rem] border p-4 text-left transition hover:-translate-y-1 hover:shadow-lg ${
                     objective.done
                       ? 'border-cyan-200 bg-cyan-50/80'
-                      : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/40'
+                      : 'border-slate-300 bg-slate-50 hover:border-cyan-200 hover:bg-cyan-50/40'
                   }`}
                   key={objective.id}
                   onClick={() =>
@@ -376,7 +376,7 @@ export default function StudentAccompaniedDrivingPage() {
                     className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black ${
                       objective.done
                         ? 'bg-cyan-600 text-white'
-                        : 'border border-slate-300 bg-white text-slate-400'
+                        : 'border-2 border-slate-300 bg-white text-slate-400'
                     }`}
                   >
                     {objective.done ? '✓' : ''}
@@ -391,7 +391,7 @@ export default function StudentAccompaniedDrivingPage() {
           </div>
         </div>
 
-        <aside className="h-fit rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+        <aside className="h-fit rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <p className="text-sm font-black uppercase tracking-wide text-cyan-700">RVP sélectionné</p>
           {activeRvp ? (
             <>
@@ -410,7 +410,7 @@ export default function StudentAccompaniedDrivingPage() {
             <p className="mt-4 text-sm text-slate-500">Aucun rendez-vous pédagogique planifié.</p>
           )}
 
-          <div className="mt-8 border-t border-slate-100 pt-6">
+          <div className="mt-8 border-t-2 border-slate-200 pt-6">
             <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Bilan REMC</p>
             <h3 className="mt-2 text-xl font-black text-slate-950">Synthèse pédagogique</h3>
             <div className="mt-4 space-y-3">

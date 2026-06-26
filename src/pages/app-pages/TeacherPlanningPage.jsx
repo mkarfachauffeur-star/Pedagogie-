@@ -51,7 +51,7 @@ function PlanningSlotCard({ slot, showDay = true }) {
   return (
     <article
       className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
-        isBreak ? 'border-slate-300 bg-slate-100' : 'border-slate-200 bg-white'
+        isBreak ? 'border-slate-300 bg-slate-100' : 'border-slate-300 bg-white'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -116,7 +116,7 @@ export default function TeacherPlanningPage() {
         <MetricCard label="Heures travaillées cette semaine" value={`${weeklyTeachingHours}h`} tone="cyan" />
       </section>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900">Timeline des horaires</h2>
@@ -126,7 +126,7 @@ export default function TeacherPlanningPage() {
             <button
               type="button"
               onClick={() => setWeekIndex((current) => Math.max(0, current - 1))}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600"
+              className="rounded-xl border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600"
               disabled={weekIndex === 0}
             >
               Semaine précédente
@@ -134,7 +134,7 @@ export default function TeacherPlanningPage() {
             <button
               type="button"
               onClick={() => setWeekIndex((current) => Math.min(weeklyPlans.length - 1, current + 1))}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600"
+              className="rounded-xl border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600"
               disabled={weekIndex === weeklyPlans.length - 1}
             >
               Semaine suivante
@@ -142,20 +142,20 @@ export default function TeacherPlanningPage() {
             <button
               type="button"
               onClick={() => setPeriod('jour')}
-              className={`rounded-xl px-4 py-2 text-sm font-bold ${period === 'jour' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-bold ${period === 'jour' ? 'bg-blue-600 text-white shadow-sm' : 'border-2 border-slate-300 bg-white text-slate-700'}`}
             >
               Planning jour
             </button>
             <button
               type="button"
               onClick={() => setPeriod('semaine')}
-              className={`rounded-xl px-4 py-2 text-sm font-bold ${period === 'semaine' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-bold ${period === 'semaine' ? 'bg-blue-600 text-white shadow-sm' : 'border-2 border-slate-300 bg-white text-slate-700'}`}
             >
               Planning semaine
             </button>
             {period === 'jour' && (
               <select
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                className="rounded-xl border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
                 value={selectedDay}
                 onChange={(event) => setSelectedDay(event.target.value)}
               >
@@ -180,7 +180,7 @@ export default function TeacherPlanningPage() {
             groupedDays.map((dayGroup, index) => (
               <section key={dayGroup.day} className="flex flex-col gap-3">
                 <div
-                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-slate-50 px-4 py-3 ${
+                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 via-white to-slate-50 px-4 py-3 ${
                     index > 0 ? 'border-t-4 border-t-blue-400' : ''
                   }`}
                 >
@@ -190,11 +190,11 @@ export default function TeacherPlanningPage() {
                       {formatDateFr(dayGroup.date)} · {dayGroup.hours}h de conduite
                     </p>
                   </div>
-                  <span className="rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-bold text-blue-700">
+                  <span className="rounded-full border-2 border-blue-300 bg-white px-3 py-1 text-xs font-bold text-blue-700">
                     {dayGroup.scheduleLabel}
                   </span>
                 </div>
-                <div className="grid gap-3 border-l-2 border-blue-200 pl-3 sm:pl-4">
+                <div className="grid gap-3 border-l-2 border-blue-300 pl-3 sm:pl-4">
                   {dayGroup.slots.map((slot) => (
                     <PlanningSlotCard key={slot.id} showDay={false} slot={slot} />
                   ))}

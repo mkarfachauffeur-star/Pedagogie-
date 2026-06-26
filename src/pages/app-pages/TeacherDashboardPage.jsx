@@ -74,7 +74,7 @@ export default function TeacherDashboardPage() {
         {loading ? (
           <p className="mt-4 text-sm font-semibold text-slate-500">Chargement…</p>
         ) : !stats?.recent?.length ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500">
+          <p className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500">
             Aucun examen blanc enregistré pour le moment.
           </p>
         ) : (

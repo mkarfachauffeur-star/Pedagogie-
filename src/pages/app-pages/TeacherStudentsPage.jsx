@@ -41,7 +41,7 @@ function StudentPanelTab({ active, children, onClick }) {
       className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${
         active
           ? 'bg-navy-950 text-white shadow-md'
-          : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
+          : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200 hover:text-cyan-800'
       }`}
       onClick={onClick}
       type="button"
@@ -112,7 +112,7 @@ function ShareToggle({ active, disabled, onClick, compact = false }) {
       className={`rounded-xl border px-3 py-2 text-xs font-extrabold transition ${
         active
           ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+          : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400'
       } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
       disabled={disabled}
       onClick={onClick}
@@ -412,7 +412,7 @@ export default function TeacherStudentsPage() {
   if (studentsLoading) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+        <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
           <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Mes élèves
           </p>
@@ -426,7 +426,7 @@ export default function TeacherStudentsPage() {
   if (studentsError) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+        <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
           <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Mes élèves
           </p>
@@ -445,7 +445,7 @@ export default function TeacherStudentsPage() {
   if (!displayStudents.length) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+        <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
           <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             Mes élèves
           </p>
@@ -458,7 +458,7 @@ export default function TeacherStudentsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
+      <section className="rounded-[2rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white shadow-[var(--shadow-card)] md:p-8">
         <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
           Mes élèves
         </p>
@@ -475,7 +475,7 @@ export default function TeacherStudentsPage() {
             <label className="mt-3 block text-sm font-bold text-slate-700">
               Rechercher par nom et prénom
               <input
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                className="mt-2 w-full rounded-xl border-2 border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                 onChange={(event) => setStudentSearchQuery(event.target.value)}
                 type="search"
                 value={studentSearchQuery}
@@ -485,7 +485,7 @@ export default function TeacherStudentsPage() {
 
           <div className="grid max-h-[min(420px,50vh)] gap-3 overflow-y-auto pr-1">
             {filteredStudents.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
                 Aucun élève ne correspond à « {studentSearchQuery} ».
               </p>
             ) : (
@@ -501,7 +501,7 @@ export default function TeacherStudentsPage() {
                 className={`card-list-item ${
                   selectedStudentId === student.id
                     ? 'border-cyan-300 bg-cyan-50 ring-2 ring-cyan-100'
-                    : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:shadow-sm'
+                    : 'border-slate-300 bg-slate-50 hover:border-cyan-200 hover:shadow-sm'
                 }`}
               >
                 <p className="font-extrabold text-slate-900">
@@ -547,7 +547,7 @@ export default function TeacherStudentsPage() {
             Pré-inscrire un élève
           </button>
 
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t-2 border-slate-300 pt-4">
             <h3 className="text-sm font-extrabold text-slate-900">Mes pré-inscriptions</h3>
             {preRegLoading ? (
               <p className="mt-2 text-xs font-semibold text-slate-500">Chargement…</p>
@@ -556,7 +556,7 @@ export default function TeacherStudentsPage() {
             ) : (
               <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto">
                 {preRegistrations.slice(0, 8).map((row) => (
-                  <article className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2" key={row.id}>
+                  <article className="rounded-xl border-2 border-slate-300 bg-slate-50 px-3 py-2" key={row.id}>
                     <p className="text-sm font-bold text-slate-900">
                       {formatPersonName(row)}
                     </p>
@@ -725,7 +725,7 @@ export default function TeacherStudentsPage() {
                     {lessonSaving ? 'Enregistrement…' : 'Enregistrer la leçon'}
                   </button>
                   <button
-                    className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:border-slate-300"
+                    className="rounded-xl border-2 border-slate-300 bg-white px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:border-slate-400"
                     onClick={() => setLessonFormOpen(false)}
                     type="button"
                   >

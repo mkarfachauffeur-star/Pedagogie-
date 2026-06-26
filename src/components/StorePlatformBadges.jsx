@@ -23,7 +23,7 @@ function StoreBadgeLink({ store, size }) {
   const heightClass = badgeHeights[size] ?? badgeHeights.default
   const hasLink = Boolean(store.href)
   const className =
-    'inline-flex items-center justify-center rounded-2xl border border-slate-200/90 bg-white px-3 py-2.5 shadow-md shadow-black/10 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400'
+    'inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white px-3 py-2.5 shadow-md shadow-black/10 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400'
 
   const image = (
     <img

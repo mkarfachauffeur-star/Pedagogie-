@@ -85,7 +85,7 @@ export default function AdminSettingsPage() {
         <>
           <StudentCharterAdminSection canWrite={canWrite} />
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-lg font-extrabold text-slate-950">Formules & tarifs</h2>
             <p className="mt-1 text-sm text-slate-500">Forfaits, heures incluses et tarifs AAC / CS de votre auto-école.</p>
             <Link
@@ -97,14 +97,14 @@ export default function AdminSettingsPage() {
             </Link>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-lg font-extrabold text-slate-950">Séances simulateur</h2>
             <p className="mt-1 text-sm text-slate-500">
               Paramètre enregistré avec le formulaire ci-dessous — compatible RdvPermis.
             </p>
           </section>
 
-      <form className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6" onSubmit={save}>
+      <form className="space-y-6 rounded-2xl border-2 border-slate-300 bg-white p-6" onSubmit={save}>
         <div>
           <h3 className="text-sm font-extrabold text-slate-900">Mode d&apos;encadrement simulateur</h3>
           <div className="mt-4 space-y-3">
@@ -114,7 +114,7 @@ export default function AdminSettingsPage() {
                 className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${
                   normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value
                     ? 'border-cyan-300 bg-cyan-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    : 'border-slate-300 bg-white hover:border-slate-400'
                 } ${!canWrite ? 'cursor-default opacity-80' : ''}`}
               >
                 <input
@@ -138,7 +138,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <hr className="border-slate-200" />
+        <hr className="border-slate-300" />
         <div className="flex items-center gap-4">
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="h-16 w-16 rounded-xl object-cover" />

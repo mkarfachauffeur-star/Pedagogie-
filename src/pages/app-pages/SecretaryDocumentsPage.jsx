@@ -100,7 +100,7 @@ export default function SecretaryDocumentsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">Documents</span>
           <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
@@ -123,13 +123,13 @@ export default function SecretaryDocumentsPage() {
       ) : (
         <>
           <section className="grid gap-6 xl:grid-cols-[420px_1fr]">
-            <aside className="rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl">
+            <aside className="rounded-[2rem] border-2 border-slate-300 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl">
               <h2 className="text-2xl font-extrabold text-slate-950">Dossier élève</h2>
               <div className="mt-5">
                 <label className="block">
                   <span className="text-sm font-bold text-slate-700">Recherche élève</span>
                   <input
-                    className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                    className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Nom et prénom, ou numéro dossier…"
                     value={query}
@@ -141,7 +141,7 @@ export default function SecretaryDocumentsPage() {
                   )}
                   {students.map((student) => (
                     <button
-                      className={`w-full rounded-2xl border p-4 text-left transition ${selectedStudentId === student.id ? 'border-cyan-300 bg-cyan-50 shadow-md' : 'border-slate-200 bg-white hover:bg-cyan-50'}`}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${selectedStudentId === student.id ? 'border-cyan-300 bg-cyan-50 shadow-md' : 'border-slate-300 bg-white hover:bg-cyan-50'}`}
                       key={student.id}
                       onClick={() => setSelectedStudentId(student.id)}
                       type="button"
@@ -160,7 +160,7 @@ export default function SecretaryDocumentsPage() {
               </article>
             </aside>
 
-            <form className="rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl" onSubmit={saveDocument}>
+            <form className="rounded-[2rem] border-2 border-slate-300 bg-white/85 p-5 shadow-[var(--shadow-card)] backdrop-blur-xl" onSubmit={saveDocument}>
               <h2 className="text-2xl font-extrabold text-slate-950">Déposer un document</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <SelectField label="Type de document" onChange={(value) => updateForm('type', value)} value={form.type} options={DOCUMENT_CATEGORIES} />
@@ -181,7 +181,7 @@ export default function SecretaryDocumentsPage() {
                 <label className="block md:col-span-2">
                   <span className="text-sm font-bold text-slate-700">Commentaire</span>
                   <textarea
-                    className="mt-2 min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                    className="mt-2 min-h-28 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                     onChange={(event) => updateForm('comment', event.target.value)}
                     value={form.comment}
                   />
@@ -211,7 +211,7 @@ export default function SecretaryDocumentsPage() {
             </form>
           </section>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white p-5 shadow-[var(--shadow-card)]">
+          <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
                 <h2 className="text-2xl font-extrabold text-slate-950">
@@ -226,7 +226,7 @@ export default function SecretaryDocumentsPage() {
                 <EmptyState className="md:col-span-2" title="Aucun document disponible" message="Aucun document disponible pour le moment." icon="📄" />
               )}
               {documents.map((document) => (
-                <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={document.id}>
+                <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={document.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-slate-950">{document.type}</h3>
@@ -265,7 +265,7 @@ function Field({ label, onChange, type = 'text', value }) {
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
       <input
-        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
         onChange={(event) => onChange(event.target.value)}
         type={type}
         value={value}
@@ -279,7 +279,7 @@ function SelectField({ label, onChange, options, value }) {
     <label className="block">
       <span className="text-sm font-bold text-slate-700">{label}</span>
       <select
-        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

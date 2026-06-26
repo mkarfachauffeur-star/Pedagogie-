@@ -29,12 +29,12 @@ export function AttachmentList({ attachments, classify }) {
           const image = isImageAttachment(a)
           const pdf = isPdf(a.mime_type)
           return (
-            <div key={a.id} className="rounded-xl border border-slate-200 bg-white/90 p-2 text-xs text-slate-700">
+            <div key={a.id} className="rounded-xl border-2 border-slate-300 bg-white/90 p-2 text-xs text-slate-700">
               {image && a.url && (
                 <button
                   type="button"
                   onClick={() => setPreview(a)}
-                  className="block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 transition hover:border-cyan-300 hover:shadow-sm"
+                  className="block w-full cursor-zoom-in overflow-hidden rounded-lg border-2 border-slate-300 transition hover:border-cyan-300 hover:shadow-sm"
                   title="Agrandir l'image"
                 >
                   <img
@@ -76,7 +76,7 @@ export function AttachmentList({ attachments, classify }) {
               {classify && (
                 <div className="mt-2 flex items-center gap-2">
                   <select
-                    className="min-h-8 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-700 outline-none"
+                    className="min-h-8 flex-1 rounded-lg border-2 border-slate-300 bg-white px-2 text-[11px] font-medium text-slate-700 outline-none"
                     value={types[a.id] || DOC_TYPES[0]}
                     onChange={(event) => setTypes((current) => ({ ...current, [a.id]: event.target.value }))}
                   >
@@ -129,7 +129,7 @@ export function PendingFiles({ files, onRemove }) {
       {files.map((file, index) => (
         <span
           key={`${file.name}-${index}`}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-slate-300 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700"
         >
           {file.name}
           <button type="button" onClick={() => onRemove(index)} className="text-slate-500 hover:text-slate-800">×</button>

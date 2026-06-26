@@ -54,7 +54,7 @@ export default function StudentCharterPage() {
         </p>
       )}
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)] sm:p-8">
+      <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)] sm:p-8">
         <CharterContentView content={status?.charter?.content} />
       </section>
     </PageShell>

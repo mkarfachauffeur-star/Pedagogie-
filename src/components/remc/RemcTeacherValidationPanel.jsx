@@ -44,7 +44,7 @@ function RemcCompetencyCard({
         expanded && unlocked
           ? 'border-cyan-200 bg-cyan-50/60 shadow-sm'
           : unlocked
-            ? 'border-slate-200 bg-white hover:border-cyan-100'
+            ? 'border-slate-300 bg-white hover:border-cyan-100'
             : 'border-slate-100 bg-slate-50/80'
       }`}
     >
@@ -125,7 +125,7 @@ function RemcCompetencyCard({
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             {items.map((item) => (
-              <div className="rounded-xl border border-slate-200 bg-white p-3" key={item.id}>
+              <div className="rounded-xl border-2 border-slate-300 bg-white p-3" key={item.id}>
                 <p className="text-sm font-bold text-slate-700">
                   {item.code ? (
                     <>
@@ -136,7 +136,7 @@ function RemcCompetencyCard({
                   )}
                 </p>
                 <select
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                  className="mt-2 w-full rounded-xl border-2 border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                   onChange={(event) =>
                     onRemcStatusChange?.(studentId, code, item.id, event.target.value)
                   }

@@ -32,7 +32,7 @@ export default function PlatformDashboardPage() {
       )}
 
       {profitability && (
-        <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+        <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5">
           <h2 className="text-xl font-extrabold text-slate-950">Rentabilité globale (toutes organisations)</h2>
           <p className="mt-1 text-sm text-slate-500">Les tarifs unitaires restent modifiables uniquement par chaque gérant.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,7 +51,7 @@ export default function PlatformDashboardPage() {
 
 function Kpi({ label, value }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5">
+    <article className="rounded-2xl border-2 border-slate-300 bg-white p-5">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className="mt-2 text-3xl font-black text-cyan-700">{value}</p>
     </article>

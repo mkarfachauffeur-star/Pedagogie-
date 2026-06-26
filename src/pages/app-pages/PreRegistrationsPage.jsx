@@ -121,7 +121,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[var(--shadow-card)]">
+      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
         <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
           <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
             {roleLabel}
@@ -150,7 +150,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
               className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${
                 filter === item.id
                   ? 'bg-navy-950 text-white'
-                  : 'border border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
+                  : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200'
               }`}
               key={item.id}
               onClick={() => setFilter(item.id)}
@@ -196,7 +196,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wide text-slate-500">
+                <tr className="border-b-2 border-slate-300 text-xs font-black uppercase tracking-wide text-slate-500">
                   <th className="px-3 py-3">Date</th>
                   <th className="px-3 py-3">Élève</th>
                   <th className="px-3 py-3">Téléphone</th>
@@ -209,7 +209,7 @@ export default function PreRegistrationsPage({ roleLabel = 'Administration' }) {
               </thead>
               <tbody>
                 {pageItems.map((row) => (
-                  <tr className="border-b border-slate-100 align-top" key={row.id}>
+                  <tr className="border-b-2 border-slate-200 align-top" key={row.id}>
                     <td className="px-3 py-4 font-semibold text-slate-700">{formatDateFr(row.created_at)}</td>
                     <td className="px-3 py-4">
                       <p className="font-extrabold text-slate-900">

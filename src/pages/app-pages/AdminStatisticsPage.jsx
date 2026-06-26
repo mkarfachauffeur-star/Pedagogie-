@@ -57,7 +57,7 @@ export default function AdminStatisticsPage() {
             <Kpi label="Restant à encaisser" value={formatEur(dashboard.remainingToCollect)} tone="amber" />
           </section>
 
-          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-xl font-extrabold text-slate-950">Évolution du chiffre d'affaires</h2>
             <p className="mt-1 text-sm text-slate-500">Encaissements des 12 derniers mois.</p>
             {dashboard.monthlyTrend.length === 0 ? (
@@ -82,7 +82,7 @@ export default function AdminStatisticsPage() {
             )}
           </section>
 
-          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-xl font-extrabold text-slate-950">Répartition des revenus</h2>
             <p className="mt-1 text-sm text-slate-500">Par nature d'encaissement enregistrée.</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -103,11 +103,11 @@ export default function AdminStatisticsPage() {
           </section>
 
           <section className="grid gap-4 sm:grid-cols-2">
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
               <p className="text-sm font-bold text-slate-500">Total encaissé</p>
               <p className="mt-2 text-3xl font-black text-emerald-600">{formatEur(dashboard.totalCollected)}</p>
             </article>
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+            <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
               <p className="text-sm font-bold text-slate-500">Montant contractuel total</p>
               <p className="mt-2 text-3xl font-black text-slate-900">{formatEur(dashboard.contractTotal)}</p>
             </article>
@@ -127,7 +127,7 @@ function Kpi({ label, value, tone = 'cyan' }) {
     amber: 'text-amber-600',
   }
   return (
-    <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm font-bold text-slate-500">{label}</p>
       <p className={`mt-2 text-3xl font-black ${colors[tone] || colors.cyan}`}>{value}</p>
     </article>
