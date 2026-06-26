@@ -358,7 +358,12 @@ export default function LoginPage() {
           {...fadeUp(0.2)}
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-            <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+            <nav aria-label="Liens légaux" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-400">
+              <Link className="transition hover:text-white" to="/mentions-legales">Mentions légales</Link>
+              <Link className="transition hover:text-white" to="/confidentialite">Politique de confidentialité</Link>
+              <Link className="transition hover:text-white" to="/contact">Contact</Link>
+            </nav>
+            <p className="mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
               <Smartphone className="h-4 w-4 text-blue-400" />
               Applications mobiles
             </p>
@@ -367,7 +372,7 @@ export default function LoginPage() {
             </p>
             <StorePlatformBadges className="mt-5" size="large" />
             <p className="mt-8 text-xs text-slate-600">
-              © 2024 Pedagogia Drive. Tous droits réservés.
+              © {new Date().getFullYear()} Pedagogia Drive. Tous droits réservés.
             </p>
           </div>
         </motion.footer>

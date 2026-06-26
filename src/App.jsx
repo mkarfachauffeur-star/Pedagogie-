@@ -2,6 +2,9 @@ import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProfileSelection from './pages/ProfileSelection'
 import LoginPage from './pages/LoginPage'
+import MentionsLegalesPage from './pages/MentionsLegalesPage'
+import ConfidentialitePage from './pages/ConfidentialitePage'
+import ContactPage from './pages/ContactPage'
 import SignupPage from './pages/SignupPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -124,6 +127,9 @@ function App() {
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
+        <Route path="/confidentialite" element={<ConfidentialitePage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route path="/login" element={<LoginPage />} />
 

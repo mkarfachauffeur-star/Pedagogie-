@@ -21,7 +21,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
-import PrivateBetaBanner from '../components/marketing/PrivateBetaBanner'
+import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
+import PublicFooter from '../components/marketing/PublicFooter'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { isPrivateBeta } from '../config/beta'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
@@ -35,10 +36,29 @@ const primaryNavLinks = [
 ]
 
 function menuLinks(privateBeta) {
+  const items = [...primaryNavLinks]
   if (privateBeta) {
-    return [...primaryNavLinks, { label: 'Démonstration', href: '#demonstration' }]
+    items.push({ label: 'Démonstration', href: '#demonstration' })
   }
-  return [...primaryNavLinks, { label: 'Contact', href: '#contact' }]
+  items.push({ label: 'Contact', href: '/contact', route: true })
+  return items
+}
+
+function MarketingNavItem({ item, className, onNavigate, children }) {
+  if (item.route) {
+    return (
+      <Link className={className} to={item.href} onClick={onNavigate}>
+        {item.label}
+        {children}
+      </Link>
+    )
+  }
+  return (
+    <a className={className} href={item.href} onClick={onNavigate}>
+      {item.label}
+      {children}
+    </a>
+  )
 }
 
 const headerActionSizeClass =
@@ -130,13 +150,6 @@ const upcomingFeatures = [
   { title: 'Préparation examen pratique', text: 'Révisions ciblées avant le jour J.' },
   { title: 'Révision Code par thème', text: 'Thématiques structurées pour ancrer les acquis.' },
 ]
-
-const footerLinks = {
-  Produit: ['Fonctionnalités', 'Livret numérique', 'Applications mobiles'],
-  Ressources: ['Documentation', 'FAQ', 'Support'],
-  Entreprise: ['À propos', 'Contact'],
-  Légal: ['Mentions légales', 'CGU', 'Confidentialité'],
-}
 
 function reveal(shouldReduceMotion, delay = 0) {
   return {
@@ -308,7 +321,7 @@ export default function ProfileSelection() {
   const { theme, isDark, toggleTheme } = useMarketingTheme()
   const skin = marketingSkin(theme)
   const links = menuLinks(isPrivateBeta)
-  const desktopNavLinks = isPrivateBeta ? primaryNavLinks : links
+  const desktopNavLinks = links
   const demoCtaClass =
     `${headerActionSizeClass} bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/35 transition hover:-translate-y-0.5 hover:brightness-110`
   const heroCtaClass =
@@ -327,16 +340,15 @@ export default function ProfileSelection() {
             className="hidden shrink-0 items-center justify-center gap-8 2xl:flex 2xl:gap-10"
           >
             {desktopNavLinks.map((item, index) => (
-              <a
+              <MarketingNavItem
                 className={skin.navLink(index === 0)}
-                href={item.href}
+                item={item}
                 key={item.href}
               >
-                {item.label}
                 {index === 0 ? (
                   <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
                 ) : null}
-              </a>
+              </MarketingNavItem>
             ))}
           </nav>
           <div className="flex shrink-0 items-center gap-3 sm:gap-4 2xl:justify-self-end 2xl:gap-5">
@@ -347,15 +359,9 @@ export default function ProfileSelection() {
               >
                 Se connecter
               </Link>
-              {isPrivateBeta ? (
-                <a className={demoCtaClass} href="#demonstration">
-                  Demander une démonstration
-                </a>
-              ) : (
-                <Link className={demoCtaClass} to="/signup">
-                  Créer mon auto-école
-                </Link>
-              )}
+              <Link className={demoCtaClass} to="/signup">
+                Pré-inscription
+              </Link>
             </div>
             <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
             <button
@@ -373,14 +379,12 @@ export default function ProfileSelection() {
           <div className={skin.mobileMenu}>
             <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-5" initial={{ opacity: 0, y: -6 }}>
               {links.map((item) => (
-                <a
+                <MarketingNavItem
                   className={skin.mobileNav}
-                  href={item.href}
+                  item={item}
                   key={item.href}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item.label}
-                </a>
+                  onNavigate={() => setMobileOpen(false)}
+                />
               ))}
               <div className={`mt-4 grid gap-5 border-t pt-5 sm:gap-6 ${skin.mobileDivider}`}>
                 <Link
@@ -390,30 +394,20 @@ export default function ProfileSelection() {
                 >
                   Se connecter
                 </Link>
-                {isPrivateBeta ? (
-                  <a
-                    className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
-                    href="#demonstration"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Demander une démonstration
-                  </a>
-                ) : (
-                  <Link
-                    className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
-                    onClick={() => setMobileOpen(false)}
-                    to="/signup"
-                  >
-                    Créer mon auto-école
-                  </Link>
-                )}
+                <Link
+                  className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
+                  onClick={() => setMobileOpen(false)}
+                  to="/signup"
+                >
+                  Pré-inscription
+                </Link>
               </div>
             </motion.div>
           </div>
         )}
       </header>
 
-      {isPrivateBeta ? <PrivateBetaBanner isDark={isDark} /> : null}
+      <BetaDevelopmentBanner isDark={isDark} />
 
       <main>
         {/* Hero */}
@@ -457,18 +451,11 @@ export default function ProfileSelection() {
                   </li>
                 ))}
               </ul>
-              <div className={`mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center ${isPrivateBeta ? '' : 'lg:hidden'}`}>
-                {isPrivateBeta ? (
-                  <a className={heroCtaClass} href="#demonstration">
-                    Demander une démonstration
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                ) : (
-                  <Link className={heroCtaClass} to="/signup">
-                    Créer mon auto-école
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                )}
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:hidden">
+                <Link className={heroCtaClass} to="/signup">
+                  Pré-inscription
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
                 <Link
                   to="/login"
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black backdrop-blur sm:w-auto ${skin.loginBtn}`}
@@ -662,7 +649,7 @@ export default function ProfileSelection() {
                   className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
                   to="/signup"
                 >
-                  Créer mon auto-école
+                  Pré-inscription
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </motion.div>
@@ -683,28 +670,7 @@ export default function ProfileSelection() {
         </section>
       </main>
 
-      <footer className={skin.footer}>
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
-          <div>
-            <BrandLogo isDark={isDark} />
-          </div>
-          <div className="grid gap-6 text-sm sm:grid-cols-4 sm:gap-10">
-            {Object.entries(footerLinks).map(([title, links]) => (
-              <div key={title}>
-                <p className={skin.footerTitle}>{title}</p>
-                <ul className="mt-2 space-y-1">
-                  {links.map((link) => (
-                    <li className={skin.footerLink} key={link}>{link}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className={skin.footerCopy}>
-          © 2026 Pedagogia Drive
-        </p>
-      </footer>
+      <PublicFooter isDark={isDark} />
     </div>
   )
 }
