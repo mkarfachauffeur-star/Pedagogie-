@@ -10,6 +10,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import AuthHashRedirect from './components/AuthHashRedirect'
+import GoogleAnalytics from './components/analytics/GoogleAnalytics'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
 import ManagerStudentsPage from './pages/app-pages/AdminStudentsPage'
@@ -122,6 +123,7 @@ function withStudentLayoutLazy(LazyPage, fullWidth = false, suspenseLabel = 'Cha
 function App() {
   return (
     <BrowserRouter>
+      <GoogleAnalytics />
       <AuthHashRedirect />
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
