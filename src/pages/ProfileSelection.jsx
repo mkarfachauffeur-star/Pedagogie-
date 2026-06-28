@@ -20,12 +20,15 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
+import MarketingFaq from '../components/marketing/MarketingFaq'
+import MarketingReassurance from '../components/marketing/MarketingReassurance'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
 import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
 import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
+import { MARKETING_FAQ, MARKETING_REASSURANCE } from '../lib/marketingContent'
 import { buildHomeJsonLd, SEO_PAGES } from '../lib/seo'
 import { marketingSkin } from '../lib/marketingTheme'
 
@@ -34,6 +37,7 @@ const primaryNavLinks = [
   { label: 'Plateforme', href: '#plateforme' },
   { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'FAQ', href: '#faq' },
 ]
 
 function menuLinks() {
@@ -338,6 +342,12 @@ export default function ProfileSelection() {
 
   return (
     <div className={skin.page} data-theme={theme}>
+      <a
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-xl focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+        href="#main-content"
+      >
+        Aller au contenu principal
+      </a>
       <PageSeo {...SEO_PAGES.home} jsonLd={homeJsonLd} />
       <div className={skin.ambient} />
 
@@ -420,7 +430,7 @@ export default function ProfileSelection() {
 
       <BetaDevelopmentBanner isDark={isDark} />
 
-      <main>
+      <main id="main-content">
         {/* Hero */}
         <section id="accueil" className="mx-auto max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -436,12 +446,13 @@ export default function ProfileSelection() {
                 </span>
               </h1>
               <p className={`mt-5 max-w-xl text-base leading-8 sm:text-lg ${skin.body}`}>
-                PEDAGOGIA DRIVE est le livret numérique nouvelle génération, créé par un enseignant de la
-                conduite qui accompagne des élèves au quotidien.
+                Pedagogia Drive est le livret numérique auto-école et la plateforme pédagogique pensée
+                par un enseignant de la conduite : logiciel auto-école, application moniteur et outil
+                de gestion des élèves réunis en un seul espace.
               </p>
               <p className={`mt-3 max-w-xl text-sm leading-7 sm:text-base ${skin.bodyMuted}`}>
-                REMC, QCU, documents, messagerie et gestion des élèves — une plateforme qui prolonge
-                l&apos;apprentissage bien au-delà des heures de conduite.
+                REMC, QCM conduite, gestion des enseignants, documents et messagerie — un suivi
+                pédagogique complet qui prolonge l&apos;apprentissage bien au-delà des heures de conduite.
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
@@ -485,8 +496,8 @@ export default function ProfileSelection() {
               <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
                 Les outils classiques gèrent les dossiers.
                 <br />
-                PEDAGOGIA DRIVE accompagne l&apos;apprentissage — avec des ressources pédagogiques évolutives,
-                dont les vidéos commentées arrivent prochainement.
+                Pedagogia Drive est un logiciel auto-école qui accompagne l&apos;apprentissage — livret
+                numérique, suivi pédagogique et gestion des élèves dans une application 100 % en ligne.
               </p>
             </motion.div>
             <div className="mt-10 grid gap-5 sm:grid-cols-3">
@@ -613,6 +624,22 @@ export default function ProfileSelection() {
               </motion.div>
             </div>
           </div>
+        </section>
+
+        {/* Réassurance SEO */}
+        <section className={`${skin.sectionAlt} py-14 lg:py-20`}>
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div {...reveal(shouldReduceMotion)}>
+              <MarketingReassurance isDark={isDark} items={MARKETING_REASSURANCE} skin={skin} />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* FAQ SEO */}
+        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+          <motion.div {...reveal(shouldReduceMotion, 0.04)}>
+            <MarketingFaq isDark={isDark} items={MARKETING_FAQ} skin={skin} />
+          </motion.div>
         </section>
 
         {/* Contact / démonstration */}

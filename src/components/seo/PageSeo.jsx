@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import {
   DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_ALT,
   SITE_LOCALE,
   SITE_NAME,
   canonicalUrl,
@@ -49,6 +50,7 @@ export default function PageSeo({
   description,
   path = '/',
   image = DEFAULT_OG_IMAGE,
+  imageAlt = DEFAULT_OG_IMAGE_ALT,
   ogType = 'website',
   noindex = false,
   jsonLd = null,
@@ -74,18 +76,22 @@ export default function PageSeo({
     upsertMeta('property', 'og:description', description)
     upsertMeta('property', 'og:url', canonical)
     upsertMeta('property', 'og:image', image)
+    upsertMeta('property', 'og:image:alt', imageAlt)
+    upsertMeta('property', 'og:image:width', '512')
+    upsertMeta('property', 'og:image:height', '512')
 
     upsertMeta('name', 'twitter:card', 'summary_large_image')
     upsertMeta('name', 'twitter:title', title)
     upsertMeta('name', 'twitter:description', description)
     upsertMeta('name', 'twitter:image', image)
+    upsertMeta('name', 'twitter:image:alt', imageAlt)
 
     setJsonLd(jsonLdKey ? JSON.parse(jsonLdKey) : null)
 
     return () => {
       removeJsonLd()
     }
-  }, [title, description, path, image, ogType, noindex, jsonLdKey])
+  }, [title, description, path, image, imageAlt, ogType, noindex, jsonLdKey])
 
   return null
 }

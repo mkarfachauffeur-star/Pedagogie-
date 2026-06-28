@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
 import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
-import { breadcrumbsForPage, buildBreadcrumbJsonLd, SEO_PAGES } from '../lib/seo'
+import { breadcrumbsForPage, buildPageJsonLd, SEO_PAGES } from '../lib/seo'
 import { roleDestinations } from '../utils/authSession'
 
 function LoginRoadArt() {
@@ -108,9 +108,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
+  const loginPage = SEO_PAGES.login
   const loginJsonLd = useMemo(
-    () => buildBreadcrumbJsonLd(breadcrumbsForPage('login')),
-    [],
+    () =>
+      buildPageJsonLd({
+        path: loginPage.path,
+        title: loginPage.title,
+        description: loginPage.description,
+        breadcrumbTrail: breadcrumbsForPage('login'),
+      }),
+    [loginPage.description, loginPage.path, loginPage.title],
   )
 
   useEffect(() => {
@@ -178,7 +185,7 @@ export default function LoginPage() {
     <div
       className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
     >
-      <PageSeo {...SEO_PAGES.login} jsonLd={loginJsonLd} />
+      <PageSeo {...loginPage} jsonLd={loginJsonLd} />
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
       {isDark && <LoginRoadArt />}
 

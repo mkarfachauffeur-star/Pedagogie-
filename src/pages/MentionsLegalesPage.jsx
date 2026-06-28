@@ -1,17 +1,28 @@
 import { useMemo } from 'react'
 import PublicPageLayout from '../layouts/PublicPageLayout'
 import PageSeo from '../components/seo/PageSeo'
-import { SEO_PAGES, breadcrumbsForPage, buildBreadcrumbJsonLd } from '../lib/seo'
+import {
+  SEO_PAGES,
+  breadcrumbsForPage,
+  buildPageJsonLd,
+} from '../lib/seo'
 
 export default function MentionsLegalesPage() {
+  const page = SEO_PAGES.mentionsLegales
   const jsonLd = useMemo(
-    () => buildBreadcrumbJsonLd(breadcrumbsForPage('mentionsLegales')),
-    [],
+    () =>
+      buildPageJsonLd({
+        path: page.path,
+        title: page.title,
+        description: page.description,
+        breadcrumbTrail: breadcrumbsForPage('mentionsLegales'),
+      }),
+    [page.description, page.path, page.title],
   )
 
   return (
     <>
-      <PageSeo {...SEO_PAGES.mentionsLegales} jsonLd={jsonLd} />
+      <PageSeo {...page} jsonLd={jsonLd} />
       <PublicPageLayout title="Mentions légales">
         <section className="space-y-2">
           <h2 className="text-base font-extrabold text-slate-900">Éditeur du site</h2>

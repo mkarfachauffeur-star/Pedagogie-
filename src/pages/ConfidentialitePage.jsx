@@ -1,21 +1,32 @@
 import { useMemo } from 'react'
 import PublicPageLayout from '../layouts/PublicPageLayout'
 import PageSeo from '../components/seo/PageSeo'
-import { SEO_PAGES, breadcrumbsForPage, buildBreadcrumbJsonLd } from '../lib/seo'
+import {
+  SEO_PAGES,
+  breadcrumbsForPage,
+  buildPageJsonLd,
+} from '../lib/seo'
 
 export default function ConfidentialitePage() {
+  const page = SEO_PAGES.confidentialite
   const jsonLd = useMemo(
-    () => buildBreadcrumbJsonLd(breadcrumbsForPage('confidentialite')),
-    [],
+    () =>
+      buildPageJsonLd({
+        path: page.path,
+        title: page.title,
+        description: page.description,
+        breadcrumbTrail: breadcrumbsForPage('confidentialite'),
+      }),
+    [page.description, page.path, page.title],
   )
 
   return (
     <>
-      <PageSeo {...SEO_PAGES.confidentialite} jsonLd={jsonLd} />
+      <PageSeo {...page} jsonLd={jsonLd} />
       <PublicPageLayout title="Politique de confidentialité">
         <p>
           Pedagogia Drive collecte uniquement les données nécessaires au fonctionnement
-          de la plateforme :
+          de la plateforme pédagogique auto-école :
         </p>
 
         <ul className="list-disc space-y-2 pl-5">

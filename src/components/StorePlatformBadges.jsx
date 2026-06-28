@@ -26,13 +26,15 @@ function StoreBadgeLink({ store, size }) {
     'inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white px-3 py-2.5 shadow-md shadow-black/10 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400'
 
   const image = (
-    <img
-      alt={store.alt}
-      className={`${heightClass} w-auto max-w-[min(100%,220px)] object-contain`}
-      decoding="async"
-      loading="lazy"
-      src={store.src}
-    />
+                      <img
+                        alt={store.alt}
+                        className={`${heightClass} w-auto max-w-[min(100%,220px)] object-contain`}
+                        decoding="async"
+                        height={size === 'large' ? 64 : 48}
+                        loading="lazy"
+                        src={store.src}
+                        width={220}
+                      />
   )
 
   const href = hasLink ? store.href : '#contact'

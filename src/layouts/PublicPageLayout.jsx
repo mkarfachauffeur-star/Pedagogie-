@@ -21,7 +21,7 @@ export default function PublicPageLayout({ title, children, showBetaBanner = tru
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-10 sm:px-6">
+      <main className="flex-1 px-4 py-10 sm:px-6" id="main-content">
         <article className="mx-auto w-full max-w-3xl rounded-[2rem] border border-white/10 bg-white p-6 text-slate-800 shadow-2xl md:p-8">
           <h1 className="text-3xl font-extrabold text-slate-950">{title}</h1>
           <div className="prose-public mt-8 space-y-6 text-sm leading-7 text-slate-600">

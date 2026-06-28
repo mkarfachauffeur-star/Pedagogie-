@@ -1,17 +1,32 @@
 import { useMemo } from 'react'
 import PublicPageLayout from '../layouts/PublicPageLayout'
 import PageSeo from '../components/seo/PageSeo'
-import { SEO_PAGES, breadcrumbsForPage, buildBreadcrumbJsonLd } from '../lib/seo'
+import {
+  SEO_PAGES,
+  breadcrumbsForPage,
+  buildPageJsonLd,
+} from '../lib/seo'
 
 export default function ContactPage() {
-  const jsonLd = useMemo(() => buildBreadcrumbJsonLd(breadcrumbsForPage('contact')), [])
+  const page = SEO_PAGES.contact
+  const jsonLd = useMemo(
+    () =>
+      buildPageJsonLd({
+        path: page.path,
+        title: page.title,
+        description: page.description,
+        breadcrumbTrail: breadcrumbsForPage('contact'),
+      }),
+    [page.description, page.path, page.title],
+  )
 
   return (
     <>
-      <PageSeo {...SEO_PAGES.contact} jsonLd={jsonLd} />
+      <PageSeo {...page} jsonLd={jsonLd} />
       <PublicPageLayout title="Contact">
         <p>
-          Vous souhaitez découvrir Pedagogia Drive ou participer aux tests de la version bêta ?
+          Vous souhaitez découvrir Pedagogia Drive, notre logiciel auto-école et livret numérique REMC,
+          ou participer aux tests de la version bêta ?
         </p>
 
         <section className="space-y-2">
