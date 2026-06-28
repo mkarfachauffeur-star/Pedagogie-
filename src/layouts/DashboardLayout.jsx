@@ -4,8 +4,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import NotificationBell from '../components/NotificationBell'
 import OrgStatusBanner from '../components/OrgStatusBanner'
+import PageSeo from '../components/seo/PageSeo'
 import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
+import { SITE_NAME } from '../lib/seo'
 import { useStudentTrack } from '../hooks/useStudentTrack'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { runExpirationRemindersCheck } from '../services/expirationReminders'
@@ -58,7 +60,17 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   }, [sidebarOpen])
 
   if (fullWidth) {
-    return <div className="full-width-page min-h-screen w-full bg-[#f0f7ff]">{children}</div>
+    return (
+      <div className="full-width-page min-h-screen w-full bg-[#f0f7ff]">
+        <PageSeo
+          description="Espace privé Pedagogia Drive réservé aux utilisateurs authentifiés."
+          noindex
+          path={location.pathname}
+          title={`${config?.label || 'Espace'} — ${SITE_NAME}`}
+        />
+        {children}
+      </div>
+    )
   }
 
   const closeSidebar = () => setSidebarOpen(false)
@@ -85,6 +97,12 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
 
   return (
     <div className="pd-shell relative min-h-screen w-full lg:flex">
+      <PageSeo
+        description="Espace privé Pedagogia Drive réservé aux utilisateurs authentifiés."
+        noindex
+        path={location.pathname}
+        title={`${config?.label || 'Espace'} — ${SITE_NAME}`}
+      />
       {sidebarOpen && (
         <button
           type="button"

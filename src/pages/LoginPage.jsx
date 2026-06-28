@@ -13,11 +13,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
+import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useAuth } from '../context/AuthContext'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
 import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
+import { breadcrumbsForPage, buildBreadcrumbJsonLd, SEO_PAGES } from '../lib/seo'
 import { roleDestinations } from '../utils/authSession'
 
 function LoginRoadArt() {
@@ -106,6 +108,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
+  const loginJsonLd = useMemo(
+    () => buildBreadcrumbJsonLd(breadcrumbsForPage('login')),
+    [],
+  )
 
   useEffect(() => {
     const savedEmail = window.localStorage.getItem('pedagogia-drive-login-email')
@@ -172,6 +178,7 @@ export default function LoginPage() {
     <div
       className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
     >
+      <PageSeo {...SEO_PAGES.login} jsonLd={loginJsonLd} />
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
       {isDark && <LoginRoadArt />}
 

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BrandLogo from '../components/BrandLogo'
+import PageSeo from '../components/seo/PageSeo'
 import { getUserFacingError } from '../lib/userFacingError'
+import { SITE_NAME } from '../lib/seo'
 import {
   authHashErrorMessage,
   clearAuthHash,
@@ -112,6 +114,12 @@ export default function AcceptInvitePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-navy-950 to-cyan-950 p-4">
+      <PageSeo
+        description="Activation de compte Pedagogia Drive — lien d'invitation sécurisé."
+        noindex
+        path="/accept-invite"
+        title={`Activation de compte — ${SITE_NAME}`}
+      />
       <div className="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl">
         <BrandLogo />
         <h1 className="mt-6 text-2xl font-extrabold text-slate-950">Activer votre compte</h1>

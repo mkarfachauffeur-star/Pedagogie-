@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
+import PageSeo from '../components/seo/PageSeo'
 import { useAuth } from '../context/AuthContext'
+import { SITE_NAME } from '../lib/seo'
 
 const NAV = [
   { href: '/platform/dashboard', label: 'Tableau de bord' },
@@ -16,6 +18,12 @@ export default function PlatformLayout() {
 
   return (
     <div className="flex min-h-screen bg-slate-100">
+      <PageSeo
+        description="Administration plateforme Pedagogia Drive — accès restreint."
+        noindex
+        path={location.pathname}
+        title={`Super Admin — ${SITE_NAME}`}
+      />
       <aside className="w-64 shrink-0 border-r-2 border-slate-300 bg-navy-950 p-5 text-white">
         <BrandLogo />
         <p className="mt-2 text-xs font-bold uppercase tracking-wide text-cyan-300">Super Admin</p>

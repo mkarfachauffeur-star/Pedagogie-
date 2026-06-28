@@ -17,14 +17,16 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
 import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
+import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
+import { buildHomeJsonLd, SEO_PAGES } from '../lib/seo'
 import { marketingSkin } from '../lib/marketingTheme'
 
 const primaryNavLinks = [
@@ -332,8 +334,11 @@ export default function ProfileSelection() {
   }, [])
   const heroCtaClass =
     'inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto'
+  const homeJsonLd = useMemo(() => buildHomeJsonLd(), [])
+
   return (
     <div className={skin.page} data-theme={theme}>
+      <PageSeo {...SEO_PAGES.home} jsonLd={homeJsonLd} />
       <div className={skin.ambient} />
 
       <header className={skin.header}>
