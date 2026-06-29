@@ -50,6 +50,13 @@ export const SEO_PAGES = {
       'Politique de confidentialité Pedagogia Drive : protection des données des auto-écoles, élèves, enseignants et secrétariat. Conforme au RGPD.',
     ogType: 'website',
   },
+  blog: {
+    path: '/blog',
+    title: 'Blog | Pedagogia Drive — Livret numérique & auto-école',
+    description:
+      'Blog Pedagogia Drive : guides SEO pour gérants d\'auto-école sur le livret numérique, le REMC, le suivi pédagogique, les QCM et la digitalisation.',
+    ogType: 'website',
+  },
 }
 
 export function canonicalUrl(path = '/') {
@@ -203,9 +210,96 @@ export function breadcrumbsForPage(pageKey) {
     contact: { name: 'Contact', path: '/contact' },
     mentionsLegales: { name: 'Mentions légales', path: '/mentions-legales' },
     confidentialite: { name: 'Confidentialité', path: '/confidentialite' },
+    blog: { name: 'Blog', path: '/blog' },
   }
 
   const current = labels[pageKey]
   if (!current) return [home]
   return [home, current]
+}
+
+export function breadcrumbsForBlogArticle(article) {
+  return [
+    { name: 'Accueil', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: article.title, path: `/blog/${article.slug}` },
+  ]
+}
+
+export function buildBlogListJsonLd() {
+  const page = SEO_PAGES.blog
+  return buildPageJsonLd({
+    path: page.path,
+    title: page.title,
+    description: page.description,
+    breadcrumbTrail: breadcrumbsForPage('blog'),
+  })
+}
+
+export function buildBlogArticleJsonLd(article) {
+  const path = `/blog/${article.slug}`
+  const url = canonicalUrl(path)
+  const imageUrl = article.coverImage.startsWith('http')
+    ? article.coverImage
+    : `${SITE_URL}${article.coverImage}`
+
+  const graph = [
+    {
+      '@type': 'BlogPosting',
+      '@id': `${url}#article`,
+      headline: article.title,
+      description: article.metaDescription,
+      image: imageUrl,
+      datePublished: article.publishedAt,
+      dateModified: article.publishedAt,
+      author: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        logo: {
+          '@type': 'ImageObject',
+          url: DEFAULT_OG_IMAGE,
+        },
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `${url}#webpage`,
+      },
+      inLanguage: 'fr-FR',
+      articleSection: article.category,
+      url,
+    },
+    {
+      '@type': 'WebPage',
+      '@id': `${url}#webpage`,
+      url,
+      name: article.title,
+      description: article.metaDescription,
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      inLanguage: 'fr-FR',
+    },
+  ]
+
+  const breadcrumbs = breadcrumbListNode(breadcrumbsForBlogArticle(article))
+  if (breadcrumbs) graph.push(breadcrumbs)
+
+  if (article.faq?.length) {
+    graph.push({
+      '@type': 'FAQPage',
+      mainEntity: article.faq.map(({ question, answer }) => ({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: { '@type': 'Answer', text: answer },
+      })),
+    })
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': graph,
+  }
 }

@@ -29,6 +29,9 @@ export default function PublicFooter({ isDark = true, compact = false }) {
           <Link className={linkClass} to="/confidentialite">
             Politique de confidentialité
           </Link>
+          <Link className={linkClass} to="/blog">
+            Blog
+          </Link>
           <Link className={linkClass} to="/contact">
             Contact
           </Link>

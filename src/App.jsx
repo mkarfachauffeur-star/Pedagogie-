@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage'
 import MentionsLegalesPage from './pages/MentionsLegalesPage'
 import ConfidentialitePage from './pages/ConfidentialitePage'
 import ContactPage from './pages/ContactPage'
+import BlogListPage from './pages/BlogListPage'
+import BlogArticlePage from './pages/BlogArticlePage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
@@ -133,6 +135,8 @@ function App() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogArticlePage />} />
 
         <Route path="/manager/dashboard" element={withProtectedLayout('manager', ManagerDashboardPage)} />
         <Route path="/manager/students" element={withProtectedLayout('manager', ManagerStudentsPage)} />

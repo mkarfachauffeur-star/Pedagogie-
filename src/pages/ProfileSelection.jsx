@@ -25,6 +25,7 @@ import MarketingReassurance from '../components/marketing/MarketingReassurance'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
 import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
+import BlogHomeSection from '../components/blog/BlogHomeSection'
 import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
@@ -37,6 +38,7 @@ const primaryNavLinks = [
   { label: 'Plateforme', href: '#plateforme' },
   { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'Blog', href: '/blog', route: true },
   { label: 'FAQ', href: '#faq' },
 ]
 
@@ -625,6 +627,9 @@ export default function ProfileSelection() {
             </div>
           </div>
         </section>
+
+        {/* Blog SEO */}
+        <BlogHomeSection isDark={isDark} reveal={reveal} shouldReduceMotion={shouldReduceMotion} skin={skin} />
 
         {/* Réassurance SEO */}
         <section className={`${skin.sectionAlt} py-14 lg:py-20`}>
