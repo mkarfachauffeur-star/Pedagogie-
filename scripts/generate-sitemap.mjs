@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
-const SITE_URL = 'https://pedagogia-drive.fr'
+const SITE_URL = 'https://www.pedagogia-drive.fr'
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public')
 
 const pages = [

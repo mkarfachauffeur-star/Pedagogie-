@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pedagogia-drive.fr/sitemap.xml
+Sitemap: https://www.pedagogia-drive.fr/sitemap.xml

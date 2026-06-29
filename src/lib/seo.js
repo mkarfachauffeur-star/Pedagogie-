@@ -1,46 +1,53 @@
 import { MARKETING_FAQ } from './marketingContent'
 
-export const SITE_URL = 'https://pedagogia-drive.fr'
+export const SITE_URL = 'https://www.pedagogia-drive.fr'
 export const SITE_NAME = 'Pedagogia Drive'
 export const SITE_LOCALE = 'fr_FR'
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/brand/pedagogia-drive-logo.png`
-export const DEFAULT_OG_IMAGE_ALT = 'Logo Pedagogia Drive — livret numérique auto-école'
+export const SITE_LANGUAGE = 'fr'
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/android-chrome-512x512.png`
+export const DEFAULT_OG_IMAGE_ALT = 'Pedagogia Drive — livret numérique pour auto-écoles'
 export const CONTACT_EMAIL = 'contact@pedagogia-drive.fr'
+
+export const SEO_KEYWORDS =
+  'auto école, logiciel auto école, livret numérique, REMC, suivi pédagogique, enseignant conduite, application auto école, SaaS auto école'
+
+export const SEO_DEFAULT_TITLE = 'Pedagogia Drive | Livret numérique pour auto-écoles'
+export const SEO_DEFAULT_DESCRIPTION =
+  'Pedagogia Drive est le livret numérique nouvelle génération destiné aux auto-écoles. QCM REMC, suivi pédagogique, messagerie, documents, gestion des élèves, enseignants et secrétariat.'
 
 export const SEO_PAGES = {
   home: {
     path: '/',
-    title: 'Pedagogia Drive | Livret numérique, logiciel & application auto-école REMC',
-    description:
-      'Plateforme pédagogique pour auto-écoles : livret numérique, suivi REMC, gestion des élèves et enseignants, QCM conduite. Outil conçu par un moniteur, 100 % en ligne.',
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
     ogType: 'website',
   },
   login: {
     path: '/login',
-    title: 'Connexion | Pedagogia Drive — Application auto-école sécurisée',
+    title: 'Connexion | Pedagogia Drive — Livret numérique auto-école',
     description:
-      'Connectez-vous à Pedagogia Drive : livret numérique, suivi pédagogique conduite, REMC et gestion auto-école. Espace sécurisé pour élèves, enseignants et secrétariat.',
+      'Connectez-vous à Pedagogia Drive, le livret numérique pour auto-écoles : QCM REMC, suivi pédagogique, messagerie et gestion des élèves, enseignants et secrétariat.',
     ogType: 'website',
   },
   contact: {
     path: '/contact',
-    title: 'Contact & démonstration | Pedagogia Drive — Logiciel auto-école',
+    title: 'Contact | Pedagogia Drive — Logiciel auto-école & démonstration',
     description:
-      'Demandez une démonstration de Pedagogia Drive : logiciel auto-école, livret numérique REMC, gestion des élèves et application moniteur auto-école.',
+      'Contactez Pedagogia Drive pour une démonstration du livret numérique auto-école : QCM REMC, suivi pédagogique, messagerie et gestion des équipes pédagogiques.',
     ogType: 'website',
   },
   mentionsLegales: {
     path: '/mentions-legales',
-    title: 'Mentions légales | Pedagogia Drive — Plateforme auto-école',
+    title: 'Mentions légales | Pedagogia Drive',
     description:
-      'Mentions légales de Pedagogia Drive, éditeur du livret numérique et logiciel de gestion pédagogique pour auto-écoles.',
+      'Mentions légales de Pedagogia Drive, éditeur du livret numérique et logiciel SaaS auto-école pour le suivi pédagogique REMC.',
     ogType: 'website',
   },
   confidentialite: {
     path: '/confidentialite',
-    title: 'Confidentialité & RGPD | Pedagogia Drive — Application auto-école',
+    title: 'Confidentialité | Pedagogia Drive — Protection des données',
     description:
-      'Politique de confidentialité Pedagogia Drive : protection des données élèves, enseignants et auto-écoles. Application conforme au RGPD.',
+      'Politique de confidentialité Pedagogia Drive : protection des données des auto-écoles, élèves, enseignants et secrétariat. Conforme au RGPD.',
     ogType: 'website',
   },
 }
@@ -89,6 +96,7 @@ export function buildFaqJsonLd(faqItems = MARKETING_FAQ) {
 export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
   const organizationId = `${SITE_URL}/#organization`
   const websiteId = `${SITE_URL}/#website`
+  const softwareId = `${SITE_URL}/#software`
   const { title, description } = SEO_PAGES.home
 
   const graph = [
@@ -102,8 +110,12 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
         url: DEFAULT_OG_IMAGE,
       },
       email: CONTACT_EMAIL,
+      areaServed: {
+        '@type': 'Country',
+        name: 'France',
+      },
       description:
-        'Pedagogia Drive édite un livret numérique auto-école et un logiciel de gestion pédagogique conforme au REMC.',
+        'Pedagogia Drive édite un livret numérique et un logiciel SaaS auto-école pour le suivi pédagogique REMC.',
     },
     {
       '@type': 'WebSite',
@@ -112,6 +124,14 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
       name: SITE_NAME,
       inLanguage: 'fr-FR',
       publisher: { '@id': organizationId },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
     },
     {
       '@type': 'WebPage',
@@ -125,19 +145,24 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
     },
     {
       '@type': 'SoftwareApplication',
+      '@id': softwareId,
       name: SITE_NAME,
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web, iOS, Android',
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Web',
       url: SITE_URL,
-      description:
-        'Application auto-école : livret numérique, suivi pédagogique REMC, QCM conduite, gestion des élèves et des enseignants.',
+      inLanguage: 'fr-FR',
+      description,
       offers: {
         '@type': 'Offer',
-        price: '0',
         priceCurrency: 'EUR',
-        availability: 'https://schema.org/PreOrder',
+        availability: 'https://schema.org/InStock',
+        description: 'Sur devis',
       },
-      author: { '@id': organizationId },
+      provider: { '@id': organizationId },
+      areaServed: {
+        '@type': 'Country',
+        name: 'France',
+      },
     },
     buildFaqJsonLd(faqItems),
   ]

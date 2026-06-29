@@ -2,12 +2,14 @@ import { useEffect } from 'react'
 import {
   DEFAULT_OG_IMAGE,
   DEFAULT_OG_IMAGE_ALT,
+  SEO_KEYWORDS,
   SITE_LOCALE,
   SITE_NAME,
   canonicalUrl,
 } from '../../lib/seo'
 
 const JSON_LD_ID = 'pd-json-ld'
+const THEME_COLOR = '#2563eb'
 
 function upsertMeta(attribute, key, content) {
   if (content == null || content === '') return
@@ -61,11 +63,16 @@ export default function PageSeo({
     const canonical = canonicalUrl(path)
     const robots = noindex ? 'noindex, nofollow' : 'index, follow'
 
+    document.documentElement.lang = 'fr'
+
     document.title = title
 
     upsertMeta('name', 'description', description)
+    upsertMeta('name', 'keywords', SEO_KEYWORDS)
     upsertMeta('name', 'robots', robots)
     upsertMeta('name', 'author', SITE_NAME)
+    upsertMeta('name', 'application-name', SITE_NAME)
+    upsertMeta('name', 'theme-color', THEME_COLOR)
 
     upsertLink('canonical', canonical)
 
