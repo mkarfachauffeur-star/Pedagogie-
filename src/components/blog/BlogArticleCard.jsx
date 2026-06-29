@@ -11,10 +11,10 @@ export default function BlogArticleCard({ article, isDark, skin }) {
   return (
     <article className={skin.cardHover}>
       <Link className="block" to={`/blog/${article.slug}`}>
-        <div className="aspect-[16/10] overflow-hidden rounded-t-[1.15rem] bg-slate-100">
+        <div className="aspect-[16/10] overflow-hidden rounded-t-[1.15rem] bg-slate-900/40">
           <img
             alt={article.coverImageAlt}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
             decoding="async"
             height={400}
             loading="lazy"

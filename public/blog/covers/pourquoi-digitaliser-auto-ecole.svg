@@ -1,13 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Pourquoi digitaliser son auto-école ?">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Pourquoi digitaliser son auto-école ?">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#6366F1"/>
       <stop offset="100%" stop-color="#4338CA"/>
     </linearGradient>
+    <linearGradient id="panel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0.06"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
   </defs>
-  <rect width="1200" height="630" fill="url(#g)"/>
-  <circle cx="980" cy="120" r="180" fill="white" fill-opacity="0.08"/>
-  <circle cx="200" cy="520" r="140" fill="white" fill-opacity="0.06"/>
-  <text x="60" y="320" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800"><tspan x="60" dy="0">Pourquoi digitaliser son auto-école ?</tspan></text>
-  <text x="60" y="580" fill="white" fill-opacity="0.85" font-family="system-ui, sans-serif" font-size="22" font-weight="600">Pedagogia Drive — Blog auto-école</text>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1350" cy="180" r="220" fill="white" fill-opacity="0.07"/>
+  <circle cx="200" cy="860" r="160" fill="white" fill-opacity="0.05"/>
+  <rect x="980" y="120" width="520" height="760" rx="36" fill="url(#panel)" stroke="white" stroke-opacity="0.15"/>
+  <g transform="translate(1080, 250)" filter="url(#soft)">
+    
+      <rect x="55" y="85" width="120" height="150" rx="12" fill="white" fill-opacity="0.95"/>
+      <rect x="75" y="110" width="80" height="8" rx="4" fill="#6366F1" fill-opacity="0.35"/>
+      <rect x="75" y="130" width="64" height="8" rx="4" fill="#6366F1" fill-opacity="0.25"/>
+      <rect x="75" y="150" width="72" height="8" rx="4" fill="#6366F1" fill-opacity="0.25"/>
+      <path d="M195 110c30-10 55 10 55 40s-25 50-55 40" fill="none" stroke="white" stroke-width="10" stroke-opacity="0.9"/>
+      <ellipse cx="250" cy="150" rx="42" ry="34" fill="white" fill-opacity="0.85"/>
+      <path d="M230 150h40M250 130v40" stroke="#4338CA" stroke-width="5" stroke-linecap="round"/>
+    
+  </g>
+  <rect x="100" y="130" rx="20" width="244" height="44" fill="white" fill-opacity="0.15"/>
+  <text x="124" y="160" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800" letter-spacing="0.08em">DIGITALISATION</text>
+  <text x="100" y="380" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" letter-spacing="-0.02em"><tspan x="100" dy="0">Pourquoi digitaliser son</tspan><tspan x="100" dy="52">auto-école ?</tspan></text>
+  <text x="100" y="920" fill="white" fill-opacity="0.88" font-family="system-ui, sans-serif" font-size="26" font-weight="600">Pedagogia Drive</text>
+  <text x="100" y="958" fill="white" fill-opacity="0.65" font-family="system-ui, sans-serif" font-size="20" font-weight="500">Blog auto-école · Livret numérique &amp; REMC</text>
 </svg>

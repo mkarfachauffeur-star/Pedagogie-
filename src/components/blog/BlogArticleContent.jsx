@@ -31,10 +31,10 @@ export default function BlogArticleContent({ article, isDark, skin }) {
   return (
     <article className="min-w-0">
       <div className={`${skin.card} overflow-hidden`}>
-        <div className="aspect-[21/9] overflow-hidden bg-slate-100">
+        <div className="aspect-[16/10] overflow-hidden bg-slate-900/40">
           <img
             alt={article.coverImageAlt}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
             decoding="async"
             fetchPriority="high"
             height={450}
