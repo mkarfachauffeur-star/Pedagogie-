@@ -14,6 +14,7 @@
     "supabase:deploy:functions": "npm run supabase:deploy:signup && npx supabase functions deploy invite-user && npx supabase functions deploy create-student && npx supabase functions deploy manage-user && npx supabase functions deploy notify-demo-request --no-verify-jwt",
     "seed:demo": "node scripts/seed-demo-data.mjs",
     "seed:demo:reset": "node scripts/seed-demo-data.mjs --reset",
+    "create:super-admin": "node scripts/create-super-admin.mjs",
     "verify:demo-rls": "node scripts/verify-demo-rls.mjs",
     "audit:production": "node scripts/audit-production.mjs",
     "verify:post-migrations": "node scripts/verify-post-migrations.mjs",
