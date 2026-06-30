@@ -1,0 +1,27 @@
+-- =============================================================================
+-- Promouvoir un utilisateur existant en Super Admin
+-- Exécuter dans Supabase → SQL Editor (service role / postgres)
+-- =============================================================================
+--
+-- OPTION A — Par e-mail (remplacer l'adresse) :
+--
+-- SELECT public.promote_to_super_admin(u.id)
+-- FROM auth.users u
+-- WHERE lower(u.email) = lower('admin@pedagogia-drive.fr');
+--
+-- OPTION B — Par UUID (remplacer USER_UUID) :
+--
+-- SELECT public.promote_to_super_admin('USER_UUID'::uuid);
+--
+-- VÉRIFICATION :
+--
+-- SELECT p.id, p.email, p.full_name, p.role, p.organization_id, sa.is_active
+-- FROM public.super_admins sa
+-- JOIN public.profiles p ON p.id = sa.profile_id
+-- WHERE sa.is_active = true;
+--
+-- RÉVOQUER (désactiver le Super Admin) :
+--
+-- SELECT public.revoke_super_admin('USER_UUID'::uuid);
+--
+-- =============================================================================

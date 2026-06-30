@@ -11,7 +11,7 @@
     "supabase:login": "npx supabase login",
     "supabase:link": "npx supabase link --project-ref watdeahravfccjdoseaf",
     "supabase:deploy:signup": "npx supabase functions deploy register-organization --no-verify-jwt",
-    "supabase:deploy:functions": "npm run supabase:deploy:signup && npx supabase functions deploy invite-user && npx supabase functions deploy create-student && npx supabase functions deploy manage-user && npx supabase functions deploy notify-demo-request --no-verify-jwt",
+    "supabase:deploy:functions": "npm run supabase:deploy:signup && npx supabase functions deploy invite-user && npx supabase functions deploy create-student && npx supabase functions deploy manage-user && npx supabase functions deploy notify-demo-request --no-verify-jwt && npx supabase functions deploy platform-organization",
     "seed:demo": "node scripts/seed-demo-data.mjs",
     "seed:demo:reset": "node scripts/seed-demo-data.mjs --reset",
     "create:super-admin": "node scripts/create-super-admin.mjs",

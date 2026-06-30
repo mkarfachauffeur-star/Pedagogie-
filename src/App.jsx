@@ -34,6 +34,9 @@ import PlatformDashboardPage from './pages/platform/PlatformDashboardPage'
 import PlatformOrganizationsPage from './pages/platform/PlatformOrganizationsPage'
 import PlatformSubscriptionsPage from './pages/platform/PlatformSubscriptionsPage'
 import PlatformAuditPage from './pages/platform/PlatformAuditPage'
+import PlatformDemoRequestsPage from './pages/platform/PlatformDemoRequestsPage'
+import PlatformUsersPage from './pages/platform/PlatformUsersPage'
+import PlatformPaymentsPage from './pages/platform/PlatformPaymentsPage'
 
 import StudentDashboardPage from './pages/app-pages/StudentDashboardPage'
 const StudentLessonsPage = lazy(() => import('./pages/app-pages/StudentLessonsPage'))
@@ -249,7 +252,10 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<PlatformDashboardPage />} />
           <Route path="organizations" element={<PlatformOrganizationsPage />} />
+          <Route path="demo-requests" element={<PlatformDemoRequestsPage />} />
+          <Route path="users" element={<PlatformUsersPage />} />
           <Route path="subscriptions" element={<PlatformSubscriptionsPage />} />
+          <Route path="payments" element={<PlatformPaymentsPage />} />
           <Route path="audit" element={<PlatformAuditPage />} />
         </Route>
       </Routes>

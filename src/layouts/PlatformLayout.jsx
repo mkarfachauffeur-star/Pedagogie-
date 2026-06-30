@@ -7,7 +7,10 @@ import { SITE_NAME } from '../lib/seo'
 const NAV = [
   { href: '/platform/dashboard', label: 'Tableau de bord' },
   { href: '/platform/organizations', label: 'Auto-écoles' },
+  { href: '/platform/demo-requests', label: 'Demandes démo' },
+  { href: '/platform/users', label: 'Utilisateurs' },
   { href: '/platform/subscriptions', label: 'Abonnements' },
+  { href: '/platform/payments', label: 'Paiements' },
   { href: '/platform/audit', label: 'Audits' },
 ]
 

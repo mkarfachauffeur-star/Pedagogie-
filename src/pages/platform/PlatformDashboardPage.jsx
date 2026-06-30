@@ -28,6 +28,8 @@ export default function PlatformDashboardPage() {
           <Kpi label="Actives" value={stats.orgsByStatus?.active ?? 0} />
           <Kpi label="Suspendues" value={stats.orgsByStatus?.suspended ?? 0} />
           <Kpi label="Annulées" value={stats.orgsByStatus?.cancelled ?? 0} />
+          <Kpi label="Demandes démo" value={stats.totalDemoRequests} />
+          <Kpi label="Utilisateurs" value={stats.totalUsers} />
         </section>
       )}
 
