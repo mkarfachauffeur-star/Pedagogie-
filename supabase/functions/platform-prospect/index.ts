@@ -431,25 +431,9 @@ async function handleResendInvite(
     organization_id: prospect.organization_id,
   })
 
-  const { data: managerProfile } = await admin
-    .from('profiles')
-    .select('id, full_name, email, organization_id, role')
-    .eq('organization_id', prospect.organization_id)
-    .eq('role', 'manager')
-    .maybeSingle()
-
-  if (!managerProfile) {
-    return errorResponse(log, 'load_manager', 'Profil gérant introuvable pour cette auto-école.', 404)
-  }
-
-  log.ok('load_manager', 'Gérant trouvé', {
-    user_id: managerProfile.id,
-    email: managerProfile.email,
-  })
-
   const authResult = await createManagerAuthInvite(log, admin, {
     email: prospect.email,
-    contactName: prospect.contact_name || managerProfile.full_name || 'Gérant',
+    contactName: prospect.contact_name || 'Gérant',
   })
 
   const { data: sub } = await admin
