@@ -13,6 +13,7 @@ type AuthInviteResult = {
   userId: string
   created: boolean
   activateLink: string
+  inviteType: 'invite' | 'recovery'
 }
 
 type PriorProfile = {
@@ -24,11 +25,56 @@ type PriorProfile = {
   is_active: boolean | null
 }
 
+type StepLog = {
+  step: string
+  status: 'ok' | 'error' | 'skip'
+  message?: string
+  detail?: Record<string, unknown>
+}
+
+class PipelineLog {
+  steps: StepLog[] = []
+
+  ok(step: string, message?: string, detail?: Record<string, unknown>) {
+    this.steps.push({ step, status: 'ok', message, detail })
+    console.log(`[platform-prospect][${step}] OK`, message ?? '', JSON.stringify(detail ?? {}))
+  }
+
+  skip(step: string, message?: string) {
+    this.steps.push({ step, status: 'skip', message })
+    console.log(`[platform-prospect][${step}] SKIP`, message ?? '')
+  }
+
+  error(step: string, message: string, detail?: Record<string, unknown>) {
+    this.steps.push({ step, status: 'error', message, detail })
+    console.error(`[platform-prospect][${step}] ERROR`, message, JSON.stringify(detail ?? {}))
+  }
+}
+
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })
+}
+
+function errorResponse(
+  log: PipelineLog,
+  failedStep: string,
+  message: string,
+  status: number,
+  extra: Record<string, unknown> = {},
+) {
+  log.error(failedStep, message, extra)
+  return json(
+    {
+      error: message,
+      failed_step: failedStep,
+      steps: log.steps,
+      ...extra,
+    },
+    status,
+  )
 }
 
 function escapeHtml(value: string) {
@@ -44,11 +90,35 @@ function appBaseUrl() {
     .replace(/\/$/, '')
 }
 
+function inviteRedirectUrl() {
+  return `${appBaseUrl()}/accept-invite`
+}
+
 function formatFrDate(iso: string) {
   try {
     return new Date(iso).toLocaleDateString('fr-FR')
   } catch {
     return iso
+  }
+}
+
+function logEnvConfig(log: PipelineLog) {
+  const resendConfigured = Boolean(Deno.env.get('RESEND_API_KEY'))
+  log.ok('config_check', 'Configuration edge function', {
+    resend_configured: resendConfigured,
+    resend_key_length: Deno.env.get('RESEND_API_KEY')?.length ?? 0,
+    site_url: appBaseUrl(),
+    redirect_to: inviteRedirectUrl(),
+    access_email_from:
+      Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>',
+    supabase_invite_note:
+      'generateLink ne déclenche pas d\'e-mail Supabase — l\'e-mail part uniquement via Resend.',
+  })
+  if (!resendConfigured) {
+    log.error(
+      'config_check',
+      'RESEND_API_KEY absente des secrets Supabase — aucun e-mail ne peut être envoyé.',
+    )
   }
 }
 
@@ -81,23 +151,41 @@ async function findUserByEmail(admin: AdminClient, email: string) {
   }
 }
 
-async function sendWelcomeEmail(payload: {
-  to: string
-  contactName: string
-  schoolName: string
-  email: string
-  activateLink: string
-  loginUrl: string
-  trialStartedAt: string
-  trialEndsAt: string
-}) {
+async function sendWelcomeEmail(
+  log: PipelineLog,
+  payload: {
+    to: string
+    contactName: string
+    schoolName: string
+    email: string
+    activateLink: string
+    loginUrl: string
+    trialStartedAt: string
+    trialEndsAt: string
+  },
+) {
   const resendKey = Deno.env.get('RESEND_API_KEY')
   if (!resendKey) {
-    throw new Error('RESEND_API_KEY non configurée — envoi e-mail impossible.')
+    throw new Error(
+      'RESEND_API_KEY non configurée dans les secrets Supabase (Dashboard → Edge Functions → Secrets).',
+    )
   }
 
   const from =
     Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
+
+  log.ok('send_email_prepare', 'Préparation e-mail Resend', {
+    to: payload.to,
+    from,
+    subject: `[Pedagogia Drive] Bienvenue — activez votre compte gérant (${payload.schoolName})`,
+    activate_link_host: (() => {
+      try {
+        return new URL(payload.activateLink).host
+      } catch {
+        return 'invalid-url'
+      }
+    })(),
+  })
 
   const html = `
     <h2>Bienvenue sur Pedagogia Drive</h2>
@@ -125,28 +213,62 @@ async function sendWelcomeEmail(payload: {
     }),
   })
 
+  const responseText = await res.text().catch(() => '')
+  let responseJson: Record<string, unknown> = {}
+  try {
+    responseJson = responseText ? JSON.parse(responseText) : {}
+  } catch {
+    responseJson = { raw: responseText }
+  }
+
   if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    console.error('[platform-prospect] Resend failed', res.status, body)
-    throw new Error(`Envoi e-mail Resend échoué (${res.status}).`)
+    log.error('send_email', `Resend HTTP ${res.status}`, {
+      status: res.status,
+      body: responseJson,
+    })
+    throw new Error(
+      `Envoi e-mail Resend échoué (HTTP ${res.status}) : ${JSON.stringify(responseJson)}`,
+    )
+  }
+
+  log.ok('send_email', 'E-mail Resend accepté', {
+    resend_id: responseJson.id ?? null,
+    resend_response: responseJson,
+  })
+
+  return {
+    emailId: typeof responseJson.id === 'string' ? responseJson.id : null,
+    resendResponse: responseJson,
   }
 }
 
 async function createManagerAuthInvite(
+  log: PipelineLog,
   admin: AdminClient,
-  params: { email: string; contactName: string; orgId?: string },
+  params: { email: string; contactName: string },
 ): Promise<AuthInviteResult> {
   const { email, contactName } = params
-  const redirectTo = `${appBaseUrl()}/accept-invite`
+  const redirectTo = inviteRedirectUrl()
   const metadata = {
-    organization_id: params.orgId ?? null,
     role: 'manager',
     full_name: contactName,
   }
 
+  log.ok('auth_invite_prepare', 'Génération lien Supabase Auth', {
+    email,
+    redirect_to: redirectTo,
+    method: 'auth.admin.generateLink (pas inviteUserByEmail — e-mail custom Resend)',
+  })
+
   const existing = await findUserByEmail(admin, email)
 
   if (existing) {
+    log.ok('auth_user_lookup', 'Compte Auth existant trouvé', {
+      user_id: existing.id,
+      email: existing.email,
+      created_at: existing.created_at,
+    })
+
     const { data: profile } = await admin
       .from('profiles')
       .select('role')
@@ -162,12 +284,21 @@ async function createManagerAuthInvite(
       email,
       options: { redirectTo },
     })
-    if (linkError) throw linkError
+    if (linkError) {
+      log.error('auth_invite', linkError.message, { code: linkError.code, type: 'recovery' })
+      throw linkError
+    }
 
     const activateLink = linkData?.properties?.action_link
-    if (!activateLink) throw new Error('Lien d\'activation introuvable.')
+    if (!activateLink) throw new Error('Lien d\'activation introuvable (recovery).')
 
-    return { userId: existing.id, created: false, activateLink }
+    log.ok('auth_invite', 'Lien recovery Supabase généré', {
+      user_id: existing.id,
+      invite_type: 'recovery',
+      link_preview: `${activateLink.slice(0, 80)}…`,
+    })
+
+    return { userId: existing.id, created: false, activateLink, inviteType: 'recovery' }
   }
 
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
@@ -178,30 +309,54 @@ async function createManagerAuthInvite(
       redirectTo,
     },
   })
-  if (linkError) throw linkError
+  if (linkError) {
+    log.error('auth_invite', linkError.message, { code: linkError.code, type: 'invite' })
+    throw linkError
+  }
 
   const userId = linkData?.user?.id
   const activateLink = linkData?.properties?.action_link
   if (!userId || !activateLink) {
-    throw new Error('Invitation gérant impossible (lien Supabase manquant).')
+    throw new Error('Invitation gérant impossible (userId ou action_link Supabase manquant).')
   }
 
-  await admin.auth.admin.updateUserById(userId, {
+  log.ok('auth_user_create', 'Compte Auth créé via generateLink invite', {
+    user_id: userId,
+    email,
+    invite_type: 'invite',
+  })
+
+  const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
     app_metadata: { role: 'manager' },
     user_metadata: metadata,
   })
+  if (metaError) {
+    log.error('auth_metadata', metaError.message, { user_id: userId })
+    throw metaError
+  }
 
-  return { userId, created: true, activateLink }
+  log.ok('auth_invite', 'Lien invite Supabase généré', {
+    user_id: userId,
+    invite_type: 'invite',
+    link_preview: `${activateLink.slice(0, 80)}…`,
+  })
+
+  return { userId, created: true, activateLink, inviteType: 'invite' }
 }
 
 async function rollbackAuthUser(
   admin: AdminClient,
+  log: PipelineLog,
   authResult: AuthInviteResult,
   priorProfile: PriorProfile | null,
 ) {
   if (authResult.created) {
     const { error } = await admin.auth.admin.deleteUser(authResult.userId)
-    if (error) console.error('[platform-prospect] deleteUser rollback failed', error.message)
+    if (error) {
+      log.error('rollback_auth', error.message, { user_id: authResult.userId })
+    } else {
+      log.ok('rollback_auth', 'Compte Auth supprimé (rollback)', { user_id: authResult.userId })
+    }
     return
   }
 
@@ -214,12 +369,14 @@ async function rollbackAuthUser(
       email: priorProfile.email,
       is_active: priorProfile.is_active ?? true,
     })
+    log.ok('rollback_auth', 'Profil précédent restauré', { user_id: priorProfile.id })
   }
 }
 
 async function rollbackAcceptance(
   admin: AdminClient,
   asCaller: AdminClient,
+  log: PipelineLog,
   params: {
     prospectId: string
     orgId: string | null
@@ -232,14 +389,109 @@ async function rollbackAcceptance(
       p_prospect_id: params.prospectId,
       p_org_id: params.orgId,
     })
-    if (error) console.error('[platform-prospect] SQL rollback failed', error.message)
+    if (error) {
+      log.error('rollback_org', error.message, { org_id: params.orgId })
+    } else {
+      log.ok('rollback_org', 'Organisation supprimée (rollback)', { org_id: params.orgId })
+    }
   }
 
-  await rollbackAuthUser(admin, params.authResult, params.priorProfile)
+  await rollbackAuthUser(admin, log, params.authResult, params.priorProfile)
+}
+
+async function handleResendInvite(
+  admin: AdminClient,
+  log: PipelineLog,
+  prospectId: string,
+) {
+  logEnvConfig(log)
+
+  const { data: prospect, error: prospectError } = await admin
+    .from('demo_requests')
+    .select('*')
+    .eq('id', prospectId)
+    .single()
+
+  if (prospectError || !prospect) {
+    return errorResponse(log, 'load_prospect', 'Prospect introuvable.', 404)
+  }
+
+  if (!prospect.organization_id || !['Acceptée', 'Essai gratuit'].includes(prospect.status)) {
+    return errorResponse(
+      log,
+      'load_prospect',
+      'Seules les demandes déjà acceptées peuvent recevoir un renvoi d\'invitation.',
+      400,
+    )
+  }
+
+  log.ok('load_prospect', 'Prospect accepté chargé', {
+    prospect_id: prospectId,
+    email: prospect.email,
+    organization_id: prospect.organization_id,
+  })
+
+  const { data: managerProfile } = await admin
+    .from('profiles')
+    .select('id, full_name, email, organization_id, role')
+    .eq('organization_id', prospect.organization_id)
+    .eq('role', 'manager')
+    .maybeSingle()
+
+  if (!managerProfile) {
+    return errorResponse(log, 'load_manager', 'Profil gérant introuvable pour cette auto-école.', 404)
+  }
+
+  log.ok('load_manager', 'Gérant trouvé', {
+    user_id: managerProfile.id,
+    email: managerProfile.email,
+  })
+
+  const authResult = await createManagerAuthInvite(log, admin, {
+    email: prospect.email,
+    contactName: prospect.contact_name || managerProfile.full_name || 'Gérant',
+  })
+
+  const { data: sub } = await admin
+    .from('subscriptions')
+    .select('trial_ends_at, current_period_start')
+    .eq('organization_id', prospect.organization_id)
+    .maybeSingle()
+
+  const emailResult = await sendWelcomeEmail(log, {
+    to: prospect.email,
+    contactName: prospect.contact_name,
+    schoolName: prospect.school_name,
+    loginUrl: `${appBaseUrl()}/login`,
+    email: prospect.email,
+    activateLink: authResult.activateLink,
+    trialStartedAt: sub?.current_period_start || new Date().toISOString(),
+    trialEndsAt: sub?.trial_ends_at || new Date().toISOString(),
+  })
+
+  await admin
+    .from('demo_requests')
+    .update({
+      updated_at: new Date().toISOString(),
+      internal_notes: prospect.internal_notes
+        ? `${prospect.internal_notes}\n[${new Date().toISOString()}] Invitation renvoyée — Resend ${emailResult.emailId || 'ok'}`
+        : `[${new Date().toISOString()}] Invitation renvoyée — Resend ${emailResult.emailId || 'ok'}`,
+    })
+    .eq('id', prospectId)
+
+  return json({
+    ok: true,
+    action: 'resend_invite',
+    email_sent: true,
+    resend_id: emailResult.emailId,
+    steps: log.steps,
+  })
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+
+  const log = new PipelineLog()
 
   try {
     const authHeader = req.headers.get('Authorization') || ''
@@ -251,19 +503,29 @@ Deno.serve(async (req) => {
     })
     const { data: userData } = await asCaller.auth.getUser()
     const caller = userData?.user
-    if (!caller) return json({ error: 'Non authentifié' }, 401)
+    if (!caller) return errorResponse(log, 'auth', 'Non authentifié', 401)
 
     const admin = createClient(url, serviceKey)
     if (!(await assertSuperAdmin(admin, caller.id))) {
-      return json({ error: 'Accès réservé au Super Admin' }, 403)
+      return errorResponse(log, 'auth', 'Accès réservé au Super Admin', 403)
     }
+
+    log.ok('auth', 'Super Admin vérifié', { caller_id: caller.id, email: caller.email })
 
     const body = await req.json()
     const action = String(body.action || '').trim()
 
-    if (action === 'accept_prospect' || action === 'create_organization') {
+    if (action === 'resend_invite') {
       const prospectId = String(body.prospect_id || '').trim()
-      if (!prospectId) return json({ error: 'prospect_id requis' }, 400)
+      if (!prospectId) return errorResponse(log, 'input', 'prospect_id requis', 400)
+      return await handleResendInvite(admin, log, prospectId)
+    }
+
+    if (action === 'accept_prospect' || action === 'create_organization') {
+      logEnvConfig(log)
+
+      const prospectId = String(body.prospect_id || '').trim()
+      if (!prospectId) return errorResponse(log, 'input', 'prospect_id requis', 400)
 
       const { data: prospect, error: prospectError } = await admin
         .from('demo_requests')
@@ -271,17 +533,25 @@ Deno.serve(async (req) => {
         .eq('id', prospectId)
         .single()
       if (prospectError || !prospect) {
-        return json({ error: 'Prospect introuvable.' }, 404)
+        return errorResponse(log, 'load_prospect', 'Prospect introuvable.', 404, {
+          detail: prospectError?.message,
+        })
       }
       if (prospect.organization_id) {
-        return json({ error: 'Une auto-école est déjà associée à ce prospect.' }, 400)
+        return errorResponse(log, 'load_prospect', 'Une auto-école est déjà associée à ce prospect.', 400)
       }
       if (prospect.status === 'Refusée') {
-        return json({ error: 'Impossible d\'accepter une demande refusée.' }, 400)
+        return errorResponse(log, 'load_prospect', 'Impossible d\'accepter une demande refusée.', 400)
       }
       if (prospect.status === 'Acceptée') {
-        return json({ error: 'Cette demande a déjà été acceptée.' }, 400)
+        return errorResponse(log, 'load_prospect', 'Cette demande a déjà été acceptée.', 400)
       }
+
+      log.ok('load_prospect', 'Prospect chargé', {
+        prospect_id: prospectId,
+        email: prospect.email,
+        school_name: prospect.school_name,
+      })
 
       let authResult: AuthInviteResult
       let priorProfile: PriorProfile | null = null
@@ -297,12 +567,17 @@ Deno.serve(async (req) => {
           priorProfile = data ?? null
         }
 
-        authResult = await createManagerAuthInvite(admin, {
+        authResult = await createManagerAuthInvite(log, admin, {
           email: prospect.email,
           contactName: prospect.contact_name,
         })
       } catch (authErr) {
-        return json({ error: String(authErr?.message || authErr) }, 400)
+        return errorResponse(
+          log,
+          'auth_invite',
+          String(authErr?.message || authErr),
+          400,
+        )
       }
 
       const { data: acceptData, error: acceptError } = await asCaller.rpc('platform_accept_demo_request', {
@@ -313,15 +588,31 @@ Deno.serve(async (req) => {
       })
 
       if (acceptError || !acceptData) {
-        await rollbackAuthUser(admin, authResult, priorProfile)
-        return json({ error: acceptError?.message || 'Création auto-école impossible.' }, 400)
+        await rollbackAuthUser(admin, log, authResult, priorProfile)
+        return errorResponse(
+          log,
+          'create_organization',
+          acceptError?.message || 'Création auto-école impossible.',
+          400,
+          { rpc_error: acceptError },
+        )
       }
 
       const orgId = String(acceptData.organization_id || '')
       const trialStartedAt = String(acceptData.trial_started_at || '')
       const trialEndsAt = String(acceptData.trial_ends_at || '')
 
-      await admin.auth.admin.updateUserById(authResult.userId, {
+      log.ok('create_organization', 'Organisation créée', {
+        organization_id: orgId,
+        trial_started_at: trialStartedAt,
+        trial_ends_at: trialEndsAt,
+      })
+      log.ok('create_profile', 'Profil Manager + abonnement Starter créés via RPC', {
+        manager_user_id: authResult.userId,
+        manager_created: authResult.created,
+      })
+
+      const { error: metaError } = await admin.auth.admin.updateUserById(authResult.userId, {
         app_metadata: { role: 'manager' },
         user_metadata: {
           organization_id: orgId,
@@ -329,9 +620,20 @@ Deno.serve(async (req) => {
           full_name: prospect.contact_name,
         },
       })
+      if (metaError) {
+        await rollbackAcceptance(admin, asCaller, log, {
+          prospectId,
+          orgId,
+          authResult,
+          priorProfile,
+        })
+        return errorResponse(log, 'auth_metadata', metaError.message, 400)
+      }
+      log.ok('auth_metadata', 'Métadonnées Auth gérant mises à jour', { user_id: authResult.userId })
 
+      let emailResult
       try {
-        await sendWelcomeEmail({
+        emailResult = await sendWelcomeEmail(log, {
           to: prospect.email,
           contactName: prospect.contact_name,
           schoolName: prospect.school_name,
@@ -342,13 +644,18 @@ Deno.serve(async (req) => {
           trialEndsAt,
         })
       } catch (emailErr) {
-        await rollbackAcceptance(admin, asCaller, {
+        await rollbackAcceptance(admin, asCaller, log, {
           prospectId,
           orgId,
           authResult,
           priorProfile,
         })
-        return json({ error: String(emailErr?.message || emailErr) }, 502)
+        return errorResponse(
+          log,
+          'send_email',
+          String(emailErr?.message || emailErr),
+          502,
+        )
       }
 
       return json({
@@ -356,22 +663,26 @@ Deno.serve(async (req) => {
         organization_id: orgId,
         manager_user_id: authResult.userId,
         manager_created: authResult.created,
+        invite_type: authResult.inviteType,
         trial_started_at: trialStartedAt,
         trial_ends_at: trialEndsAt,
         status: 'Acceptée',
         email_sent: true,
+        resend_id: emailResult.emailId,
+        redirect_to: inviteRedirectUrl(),
+        steps: log.steps,
       })
     }
 
     if (action === 'send_email') {
       const resendKey = Deno.env.get('RESEND_API_KEY')
-      if (!resendKey) return json({ error: 'RESEND_API_KEY non configurée.' }, 503)
+      if (!resendKey) return errorResponse(log, 'config_check', 'RESEND_API_KEY non configurée.', 503)
 
       const to = String(body.to || '').trim()
       const subject = String(body.subject || '').trim()
       const html = String(body.html || body.message || '').trim()
       if (!to || !subject || !html) {
-        return json({ error: 'to, subject et message requis.' }, 400)
+        return errorResponse(log, 'input', 'to, subject et message requis.', 400)
       }
 
       const from =
@@ -388,14 +699,14 @@ Deno.serve(async (req) => {
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => '')
-        return json({ error: `Envoi e-mail échoué (${res.status}) ${errBody}` }, 502)
+        return errorResponse(log, 'send_email', `Envoi e-mail échoué (${res.status}) ${errBody}`, 502)
       }
 
-      return json({ ok: true, email_sent: true })
+      return json({ ok: true, email_sent: true, steps: log.steps })
     }
 
-    return json({ error: 'Action non supportée' }, 400)
+    return errorResponse(log, 'input', 'Action non supportée', 400)
   } catch (err) {
-    return json({ error: String(err?.message || err) }, 500)
+    return errorResponse(log, 'unexpected', String(err?.message || err), 500)
   }
 })

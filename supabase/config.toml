@@ -33,7 +33,9 @@ verify_jwt = true
 [auth]
 site_url = "https://www.pedagogia-drive.fr"
 additional_redirect_urls = [
+  "https://www.pedagogia-drive.fr/accept-invite",
   "https://www.pedagogia-drive.fr/**",
+  "https://pedagogia-drive.vercel.app/accept-invite",
   "https://pedagogia-drive.vercel.app/**",
   "http://localhost:5173/**",
   "http://127.0.0.1:5173/**",

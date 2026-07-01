@@ -2,14 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import { formatPlatformDateTime } from '../../lib/platformPlans'
 import { supabase } from '../../lib/supabase'
-import { acceptProspect, listProspects, refuseProspect } from '../../services/prospects'
+import { acceptProspect, listProspects, refuseProspect, resendManagerInvite, formatAcceptSteps } from '../../services/prospects'
 import { useProspectNotifications } from '../../hooks/useProspectNotifications'
 
 const STATUS_BADGE = {
   'Nouvelle demande': 'bg-amber-100 text-amber-900',
   Refusée: 'bg-rose-100 text-rose-900',
+  Acceptée: 'bg-cyan-100 text-cyan-900',
   'Essai gratuit': 'bg-cyan-100 text-cyan-900',
 }
+
+const TERMINAL_STATUSES = new Set(['Refusée', 'Acceptée', 'Essai gratuit'])
 
 export default function PlatformProspectsPage() {
   const [prospects, setProspects] = useState([])
@@ -56,7 +59,7 @@ export default function PlatformProspectsPage() {
   }, [refresh])
 
   const handleAccept = async (prospect) => {
-    if (prospect.organization_id || prospect.status === 'Essai gratuit') return
+    if (prospect.organization_id || TERMINAL_STATUSES.has(prospect.status)) return
     if (
       !window.confirm(
         `Accepter « ${prospect.school_name} » ?\n\nCréation de l'auto-école, du compte gérant (${prospect.email}), essai 30 jours Starter et envoi d'un lien sécurisé pour définir le mot de passe.`,
@@ -69,16 +72,38 @@ export default function PlatformProspectsPage() {
     const { data, error } = await acceptProspect(prospect.id)
     setBusyId(null)
     if (error) {
-      setFeedback({ type: 'error', message: error.message || 'Acceptation impossible.' })
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Acceptation impossible.',
+        steps: null,
+      })
       return
     }
     setFeedback({
-      type: data?.email_sent ? 'ok' : 'error',
+      type: 'ok',
       message: data?.email_sent
-        ? 'Demande acceptée — auto-école créée, essai 30 jours Starter activé, lien d\'activation envoyé au gérant.'
-        : `Auto-école créée mais e-mail d'invitation non envoyé${data?.email_error ? ` (${data.email_error})` : ''}. Vérifiez RESEND_API_KEY.`,
+        ? `Demande acceptée — essai Starter jusqu'au ${data.trial_ends_at ? new Date(data.trial_ends_at).toLocaleDateString('fr-FR') : '—'}. E-mail envoyé (Resend ${data.resend_id || 'ok'}).`
+        : 'Demande acceptée.',
+      steps: formatAcceptSteps(data),
     })
     refresh()
+  }
+
+  const handleResendInvite = async (prospect) => {
+    if (!window.confirm(`Renvoyer l'e-mail d'activation à ${prospect.email} ?`)) return
+    setBusyId(prospect.id)
+    setFeedback(null)
+    const { data, error } = await resendManagerInvite(prospect.id)
+    setBusyId(null)
+    if (error) {
+      setFeedback({ type: 'error', message: error.message || 'Renvoi impossible.', steps: null })
+      return
+    }
+    setFeedback({
+      type: 'ok',
+      message: `Invitation renvoyée à ${prospect.email} (Resend ${data?.resend_id || 'ok'}).`,
+      steps: formatAcceptSteps(data),
+    })
   }
 
   const handleRefuse = async (prospect) => {
@@ -95,7 +120,7 @@ export default function PlatformProspectsPage() {
   }
 
   const pending = prospects.filter(
-    (row) => !row.organization_id && row.status !== 'Refusée' && row.status !== 'Essai gratuit',
+    (row) => !row.organization_id && !TERMINAL_STATUSES.has(row.status),
   )
 
   return (
@@ -113,15 +138,20 @@ export default function PlatformProspectsPage() {
       )}
 
       {feedback && (
-        <p
+        <div
           className={`rounded-xl border-2 px-4 py-3 text-sm font-bold ${
             feedback.type === 'ok'
               ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
               : 'border-rose-200 bg-rose-50 text-rose-800'
           }`}
         >
-          {feedback.message}
-        </p>
+          <p className="whitespace-pre-wrap">{feedback.message}</p>
+          {feedback.steps && (
+            <pre className="mt-3 overflow-x-auto rounded-lg bg-white/70 p-3 text-xs font-normal text-slate-700">
+              {feedback.steps}
+            </pre>
+          )}
+        </div>
       )}
 
       <p className="text-sm font-semibold text-slate-600">
@@ -158,7 +188,7 @@ export default function PlatformProspectsPage() {
               prospects.map((row) => {
                 const status = row.status || 'Nouvelle demande'
                 const canAct =
-                  !row.organization_id && status !== 'Refusée' && status !== 'Essai gratuit'
+                  !row.organization_id && !TERMINAL_STATUSES.has(status)
                 const isBusy = busyId === row.id
                 return (
                   <tr className="border-b" key={row.id}>
@@ -198,6 +228,15 @@ export default function PlatformProspectsPage() {
                             ✗ Refuser
                           </button>
                         </div>
+                      ) : status === 'Acceptée' || status === 'Essai gratuit' ? (
+                        <button
+                          className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 disabled:opacity-50"
+                          disabled={isBusy}
+                          onClick={() => handleResendInvite(row)}
+                          type="button"
+                        >
+                          ↻ Renvoyer l&apos;invitation
+                        </button>
                       ) : (
                         <span className="text-xs text-slate-400">—</span>
                       )}

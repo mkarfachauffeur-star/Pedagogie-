@@ -13,13 +13,58 @@ function normalizeError(error) {
   return error instanceof Error ? error : new Error(error.message || String(error))
 }
 
+async function readInvokePayload(error, data) {
+  if (data && typeof data === 'object') return data
+  try {
+    if (error?.context && typeof error.context.json === 'function') {
+      return await error.context.json()
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const body = error?.context?.body
+    if (typeof body === 'string' && body.trim()) return JSON.parse(body)
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function formatStepsMessage(payload) {
+  if (!payload?.steps?.length) return null
+  return payload.steps
+    .map((step) => {
+      const icon = step.status === 'ok' ? '✓' : step.status === 'error' ? '✗' : '·'
+      const detail = step.message ? ` — ${step.message}` : ''
+      return `${icon} ${step.step}${detail}`
+    })
+    .join('\n')
+}
+
+async function invokePlatformProspect(body) {
+  const { data, error } = await supabase.functions.invoke('platform-prospect', { body })
+  const payload = (await readInvokePayload(error, data)) || data || {}
+
+  if (error || payload.error) {
+    const stepsText = formatStepsMessage(payload)
+    const failedStep = payload.failed_step ? `[${payload.failed_step}] ` : ''
+    const message = payload.error || error?.message || 'Opération impossible.'
+    const fullMessage = stepsText
+      ? `${failedStep}${message}\n\n${stepsText}`
+      : `${failedStep}${message}`
+    throw new Error(fullMessage)
+  }
+
+  return payload
+}
+
 export async function listProspects() {
   const rpc = await supabase.rpc('platform_list_demo_requests')
   if (!rpc.error) {
     return { prospects: rpc.data || [], error: null }
   }
 
-  // Secours : lecture directe (si migration RPC pas encore appliquée)
   const direct = await supabase
     .from('demo_requests')
     .select('*')
@@ -86,32 +131,30 @@ export async function refuseProspect(prospectId) {
   return updateProspect(prospectId, { status: PROSPECT_STATUS.REFUSED })
 }
 
-function parseFunctionErrorBody(error, data) {
-  if (data?.error) return String(data.error)
-  try {
-    const body = error?.context?.body
-    if (typeof body === 'string' && body.trim()) {
-      const parsed = JSON.parse(body)
-      if (parsed?.error) return String(parsed.error)
-    }
-  } catch {
-    // ignore
-  }
-  return null
-}
-
 export async function acceptProspect(prospectId) {
   try {
-    const { data, error } = await supabase.functions.invoke('platform-prospect', {
-      body: { action: 'accept_prospect', prospect_id: prospectId },
+    const data = await invokePlatformProspect({
+      action: 'accept_prospect',
+      prospect_id: prospectId,
     })
-    const serverMessage = parseFunctionErrorBody(error, data)
-    if (error) {
-      throw new Error(serverMessage || error.message || 'Acceptation impossible.')
-    }
-    if (data?.error) throw new Error(data.error)
     return { data, error: null }
   } catch (error) {
     return { data: null, error: normalizeError(error) }
   }
+}
+
+export async function resendManagerInvite(prospectId) {
+  try {
+    const data = await invokePlatformProspect({
+      action: 'resend_invite',
+      prospect_id: prospectId,
+    })
+    return { data, error: null }
+  } catch (error) {
+    return { data: null, error: normalizeError(error) }
+  }
+}
+
+export function formatAcceptSteps(data) {
+  return formatStepsMessage(data)
 }
