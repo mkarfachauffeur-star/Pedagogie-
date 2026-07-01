@@ -10,7 +10,7 @@ import {
   Smartphone,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
 import PageSeo from '../components/seo/PageSeo'
@@ -97,7 +97,8 @@ function LoginRoadArt() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { signInWithPassword } = useAuth()
+  const location = useLocation()
+  const { signInWithPassword, completePasswordChange, mustChangePassword: sessionMustChange, role: sessionRole } = useAuth()
   const { isDark, toggleTheme } = useMarketingTheme()
   const skin = marketingSkin(isDark ? 'dark' : 'light')
   const shouldReduceMotion = useReducedMotion()
@@ -108,6 +109,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
+  const [pendingRole, setPendingRole] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const loginPage = SEO_PAGES.login
   const loginJsonLd = useMemo(
     () =>
@@ -124,6 +130,19 @@ export default function LoginPage() {
     const savedEmail = window.localStorage.getItem('pedagogia-drive-login-email')
     if (savedEmail) setEmail(savedEmail)
   }, [])
+
+  useEffect(() => {
+    if (sessionMustChange) {
+      setMustChangePassword(true)
+      setPendingRole(sessionRole)
+    }
+  }, [sessionMustChange, sessionRole])
+
+  useEffect(() => {
+    if (location.state?.forcePasswordChange) {
+      setMustChangePassword(true)
+    }
+  }, [location.state?.forcePasswordChange])
 
   useEffect(() => {
     const previousBodyBg = document.body.style.backgroundColor
@@ -154,13 +173,48 @@ export default function LoginPage() {
       window.localStorage.setItem('pedagogia-drive-login-email', email)
     }
     setSubmitting(true)
-    const { error, role: realRole } = await signInWithPassword(email, password)
+    const { error, role: realRole, mustChangePassword: forceChange } = await signInWithPassword(email, password)
     setSubmitting(false)
     if (error) {
       setAuthError(error.message || getUserFacingError(error, 'login'))
       return
     }
+    if (forceChange) {
+      setMustChangePassword(true)
+      setPendingRole(realRole)
+      setNewPassword('')
+      setConfirmPassword('')
+      setAuthError('')
+      return
+    }
     const destination = roleDestinations[realRole] || '/'
+    navigate(destination, { replace: true })
+  }
+
+  const handlePasswordChange = async (event) => {
+    event.preventDefault()
+    setAuthError('')
+    if (newPassword.length < 8) {
+      setAuthError('Le nouveau mot de passe doit contenir au moins 8 caractères.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setAuthError('Les mots de passe ne correspondent pas.')
+      return
+    }
+    if (newPassword === password) {
+      setAuthError('Choisissez un mot de passe différent du mot de passe temporaire.')
+      return
+    }
+    setSubmitting(true)
+    const { error } = await completePasswordChange(newPassword)
+    setSubmitting(false)
+    if (error) {
+      setAuthError(error.message || getUserFacingError(error, 'save'))
+      return
+    }
+    setMustChangePassword(false)
+    const destination = roleDestinations[pendingRole] || '/'
     navigate(destination, { replace: true })
   }
 
@@ -241,6 +295,67 @@ export default function LoginPage() {
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-blue-500/60 via-violet-400/30 to-red-500/60" />
                 )}
 
+                {mustChangePassword ? (
+                  <form className="grid gap-4" onSubmit={handlePasswordChange}>
+                    <div className={skin.loginForgotBox}>
+                      <p className={`font-black ${skin.heading}`}>Changement de mot de passe obligatoire</p>
+                      <p className="mt-2 text-sm">
+                        Pour des raisons de sécurité, définissez un nouveau mot de passe personnel avant d&apos;accéder à votre espace.
+                      </p>
+                    </div>
+                    <label className={skin.loginLabel}>
+                      Nouveau mot de passe
+                      <span className={skin.loginInputWrap}>
+                        <LockKeyhole className={inputIconClass} />
+                        <input
+                          autoComplete="new-password"
+                          className={skin.loginInput}
+                          minLength={8}
+                          onChange={(event) => setNewPassword(event.target.value)}
+                          placeholder="Minimum 8 caractères"
+                          required
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPassword}
+                        />
+                        <button
+                          aria-label={showNewPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                          className={passwordToggleClass}
+                          onClick={() => setShowNewPassword((current) => !current)}
+                          type="button"
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </span>
+                    </label>
+                    <label className={skin.loginLabel}>
+                      Confirmer le mot de passe
+                      <span className={skin.loginInputWrap}>
+                        <LockKeyhole className={inputIconClass} />
+                        <input
+                          autoComplete="new-password"
+                          className={skin.loginInput}
+                          minLength={8}
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                          placeholder="Répétez le mot de passe"
+                          required
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                        />
+                      </span>
+                    </label>
+                    {authError && <p className={skin.loginError}>{authError}</p>}
+                    <button
+                      className="group mt-1 flex w-full overflow-hidden rounded-xl shadow-lg shadow-blue-900/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
+                      disabled={submitting || newPassword.length < 8 || !confirmPassword}
+                      type="submit"
+                    >
+                      <span className="flex flex-1 items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">
+                        Enregistrer et continuer
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </button>
+                  </form>
+                ) : (
                 <form className="grid gap-4" onSubmit={handleSubmit}>
                   <label className={skin.loginLabel}>
                     E-mail
@@ -331,6 +446,7 @@ export default function LoginPage() {
                     Redirection automatique vers votre espace après connexion.
                   </p>
                 </form>
+                )}
 
                 <Link className={`mt-6 flex items-center justify-center gap-2 ${skin.loginBackLink}`} to="/">
                   <ArrowLeft className="h-4 w-4" />

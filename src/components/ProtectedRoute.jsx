@@ -4,11 +4,15 @@ import { roleDestinations } from '../utils/authSession'
 import LoadingSpinner from './ui/LoadingSpinner'
 
 export default function ProtectedRoute({ role, children }) {
-  const { isAuthenticated, role: currentRole, loading, isSuperAdmin } = useAuth()
+  const { isAuthenticated, role: currentRole, loading, isSuperAdmin, mustChangePassword } = useAuth()
   const location = useLocation()
 
   if (loading) {
     return <LoadingSpinner label="Vérification de votre accès…" />
+  }
+
+  if (mustChangePassword) {
+    return <Navigate to="/login" replace state={{ from: location.pathname, forcePasswordChange: true }} />
   }
 
   if (!isAuthenticated || !currentRole) {

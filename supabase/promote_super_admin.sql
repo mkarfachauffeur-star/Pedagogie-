@@ -7,7 +7,7 @@
 --
 -- SELECT public.promote_to_super_admin(u.id)
 -- FROM auth.users u
--- WHERE lower(u.email) = lower('admin@pedagogia-drive.fr');
+-- WHERE lower(u.email) = lower('m.karfa@hotmail.com');
 --
 -- OPTION B — Par UUID (remplacer USER_UUID) :
 --

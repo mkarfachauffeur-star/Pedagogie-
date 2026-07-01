@@ -28,13 +28,14 @@ import ManagerMessagesPage from './pages/app-pages/ManagerMessagesPage'
 import ManagerExportsPage from './pages/app-pages/ManagerExportsPage'
 import ManagerPackagesPage from './pages/app-pages/ManagerPackagesPage'
 
-import PlatformLayout from './layouts/PlatformLayout'
 import PlatformProtectedRoute from './components/PlatformProtectedRoute'
 import PlatformDashboardPage from './pages/platform/PlatformDashboardPage'
 import PlatformOrganizationsPage from './pages/platform/PlatformOrganizationsPage'
 import PlatformSubscriptionsPage from './pages/platform/PlatformSubscriptionsPage'
 import PlatformAuditPage from './pages/platform/PlatformAuditPage'
-import PlatformDemoRequestsPage from './pages/platform/PlatformDemoRequestsPage'
+import PlatformProspectsPage from './pages/platform/PlatformProspectsPage'
+import PlatformPricingPage from './pages/platform/PlatformPricingPage'
+import PlatformSettingsPage from './pages/platform/PlatformSettingsPage'
 import PlatformUsersPage from './pages/platform/PlatformUsersPage'
 import PlatformPaymentsPage from './pages/platform/PlatformPaymentsPage'
 
@@ -86,6 +87,16 @@ function withProtectedLayout(role, Page, fullWidth = false) {
         <Page />
       </DashboardLayout>
     </ProtectedRoute>
+  )
+}
+
+function withPlatformLayout(Page, fullWidth = false) {
+  return (
+    <PlatformProtectedRoute>
+      <DashboardLayout role="super_admin" fullWidth={fullWidth}>
+        <Page />
+      </DashboardLayout>
+    </PlatformProtectedRoute>
   )
 }
 
@@ -241,23 +252,17 @@ function App() {
           element={withProtectedLayout('secretary', SecretaryMessagesPage)}
         />
 
-        <Route
-          path="/platform"
-          element={
-            <PlatformProtectedRoute>
-              <PlatformLayout />
-            </PlatformProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<PlatformDashboardPage />} />
-          <Route path="organizations" element={<PlatformOrganizationsPage />} />
-          <Route path="demo-requests" element={<PlatformDemoRequestsPage />} />
-          <Route path="users" element={<PlatformUsersPage />} />
-          <Route path="subscriptions" element={<PlatformSubscriptionsPage />} />
-          <Route path="payments" element={<PlatformPaymentsPage />} />
-          <Route path="audit" element={<PlatformAuditPage />} />
-        </Route>
+        <Route path="/platform" element={<Navigate to="/platform/dashboard" replace />} />
+        <Route path="/platform/dashboard" element={withPlatformLayout(PlatformDashboardPage)} />
+        <Route path="/platform/organizations" element={withPlatformLayout(PlatformOrganizationsPage)} />
+        <Route path="/platform/prospects" element={withPlatformLayout(PlatformProspectsPage)} />
+        <Route path="/platform/demo-requests" element={<Navigate replace to="/platform/prospects" />} />
+        <Route path="/platform/pricing" element={withPlatformLayout(PlatformPricingPage)} />
+        <Route path="/platform/settings" element={withPlatformLayout(PlatformSettingsPage)} />
+        <Route path="/platform/users" element={withPlatformLayout(PlatformUsersPage)} />
+        <Route path="/platform/subscriptions" element={withPlatformLayout(PlatformSubscriptionsPage)} />
+        <Route path="/platform/payments" element={withPlatformLayout(PlatformPaymentsPage)} />
+        <Route path="/platform/audit" element={withPlatformLayout(PlatformAuditPage)} />
       </Routes>
     </BrowserRouter>
   )

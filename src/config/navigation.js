@@ -69,6 +69,22 @@ export const NAVIGATION = {
       { href: '/teacher/finance', icon: '\u{1F4B8}', label: 'Finances' },
     ],
   },
+  super_admin: {
+    label: 'Super Admin',
+    spaceLabel: 'Administration plateforme',
+    user: { avatar: '\u{1F510}', name: 'Super Admin', role: 'Plateforme' },
+    items: [
+      { href: '/platform/dashboard', icon: '\u{1F4CA}', label: 'Dashboard' },
+      { href: '/platform/prospects', icon: '\u{1F4E9}', label: 'Prospects', badgeKey: 'prospects' },
+      { href: '/platform/organizations', icon: '\u{1F3E2}', label: 'Auto-écoles' },
+      { href: '/platform/subscriptions', icon: '\u{1F4E6}', label: 'Abonnements' },
+      { href: '/platform/payments', icon: '\u{1F4B0}', label: 'Paiements' },
+      { href: '/platform/pricing', icon: '\u{1F4B8}', label: 'Tarifs' },
+      { href: '/platform/users', icon: '\u{1F465}', label: 'Utilisateurs plateforme' },
+      { href: '/platform/audit', icon: '\u{1F4CB}', label: 'Audit' },
+      { href: '/platform/settings', icon: '\u2699\uFE0F', label: 'Paramètres' },
+    ],
+  },
   secretary: {
     user: { avatar: '\u{1F469}\u200D\u{1F4BC}', name: 'Secrétariat', role: 'Secrétariat' },
     items: [

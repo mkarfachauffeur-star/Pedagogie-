@@ -112,7 +112,8 @@ export function AuthProvider({ children }) {
 
   const signInWithPassword = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null }
+    if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null, mustChangePassword: false }
+    const mustChangePassword = Boolean(data.user?.user_metadata?.must_change_password)
     let nextRole = null
     try {
       const superAdmin = await checkIsSuperAdmin(data.user?.id)
@@ -125,7 +126,7 @@ export function AuthProvider({ children }) {
           .maybeSingle()
         if (prof && prof.is_active === false) {
           await supabase.auth.signOut()
-          return { error: new Error('Compte désactivé.'), role: null }
+          return { error: new Error('Compte désactivé.'), role: null, mustChangePassword: false }
         }
         nextRole = prof?.role ?? resolveRoleFromUser(data.user) ?? null
       }
@@ -134,7 +135,17 @@ export function AuthProvider({ children }) {
     }
     await loadProfile(data.user?.id)
     if (nextRole !== 'super_admin') await logLoginAudit()
-    return { error: null, role: nextRole }
+    return { error: null, role: nextRole, mustChangePassword }
+  }, [loadProfile])
+
+  const completePasswordChange = useCallback(async (newPassword) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+      data: { must_change_password: false },
+    })
+    if (error) return { error: new Error(getUserFacingError(error, 'save')) }
+    await loadProfile(data.user?.id)
+    return { error: null }
   }, [loadProfile])
 
   const signOut = useCallback(async () => {
@@ -152,6 +163,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const role = isSuperAdmin ? 'super_admin' : (session ? (profile?.role || supabaseRole) : null)
+  const mustChangePassword = Boolean(session?.user?.user_metadata?.must_change_password)
   const isTrial = organization?.status === 'trial'
   const canWrite = useMemo(
     () => computeCanWrite(organization, subscription),
@@ -164,7 +176,7 @@ export function AuthProvider({ children }) {
       user: session?.user ?? null,
       profile,
       profileId: profile?.id ?? session?.user?.id ?? null,
-      organizationId: profile?.organization_id ?? null,
+      organizationId: isSuperAdmin ? null : (profile?.organization_id ?? null),
       organization,
       subscription,
       studentCount,
@@ -172,13 +184,15 @@ export function AuthProvider({ children }) {
       canWrite,
       isTrial,
       role,
+      mustChangePassword,
       isAuthenticated: Boolean(session),
       loading,
       signInWithPassword,
+      completePasswordChange,
       signOut,
       refreshOrg: loadProfile,
     }),
-    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, loading, signInWithPassword, signOut, loadProfile],
+    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, mustChangePassword, loading, signInWithPassword, completePasswordChange, signOut, loadProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

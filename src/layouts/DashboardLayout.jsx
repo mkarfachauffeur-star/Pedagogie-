@@ -9,6 +9,7 @@ import { NAVIGATION } from '../config/navigation'
 import { useAuth } from '../context/AuthContext'
 import { SITE_NAME } from '../lib/seo'
 import { useStudentTrack } from '../hooks/useStudentTrack'
+import { useProspectNotifications } from '../hooks/useProspectNotifications'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { runExpirationRemindersCheck } from '../services/expirationReminders'
 import { getTrackLabel } from '../lib/studentTrack'
@@ -16,8 +17,14 @@ import { getTrackLabel } from '../lib/studentTrack'
 export default function DashboardLayout({ role, children, fullWidth = false }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut, profileId } = useAuth()
+  const { signOut, profileId, profile } = useAuth()
   const config = NAVIGATION[role]
+  const sidebarUser = config?.user
+    ? {
+        ...config.user,
+        name: profile?.full_name?.trim() || config.user.name,
+      }
+    : null
   const { navItems, track, loading: trackLoading } = useStudentTrack(role === 'student' ? profileId : null)
   const items = role === 'student' ? navItems : config.items
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -25,6 +32,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   // Le badge n'apparaît que lorsqu'il y a réellement des messages non lus
   // (compteur Supabase temps réel ; 0 tant qu'aucune session réelle).
   const notificationCount = useUnreadCount()
+  const { newCount: newProspectCount } = useProspectNotifications()
 
   // Chaque changement de page repart du haut (évite d'atterrir en bas sur les longues pages).
   useEffect(() => {
@@ -95,6 +103,23 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
     )
   }
 
+  const renderNavBadge = (count, compact = false) => {
+    if (count <= 0) return null
+    const label = count > 99 ? '99+' : count
+    return (
+      <span
+        aria-label={`${count} nouvelle${count > 1 ? 's' : ''} demande${count > 1 ? 's' : ''}`}
+        className={`flex shrink-0 items-center justify-center rounded-full bg-amber-500 font-bold text-white ${
+          compact
+            ? 'absolute -right-1 -top-1 h-4 min-w-4 px-0.5 text-[10px]'
+            : 'ml-auto h-5 min-w-5 px-1.5 text-[11px] leading-none'
+        }`}
+      >
+        {label}
+      </span>
+    )
+  }
+
   return (
     <div className="pd-shell relative min-h-screen w-full lg:flex">
       <PageSeo
@@ -137,25 +162,25 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             </Link>
             {!sidebarCollapsed && (
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                Espace professionnel
+                {config.spaceLabel || 'Espace professionnel'}
               </p>
             )}
           </div>
 
-          {config.user && (
+          {sidebarUser && (
             <div
               className={`mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-blue-100/80 bg-blue-50/70 p-3 transition-all duration-300 ${sidebarCollapsed ? 'lg:mx-3 lg:justify-center lg:px-2' : ''}`}
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-lg text-white shadow-sm">
-                {config.user.avatar}
+                {sidebarUser.avatar}
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
               </div>
               <div
                 className={`min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
               >
-                <p className="truncate text-sm font-semibold text-slate-900">{config.user.name}</p>
-                {config.user.role && (
-                  <p className="text-xs text-slate-500">{config.user.role}</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{sidebarUser.name}</p>
+                {sidebarUser.role && (
+                  <p className="text-xs text-slate-500">{sidebarUser.role}</p>
                 )}
               </div>
             </div>
@@ -168,6 +193,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             {items.map((item) => {
               const active = location.pathname === item.href
               const showMessagesBadge = isMessagesNavItem(item.href)
+              const showProspectBadge = role === 'super_admin' && item.badgeKey === 'prospects' && newProspectCount > 0
               return (
                 <Link
                   key={item.href}
@@ -190,6 +216,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                     {showMessagesBadge && sidebarCollapsed && (
                       <span className="hidden lg:block">{renderUnreadBadge(true)}</span>
                     )}
+                    {showProspectBadge && sidebarCollapsed && (
+                      <span className="hidden lg:block">{renderNavBadge(newProspectCount, true)}</span>
+                    )}
                   </span>
                   <span
                     className={`truncate transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
@@ -198,6 +227,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                   </span>
                   {showMessagesBadge && (
                     <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{renderUnreadBadge()}</span>
+                  )}
+                  {showProspectBadge && (
+                    <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{renderNavBadge(newProspectCount)}</span>
                   )}
                 </Link>
               )
@@ -244,16 +276,18 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
               <p className="text-sm font-semibold text-slate-900">
                 {role === 'student' && !trackLoading
                   ? getTrackLabel(track)
-                  : (config.user?.name || 'PEDAGOGIA DRIVE')}
+                  : (sidebarUser?.name || 'PEDAGOGIA DRIVE')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationBell role={role} unreadCount={notificationCount} />
-            {config.user && (
+            {role !== 'super_admin' && (
+              <NotificationBell role={role} unreadCount={notificationCount} />
+            )}
+            {sidebarUser && (
               <div className="hidden items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
-                <span className="text-lg">{config.user.avatar}</span>
-                <span className="text-sm font-medium text-slate-700">{config.user.name}</span>
+                <span className="text-lg">{sidebarUser.avatar}</span>
+                <span className="text-sm font-medium text-slate-700">{sidebarUser.name}</span>
               </div>
             )}
           </div>

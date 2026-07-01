@@ -27,9 +27,13 @@ verify_jwt = false
 [functions.create-simulator-resource]
 verify_jwt = true
 
+[functions.platform-prospect]
+verify_jwt = true
+
 [auth]
-site_url = "https://pedagogia-drive.vercel.app"
+site_url = "https://www.pedagogia-drive.fr"
 additional_redirect_urls = [
+  "https://www.pedagogia-drive.fr/**",
   "https://pedagogia-drive.vercel.app/**",
   "http://localhost:5173/**",
   "http://127.0.0.1:5173/**",

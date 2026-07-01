@@ -1,61 +1,70 @@
 import { useEffect, useState } from 'react'
-import { fetchPlatformStats } from '../../services/platform'
-import { fetchGlobalProfitabilityStats, formatEur } from '../../services/profitability'
+import { fetchPlatformSaasMetrics, formatPlatformEur } from '../../services/platform'
+import { useProspectNotifications } from '../../hooks/useProspectNotifications'
 import PageHero from '../../components/ui/PageHero'
+import { Link } from 'react-router-dom'
 
 export default function PlatformDashboardPage() {
-  const [stats, setStats] = useState(null)
-  const [profitability, setProfitability] = useState(null)
+  const [metrics, setMetrics] = useState(null)
+  const { newCount } = useProspectNotifications()
 
   useEffect(() => {
-    fetchPlatformStats().then(setStats)
-    fetchGlobalProfitabilityStats().then(({ dashboard }) => setProfitability(dashboard))
+    fetchPlatformSaasMetrics().then(setMetrics)
   }, [])
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <PageHero
         eyebrow="Super Admin"
-        title="Tableau de bord PEDAGOGIA DRIVE"
-        subtitle="Vue globale de la plateforme SaaS — statistiques agrégées de toutes les auto-écoles (lecture seule)."
+        title="Dashboard SaaS"
+        subtitle="Revenus et abonnements Pedagogia Drive — aucune donnée élève."
       />
 
-      {stats && (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi label="Auto-écoles" value={stats.totalOrganizations} />
-          <Kpi label="Élèves (total)" value={stats.totalStudents} />
-          <Kpi label="En essai" value={stats.orgsByStatus?.trial ?? 0} />
-          <Kpi label="Actives" value={stats.orgsByStatus?.active ?? 0} />
-          <Kpi label="Suspendues" value={stats.orgsByStatus?.suspended ?? 0} />
-          <Kpi label="Annulées" value={stats.orgsByStatus?.cancelled ?? 0} />
-          <Kpi label="Demandes démo" value={stats.totalDemoRequests} />
-          <Kpi label="Utilisateurs" value={stats.totalUsers} />
-        </section>
+      {newCount > 0 && (
+        <Link
+          className="flex items-center justify-between rounded-2xl border-2 border-amber-300 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-900 transition hover:bg-amber-100"
+          to="/platform/prospects"
+        >
+          <span>{newCount} nouvelle{newCount > 1 ? 's' : ''} demande{newCount > 1 ? 's' : ''} de démonstration</span>
+          <span className="text-amber-700">Voir les prospects →</span>
+        </Link>
       )}
 
-      {profitability && (
-        <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5">
-          <h2 className="text-xl font-extrabold text-slate-950">Rentabilité globale (toutes organisations)</h2>
-          <p className="mt-1 text-sm text-slate-500">Les tarifs unitaires restent modifiables uniquement par chaque gérant.</p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Kpi label="CA mensuel global" value={formatEur(profitability.monthlyRevenue)} />
-            <Kpi label="CA annuel global" value={formatEur(profitability.annualRevenue)} />
-            <Kpi label="Élèves actifs" value={profitability.activeStudents} />
-            <Kpi label="Heures réalisées" value={`${profitability.hoursCompleted} h`} />
-            <Kpi label="Panier moyen / élève" value={formatEur(profitability.averageBasket)} />
-            <Kpi label="Restant à encaisser" value={formatEur(profitability.remainingToCollect)} />
-          </div>
+      {metrics && (
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <Kpi hint="Revenu mensuel récurrent" label="MRR" value={formatPlatformEur(metrics.mrrCents, { fromCents: true })} />
+          <Kpi hint="Revenu annuel récurrent" label="ARR" value={formatPlatformEur(metrics.arrCents, { fromCents: true })} />
+          <Kpi label="Essais gratuits" value={metrics.trialCount} />
+          <Kpi label="Clients Starter" value={metrics.starterCount} />
+          <Kpi label="Clients Premium" value={metrics.premiumCount} />
+          <Kpi label="Auto-écoles (total)" value={metrics.totalOrganizations} />
+          <Kpi label="Paiements du mois" value={formatPlatformEur(metrics.monthlyPaidCents, { fromCents: true })} />
+          <Kpi
+            label="Paiements échoués"
+            value={`${metrics.failedPayments} · ${formatPlatformEur(metrics.failedAmountCents, { fromCents: true })}`}
+          />
+          <Kpi
+            label="Paiements en attente"
+            value={`${metrics.pendingPayments} · ${formatPlatformEur(metrics.pendingAmountCents, { fromCents: true })}`}
+          />
+          <Kpi
+            label="Revenu prévu mois prochain"
+            value={formatPlatformEur(metrics.projectedNextMonthCents, { fromCents: true })}
+          />
+          <Kpi label="Conversion Essai → Client" value={`${metrics.conversionRate.toFixed(1)} %`} />
+          <Kpi label="Churn" value={`${metrics.churnRate.toFixed(1)} %`} />
         </section>
       )}
     </div>
   )
 }
 
-function Kpi({ label, value }) {
+function Kpi({ label, value, hint }) {
   return (
     <article className="rounded-2xl border-2 border-slate-300 bg-white p-5">
       <p className="text-sm font-bold text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-black text-cyan-700">{value}</p>
+      {hint && <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{hint}</p>}
+      <p className="mt-2 text-2xl font-black text-cyan-700 xl:text-3xl">{value}</p>
     </article>
   )
 }
