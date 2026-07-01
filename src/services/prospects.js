@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 export const PROSPECT_STATUS = {
   NEW: 'Nouvelle demande',
   REFUSED: 'Refusée',
+  ACCEPTED: 'Acceptée',
+  /** @deprecated alias historique */
   TRIAL: 'Essai gratuit',
 }
 
@@ -84,12 +86,29 @@ export async function refuseProspect(prospectId) {
   return updateProspect(prospectId, { status: PROSPECT_STATUS.REFUSED })
 }
 
+function parseFunctionErrorBody(error, data) {
+  if (data?.error) return String(data.error)
+  try {
+    const body = error?.context?.body
+    if (typeof body === 'string' && body.trim()) {
+      const parsed = JSON.parse(body)
+      if (parsed?.error) return String(parsed.error)
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
 export async function acceptProspect(prospectId) {
   try {
     const { data, error } = await supabase.functions.invoke('platform-prospect', {
       body: { action: 'accept_prospect', prospect_id: prospectId },
     })
-    if (error) throw error
+    const serverMessage = parseFunctionErrorBody(error, data)
+    if (error) {
+      throw new Error(serverMessage || error.message || 'Acceptation impossible.')
+    }
     if (data?.error) throw new Error(data.error)
     return { data, error: null }
   } catch (error) {

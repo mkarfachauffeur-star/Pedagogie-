@@ -1,10 +1,27 @@
-// PEDAGOGIA DRIVE — Super Admin : accepter un prospect (org + gérant + invitation Supabase)
+// PEDAGOGIA DRIVE — Super Admin : accepter un prospect (transaction + invitation Supabase)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+type AdminClient = ReturnType<typeof createClient>
+
+type AuthInviteResult = {
+  userId: string
+  created: boolean
+  activateLink: string
+}
+
+type PriorProfile = {
+  id: string
+  organization_id: string | null
+  role: string
+  full_name: string | null
+  email: string | null
+  is_active: boolean | null
 }
 
 function json(payload: unknown, status = 200) {
@@ -27,10 +44,15 @@ function appBaseUrl() {
     .replace(/\/$/, '')
 }
 
-async function assertSuperAdmin(
-  admin: ReturnType<typeof createClient>,
-  userId: string,
-): Promise<boolean> {
+function formatFrDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR')
+  } catch {
+    return iso
+  }
+}
+
+async function assertSuperAdmin(admin: AdminClient, userId: string): Promise<boolean> {
   const { data: sa } = await admin
     .from('super_admins')
     .select('profile_id')
@@ -47,7 +69,7 @@ async function assertSuperAdmin(
   return profile?.role === 'super_admin'
 }
 
-async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+async function findUserByEmail(admin: AdminClient, email: string) {
   let page = 1
   while (true) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
@@ -66,9 +88,13 @@ async function sendWelcomeEmail(payload: {
   email: string
   activateLink: string
   loginUrl: string
+  trialStartedAt: string
+  trialEndsAt: string
 }) {
   const resendKey = Deno.env.get('RESEND_API_KEY')
-  if (!resendKey) return { sent: false, reason: 'missing_resend_api_key' as const }
+  if (!resendKey) {
+    throw new Error('RESEND_API_KEY non configurée — envoi e-mail impossible.')
+  }
 
   const from =
     Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
@@ -77,8 +103,8 @@ async function sendWelcomeEmail(payload: {
     <h2>Bienvenue sur Pedagogia Drive</h2>
     <p>Bonjour ${escapeHtml(payload.contactName)},</p>
     <p>Votre demande de démonstration pour <strong>${escapeHtml(payload.schoolName)}</strong> a été acceptée.</p>
-    <p>Votre essai gratuit de <strong>30 jours</strong> (plan Starter) est activé.</p>
-    <p>Pour accéder à votre espace gérant, définissez votre mot de passe via le lien sécurisé ci-dessous :</p>
+    <p>Votre essai gratuit <strong>Starter</strong> de 30 jours est activé du <strong>${escapeHtml(formatFrDate(payload.trialStartedAt))}</strong> au <strong>${escapeHtml(formatFrDate(payload.trialEndsAt))}</strong>.</p>
+    <p>Pour accéder à votre espace gérant, définissez votre mot de passe via le lien sécurisé Supabase ci-dessous :</p>
     <p><a href="${escapeHtml(payload.activateLink)}" style="display:inline-block;padding:12px 24px;background:#0891b2;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">Définir mon mot de passe</a></p>
     <p style="font-size:13px;color:#64748b">Identifiant : ${escapeHtml(payload.email)}</p>
     <p style="font-size:13px;color:#64748b">Une fois votre mot de passe défini, connectez-vous sur <a href="${escapeHtml(payload.loginUrl)}">${escapeHtml(payload.loginUrl)}</a>.</p>
@@ -99,20 +125,21 @@ async function sendWelcomeEmail(payload: {
     }),
   })
 
-  if (res.ok) return { sent: true as const }
-  const body = await res.text().catch(() => '')
-  console.error('[platform-prospect] Resend failed', res.status, body)
-  return { sent: false as const, reason: `resend_${res.status}` }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error('[platform-prospect] Resend failed', res.status, body)
+    throw new Error(`Envoi e-mail Resend échoué (${res.status}).`)
+  }
 }
 
-async function inviteManagerAccount(
-  admin: ReturnType<typeof createClient>,
-  params: { email: string; contactName: string; orgId: string },
-) {
-  const { email, contactName, orgId } = params
+async function createManagerAuthInvite(
+  admin: AdminClient,
+  params: { email: string; contactName: string; orgId?: string },
+): Promise<AuthInviteResult> {
+  const { email, contactName } = params
   const redirectTo = `${appBaseUrl()}/accept-invite`
   const metadata = {
-    organization_id: orgId,
+    organization_id: params.orgId ?? null,
     role: 'manager',
     full_name: contactName,
   }
@@ -140,25 +167,6 @@ async function inviteManagerAccount(
     const activateLink = linkData?.properties?.action_link
     if (!activateLink) throw new Error('Lien d\'activation introuvable.')
 
-    const { error: updateError } = await admin.auth.admin.updateUserById(existing.id, {
-      app_metadata: { role: 'manager' },
-      user_metadata: {
-        ...(existing.user_metadata || {}),
-        ...metadata,
-        must_change_password: undefined,
-      },
-    })
-    if (updateError) throw updateError
-
-    await admin.from('profiles').upsert({
-      id: existing.id,
-      organization_id: orgId,
-      role: 'manager',
-      full_name: contactName,
-      email,
-      is_active: true,
-    })
-
     return { userId: existing.id, created: false, activateLink }
   }
 
@@ -183,16 +191,51 @@ async function inviteManagerAccount(
     user_metadata: metadata,
   })
 
-  await admin.from('profiles').upsert({
-    id: userId,
-    organization_id: orgId,
-    role: 'manager',
-    full_name: contactName,
-    email,
-    is_active: true,
-  })
-
   return { userId, created: true, activateLink }
+}
+
+async function rollbackAuthUser(
+  admin: AdminClient,
+  authResult: AuthInviteResult,
+  priorProfile: PriorProfile | null,
+) {
+  if (authResult.created) {
+    const { error } = await admin.auth.admin.deleteUser(authResult.userId)
+    if (error) console.error('[platform-prospect] deleteUser rollback failed', error.message)
+    return
+  }
+
+  if (priorProfile) {
+    await admin.from('profiles').upsert({
+      id: priorProfile.id,
+      organization_id: priorProfile.organization_id,
+      role: priorProfile.role,
+      full_name: priorProfile.full_name,
+      email: priorProfile.email,
+      is_active: priorProfile.is_active ?? true,
+    })
+  }
+}
+
+async function rollbackAcceptance(
+  admin: AdminClient,
+  asCaller: AdminClient,
+  params: {
+    prospectId: string
+    orgId: string | null
+    authResult: AuthInviteResult
+    priorProfile: PriorProfile | null
+  },
+) {
+  if (params.orgId) {
+    const { error } = await asCaller.rpc('platform_rollback_demo_acceptance', {
+      p_prospect_id: params.prospectId,
+      p_org_id: params.orgId,
+    })
+    if (error) console.error('[platform-prospect] SQL rollback failed', error.message)
+  }
+
+  await rollbackAuthUser(admin, params.authResult, params.priorProfile)
 }
 
 Deno.serve(async (req) => {
@@ -236,69 +279,87 @@ Deno.serve(async (req) => {
       if (prospect.status === 'Refusée') {
         return json({ error: 'Impossible d\'accepter une demande refusée.' }, 400)
       }
-
-      const { data: orgId, error: orgError } = await admin.rpc('platform_create_organization', {
-        p_name: prospect.school_name,
-        p_email: prospect.email,
-        p_phone: prospect.phone,
-      })
-      if (orgError || !orgId) {
-        return json({ error: orgError?.message || 'Création auto-école impossible.' }, 400)
+      if (prospect.status === 'Acceptée') {
+        return json({ error: 'Cette demande a déjà été acceptée.' }, 400)
       }
 
-      let managerResult
+      let authResult: AuthInviteResult
+      let priorProfile: PriorProfile | null = null
+
       try {
-        managerResult = await inviteManagerAccount(admin, {
+        const existing = await findUserByEmail(admin, prospect.email)
+        if (existing) {
+          const { data } = await admin
+            .from('profiles')
+            .select('id, organization_id, role, full_name, email, is_active')
+            .eq('id', existing.id)
+            .maybeSingle()
+          priorProfile = data ?? null
+        }
+
+        authResult = await createManagerAuthInvite(admin, {
           email: prospect.email,
           contactName: prospect.contact_name,
-          orgId,
         })
       } catch (authErr) {
-        await admin.from('organizations').delete().eq('id', orgId)
         return json({ error: String(authErr?.message || authErr) }, 400)
       }
 
-      const loginUrl = `${appBaseUrl()}/login`
-      const emailResult = await sendWelcomeEmail({
-        to: prospect.email,
-        contactName: prospect.contact_name,
-        schoolName: prospect.school_name,
-        loginUrl,
-        email: prospect.email,
-        activateLink: managerResult.activateLink,
+      const { data: acceptData, error: acceptError } = await asCaller.rpc('platform_accept_demo_request', {
+        p_prospect_id: prospectId,
+        p_manager_user_id: authResult.userId,
+        p_manager_email: prospect.email,
+        p_manager_name: prospect.contact_name,
       })
 
-      const noteLine = `[${new Date().toISOString()}] Acceptée — org ${orgId}, gérant ${managerResult.userId}${emailResult.sent ? ', invitation envoyée' : ', e-mail non envoyé'}`
-      await admin
-        .from('demo_requests')
-        .update({
-          status: 'Essai gratuit',
+      if (acceptError || !acceptData) {
+        await rollbackAuthUser(admin, authResult, priorProfile)
+        return json({ error: acceptError?.message || 'Création auto-école impossible.' }, 400)
+      }
+
+      const orgId = String(acceptData.organization_id || '')
+      const trialStartedAt = String(acceptData.trial_started_at || '')
+      const trialEndsAt = String(acceptData.trial_ends_at || '')
+
+      await admin.auth.admin.updateUserById(authResult.userId, {
+        app_metadata: { role: 'manager' },
+        user_metadata: {
           organization_id: orgId,
-          updated_at: new Date().toISOString(),
-          internal_notes: prospect.internal_notes
-            ? `${prospect.internal_notes}\n${noteLine}`
-            : noteLine,
-        })
-        .eq('id', prospectId)
-
-      await admin.from('audit_logs').insert({
-        organization_id: orgId,
-        actor_id: caller.id,
-        actor_role: 'super_admin',
-        action: 'create',
-        entity_type: 'organizations',
-        entity_id: orgId,
-        entity_label: prospect.school_name,
-        metadata: { source: 'prospect_accept', prospect_id: prospectId },
+          role: 'manager',
+          full_name: prospect.contact_name,
+        },
       })
+
+      try {
+        await sendWelcomeEmail({
+          to: prospect.email,
+          contactName: prospect.contact_name,
+          schoolName: prospect.school_name,
+          loginUrl: `${appBaseUrl()}/login`,
+          email: prospect.email,
+          activateLink: authResult.activateLink,
+          trialStartedAt,
+          trialEndsAt,
+        })
+      } catch (emailErr) {
+        await rollbackAcceptance(admin, asCaller, {
+          prospectId,
+          orgId,
+          authResult,
+          priorProfile,
+        })
+        return json({ error: String(emailErr?.message || emailErr) }, 502)
+      }
 
       return json({
         ok: true,
         organization_id: orgId,
-        manager_user_id: managerResult.userId,
-        manager_created: managerResult.created,
-        email_sent: emailResult.sent,
-        email_error: emailResult.sent ? null : emailResult.reason ?? null,
+        manager_user_id: authResult.userId,
+        manager_created: authResult.created,
+        trial_started_at: trialStartedAt,
+        trial_ends_at: trialEndsAt,
+        status: 'Acceptée',
+        email_sent: true,
       })
     }
 
