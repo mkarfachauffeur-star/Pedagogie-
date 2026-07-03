@@ -15,15 +15,20 @@ function json(payload: unknown, status = 200) {
 }
 
 async function assertSuperAdmin(admin: ReturnType<typeof createClient>, userId: string) {
-  const { data, error } = await admin
+  const { data: sa } = await admin
     .from('super_admins')
     .select('profile_id')
     .eq('profile_id', userId)
     .eq('is_active', true)
     .maybeSingle()
-  if (error) throw error
-  if (!data) return false
-  return true
+  if (sa) return true
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle()
+  return profile?.role === 'super_admin'
 }
 
 Deno.serve(async (req) => {
@@ -53,22 +58,30 @@ Deno.serve(async (req) => {
       const orgId = String(body.organization_id || '').trim()
       if (!orgId) return json({ error: 'organization_id requis' }, 400)
 
-      const { data: profiles } = await admin.from('profiles').select('id').eq('organization_id', orgId)
+      const { data: orgRow } = await admin
+        .from('organizations')
+        .select('id, name')
+        .eq('id', orgId)
+        .maybeSingle()
+      if (!orgRow) {
+        return json({ ok: true, message: 'Auto-école déjà supprimée.' })
+      }
+
+      const { data: profiles, error: profilesError } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('organization_id', orgId)
+      if (profilesError) return json({ error: profilesError.message }, 400)
+
       for (const profile of profiles || []) {
-        await admin.auth.admin.deleteUser(profile.id)
+        const { error: userError } = await admin.auth.admin.deleteUser(profile.id)
+        if (userError) {
+          return json({ error: `Suppression compte ${profile.id} : ${userError.message}` }, 400)
+        }
       }
 
       const { error: deleteError } = await admin.from('organizations').delete().eq('id', orgId)
       if (deleteError) return json({ error: deleteError.message }, 400)
-
-      await admin.from('audit_logs').insert({
-        actor_id: caller.id,
-        actor_role: 'super_admin',
-        action: 'delete',
-        entity_type: 'organizations',
-        entity_id: orgId,
-        metadata: { source: 'platform_super_admin' },
-      })
 
       return json({ ok: true, message: 'Auto-école supprimée.' })
     }

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import { formatPlatformDateTime } from '../../lib/platformPlans'
 import { supabase } from '../../lib/supabase'
-import { acceptProspect, listProspects, refuseProspect, resendManagerInvite, formatAcceptSteps } from '../../services/prospects'
+import { acceptProspect, deleteProspectRecord, listProspects, refuseProspect, resendManagerInvite } from '../../services/prospects'
+import { deleteOrganization } from '../../services/platform'
 import { useProspectNotifications } from '../../hooks/useProspectNotifications'
 
 const STATUS_BADGE = {
@@ -82,9 +83,8 @@ export default function PlatformProspectsPage() {
     setFeedback({
       type: 'ok',
       message: data?.email_sent
-        ? `Demande acceptée — essai Starter jusqu'au ${data.trial_ends_at ? new Date(data.trial_ends_at).toLocaleDateString('fr-FR') : '—'}. E-mail envoyé à ${prospect.email} (Resend HTTP ${data.resend_http_status || 200}, id ${data.resend_id || 'ok'}, from ${data.email_from || 'noreply@pedagogia-drive.fr'}).`
+        ? `Demande acceptée. Invitation envoyée à ${prospect.email}.`
         : 'Demande acceptée.',
-      steps: formatAcceptSteps(data),
     })
     refresh()
   }
@@ -99,10 +99,11 @@ export default function PlatformProspectsPage() {
       setFeedback({ type: 'error', message: error.message || 'Renvoi impossible.', steps: null })
       return
     }
+    console.info('[platform-prospect][resend_invite]', data)
     setFeedback({
       type: 'ok',
-      message: `Invitation renvoyée à ${prospect.email} (Resend HTTP ${data?.resend_http_status || 200}, id ${data?.resend_id || 'ok'}).`,
-      steps: formatAcceptSteps(data),
+      message: `Invitation envoyée à ${prospect.email}.`,
+      debug: data,
     })
   }
 
@@ -116,6 +117,41 @@ export default function PlatformProspectsPage() {
       return
     }
     setFeedback({ type: 'ok', message: 'Demande refusée.' })
+    refresh()
+  }
+
+  const handleDelete = async (prospect) => {
+    const hasOrg = Boolean(prospect.organization_id)
+    const message = hasOrg
+      ? `Supprimer définitivement « ${prospect.school_name} » ?\n\nL'auto-école, tous ses comptes utilisateurs et cette demande seront supprimés. Cette action est irréversible.`
+      : `Supprimer la demande « ${prospect.school_name} » ?\n\nCette action est irréversible.`
+    if (!window.confirm(message)) return
+
+    setBusyId(prospect.id)
+    setFeedback(null)
+
+    if (hasOrg) {
+      const { error: orgError } = await deleteOrganization(prospect.organization_id)
+      if (orgError && !String(orgError.message || '').includes('déjà supprimée')) {
+        setBusyId(null)
+        setFeedback({ type: 'error', message: orgError.message || 'Suppression de l\'auto-école impossible.' })
+        return
+      }
+    }
+
+    const { error } = await deleteProspectRecord(prospect.id)
+    setBusyId(null)
+    if (error) {
+      setFeedback({ type: 'error', message: error.message || 'Suppression impossible.' })
+      return
+    }
+
+    setFeedback({
+      type: 'ok',
+      message: hasOrg
+        ? `« ${prospect.school_name} » et son auto-école ont été supprimés.`
+        : `Demande « ${prospect.school_name} » supprimée.`,
+    })
     refresh()
   }
 
@@ -146,7 +182,15 @@ export default function PlatformProspectsPage() {
           }`}
         >
           <p className="whitespace-pre-wrap">{feedback.message}</p>
-          {feedback.steps && (
+          {feedback.debug && (
+            <details className="mt-3 rounded-lg bg-white/70 p-3 text-xs font-normal text-slate-700">
+              <summary className="cursor-pointer font-bold text-slate-800">Logs envoi (platform-prospect)</summary>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap">
+                {JSON.stringify(feedback.debug, null, 2)}
+              </pre>
+            </details>
+          )}
+          {feedback.type === 'error' && feedback.steps && (
             <pre className="mt-3 overflow-x-auto rounded-lg bg-white/70 p-3 text-xs font-normal text-slate-700">
               {feedback.steps}
             </pre>
@@ -209,37 +253,45 @@ export default function PlatformProspectsPage() {
                       </span>
                     </td>
                     <td className="p-4">
-                      {canAct ? (
-                        <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        {canAct ? (
+                          <>
+                            <button
+                              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                              disabled={isBusy}
+                              onClick={() => handleAccept(row)}
+                              type="button"
+                            >
+                              ✓ Accepter
+                            </button>
+                            <button
+                              className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+                              disabled={isBusy}
+                              onClick={() => handleRefuse(row)}
+                              type="button"
+                            >
+                              ✗ Refuser
+                            </button>
+                          </>
+                        ) : status === 'Acceptée' || status === 'Essai gratuit' ? (
                           <button
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                            className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 disabled:opacity-50"
                             disabled={isBusy}
-                            onClick={() => handleAccept(row)}
+                            onClick={() => handleResendInvite(row)}
                             type="button"
                           >
-                            ✓ Accepter
+                            ↻ Renvoyer l&apos;invitation
                           </button>
-                          <button
-                            className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-800 hover:bg-rose-100 disabled:opacity-50"
-                            disabled={isBusy}
-                            onClick={() => handleRefuse(row)}
-                            type="button"
-                          >
-                            ✗ Refuser
-                          </button>
-                        </div>
-                      ) : status === 'Acceptée' || status === 'Essai gratuit' ? (
+                        ) : null}
                         <button
-                          className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 disabled:opacity-50"
+                          className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                           disabled={isBusy}
-                          onClick={() => handleResendInvite(row)}
+                          onClick={() => handleDelete(row)}
                           type="button"
                         >
-                          ↻ Renvoyer l&apos;invitation
+                          🗑 Supprimer
                         </button>
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 )

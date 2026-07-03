@@ -11,6 +11,24 @@ import {
 
 export { formatPlatformEur }
 
+async function readFunctionPayload(error, data) {
+  if (data && typeof data === 'object') return data
+  try {
+    if (error?.context && typeof error.context.json === 'function') {
+      return await error.context.json()
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const body = error?.context?.body
+    if (typeof body === 'string' && body.trim()) return JSON.parse(body)
+  } catch {
+    // ignore
+  }
+  return null
+}
+
 function addDays(date, days) {
   const next = new Date(date)
   next.setDate(next.getDate() + days)
@@ -211,8 +229,10 @@ export async function deleteOrganization(orgId) {
     const { data, error } = await supabase.functions.invoke('platform-organization', {
       body: { action: 'delete', organization_id: orgId },
     })
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
+    const payload = (await readFunctionPayload(error, data)) || data || {}
+    if (error || payload.error) {
+      throw new Error(payload.error || error?.message || 'Suppression impossible.')
+    }
     return { error: null }
   } catch (error) {
     return { error }

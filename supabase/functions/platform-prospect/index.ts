@@ -108,13 +108,31 @@ function resolveEmailFrom(): string {
   return Deno.env.get('ACCESS_EMAIL_FROM') || DEFAULT_EMAIL_FROM
 }
 
+/** Strip whitespace, quotes and BOM often pasted with dashboard/CLI secrets. */
+function normalizeResendApiKey(raw: string | undefined): string {
+  if (!raw) return ''
+  let key = raw.replace(/^\uFEFF/, '').trim()
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim()
+  }
+  return key
+}
+
+function readResendApiKey(): string {
+  return normalizeResendApiKey(Deno.env.get('RESEND_API_KEY'))
+}
+
 function logEnvConfig(log: PipelineLog) {
-  const resendKey = Deno.env.get('RESEND_API_KEY')
+  const resendKey = readResendApiKey()
   const resendConfigured = Boolean(resendKey)
   log.ok('config_check', 'Configuration edge function', {
     resend_configured: resendConfigured,
     resend_key_length: resendKey?.length ?? 0,
     resend_key_prefix: resendKey ? `${resendKey.slice(0, 6)}…` : null,
+    resend_key_format_ok: resendKey ? resendKey.startsWith('re_') : false,
     site_url: appBaseUrl(),
     redirect_to: inviteRedirectUrl(),
     email_from: resolveEmailFrom(),
@@ -142,10 +160,15 @@ async function callResendApi(
   log: PipelineLog,
   params: { from: string; to: string; subject: string; html: string },
 ): Promise<ResendSendResult> {
-  const resendKey = Deno.env.get('RESEND_API_KEY')
+  const resendKey = readResendApiKey()
   if (!resendKey) {
     throw new Error(
       'RESEND_API_KEY absente — configurez-la dans Supabase → Edge Functions → Secrets puis redéployez platform-prospect.',
+    )
+  }
+  if (!resendKey.startsWith('re_')) {
+    throw new Error(
+      'RESEND_API_KEY invalide — la clé Resend doit commencer par re_ (copiez-la depuis Resend → API Keys, sans guillemets).',
     )
   }
 
@@ -515,7 +538,11 @@ async function handleResendInvite(
       trialEndsAt: sub?.trial_ends_at || new Date().toISOString(),
     })
   } catch (emailErr) {
-    return errorResponse(log, 'send_email', String(emailErr?.message || emailErr), 502)
+    const resendStep = log.steps.find((s) => s.step === 'resend_response' || s.step === 'send_email')
+    return errorResponse(log, 'send_email', String(emailErr?.message || emailErr), 502, {
+      resend_http_status: resendStep?.detail?.http_status ?? null,
+      resend_response: resendStep?.detail?.body ?? resendStep?.detail?.resend_error ?? null,
+    })
   }
 
   await admin
@@ -703,11 +730,16 @@ Deno.serve(async (req) => {
           authResult,
           priorProfile,
         })
+        const resendStep = log.steps.find((s) => s.step === 'resend_response' || s.step === 'send_email')
         return errorResponse(
           log,
           'send_email',
           String(emailErr?.message || emailErr),
           502,
+          {
+            resend_http_status: resendStep?.detail?.http_status ?? null,
+            resend_response: resendStep?.detail?.body ?? resendStep?.detail?.resend_error ?? null,
+          },
         )
       }
 

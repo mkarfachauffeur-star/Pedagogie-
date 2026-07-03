@@ -1,5 +1,5 @@
 import { getCategoryLabel, CATEGORY_BADGE_CLASS, BLOG_CATEGORY_MAP } from '../../data/blog/categories'
-import { buildTableOfContents } from '../../data/blog/utils'
+import { buildTableOfContentsTree } from '../../data/blog/utils'
 import BlogArticleCta from './BlogArticleCta'
 
 function renderSection(section, skin) {
@@ -24,9 +24,11 @@ function renderSection(section, skin) {
 }
 
 export default function BlogArticleContent({ article, isDark, skin }) {
-  const toc = buildTableOfContents(article.sections)
+  const tocTree = buildTableOfContentsTree(article.sections)
   const category = BLOG_CATEGORY_MAP[article.category]
   const badgeClass = category ? CATEGORY_BADGE_CLASS[category.color] : CATEGORY_BADGE_CLASS.blue
+  const linkClass = `block text-sm font-semibold leading-snug transition ${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-600 hover:text-blue-700'}`
+  const subLinkClass = `block text-sm font-medium leading-snug transition ${isDark ? 'text-slate-300 hover:text-blue-200' : 'text-slate-600 hover:text-blue-700'}`
 
   return (
     <article className="min-w-0">
@@ -49,21 +51,31 @@ export default function BlogArticleContent({ article, isDark, skin }) {
             {getCategoryLabel(article.category)}
           </span>
 
-          {toc.length > 0 && (
+          {tocTree.length > 0 && (
             <nav
               aria-label="Sommaire de l'article"
               className={`mt-6 rounded-2xl border p-4 sm:p-5 ${isDark ? 'border-white/10 bg-white/[0.03]' : 'border-slate-300 bg-slate-50'}`}
             >
               <h2 className={`text-sm font-black uppercase tracking-wide ${skin.heading}`}>Sommaire</h2>
-              <ol className="mt-3 space-y-2">
-                {toc.map((item) => (
-                  <li className={item.level === 3 ? 'ml-4' : ''} key={item.id}>
-                    <a
-                      className={`text-sm font-semibold transition ${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-600 hover:text-blue-700'}`}
-                      href={`#${item.id}`}
-                    >
+              <ol className="mt-3 list-none space-y-3 p-0">
+                {tocTree.map((item) => (
+                  <li key={item.id}>
+                    <a className={linkClass} href={`#${item.id}`}>
                       {item.title}
                     </a>
+                    {item.children.length > 0 && (
+                      <ol
+                        className={`mt-2 list-none space-y-1.5 border-l-2 py-0.5 pl-4 ${isDark ? 'border-blue-400/30' : 'border-blue-300'}`}
+                      >
+                        {item.children.map((child) => (
+                          <li key={child.id}>
+                            <a className={subLinkClass} href={`#${child.id}`}>
+                              {child.title}
+                            </a>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
                   </li>
                 ))}
               </ol>

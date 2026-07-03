@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Calendar, Clock, UserRound } from 'lucide-react'
 import BlogArticleContent from '../components/blog/BlogArticleContent'
@@ -23,6 +23,10 @@ export default function BlogArticlePage() {
     () => (article ? getRelatedPosts(article, 3) : []),
     [article],
   )
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [slug])
 
   if (!article) {
     return <Navigate replace to="/blog" />

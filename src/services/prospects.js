@@ -33,13 +33,23 @@ async function readInvokePayload(error, data) {
 
 function formatStepsMessage(payload) {
   if (!payload?.steps?.length) return null
-  return payload.steps
-    .map((step) => {
-      const icon = step.status === 'ok' ? '✓' : step.status === 'error' ? '✗' : '·'
-      const detail = step.message ? ` — ${step.message}` : ''
-      return `${icon} ${step.step}${detail}`
-    })
-    .join('\n')
+  const lines = payload.steps.map((step) => {
+    const icon = step.status === 'ok' ? '✓' : step.status === 'error' ? '✗' : '·'
+    const detail = step.message ? ` — ${step.message}` : ''
+    let line = `${icon} ${step.step}${detail}`
+    if (step.detail && typeof step.detail === 'object') {
+      const extras = []
+      if (step.detail.http_status != null) extras.push(`HTTP ${step.detail.http_status}`)
+      if (step.detail.body) extras.push(JSON.stringify(step.detail.body))
+      else if (step.detail.resend_error) extras.push(JSON.stringify(step.detail.resend_error))
+      if (extras.length) line += `\n    ${extras.join(' — ')}`
+    }
+    return line
+  })
+  if (payload.resend_response) {
+    lines.push(`\nRéponse Resend complète :\n${JSON.stringify(payload.resend_response, null, 2)}`)
+  }
+  return lines.join('\n')
 }
 
 async function invokePlatformProspect(body) {
@@ -153,6 +163,17 @@ export async function resendManagerInvite(prospectId) {
   } catch (error) {
     return { data: null, error: normalizeError(error) }
   }
+}
+
+export async function deleteProspectRecord(prospectId) {
+  const rpc = await supabase.rpc('platform_delete_demo_request', { p_id: prospectId })
+  if (!rpc.error) {
+    return { error: null }
+  }
+
+  const { error } = await supabase.from('demo_requests').delete().eq('id', prospectId)
+  if (error) return { error: normalizeError(error) }
+  return { error: null }
 }
 
 export function formatAcceptSteps(data) {

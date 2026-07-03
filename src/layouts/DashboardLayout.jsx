@@ -13,6 +13,7 @@ import { useProspectNotifications } from '../hooks/useProspectNotifications'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { runExpirationRemindersCheck } from '../services/expirationReminders'
 import { getTrackLabel } from '../lib/studentTrack'
+import ManagerOnboardingTutorial from '../components/onboarding/ManagerOnboardingTutorial'
 
 export default function DashboardLayout({ role, children, fullWidth = false }) {
   const location = useLocation()
@@ -300,6 +301,8 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           </div>
         </main>
       </div>
+
+      {role === 'manager' && <ManagerOnboardingTutorial />}
     </div>
   )
 }

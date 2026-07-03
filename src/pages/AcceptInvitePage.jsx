@@ -87,27 +87,44 @@ export default function AcceptInvitePage() {
     setBusy(true)
     setError(null)
 
-    const { error: updateError } = await supabase.auth.updateUser({ password })
-    if (updateError) {
-      setBusy(false)
-      setError(getUserFacingError(updateError, 'password'))
-      return
-    }
-
     const { data: userData } = await supabase.auth.getUser()
     let destination = '/login'
+    let profileRole = null
     if (userData.user?.id) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userData.user.id)
         .maybeSingle()
-      destination = roleDestinations[profile?.role] || destination
+      profileRole = profile?.role ?? null
+      destination = roleDestinations[profileRole] || destination
+    }
+
+    const isNewManager = profileRole === 'manager'
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+      ...(isNewManager
+        ? { data: { manager_onboarding_pending: true } }
+        : {}),
+    })
+    if (updateError) {
+      setBusy(false)
+      setError(getUserFacingError(updateError, 'password'))
+      return
+    }
+
+    if (userData.user?.id) {
       console.info('[AcceptInvitePage] Compte activé — redirection vers', destination)
     }
 
     setBusy(false)
-    navigate(destination, { replace: true, state: { message: 'Compte activé. Bienvenue !' } })
+    navigate(destination, {
+      replace: true,
+      state: {
+        message: 'Compte activé. Bienvenue !',
+        ...(isNewManager ? { managerOnboarding: true } : {}),
+      },
+    })
   }
 
   const blocked = Boolean(hashError)

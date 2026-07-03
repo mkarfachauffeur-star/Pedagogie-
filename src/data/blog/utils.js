@@ -100,6 +100,27 @@ export function buildTableOfContents(sections = []) {
     }))
 }
 
+export function buildTableOfContentsTree(sections = []) {
+  const tree = []
+  let currentSection = null
+
+  for (const item of buildTableOfContents(sections)) {
+    if (item.level === 2) {
+      currentSection = { ...item, children: [] }
+      tree.push(currentSection)
+      continue
+    }
+
+    if (currentSection) {
+      currentSection.children.push(item)
+    } else {
+      tree.push({ ...item, children: [] })
+    }
+  }
+
+  return tree
+}
+
 export function getAllBlogSlugs() {
   return BLOG_POSTS.map((post) => post.slug)
 }
