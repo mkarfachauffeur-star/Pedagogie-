@@ -14,13 +14,11 @@ export default function BetaDevelopmentBanner({ isDark = true }) {
             isDark ? 'text-slate-300' : 'text-slate-600'
           }`}
         >
-          <span className={`font-bold ${isDark ? 'text-amber-200' : 'text-amber-800'}`}>
-            🚧 Version bêta en développement
+          <span className={`font-bold ${isDark ? 'text-cyan-200' : 'text-cyan-800'}`}>
+            Version 1
           </span>
           {' — '}
-          Pedagogia Drive est actuellement en phase de développement et de tests auprès
-          d&apos;auto-écoles partenaires. Certaines fonctionnalités peuvent encore évoluer
-          avant la version finale.
+          Pedagogia Drive est disponible en Version 1 pour les auto-écoles.
         </p>
       </div>
     </div>

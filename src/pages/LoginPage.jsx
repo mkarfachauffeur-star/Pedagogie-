@@ -17,6 +17,7 @@ import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useAuth } from '../context/AuthContext'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
+import { supabase } from '../lib/supabase'
 import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
 import { breadcrumbsForPage, buildPageJsonLd, SEO_PAGES } from '../lib/seo'
@@ -109,6 +110,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
+  const [forgotSending, setForgotSending] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
   const [mustChangePassword, setMustChangePassword] = useState(false)
   const [pendingRole, setPendingRole] = useState(null)
   const [newPassword, setNewPassword] = useState('')
@@ -161,6 +164,25 @@ export default function LoginPage() {
   }, [isDark])
 
   const canSubmit = useMemo(() => Boolean(email.trim() && password), [email, password])
+
+  const handleForgotPassword = async () => {
+    setAuthError('')
+    setForgotSent(false)
+    const targetEmail = email.trim().toLowerCase()
+    if (!targetEmail) {
+      setAuthError('Saisissez votre e-mail pour recevoir un lien de réinitialisation.')
+      return
+    }
+    setForgotSending(true)
+    const redirectTo = `${window.location.origin}/accept-invite`
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, { redirectTo })
+    setForgotSending(false)
+    if (error) {
+      setAuthError(getUserFacingError(error, 'reset_password'))
+      return
+    }
+    setForgotSent(true)
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -412,13 +434,29 @@ export default function LoginPage() {
                   {forgotOpen && (
                     <div className={skin.loginForgotBox}>
                       <p className={`font-black ${skin.heading}`}>Réinitialisation du mot de passe</p>
-                      <p className="mt-2">
-                        Contactez le secrétariat de votre auto-école pour obtenir un nouvel accès ou un lien de
-                        réinitialisation.
-                      </p>
+                      {forgotSent ? (
+                        <p className="mt-2">
+                          Si un compte existe pour <strong>{email.trim()}</strong>, un e-mail avec un lien de
+                          réinitialisation vient d&apos;être envoyé. Vérifiez vos spams.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="mt-2">
+                            Un lien sécurisé sera envoyé à l&apos;adresse saisie ci-dessus pour définir un nouveau mot de passe.
+                          </p>
+                          <button
+                            className={`mt-3 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 disabled:opacity-50`}
+                            disabled={forgotSending || !email.trim()}
+                            onClick={handleForgotPassword}
+                            type="button"
+                          >
+                            {forgotSending ? 'Envoi…' : 'Envoyer le lien'}
+                          </button>
+                        </>
+                      )}
                       <button
                         className={`mt-3 text-xs font-bold underline ${skin.loginLink}`}
-                        onClick={() => setForgotOpen(false)}
+                        onClick={() => { setForgotOpen(false); setForgotSent(false) }}
                         type="button"
                       >
                         Fermer

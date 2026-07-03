@@ -7,6 +7,7 @@
 // Simulateurs : compte technique sans invitation e-mail (createUser).
 // -----------------------------------------------------------------------------
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { acceptInviteUrl } from '../_shared/app-url.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -81,9 +82,9 @@ Deno.serve(async (req) => {
       return json({ error: 'Paramètres invalides (email, role)' }, 400)
     }
 
-    const appUrl = (Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'http://localhost:5173')
-      .replace(/\/$/, '')
-    const redirectTo = `${appUrl}/accept-invite`
+    const redirectTo = acceptInviteUrl()
+
+    console.log('[invite-user] invitation', { email, role, redirectTo, org: callerProfile.organization_id })
 
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {

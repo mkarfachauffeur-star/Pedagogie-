@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { acceptInviteUrl } from '../_shared/app-url.ts'
+import { emailLog } from '../_shared/email-utils.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -63,9 +65,7 @@ Deno.serve(async (req) => {
       return json({ error: 'Ce compte ne peut pas être géré ici' }, 400)
     }
 
-    const appUrl = (Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'http://localhost:5173')
-      .replace(/\/$/, '')
-    const redirectTo = `${appUrl}/accept-invite`
+    const redirectTo = acceptInviteUrl()
 
     if (action === 'disable') {
       await admin.from('profiles').update({ is_active: false }).eq('id', userId)
@@ -106,14 +106,45 @@ Deno.serve(async (req) => {
     if (!email) return json({ error: 'E-mail introuvable pour cet utilisateur' }, 400)
 
     if (action === 'reset_password') {
+      emailLog('manage-user', 'info', 'reset_password', { email, redirectTo })
       const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo })
-      if (error) return json({ error: error.message }, 400)
+      if (error) {
+        emailLog('manage-user', 'error', 'reset_password_failed', { email, error: error.message })
+        return json({ error: error.message }, 400)
+      }
+      emailLog('manage-user', 'ok', 'reset_password_sent', { email })
       return json({ ok: true, message: 'E-mail de réinitialisation envoyé.' })
     }
 
     if (action === 'resend_invite') {
       const { data: authUser } = await admin.auth.admin.getUserById(userId)
       const meta = authUser.user?.user_metadata || {}
+      const confirmed = Boolean(authUser.user?.email_confirmed_at || authUser.user?.confirmed_at)
+
+      emailLog('manage-user', 'info', 'resend_invite', { email, redirectTo, confirmed })
+
+      if (confirmed) {
+        const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo },
+        })
+        if (linkError) {
+          emailLog('manage-user', 'error', 'recovery_link_failed', { email, error: linkError.message })
+          return json({ error: linkError.message }, 400)
+        }
+        const { error: sendError } = await admin.auth.resetPasswordForEmail(email, { redirectTo })
+        if (sendError) {
+          emailLog('manage-user', 'error', 'recovery_email_failed', { email, error: sendError.message })
+          return json({ error: sendError.message }, 400)
+        }
+        emailLog('manage-user', 'ok', 'recovery_email_sent', {
+          email,
+          link_preview: linkData?.properties?.action_link?.slice(0, 80),
+        })
+        return json({ ok: true, message: 'Lien de réinitialisation renvoyé.' })
+      }
+
       const { error } = await admin.auth.admin.inviteUserByEmail(email, {
         data: {
           organization_id: targetProfile.organization_id,
@@ -122,7 +153,11 @@ Deno.serve(async (req) => {
         },
         redirectTo,
       })
-      if (error) return json({ error: error.message }, 400)
+      if (error) {
+        emailLog('manage-user', 'error', 'invite_failed', { email, error: error.message })
+        return json({ error: error.message }, 400)
+      }
+      emailLog('manage-user', 'ok', 'invite_sent', { email })
       return json({ ok: true, message: 'Invitation renvoyée.' })
     }
 

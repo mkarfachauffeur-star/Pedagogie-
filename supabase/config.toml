@@ -30,11 +30,22 @@ verify_jwt = true
 [functions.platform-prospect]
 verify_jwt = true
 
+[functions.platform-organization]
+verify_jwt = true
+
+[functions.resend-student-access]
+verify_jwt = true
+
+[functions.notify-demo-request]
+verify_jwt = false
+
 [auth]
 site_url = "https://www.pedagogia-drive.fr"
 additional_redirect_urls = [
   "https://www.pedagogia-drive.fr/accept-invite",
   "https://www.pedagogia-drive.fr/**",
+  "https://pedagogia-drive.fr/accept-invite",
+  "https://pedagogia-drive.fr/**",
   "https://pedagogia-drive.vercel.app/accept-invite",
   "https://pedagogia-drive.vercel.app/**",
   "http://localhost:5173/**",

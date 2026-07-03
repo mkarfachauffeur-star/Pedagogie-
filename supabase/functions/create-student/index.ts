@@ -1,5 +1,7 @@
 // PEDAGOGIA DRIVE — Création élève (compte + dossier + accès provisoire)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { loginUrl } from '../_shared/app-url.ts'
+import { emailLog, escapeHtml } from '../_shared/email-utils.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -99,17 +101,19 @@ async function sendAccessEmail(
     return { sent: false, reason: 'missing_resend_api_key' }
   }
 
-  const appUrl = Deno.env.get('APP_URL') || Deno.env.get('SITE_URL') || 'https://pedagogia-drive.vercel.app'
+  const appUrl = loginUrl()
   const from = Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
 
   const html = `
-    <p>Bonjour ${fullName},</p>
-    <p>Votre compte élève a été créé chez <strong>${orgName}</strong>.</p>
-    <p><strong>Identifiant :</strong> ${email}<br/>
-    <strong>Mot de passe provisoire :</strong> ${tempPassword}</p>
+    <p>Bonjour ${escapeHtml(fullName)},</p>
+    <p>Votre compte élève a été créé chez <strong>${escapeHtml(orgName)}</strong>.</p>
+    <p><strong>Identifiant :</strong> ${escapeHtml(email)}<br/>
+    <strong>Mot de passe provisoire :</strong> ${escapeHtml(tempPassword)}</p>
     <p>Connectez-vous sur <a href="${appUrl}">${appUrl}</a> puis modifiez votre mot de passe dès la première connexion.</p>
     <p>— Pedagogia Drive</p>
   `
+
+  emailLog('create-student', 'info', 'send_access_email', { email, appUrl })
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
