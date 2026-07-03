@@ -82,7 +82,7 @@ export default function PlatformProspectsPage() {
     setFeedback({
       type: 'ok',
       message: data?.email_sent
-        ? `Demande acceptée — essai Starter jusqu'au ${data.trial_ends_at ? new Date(data.trial_ends_at).toLocaleDateString('fr-FR') : '—'}. E-mail envoyé (Resend ${data.resend_id || 'ok'}).`
+        ? `Demande acceptée — essai Starter jusqu'au ${data.trial_ends_at ? new Date(data.trial_ends_at).toLocaleDateString('fr-FR') : '—'}. E-mail envoyé à ${prospect.email} (Resend HTTP ${data.resend_http_status || 200}, id ${data.resend_id || 'ok'}, from ${data.email_from || 'noreply@pedagogia-drive.fr'}).`
         : 'Demande acceptée.',
       steps: formatAcceptSteps(data),
     })
@@ -101,7 +101,7 @@ export default function PlatformProspectsPage() {
     }
     setFeedback({
       type: 'ok',
-      message: `Invitation renvoyée à ${prospect.email} (Resend ${data?.resend_id || 'ok'}).`,
+      message: `Invitation renvoyée à ${prospect.email} (Resend HTTP ${data?.resend_http_status || 200}, id ${data?.resend_id || 'ok'}).`,
       steps: formatAcceptSteps(data),
     })
   }

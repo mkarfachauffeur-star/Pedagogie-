@@ -102,15 +102,22 @@ function formatFrDate(iso: string) {
   }
 }
 
+const DEFAULT_EMAIL_FROM = 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
+
+function resolveEmailFrom(): string {
+  return Deno.env.get('ACCESS_EMAIL_FROM') || DEFAULT_EMAIL_FROM
+}
+
 function logEnvConfig(log: PipelineLog) {
-  const resendConfigured = Boolean(Deno.env.get('RESEND_API_KEY'))
+  const resendKey = Deno.env.get('RESEND_API_KEY')
+  const resendConfigured = Boolean(resendKey)
   log.ok('config_check', 'Configuration edge function', {
     resend_configured: resendConfigured,
-    resend_key_length: Deno.env.get('RESEND_API_KEY')?.length ?? 0,
+    resend_key_length: resendKey?.length ?? 0,
+    resend_key_prefix: resendKey ? `${resendKey.slice(0, 6)}…` : null,
     site_url: appBaseUrl(),
     redirect_to: inviteRedirectUrl(),
-    access_email_from:
-      Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>',
+    email_from: resolveEmailFrom(),
     supabase_invite_note:
       'generateLink ne déclenche pas d\'e-mail Supabase — l\'e-mail part uniquement via Resend.',
   })
@@ -119,6 +126,101 @@ function logEnvConfig(log: PipelineLog) {
       'config_check',
       'RESEND_API_KEY absente des secrets Supabase — aucun e-mail ne peut être envoyé.',
     )
+  }
+}
+
+type ResendSendResult = {
+  emailId: string | null
+  httpStatus: number
+  resendResponse: Record<string, unknown>
+  from: string
+  to: string
+  subject: string
+}
+
+async function callResendApi(
+  log: PipelineLog,
+  params: { from: string; to: string; subject: string; html: string },
+): Promise<ResendSendResult> {
+  const resendKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendKey) {
+    throw new Error(
+      'RESEND_API_KEY absente — configurez-la dans Supabase → Edge Functions → Secrets puis redéployez platform-prospect.',
+    )
+  }
+
+  const requestBody = {
+    from: params.from,
+    to: [params.to],
+    subject: params.subject,
+    html: params.html,
+  }
+
+  log.ok('resend_request', 'Requête POST https://api.resend.com/emails', {
+    from: requestBody.from,
+    to: requestBody.to,
+    subject: requestBody.subject,
+    html_length: params.html.length,
+    api_key_present: true,
+    api_key_prefix: `${resendKey.slice(0, 6)}…`,
+  })
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  const responseText = await res.text().catch(() => '')
+  let responseJson: Record<string, unknown> = {}
+  try {
+    responseJson = responseText ? JSON.parse(responseText) : {}
+  } catch {
+    responseJson = { raw: responseText }
+  }
+
+  log.ok('resend_response', `Réponse Resend HTTP ${res.status}`, {
+    http_status: res.status,
+    http_ok: res.ok,
+    from: params.from,
+    to: params.to,
+    subject: params.subject,
+    body: responseJson,
+  })
+
+  if (res.status !== 200) {
+    log.error('send_email', `Resend a refusé l'envoi (HTTP ${res.status})`, {
+      http_status: res.status,
+      from: params.from,
+      to: params.to,
+      subject: params.subject,
+      resend_error: responseJson,
+    })
+    const reason =
+      typeof responseJson.message === 'string'
+        ? responseJson.message
+        : JSON.stringify(responseJson)
+    throw new Error(`Resend HTTP ${res.status} — ${reason}`)
+  }
+
+  log.ok('send_email', 'E-mail accepté par Resend (HTTP 200)', {
+    http_status: 200,
+    resend_id: responseJson.id ?? null,
+    to: params.to,
+    from: params.from,
+    subject: params.subject,
+  })
+
+  return {
+    emailId: typeof responseJson.id === 'string' ? responseJson.id : null,
+    httpStatus: res.status,
+    resendResponse: responseJson,
+    from: params.from,
+    to: params.to,
+    subject: params.subject,
   }
 }
 
@@ -163,21 +265,14 @@ async function sendWelcomeEmail(
     trialStartedAt: string
     trialEndsAt: string
   },
-) {
-  const resendKey = Deno.env.get('RESEND_API_KEY')
-  if (!resendKey) {
-    throw new Error(
-      'RESEND_API_KEY non configurée dans les secrets Supabase (Dashboard → Edge Functions → Secrets).',
-    )
-  }
+): Promise<ResendSendResult> {
+  const from = resolveEmailFrom()
+  const subject = `[Pedagogia Drive] Bienvenue — activez votre compte gérant (${payload.schoolName})`
 
-  const from =
-    Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
-
-  log.ok('send_email_prepare', 'Préparation e-mail Resend', {
+  log.ok('send_email_prepare', 'Préparation e-mail invitation gérant', {
     to: payload.to,
     from,
-    subject: `[Pedagogia Drive] Bienvenue — activez votre compte gérant (${payload.schoolName})`,
+    subject,
     activate_link_host: (() => {
       try {
         return new URL(payload.activateLink).host
@@ -192,54 +287,14 @@ async function sendWelcomeEmail(
     <p>Bonjour ${escapeHtml(payload.contactName)},</p>
     <p>Votre demande de démonstration pour <strong>${escapeHtml(payload.schoolName)}</strong> a été acceptée.</p>
     <p>Votre essai gratuit <strong>Starter</strong> de 30 jours est activé du <strong>${escapeHtml(formatFrDate(payload.trialStartedAt))}</strong> au <strong>${escapeHtml(formatFrDate(payload.trialEndsAt))}</strong>.</p>
-    <p>Pour accéder à votre espace gérant, définissez votre mot de passe via le lien sécurisé Supabase ci-dessous :</p>
+    <p>Pour accéder à votre espace gérant, définissez votre mot de passe via le lien sécurisé ci-dessous :</p>
     <p><a href="${escapeHtml(payload.activateLink)}" style="display:inline-block;padding:12px 24px;background:#0891b2;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">Définir mon mot de passe</a></p>
     <p style="font-size:13px;color:#64748b">Identifiant : ${escapeHtml(payload.email)}</p>
     <p style="font-size:13px;color:#64748b">Une fois votre mot de passe défini, connectez-vous sur <a href="${escapeHtml(payload.loginUrl)}">${escapeHtml(payload.loginUrl)}</a>.</p>
     <p>— L'équipe Pedagogia Drive</p>
   `
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [payload.to],
-      subject: `[Pedagogia Drive] Bienvenue — activez votre compte gérant (${payload.schoolName})`,
-      html,
-    }),
-  })
-
-  const responseText = await res.text().catch(() => '')
-  let responseJson: Record<string, unknown> = {}
-  try {
-    responseJson = responseText ? JSON.parse(responseText) : {}
-  } catch {
-    responseJson = { raw: responseText }
-  }
-
-  if (!res.ok) {
-    log.error('send_email', `Resend HTTP ${res.status}`, {
-      status: res.status,
-      body: responseJson,
-    })
-    throw new Error(
-      `Envoi e-mail Resend échoué (HTTP ${res.status}) : ${JSON.stringify(responseJson)}`,
-    )
-  }
-
-  log.ok('send_email', 'E-mail Resend accepté', {
-    resend_id: responseJson.id ?? null,
-    resend_response: responseJson,
-  })
-
-  return {
-    emailId: typeof responseJson.id === 'string' ? responseJson.id : null,
-    resendResponse: responseJson,
-  }
+  return callResendApi(log, { from, to: payload.to, subject, html })
 }
 
 async function createManagerAuthInvite(
@@ -431,10 +486,15 @@ async function handleResendInvite(
     organization_id: prospect.organization_id,
   })
 
-  const authResult = await createManagerAuthInvite(log, admin, {
-    email: prospect.email,
-    contactName: prospect.contact_name || 'Gérant',
-  })
+  let authResult: AuthInviteResult
+  try {
+    authResult = await createManagerAuthInvite(log, admin, {
+      email: prospect.email,
+      contactName: prospect.contact_name || 'Gérant',
+    })
+  } catch (authErr) {
+    return errorResponse(log, 'auth_invite', String(authErr?.message || authErr), 400)
+  }
 
   const { data: sub } = await admin
     .from('subscriptions')
@@ -442,16 +502,21 @@ async function handleResendInvite(
     .eq('organization_id', prospect.organization_id)
     .maybeSingle()
 
-  const emailResult = await sendWelcomeEmail(log, {
-    to: prospect.email,
-    contactName: prospect.contact_name,
-    schoolName: prospect.school_name,
-    loginUrl: `${appBaseUrl()}/login`,
-    email: prospect.email,
-    activateLink: authResult.activateLink,
-    trialStartedAt: sub?.current_period_start || new Date().toISOString(),
-    trialEndsAt: sub?.trial_ends_at || new Date().toISOString(),
-  })
+  let emailResult: ResendSendResult
+  try {
+    emailResult = await sendWelcomeEmail(log, {
+      to: prospect.email,
+      contactName: prospect.contact_name,
+      schoolName: prospect.school_name,
+      loginUrl: `${appBaseUrl()}/login`,
+      email: prospect.email,
+      activateLink: authResult.activateLink,
+      trialStartedAt: sub?.current_period_start || new Date().toISOString(),
+      trialEndsAt: sub?.trial_ends_at || new Date().toISOString(),
+    })
+  } catch (emailErr) {
+    return errorResponse(log, 'send_email', String(emailErr?.message || emailErr), 502)
+  }
 
   await admin
     .from('demo_requests')
@@ -468,6 +533,10 @@ async function handleResendInvite(
     action: 'resend_invite',
     email_sent: true,
     resend_id: emailResult.emailId,
+    resend_http_status: emailResult.httpStatus,
+    email_from: emailResult.from,
+    email_to: emailResult.to,
+    email_subject: emailResult.subject,
     steps: log.steps,
   })
 }
@@ -653,15 +722,16 @@ Deno.serve(async (req) => {
         status: 'Acceptée',
         email_sent: true,
         resend_id: emailResult.emailId,
+        resend_http_status: emailResult.httpStatus,
+        email_from: emailResult.from,
+        email_to: emailResult.to,
+        email_subject: emailResult.subject,
         redirect_to: inviteRedirectUrl(),
         steps: log.steps,
       })
     }
 
     if (action === 'send_email') {
-      const resendKey = Deno.env.get('RESEND_API_KEY')
-      if (!resendKey) return errorResponse(log, 'config_check', 'RESEND_API_KEY non configurée.', 503)
-
       const to = String(body.to || '').trim()
       const subject = String(body.subject || '').trim()
       const html = String(body.html || body.message || '').trim()
@@ -669,24 +739,20 @@ Deno.serve(async (req) => {
         return errorResponse(log, 'input', 'to, subject et message requis.', 400)
       }
 
-      const from =
-        Deno.env.get('ACCESS_EMAIL_FROM') || 'Pedagogia Drive <noreply@pedagogia-drive.fr>'
-
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ from, to: [to], subject, html }),
+      const result = await callResendApi(log, {
+        from: resolveEmailFrom(),
+        to,
+        subject,
+        html,
       })
 
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => '')
-        return errorResponse(log, 'send_email', `Envoi e-mail échoué (${res.status}) ${errBody}`, 502)
-      }
-
-      return json({ ok: true, email_sent: true, steps: log.steps })
+      return json({
+        ok: true,
+        email_sent: true,
+        resend_id: result.emailId,
+        resend_http_status: result.httpStatus,
+        steps: log.steps,
+      })
     }
 
     return errorResponse(log, 'input', 'Action non supportée', 400)
