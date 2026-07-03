@@ -4,7 +4,12 @@ export const SITE_URL = 'https://www.pedagogia-drive.fr'
 export const SITE_NAME = 'Pedagogia Drive'
 export const SITE_LOCALE = 'fr_FR'
 export const SITE_LANGUAGE = 'fr'
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/android-chrome-512x512.png`
+/** Logo carré utilisé par Google (JSON-LD Organization, favicons PWA). */
+export const SITE_LOGO_SQUARE = `${SITE_URL}/android-chrome-512x512.png`
+/** Image Open Graph / Twitter (1200×630). */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
+export const OG_IMAGE_WIDTH = 1200
+export const OG_IMAGE_HEIGHT = 630
 export const DEFAULT_OG_IMAGE_ALT = 'Pedagogia Drive — livret numérique pour auto-écoles'
 export const CONTACT_EMAIL = 'contact@pedagogia-drive.fr'
 
@@ -114,7 +119,9 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: DEFAULT_OG_IMAGE,
+        url: SITE_LOGO_SQUARE,
+        width: 512,
+        height: 512,
       },
       email: CONTACT_EMAIL,
       areaServed: {
@@ -262,7 +269,9 @@ export function buildBlogArticleJsonLd(article) {
         name: SITE_NAME,
         logo: {
           '@type': 'ImageObject',
-          url: DEFAULT_OG_IMAGE,
+          url: SITE_LOGO_SQUARE,
+          width: 512,
+          height: 512,
         },
       },
       mainEntityOfPage: {

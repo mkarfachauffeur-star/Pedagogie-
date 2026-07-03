@@ -20,10 +20,10 @@
     <title>Pedagogia Drive | Livret numérique pour auto-écoles</title>
     <link rel="canonical" href="https://www.pedagogia-drive.fr/" />
 
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
@@ -36,7 +36,9 @@
       content="Pedagogia Drive est le livret numérique nouvelle génération destiné aux auto-écoles. QCM REMC, suivi pédagogique, messagerie, documents, gestion des élèves, enseignants et secrétariat."
     />
     <meta property="og:url" content="https://www.pedagogia-drive.fr/" />
-    <meta property="og:image" content="https://www.pedagogia-drive.fr/android-chrome-512x512.png" />
+    <meta property="og:image" content="https://www.pedagogia-drive.fr/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Pedagogia Drive — livret numérique pour auto-écoles" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -45,7 +47,7 @@
       name="twitter:description"
       content="Pedagogia Drive est le livret numérique nouvelle génération destiné aux auto-écoles. QCM REMC, suivi pédagogique, messagerie et gestion des élèves."
     />
-    <meta name="twitter:image" content="https://www.pedagogia-drive.fr/android-chrome-512x512.png" />
+    <meta name="twitter:image" content="https://www.pedagogia-drive.fr/og-image.png" />
     <meta name="twitter:image:alt" content="Pedagogia Drive — livret numérique pour auto-écoles" />
 
     <meta name="msapplication-config" content="/browserconfig.xml" />
@@ -55,7 +57,6 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="image" href="/android-chrome-192x192.png" type="image/png" />
     <link
       rel="preload"
       as="style"
@@ -75,7 +76,12 @@
             "@id": "https://www.pedagogia-drive.fr/#organization",
             "name": "Pedagogia Drive",
             "url": "https://www.pedagogia-drive.fr/",
-            "logo": "https://www.pedagogia-drive.fr/android-chrome-512x512.png",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://www.pedagogia-drive.fr/android-chrome-512x512.png",
+              "width": 512,
+              "height": 512
+            },
             "email": "contact@pedagogia-drive.fr",
             "areaServed": { "@type": "Country", "name": "France" }
           },

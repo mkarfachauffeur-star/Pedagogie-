@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import {
   DEFAULT_OG_IMAGE,
   DEFAULT_OG_IMAGE_ALT,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
   SEO_KEYWORDS,
   SITE_LOCALE,
   SITE_NAME,
@@ -84,8 +86,8 @@ export default function PageSeo({
     upsertMeta('property', 'og:url', canonical)
     upsertMeta('property', 'og:image', image)
     upsertMeta('property', 'og:image:alt', imageAlt)
-    upsertMeta('property', 'og:image:width', '512')
-    upsertMeta('property', 'og:image:height', '512')
+    upsertMeta('property', 'og:image:width', String(OG_IMAGE_WIDTH))
+    upsertMeta('property', 'og:image:height', String(OG_IMAGE_HEIGHT))
 
     upsertMeta('name', 'twitter:card', 'summary_large_image')
     upsertMeta('name', 'twitter:title', title)
