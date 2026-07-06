@@ -76,10 +76,11 @@ export async function fetchManagerDashboard({ organizationId } = {}) {
         .order('registration_date', { ascending: false })
         .limit(8),
       supabase
-        .from('teachers')
-        .select('profile_id, profiles:profile_id(full_name)')
+        .from('profiles')
+        .select('id, full_name')
         .eq('organization_id', organizationId)
-        .eq('resource_type', 'teacher'),
+        .eq('role', 'teacher')
+        .eq('is_active', true),
       supabase
         .from('student_initial_assessments')
         .select('id, status, student:student_id(first_name, last_name)')
@@ -107,15 +108,8 @@ export async function fetchManagerDashboard({ organizationId } = {}) {
         .limit(6),
     ])
 
-    const queryError =
-      studentsRes.error ||
-      teachersRes.error ||
-      assessmentsRes.error ||
-      documentsRes.error ||
-      examsRes.error ||
-      vehiclesRes.error ||
-      paymentsRes.error
-    if (queryError) throw queryError
+    if (studentsRes.error) throw studentsRes.error
+    if (profitabilityRes.error && !profitabilityRes.dashboard) throw profitabilityRes.error
 
     const students = studentsRes.data || []
     const teachers = teachersRes.data || []
@@ -233,7 +227,7 @@ export async function fetchManagerDashboard({ organizationId } = {}) {
         studentRows,
         fleetRows,
         teacherNames: teachers
-          .map((row) => row.profiles?.full_name?.trim())
+          .map((row) => row.full_name?.trim())
           .filter(Boolean),
       },
       error: null,
