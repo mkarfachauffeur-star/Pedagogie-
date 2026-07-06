@@ -328,6 +328,9 @@ async function seedBusinessData(admin, orgId, teacherIds, studentRows, secretary
     { match: /20h Boîte Manuelle/i, ...PACKAGE_PRICES['20h'] },
     { match: /13h Boîte Automatique/i, price_ttc: 1190, admin_fee_ttc: 150, exam_presentation_ttc: 250, exam_presentation_included: true, extra_hour_price_ttc: 55 },
     { match: /AAC/i, ...PACKAGE_PRICES.aac },
+    { match: /Supervisée|CS/i, price_ttc: 890, admin_fee_ttc: 150, exam_presentation_ttc: 250, exam_presentation_included: true, extra_hour_price_ttc: 55 },
+    { match: /Moto/i, price_ttc: 990, admin_fee_ttc: 150, exam_presentation_ttc: 250, exam_presentation_included: true, extra_hour_price_ttc: 65 },
+    { match: /Code seul/i, price_ttc: 290, admin_fee_ttc: 0, exam_presentation_ttc: 0, exam_presentation_included: false, extra_hour_price_ttc: 0 },
   ]
 
   const { data: packages } = await admin.from('pricing_packages').select('*').eq('organization_id', orgId)

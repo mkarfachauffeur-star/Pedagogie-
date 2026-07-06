@@ -46,6 +46,21 @@ begin
     exam_presentation_included = true, exam_presentation_ttc = 250
   where organization_id = v_org_id and name ilike 'Conduite Accompagnée%';
 
+  update public.pricing_packages set
+    price_ttc = 890, admin_fee_ttc = 150, extra_hour_price_ttc = 55,
+    exam_presentation_included = true, exam_presentation_ttc = 250
+  where organization_id = v_org_id and category = 'cs';
+
+  update public.pricing_packages set
+    price_ttc = 990, admin_fee_ttc = 150, extra_hour_price_ttc = 65,
+    exam_presentation_included = true, exam_presentation_ttc = 250
+  where organization_id = v_org_id and category = 'moto';
+
+  update public.pricing_packages set
+    price_ttc = 290, admin_fee_ttc = 0, extra_hour_price_ttc = 0,
+    exam_presentation_included = false, exam_presentation_ttc = 0
+  where organization_id = v_org_id and category = 'code';
+
   select id into v_pkg_20 from public.pricing_packages
   where organization_id = v_org_id and name = 'Forfait 20h Boîte Manuelle';
 

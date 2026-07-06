@@ -25,8 +25,10 @@ import {
   formationAppliesToBothGearboxes,
   formatRvpSummary,
   listPricingPackages,
+  packageDisplayStatus,
   packageHasConfiguredPrice,
   parsePackageCategory,
+  parsePricingAmount,
   upsertPricingPackage,
 } from '../../services/pricing'
 
@@ -91,7 +93,7 @@ function PackageStat({ icon: Icon, label, value }) {
 
 function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
   const hasPrice = packageHasConfiguredPrice(pkg)
-  const isActive = hasPrice && pkg.is_active
+  const status = packageDisplayStatus(pkg)
   const { family } = parsePackageCategory(pkg.category)
   const meta = FAMILY_META[family] || FAMILY_META.permis_b
   const FamilyIcon = meta.icon
@@ -114,12 +116,14 @@ function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
           </div>
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${
-              isActive
+              status.key === 'active'
                 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
-                : 'bg-slate-100 text-slate-500 ring-1 ring-slate-300'
+                : status.key === 'pending'
+                  ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-100'
+                  : 'bg-slate-100 text-slate-500 ring-1 ring-slate-300'
             }`}
           >
-            {isActive ? 'Actif' : 'Inactif'}
+            {status.label}
           </span>
         </div>
 
@@ -176,6 +180,7 @@ function PackageCard({ pkg, canWrite, onEdit, onDelete }) {
 
 const emptyForm = {
   id: null,
+  name: '',
   packageFamily: 'permis_b',
   gearbox: 'manuelle',
   formation: 'classique',
@@ -220,14 +225,16 @@ export default function ManagerPackagesPage() {
 
   const stats = useMemo(() => {
     const active = packages.filter((pkg) => packageHasConfiguredPrice(pkg) && pkg.is_active).length
-    return { total: packages.length, active, inactive: packages.length - active }
+    const pending = packages.filter((pkg) => !packageHasConfiguredPrice(pkg) && pkg.is_active).length
+    const inactive = packages.filter((pkg) => !pkg.is_active).length
+    return { total: packages.length, active, pending, inactive }
   }, [packages])
 
   const filteredPackages = useMemo(() => {
     return packages.filter((pkg) => {
       const { family } = parsePackageCategory(pkg.category)
-      const isActive = packageHasConfiguredPrice(pkg) && pkg.is_active
-      if (filter === 'active') return isActive
+      const isSelectable = packageHasConfiguredPrice(pkg) && pkg.is_active
+      if (filter === 'active') return isSelectable
       if (filter === 'all') return true
       return family === filter
     })
@@ -248,6 +255,7 @@ export default function ManagerPackagesPage() {
     const { family, gearbox, formation } = parsePackageCategory(pkg.category)
     setForm({
       id: pkg.id,
+      name: pkg.name || '',
       packageFamily: family,
       gearbox: formationAppliesToBothGearboxes(formation) ? null : (gearbox || 'manuelle'),
       formation: formation || 'classique',
@@ -283,12 +291,16 @@ export default function ManagerPackagesPage() {
       setSaveError('Organisation introuvable. Reconnectez-vous.')
       return
     }
-    if (form.priceTtc === '' || Number.isNaN(Number(form.priceTtc))) {
-      setSaveError('Indiquez le prix TTC de la formule.')
+
+    const priceTtc = parsePricingAmount(form.priceTtc)
+    const includedHours = parsePricingAmount(form.includedHours)
+
+    if (!Number.isFinite(priceTtc) || priceTtc <= 0) {
+      setSaveError('Indiquez un prix TTC supérieur à 0 €.')
       return
     }
-    if (form.includedHours === '' || Number.isNaN(Number(form.includedHours))) {
-      setSaveError('Indiquez le nombre d\'heures incluses.')
+    if (!Number.isFinite(includedHours) || includedHours < 0) {
+      setSaveError('Indiquez le nombre d\'heures incluses (0 minimum pour le code seul).')
       return
     }
 
@@ -314,7 +326,7 @@ export default function ManagerPackagesPage() {
 
     setModal(false)
     setForm(emptyForm)
-    refresh()
+    await refresh()
   }
 
   if (!profileId) {
@@ -347,10 +359,11 @@ export default function ManagerPackagesPage() {
           </button>
         ) : null}
       >
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-4">
           {[
             { label: 'Formules', value: stats.total },
             { label: 'Actives', value: stats.active },
+            { label: 'À configurer', value: stats.pending },
             { label: 'Inactives', value: stats.inactive },
           ].map((item) => (
             <div
@@ -363,6 +376,13 @@ export default function ManagerPackagesPage() {
           ))}
         </div>
       </PageHero>
+
+      {stats.pending > 0 && (
+        <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-900">
+          {stats.pending} formule{stats.pending > 1 ? 's' : ''} active{stats.pending > 1 ? 's' : ''} sans prix TTC renseigné.
+          {' '}Cliquez sur « Modifier » pour saisir le tarif — sans prix, la formule n&apos;apparaît pas dans les inscriptions élèves.
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {FILTER_OPTIONS.map((option) => (
@@ -508,9 +528,23 @@ export default function ManagerPackagesPage() {
                 )}
               </>
             )}
-            <Field label="Prix TTC (€) *" type="number" value={form.priceTtc} onChange={(v) => setForm((c) => ({ ...c, priceTtc: v }))} />
-            <Field label="Heures incluses *" type="number" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
-            <Field label="Frais administratifs TTC (€)" type="number" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
+            <Field
+              hint="Laissé vide : nom généré automatiquement à partir du type et des heures."
+              label="Nom de la formule"
+              onChange={(v) => setForm((c) => ({ ...c, name: v }))}
+              value={form.name}
+            />
+            <Field
+              hint="Utilisez un point ou une virgule pour les décimales (ex. 1290,50)."
+              label="Prix TTC (€) *"
+              min="0.01"
+              step="0.01"
+              type="number"
+              value={form.priceTtc}
+              onChange={(v) => setForm((c) => ({ ...c, priceTtc: v }))}
+            />
+            <Field label="Heures incluses *" min="0" step="1" type="number" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
+            <Field label="Frais administratifs TTC (€)" min="0" step="0.01" type="number" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
             <label className="flex items-center gap-2 text-sm font-bold">
               <input type="checkbox" checked={form.examPresentationIncluded} onChange={(e) => setForm((c) => ({ ...c, examPresentationIncluded: e.target.checked }))} />
               Présentation examen incluse
@@ -549,8 +583,11 @@ export default function ManagerPackagesPage() {
             <Field label="Prix heure supplémentaire TTC (€)" type="number" value={form.extraHourPriceTtc} onChange={(v) => setForm((c) => ({ ...c, extraHourPriceTtc: v }))} />
             <label className="flex items-center gap-2 text-sm font-bold">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((c) => ({ ...c, isActive: e.target.checked }))} />
-              Formule active
+              Formule disponible pour les inscriptions
             </label>
+            <p className="text-xs font-medium text-slate-500">
+              Une formule n&apos;est utilisable que si elle est cochée ici <strong>et</strong> qu&apos;un prix TTC supérieur à 0 € est renseigné.
+            </p>
             {saveError && (
               <p className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
                 saveError.includes('RVP')
@@ -568,11 +605,19 @@ export default function ManagerPackagesPage() {
   )
 }
 
-function Field({ label, value, onChange, type = 'text' }) {
+function Field({ label, value, onChange, type = 'text', hint, min, step }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
       {label}
-      <input className="pd-input mt-1 w-full" type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input
+        className="pd-input mt-1 w-full"
+        min={min}
+        step={step}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {hint && <span className="mt-1 block text-xs font-medium text-slate-400">{hint}</span>}
     </label>
   )
 }

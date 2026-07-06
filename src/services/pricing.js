@@ -99,9 +99,25 @@ export function formatRvpSummary(pkg) {
   return parts.length ? parts.join(' · ') : 'Non renseigné'
 }
 
+export function parsePricingAmount(value) {
+  if (value === '' || value == null) return NaN
+  const normalized = String(value).replace(/\s/g, '').replace(',', '.')
+  return Number(normalized)
+}
+
 export function packageHasConfiguredPrice(pkg) {
-  const price = Number(pkg?.price_ttc)
+  const price = parsePricingAmount(pkg?.price_ttc)
   return Number.isFinite(price) && price > 0
+}
+
+export function isPricingPackageSelectable(pkg) {
+  return Boolean(pkg?.is_active) && packageHasConfiguredPrice(pkg)
+}
+
+export function packageDisplayStatus(pkg) {
+  if (!pkg?.is_active) return { key: 'inactive', label: 'Inactif' }
+  if (!packageHasConfiguredPrice(pkg)) return { key: 'pending', label: 'À configurer' }
+  return { key: 'active', label: 'Actif' }
 }
 
 const PACKAGE_SELECT_GROUP_ORDER = [
@@ -182,7 +198,10 @@ export async function listPricingPackages(activeOnly = false) {
     if (activeOnly) query = query.eq('is_active', true)
     const { data, error } = await query
     if (error) throw error
-    return { packages: data || [], error: null }
+    const packages = activeOnly
+      ? (data || []).filter(isPricingPackageSelectable)
+      : (data || [])
+    return { packages, error: null }
   } catch (error) {
     return { packages: [], error }
   }
@@ -195,23 +214,31 @@ function isMissingColumnError(error) {
 
 function buildBasePricingRow(payload) {
   const category = normalizePackageCategory(payload.category)
-  return {
+  const row = {
     organization_id: payload.organizationId,
-    name: payload.name?.trim() || defaultPackageName({
-      category,
-      includedHours: payload.includedHours,
-    }),
     category,
-    price_ttc: Number(payload.priceTtc) || 0,
-    included_hours: Number(payload.includedHours) || 0,
-    admin_fee_ttc: Number(payload.adminFeeTtc) || 0,
+    price_ttc: parsePricingAmount(payload.priceTtc) || 0,
+    included_hours: parsePricingAmount(payload.includedHours) || 0,
+    admin_fee_ttc: parsePricingAmount(payload.adminFeeTtc) || 0,
     exam_presentation_included: Boolean(payload.examPresentationIncluded),
-    exam_presentation_ttc: Number(payload.examPresentationTtc) || 0,
-    extra_hour_price_ttc: Number(payload.extraHourPriceTtc) || 0,
+    exam_presentation_ttc: parsePricingAmount(payload.examPresentationTtc) || 0,
+    extra_hour_price_ttc: parsePricingAmount(payload.extraHourPriceTtc) || 0,
     is_active: payload.isActive !== false,
     sort_order: Number(payload.sortOrder) || 0,
     updated_at: new Date().toISOString(),
   }
+
+  const explicitName = payload.name?.trim()
+  if (explicitName) {
+    row.name = explicitName
+  } else if (!payload.id) {
+    row.name = defaultPackageName({
+      category,
+      includedHours: payload.includedHours,
+    })
+  }
+
+  return row
 }
 
 function buildRvpPricingRow(payload) {
@@ -229,13 +256,13 @@ function buildRvpPricingRow(payload) {
   }
   return {
     rvp_included: Boolean(payload.rvpIncluded),
-    rvp_ttc: payload.rvpIncluded ? 0 : Number(payload.rvpTtc) || 0,
+    rvp_ttc: payload.rvpIncluded ? 0 : parsePricingAmount(payload.rvpTtc) || 0,
     rvp1_included: Boolean(payload.rvp1Included),
-    rvp1_ttc: payload.rvp1Included ? 0 : Number(payload.rvp1Ttc) || 0,
+    rvp1_ttc: payload.rvp1Included ? 0 : parsePricingAmount(payload.rvp1Ttc) || 0,
     rvp2_included: Boolean(payload.rvp2Included),
-    rvp2_ttc: payload.rvp2Included ? 0 : Number(payload.rvp2Ttc) || 0,
+    rvp2_ttc: payload.rvp2Included ? 0 : parsePricingAmount(payload.rvp2Ttc) || 0,
     rvp3_included: Boolean(payload.rvp3Included),
-    rvp3_ttc: payload.rvp3Included ? 0 : Number(payload.rvp3Ttc) || 0,
+    rvp3_ttc: payload.rvp3Included ? 0 : parsePricingAmount(payload.rvp3Ttc) || 0,
   }
 }
 
@@ -243,7 +270,7 @@ export function formHasRvpData(form) {
   if (!packageHasRvp(form?.category)) return false
   return PACKAGE_RVP_OPTIONS.some(({ key }) => {
     const included = form[`${key}Included`]
-    const price = Number(form[`${key}Ttc`])
+    const price = parsePricingAmount(form[`${key}Ttc`])
     return included || price > 0
   })
 }
