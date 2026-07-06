@@ -29,11 +29,8 @@ export default function PrivateBetaBanner({ isDark = true }) {
           <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Pedagogia Drive
           </span>{' '}
-          est en phase de tests avec plusieurs enseignants et auto-écoles partenaires.
-          {' '}
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-            Certaines fonctionnalités sont encore en cours d&apos;amélioration avant le lancement officiel.
-          </span>
+          accueille un nombre limité d&apos;auto-écoles pilotes pour affiner la plateforme avant le lancement
+          officiel.
         </p>
       </div>
     </div>

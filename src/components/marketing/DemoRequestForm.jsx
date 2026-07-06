@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { trackDemoFormSubmit } from '../../lib/analytics'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { submitDemoRequest } from '../../services/demoRequests'
 
@@ -55,6 +56,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
       type: 'ok',
       message: 'Demande enregistrée. Nous vous recontacterons rapidement pour organiser une démonstration.',
     })
+    trackDemoFormSubmit()
     setForm({
       schoolName: '',
       contactName: '',
@@ -130,7 +132,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
             />
           </label>
           <label className={`block text-sm font-bold sm:col-span-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-            Nombre d&apos;élèves actifs
+            Nombre d&apos;élèves actifs par année
             <div className="relative mt-2">
               <select
                 className={selectClass}
@@ -176,7 +178,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
             </p>
           )}
 
-          <div className="sm:col-span-2">
+          <div className="flex justify-center sm:col-span-2">
             <button
               className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
               disabled={submitting}

@@ -40,7 +40,7 @@ test.describe('Auth', () => {
 })
 
 test.describe('Routes publiques', () => {
-  for (const path of ['/', '/blog', '/contact', '/mentions-legales', '/confidentialite']) {
+  for (const path of ['/', '/blog', '/contact', '/mentions-legales', '/politique-confidentialite', '/cgu', '/cgv', '/cookies']) {
     test(`${path} HTTP 200`, async ({ page }) => {
       const res = await page.goto(path)
       expect(res?.status()).toBeLessThan(400)

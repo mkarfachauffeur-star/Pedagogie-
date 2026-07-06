@@ -12,7 +12,10 @@ const staticPages = [
   { path: '/login', changeFrequency: 'monthly', priority: '0.8' },
   { path: '/contact', changeFrequency: 'monthly', priority: '0.8' },
   { path: '/mentions-legales', changeFrequency: 'yearly', priority: '0.5' },
-  { path: '/confidentialite', changeFrequency: 'yearly', priority: '0.5' },
+  { path: '/politique-confidentialite', changeFrequency: 'yearly', priority: '0.5' },
+  { path: '/cgu', changeFrequency: 'yearly', priority: '0.5' },
+  { path: '/cgv', changeFrequency: 'yearly', priority: '0.5' },
+  { path: '/cookies', changeFrequency: 'yearly', priority: '0.5' },
 ]
 
 const blogPages = BLOG_POSTS.map((post) => ({

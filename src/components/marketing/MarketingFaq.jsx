@@ -1,4 +1,6 @@
-export default function MarketingFaq({ items, skin, isDark }) {
+import { Link } from 'react-router-dom'
+
+export default function MarketingFaq({ items, skin, isDark, showBlogLink = false }) {
   return (
     <section aria-labelledby="faq-heading" className="mx-auto max-w-3xl" id="faq">
       <div className="text-center">
@@ -7,7 +9,7 @@ export default function MarketingFaq({ items, skin, isDark }) {
           Tout savoir sur Pedagogia Drive
         </h2>
         <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-          Livret numérique, REMC, gestion auto-école et application mobile — les réponses essentielles.
+          Les réponses essentielles avant de demander votre démonstration.
         </p>
       </div>
 
@@ -34,6 +36,16 @@ export default function MarketingFaq({ items, skin, isDark }) {
           </details>
         ))}
       </div>
+
+      {showBlogLink && (
+        <p className={`mt-8 text-center text-sm ${skin.bodyMuted}`}>
+          Guides et conseils pour gérants d&apos;auto-école sur{' '}
+          <Link className={`font-bold underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`} to="/blog">
+            notre blog
+          </Link>
+          .
+        </p>
+      )}
     </section>
   )
 }

@@ -1,43 +1,31 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
-  Bell,
-  BookOpen,
-  Briefcase,
-  Building2,
   CheckCircle2,
-  ClipboardList,
-  FileText,
-  GraduationCap,
   Menu,
-  MessageSquare,
-  Sparkles,
-  Target,
-  UserRound,
-  Users,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
 import MarketingFaq from '../components/marketing/MarketingFaq'
-import MarketingReassurance from '../components/marketing/MarketingReassurance'
+import MarketingFeaturesGrid from '../components/marketing/MarketingFeaturesGrid'
+import MarketingHowItWorks from '../components/marketing/MarketingHowItWorks'
+import MarketingWhySection from '../components/marketing/MarketingWhySection'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
-import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
-import BlogHomeSection from '../components/blog/BlogHomeSection'
 import PageSeo from '../components/seo/PageSeo'
-import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
-import { MARKETING_FAQ, MARKETING_REASSURANCE } from '../lib/marketingContent'
+import { trackDemoRequestClick } from '../lib/analytics'
+import { LANDING_FAQ_HOME, LANDING_HERO } from '../lib/marketingContent'
 import { buildHomeJsonLd, SEO_PAGES } from '../lib/seo'
 import { marketingSkin } from '../lib/marketingTheme'
 
 const primaryNavLinks = [
   { label: 'Accueil', href: '#accueil' },
-  { label: 'Plateforme', href: '#plateforme' },
-  { label: 'Bénéfices', href: '#benefices' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'Comment ça marche', href: '#comment-ca-marche' },
+  { label: 'Pourquoi nous', href: '#pourquoi' },
   { label: 'Blog', href: '/blog', route: true },
   { label: 'FAQ', href: '#faq' },
 ]
@@ -69,93 +57,6 @@ function MarketingNavItem({ item, className, onNavigate, children }) {
 
 const headerActionSizeClass =
   'inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl px-5 text-sm font-black 2xl:px-6'
-
-const platformHighlights = [
-  {
-    title: 'Livret d\'apprentissage numérique',
-    text: 'Un espace pédagogique vivant où l\'élève consulte ses leçons, ses QCU et sa progression REMC.',
-    icon: BookOpen,
-  },
-  {
-    title: 'Suivi des compétences',
-    text: 'Visualisez l\'acquisition des compétences après chaque leçon, pour l\'élève comme pour l\'enseignant.',
-    icon: Target,
-  },
-  {
-    title: 'Communication intégrée',
-    text: 'Messagerie temps réel entre élève, enseignant et secrétariat — sans multiplier les outils.',
-    icon: MessageSquare,
-  },
-]
-
-const roleBenefits = [
-  {
-    role: 'Auto-école',
-    title: 'Pilotez avec une vision complète',
-    text: 'Centralisez pédagogie, administration et suivi des élèves sur une plateforme pensée pour le quotidien des auto-écoles modernes.',
-    icon: Building2,
-  },
-  {
-    role: 'Élève',
-    title: 'Progresse entre chaque leçon',
-    text: 'Livret interactif, QCU par compétence et suivi personnalisé : l\'élève reste acteur de sa formation, même en dehors de la voiture.',
-    icon: GraduationCap,
-  },
-  {
-    role: 'Enseignant',
-    title: 'Plus de pédagogie, moins de répétitions',
-    text: 'Les contenus sont accessibles à tout moment. Les élèves arrivent mieux préparés — concentrez-vous sur la conduite et l\'accompagnement.',
-    icon: UserRound,
-  },
-  {
-    role: 'Secrétariat',
-    title: 'Gestion centralisée et fluide',
-    text: 'Inscriptions, documents, dossiers et informations pédagogiques réunis dans un espace unique, sécurisé et simple à utiliser.',
-    icon: Briefcase,
-  },
-]
-
-const availableFeatures = [
-  {
-    title: 'Suivi REMC',
-    text: 'Compétences et sous-compétences suivies en temps réel.',
-    icon: Target,
-  },
-  {
-    title: 'QCU Compétence 1',
-    text: 'Exercice interactif inédit — validation à 80 % par l\'élève.',
-    icon: ClipboardList,
-  },
-  {
-    title: 'Messagerie temps réel',
-    text: 'Échanges directs entre tous les acteurs de la formation.',
-    icon: MessageSquare,
-  },
-  {
-    title: 'Documents centralisés',
-    text: 'Dossiers élèves, pièces administratives et exports au même endroit.',
-    icon: FileText,
-  },
-  {
-    title: 'Gestion élèves & personnel',
-    text: 'Gérant, secrétariat, enseignants et élèves — chacun son espace.',
-    icon: Users,
-  },
-  {
-    title: 'Notifications intelligentes',
-    text: 'Alertes messages, rendez-vous et événements importants.',
-    icon: Bell,
-  },
-]
-
-const upcomingFeatures = [
-  { title: 'QCU compétences 2 à 4', text: 'Entraînement par compétence REMC, étape par étape.' },
-  { title: 'Vidéos pédagogiques', text: 'Contenus commentés par des professionnels de la conduite.' },
-  { title: 'Signalisation interactive', text: 'Panneaux et règles expliqués visuellement.' },
-  { title: 'Schémas & situations', text: 'Circulation, priorités et cas concrets de conduite.' },
-  { title: 'Préparation examen pratique', text: 'Révisions ciblées avant le jour J.' },
-  { title: 'Révision Code par thème', text: 'Thématiques structurées pour ancrer les acquis.' },
-]
 
 function reveal(shouldReduceMotion, delay = 0) {
   return {
@@ -382,7 +283,7 @@ export default function ProfileSelection() {
               >
                 Se connecter
               </Link>
-              <a className={demoCtaClass} href="#demonstration">
+              <a className={demoCtaClass} href="#demonstration" onClick={() => trackDemoRequestClick('header')}>
                 Demander une démo
               </a>
             </div>
@@ -420,7 +321,10 @@ export default function ProfileSelection() {
                 <a
                   className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 to-blue-700 px-4 text-sm font-black text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110"
                   href="#demonstration"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => {
+                    trackDemoRequestClick('mobile_menu')
+                    setMobileOpen(false)
+                  }}
                 >
                   Demander une démo
                 </a>
@@ -430,55 +334,32 @@ export default function ProfileSelection() {
         )}
       </header>
 
-      <BetaDevelopmentBanner isDark={isDark} />
-
       <main id="main-content">
         {/* Hero */}
         <section id="accueil" className="mx-auto max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div {...reveal(shouldReduceMotion)}>
-              <p className={skin.heroBadge}>
-                <BookOpen className="h-3.5 w-3.5" />
-                Enseignant de la conduite · Livret numérique
-              </p>
-              <h1 className={`mt-6 text-3xl font-black leading-tight tracking-[-0.04em] sm:text-5xl lg:leading-[1.1] ${skin.heading}`}>
-                Le livret numérique{' '}
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
-                  réinventé
-                </span>
+              <h1 className={`text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl lg:text-5xl lg:leading-[1.1] ${skin.heading}`}>
+                {LANDING_HERO.title}
               </h1>
               <p className={`mt-5 max-w-xl text-base leading-8 sm:text-lg ${skin.body}`}>
-                Pedagogia Drive est le livret numérique auto-école et la plateforme pédagogique pensée
-                par un enseignant de la conduite : logiciel auto-école, application moniteur et outil
-                de gestion des élèves réunis en un seul espace.
+                {LANDING_HERO.subtitle}
               </p>
-              <p className={`mt-3 max-w-xl text-sm leading-7 sm:text-base ${skin.bodyMuted}`}>
-                REMC, QCM conduite, gestion des enseignants, documents et messagerie — un suivi
-                pédagogique complet qui prolonge l&apos;apprentissage bien au-delà des heures de conduite.
-              </p>
-              <ul className="mt-6 space-y-2.5">
-                {[
-                  'Conçu sur le terrain, pas depuis un bureau',
-                  'QCU Compétence 1 déjà disponible pour les élèves',
-                  'Accès sur invitation — demandez une démonstration',
-                ].map((point) => (
-                  <li className={`flex items-center gap-2.5 text-sm font-semibold ${skin.listItem}`} key={point}>
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:hidden">
-                <a className={heroCtaClass} href="#demonstration">
-                  Demander une démo
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <a
+                  className={heroCtaClass}
+                  href="#demonstration"
+                  onClick={() => trackDemoRequestClick('hero_primary')}
+                >
+                  {LANDING_HERO.primaryCta}
                   <ArrowRight className="h-4 w-4" />
                 </a>
-                <Link
-                  to="/login"
+                <a
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black backdrop-blur sm:w-auto ${skin.loginBtn}`}
+                  href="#fonctionnalites"
                 >
-                  Se connecter
-                </Link>
+                  {LANDING_HERO.secondaryCta}
+                </a>
               </div>
             </motion.div>
             <motion.div {...reveal(shouldReduceMotion, 0.1)}>
@@ -487,198 +368,25 @@ export default function ProfileSelection() {
           </div>
         </section>
 
-        {/* Plateforme */}
-        <section id="plateforme" className={`${skin.sectionAlt} py-14 lg:py-20`}>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-              <p className={skin.eyebrowBlue}>La plateforme</p>
-              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
-                Bien plus qu&apos;un logiciel de gestion
-              </h2>
-              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-                Les outils classiques gèrent les dossiers.
-                <br />
-                Pedagogia Drive est un logiciel auto-école qui accompagne l&apos;apprentissage — livret
-                numérique, suivi pédagogique et gestion des élèves dans une application 100 % en ligne.
-              </p>
-            </motion.div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-3">
-              {platformHighlights.map((item, index) => {
-                const Icon = item.icon
-                return (
-                  <motion.article
-                    {...reveal(shouldReduceMotion, index * 0.05)}
-                    className={`${skin.card} p-5`}
-                    key={item.title}
-                  >
-                    <div className={`inline-flex rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-300 bg-blue-50 text-blue-600'}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <h3 className={`mt-4 text-base font-black ${skin.heading}`}>{item.title}</h3>
-                    <p className={`mt-2 text-sm leading-6 ${skin.bodyMuted}`}>{item.text}</p>
-                  </motion.article>
-                )
-              })}
-            </div>
-          </div>
-        </section>
+        <MarketingFeaturesGrid compact isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} />
+        <MarketingHowItWorks isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} />
+        <MarketingWhySection isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} compact />
 
-        {/* Bénéfices par rôle */}
-        <section id="benefices" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-          <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-            <p className={skin.eyebrowBlue}>Pour qui ?</p>
-            <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
-              Une plateforme pensée pour toute l&apos;équipe
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-400">
-              Auto-école, élève, enseignant ou secrétariat — chacun dispose d&apos;un espace adapté à son rôle,
-              connecté au même fil pédagogique.
-            </p>
-          </motion.div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              {roleBenefits.map((item, index) => {
-                const Icon = item.icon
-                return (
-                  <motion.article
-                    {...reveal(shouldReduceMotion, index * 0.04)}
-                    className={skin.cardHover}
-                    key={item.role}
-                  >
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-blue-400 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-                    <div className="flex items-start gap-4">
-                      <div className={`inline-flex shrink-0 rounded-xl border p-2.5 ${isDark ? 'border-blue-400/20 bg-blue-500/10 text-blue-300' : 'border-blue-300 bg-blue-50 text-blue-600'}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className={skin.roleLabel}>{item.role}</p>
-                        <h3 className={`mt-1 text-base font-black ${skin.heading}`}>{item.title}</h3>
-                        <p className={`mt-2 text-sm leading-7 ${skin.bodyMuted}`}>{item.text}</p>
-                      </div>
-                    </div>
-                  </motion.article>
-                )
-              })}
-            </div>
-        </section>
-
-        {/* Fonctionnalités */}
-        <section id="fonctionnalites" className={`${skin.sectionAlt} py-14 sm:px-6 lg:py-20`}>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-              <p className={skin.eyebrowEmerald}>Outils</p>
-              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>
-                Fonctionnalités pédagogiques
-              </h2>
-              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-                Des outils opérationnels dès aujourd&apos;hui, et une feuille de route riche pour les mois à venir.
-              </p>
-            </motion.div>
-
-            <div className="mt-10 grid gap-10 lg:grid-cols-2">
-              <motion.div {...reveal(shouldReduceMotion)}>
-                <p className={`mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  Disponible actuellement
-                </p>
-                <ul className="space-y-3">
-                  {availableFeatures.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <li
-                        className={skin.featureRow}
-                        key={item.title}
-                      >
-                        <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${isDark ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-600'}`}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className={`font-black ${skin.heading}`}>{item.title}</p>
-                          <p className={`mt-1 text-sm leading-6 ${skin.bodyMuted}`}>{item.text}</p>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </motion.div>
-
-              <motion.div {...reveal(shouldReduceMotion, 0.06)}>
-                <p className={`mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-wide ${isDark ? 'text-violet-300' : 'text-violet-600'}`}>
-                  <span className="h-2 w-2 rounded-full bg-violet-400" />
-                  Bientôt disponible
-                </p>
-                <ul className="space-y-3">
-                  {upcomingFeatures.map((item) => (
-                    <li
-                      className={skin.featureRow}
-                      key={item.title}
-                    >
-                      <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${isDark ? 'border-violet-400/20 bg-violet-500/10 text-violet-300' : 'border-violet-200 bg-violet-50 text-violet-600'}`}>
-                        <Sparkles className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className={skin.upcomingTitle}>{item.title}</p>
-                        <p className={skin.upcomingText}>{item.text}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Blog SEO */}
-        <BlogHomeSection isDark={isDark} reveal={reveal} shouldReduceMotion={shouldReduceMotion} skin={skin} />
-
-        {/* Réassurance SEO */}
-        <section className={`${skin.sectionAlt} py-14 lg:py-20`}>
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div {...reveal(shouldReduceMotion)}>
-              <MarketingReassurance isDark={isDark} items={MARKETING_REASSURANCE} skin={skin} />
-            </motion.div>
-          </div>
-        </section>
-
-        {/* FAQ SEO */}
-        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+        {/* FAQ */}
+        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20" id="faq">
           <motion.div {...reveal(shouldReduceMotion, 0.04)}>
-            <MarketingFaq isDark={isDark} items={MARKETING_FAQ} skin={skin} />
+            <MarketingFaq isDark={isDark} items={LANDING_FAQ_HOME} showBlogLink skin={skin} />
           </motion.div>
         </section>
 
         {/* Contact / démonstration */}
         <section className="relative overflow-hidden py-16 lg:py-24" id="contact">
           <div className={skin.contactGlow} />
-          <div className="relative mx-auto max-w-7xl space-y-12 px-4 sm:px-6 lg:px-8">
-            <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-2xl text-center">
-              <p className={skin.eyebrowBlue}>Bêta privée</p>
-              <h2 className={`mt-3 text-2xl font-black sm:text-3xl ${skin.heading}`}>Pourquoi une bêta privée ?</h2>
-              <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>
-                Nous préférons tester et perfectionner Pedagogia Drive avec un nombre limité
-                d&apos;établissements avant l&apos;ouverture officielle.
-              </p>
-              <p className={`mt-3 text-base leading-8 ${skin.bodyMuted}`}>
-                Notre objectif est de proposer un logiciel fiable, moderne et adapté aux besoins
-                réels des auto-écoles.
-              </p>
-            </motion.div>
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div {...reveal(shouldReduceMotion, 0.06)}>
               <DemoRequestForm isDark={isDark} />
             </motion.div>
           </div>
-        </section>
-
-        {/* Mobile */}
-        <section id="applications-mobiles" className={`${skin.sectionAlt} border-t py-14 sm:py-16`}>
-          <motion.div {...reveal(shouldReduceMotion)} className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <h2 className={`text-2xl font-black sm:text-3xl ${skin.heading}`}>Disponible sur iOS et Android</h2>
-            <p className={`mx-auto mt-4 max-w-lg text-base leading-7 ${skin.bodyMuted}`}>
-              Retrouvez votre livret numérique, votre suivi REMC et vos documents sur smartphone —
-              la formation vous suit partout.
-            </p>
-            <StorePlatformBadges className="mt-8" size="large" />
-          </motion.div>
         </section>
       </main>
 

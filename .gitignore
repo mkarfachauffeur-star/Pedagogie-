@@ -37,7 +37,8 @@ scripts/output/recette-credentials.md
 scripts/output/recette-report.json
 scripts/output/recette-credentials.json
 scripts/output/recette-credentials.md
+scripts/output/video-demo-credentials.json
+scripts/output/video-demo-credentials.md
 scripts/output/playwright-report/
-test-results/
-output/
+scripts/output/test-recovery-link.txt
 .env*

@@ -1,7 +1,7 @@
 {
-  "name": "Pedagogia Drive — Livret numérique pour auto-écoles",
+  "name": "Pedagogia Drive — Logiciel tout-en-un pour auto-écoles",
   "short_name": "Pedagogia Drive",
-  "description": "Pedagogia Drive est le livret numérique nouvelle génération destiné aux auto-écoles. QCM REMC, suivi pédagogique, messagerie, documents, gestion des élèves, enseignants et secrétariat.",
+  "description": "Gérez vos élèves, enseignants, livrets pédagogiques, documents, messagerie et suivi REMC depuis une seule plateforme SaaS.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "/",

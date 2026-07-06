@@ -45,8 +45,8 @@ async function main() {
       ? await admin.from('organizations').select('id, name, status').eq('id', orgId).maybeSingle()
       : { data: null }
     const { data: profile } = await admin.from('profiles').select('id, role, email').eq('email', email).maybeSingle()
-    const { data: sub } = profile
-      ? await admin.from('subscriptions').select('status, trial_ends_at, plan:plan_id(code)').eq('organization_id', profile.organization_id).maybeSingle()
+    const { data: sub } = orgId
+      ? await admin.from('subscriptions').select('status, trial_ends_at, plan:plan_id(code)').eq('organization_id', orgId).maybeSingle()
       : { data: null }
 
     results.push({ step: 'Organisation créée', ok: !!org, detail: org?.name || 'N/A' })

@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { contractsMap, formatEur, buildFinancialSummary } from './finance'
 
-const ACTIVE_STATUSES = new Set(['En cours', 'Validé', 'En attente', 'Pièces manquantes'])
+const ACTIVE_STATUSES = new Set(['En cours', 'En formation', 'Validé', 'En attente', 'Pièces manquantes'])
 
 function isRealizedLesson(status = '') {
   const s = String(status).toLowerCase()

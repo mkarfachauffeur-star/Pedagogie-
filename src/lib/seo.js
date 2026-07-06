@@ -10,15 +10,17 @@ export const SITE_LOGO_SQUARE = `${SITE_URL}/android-chrome-512x512.png`
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
 export const OG_IMAGE_WIDTH = 1200
 export const OG_IMAGE_HEIGHT = 630
-export const DEFAULT_OG_IMAGE_ALT = 'Pedagogia Drive — livret numérique pour auto-écoles'
+export const DEFAULT_OG_IMAGE_ALT =
+  'Pedagogia Drive — logiciel tout-en-un pour auto-écoles'
 export const CONTACT_EMAIL = 'contact@pedagogia-drive.fr'
 
 export const SEO_KEYWORDS =
-  'auto école, logiciel auto école, livret numérique, REMC, suivi pédagogique, enseignant conduite, application auto école, SaaS auto école'
+  'logiciel auto école, SaaS auto école, livret numérique, REMC, suivi pédagogique, gestion élèves, messagerie auto école, planning auto école'
 
-export const SEO_DEFAULT_TITLE = 'Pedagogia Drive | Livret numérique pour auto-écoles'
+export const SEO_DEFAULT_TITLE =
+  'Pedagogia Drive | Logiciel tout-en-un pour auto-écoles — Bêta privée'
 export const SEO_DEFAULT_DESCRIPTION =
-  'Pedagogia Drive est le livret numérique nouvelle génération destiné aux auto-écoles. QCM REMC, suivi pédagogique, messagerie, documents, gestion des élèves, enseignants et secrétariat.'
+  'Gérez vos élèves, enseignants, livrets pédagogiques, documents, messagerie et suivi REMC depuis une seule plateforme. Demandez une démonstration gratuite — essai 30 jours.'
 
 export const SEO_PAGES = {
   home: {
@@ -45,14 +47,42 @@ export const SEO_PAGES = {
     path: '/mentions-legales',
     title: 'Mentions légales | Pedagogia Drive',
     description:
-      'Mentions légales de Pedagogia Drive, éditeur du livret numérique et logiciel SaaS auto-école pour le suivi pédagogique REMC.',
+      'Mentions légales de Pedagogia Drive : éditeur, hébergeur, propriété intellectuelle, responsabilité et contact.',
+    ogType: 'website',
+  },
+  politiqueConfidentialite: {
+    path: '/politique-confidentialite',
+    title: 'Politique de confidentialité | Pedagogia Drive — RGPD',
+    description:
+      'Politique de confidentialité Pedagogia Drive : données collectées, finalités, durée de conservation, droits RGPD et contact DPO.',
     ogType: 'website',
   },
   confidentialite: {
-    path: '/confidentialite',
-    title: 'Confidentialité | Pedagogia Drive — Protection des données',
+    path: '/politique-confidentialite',
+    title: 'Politique de confidentialité | Pedagogia Drive — RGPD',
     description:
       'Politique de confidentialité Pedagogia Drive : protection des données des auto-écoles, élèves, enseignants et secrétariat. Conforme au RGPD.',
+    ogType: 'website',
+  },
+  cgu: {
+    path: '/cgu',
+    title: 'CGU | Pedagogia Drive — Conditions générales d\'utilisation',
+    description:
+      'Conditions générales d\'utilisation de Pedagogia Drive : accès, comptes, responsabilités, propriété intellectuelle et résiliation.',
+    ogType: 'website',
+  },
+  cgv: {
+    path: '/cgv',
+    title: 'CGV | Pedagogia Drive — Conditions générales de vente',
+    description:
+      'Conditions générales de vente Pedagogia Drive : abonnements, essai gratuit, Starter, Premium, paiement et résiliation.',
+    ogType: 'website',
+  },
+  cookies: {
+    path: '/cookies',
+    title: 'Politique de cookies | Pedagogia Drive',
+    description:
+      'Politique de cookies Pedagogia Drive : cookies techniques, mesure d\'audience, durée de conservation et gestion des préférences.',
     ogType: 'website',
   },
   blog: {
@@ -216,7 +246,11 @@ export function breadcrumbsForPage(pageKey) {
     login: { name: 'Connexion', path: '/login' },
     contact: { name: 'Contact', path: '/contact' },
     mentionsLegales: { name: 'Mentions légales', path: '/mentions-legales' },
-    confidentialite: { name: 'Confidentialité', path: '/confidentialite' },
+    politiqueConfidentialite: { name: 'Politique de confidentialité', path: '/politique-confidentialite' },
+    confidentialite: { name: 'Politique de confidentialité', path: '/politique-confidentialite' },
+    cgu: { name: 'CGU', path: '/cgu' },
+    cgv: { name: 'CGV', path: '/cgv' },
+    cookies: { name: 'Politique de cookies', path: '/cookies' },
     blog: { name: 'Blog', path: '/blog' },
   }
 

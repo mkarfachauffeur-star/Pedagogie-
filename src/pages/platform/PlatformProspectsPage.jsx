@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
+import { BETA_PILOT_ORG_LIMIT } from '../../config/beta'
+import { trackOrganizationCreated } from '../../lib/analytics'
 import { formatPlatformDateTime } from '../../lib/platformPlans'
 import { supabase } from '../../lib/supabase'
+import { fetchBetaPilotStatus } from '../../services/beta'
 import { acceptProspect, deleteProspectRecord, listProspects, refuseProspect, resendManagerInvite } from '../../services/prospects'
 import { deleteOrganization } from '../../services/platform'
 import { useProspectNotifications } from '../../hooks/useProspectNotifications'
@@ -21,7 +24,13 @@ export default function PlatformProspectsPage() {
   const [loadError, setLoadError] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const [pilotStatus, setPilotStatus] = useState(null)
   const { refresh: refreshBadge } = useProspectNotifications()
+
+  const refreshPilotStatus = useCallback(async () => {
+    const status = await fetchBetaPilotStatus()
+    setPilotStatus(status)
+  }, [])
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -38,7 +47,8 @@ export default function PlatformProspectsPage() {
     }
     setLoading(false)
     refreshBadge()
-  }, [refreshBadge])
+    refreshPilotStatus()
+  }, [refreshBadge, refreshPilotStatus])
 
   useEffect(() => {
     refresh()
@@ -61,6 +71,14 @@ export default function PlatformProspectsPage() {
 
   const handleAccept = async (prospect) => {
     if (prospect.organization_id || TERMINAL_STATUSES.has(prospect.status)) return
+    if (pilotStatus && !pilotStatus.acceptsNew) {
+      setFeedback({
+        type: 'error',
+        message: `Limite bêta privée atteinte (${BETA_PILOT_ORG_LIMIT} auto-écoles pilotes). Supprimez une org pilote ou attendez une place.`,
+        steps: null,
+      })
+      return
+    }
     if (
       !window.confirm(
         `Accepter « ${prospect.school_name} » ?\n\nCréation de l'auto-école, du compte gérant (${prospect.email}), essai 30 jours Starter et envoi d'un lien sécurisé pour définir le mot de passe.`,
@@ -86,6 +104,9 @@ export default function PlatformProspectsPage() {
         ? `Demande acceptée. Invitation envoyée à ${prospect.email}.`
         : 'Demande acceptée.',
     })
+    if (data?.organization_id) {
+      trackOrganizationCreated(data.organization_id)
+    }
     refresh()
   }
 
@@ -166,6 +187,22 @@ export default function PlatformProspectsPage() {
         title="Demandes de démonstration"
         subtitle="Lecture directe de public.demo_requests — aucun compte créé tant qu'une demande n'est pas acceptée."
       />
+
+      {pilotStatus && (
+        <div
+          className={`rounded-xl border-2 px-4 py-3 text-sm font-bold ${
+            pilotStatus.acceptsNew
+              ? 'border-cyan-200 bg-cyan-50 text-cyan-900'
+              : 'border-amber-200 bg-amber-50 text-amber-900'
+          }`}
+        >
+          Bêta privée : {pilotStatus.used ?? 0} / {pilotStatus.limit ?? BETA_PILOT_ORG_LIMIT} places pilotes
+          utilisées
+          {typeof pilotStatus.remaining === 'number' && (
+            <> — {pilotStatus.remaining} place{pilotStatus.remaining > 1 ? 's' : ''} restante{pilotStatus.remaining > 1 ? 's' : ''}</>
+          )}
+        </div>
+      )}
 
       {loadError && (
         <p className="rounded-xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">
@@ -258,8 +295,13 @@ export default function PlatformProspectsPage() {
                           <>
                             <button
                               className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
-                              disabled={isBusy}
+                              disabled={isBusy || (pilotStatus && !pilotStatus.acceptsNew)}
                               onClick={() => handleAccept(row)}
+                              title={
+                                pilotStatus && !pilotStatus.acceptsNew
+                                  ? 'Limite bêta privée atteinte'
+                                  : undefined
+                              }
                               type="button"
                             >
                               ✓ Accepter

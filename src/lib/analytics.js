@@ -37,3 +37,24 @@ export function trackPageView(pagePath) {
     page_title: document.title,
   })
 }
+
+export function trackEvent(eventName, params = {}) {
+  if (!import.meta.env.PROD || !hasGtag()) return
+  window.gtag('event', eventName, params)
+}
+
+export function trackDemoRequestClick(source = 'unknown') {
+  trackEvent('demo_request_click', { source })
+}
+
+export function trackDemoFormSubmit() {
+  trackEvent('demo_form_submit')
+}
+
+export function trackLogin(role) {
+  trackEvent('login', { method: 'password', role: role || 'unknown' })
+}
+
+export function trackOrganizationCreated(organizationId) {
+  trackEvent('organization_created', { organization_id: organizationId || undefined })
+}

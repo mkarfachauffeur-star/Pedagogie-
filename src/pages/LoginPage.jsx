@@ -17,6 +17,7 @@ import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useAuth } from '../context/AuthContext'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
+import { trackLogin } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
@@ -210,6 +211,7 @@ export default function LoginPage() {
       return
     }
     const destination = roleDestinations[realRole] || '/'
+    trackLogin(realRole)
     navigate(destination, { replace: true })
   }
 
@@ -237,6 +239,7 @@ export default function LoginPage() {
     }
     setMustChangePassword(false)
     const destination = roleDestinations[pendingRole] || '/'
+    trackLogin(pendingRole)
     navigate(destination, { replace: true })
   }
 
@@ -471,12 +474,9 @@ export default function LoginPage() {
                     disabled={!canSubmit || submitting}
                     className="group mt-1 flex w-full overflow-hidden rounded-xl shadow-lg shadow-blue-900/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
                   >
-                    <span className="flex flex-1 items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">
-                      Connexion
+                    <span className="flex w-full items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">
+                      {submitting ? 'Connexion…' : 'Connexion'}
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                    </span>
-                    <span className="flex items-center justify-center border-l border-white/20 bg-gradient-to-b from-red-500 to-red-600 px-4 py-3.5 text-white">
-                      <ArrowRight className="h-4 w-4" />
                     </span>
                   </button>
 
@@ -507,7 +507,7 @@ export default function LoginPage() {
               <Link className={`transition ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`} to="/mentions-legales">
                 Mentions légales
               </Link>
-              <Link className={`transition ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`} to="/confidentialite">
+              <Link className={`transition ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`} to="/politique-confidentialite">
                 Politique de confidentialité
               </Link>
               <Link className={`transition ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`} to="/contact">

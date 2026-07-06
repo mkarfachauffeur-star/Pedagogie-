@@ -4,6 +4,10 @@ import ProfileSelection from './pages/ProfileSelection'
 import LoginPage from './pages/LoginPage'
 import MentionsLegalesPage from './pages/MentionsLegalesPage'
 import ConfidentialitePage from './pages/ConfidentialitePage'
+import PolitiqueConfidentialitePage from './pages/PolitiqueConfidentialitePage'
+import CguPage from './pages/CguPage'
+import CgvPage from './pages/CgvPage'
+import CookiesPage from './pages/CookiesPage'
 import ContactPage from './pages/ContactPage'
 import BlogListPage from './pages/BlogListPage'
 import BlogArticlePage from './pages/BlogArticlePage'
@@ -145,7 +149,11 @@ function App() {
         <Route path="/" element={<ProfileSelection />} />
         <Route path="/signup" element={<Navigate replace to="/#demonstration" />} />
         <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
+        <Route path="/politique-confidentialite" element={<PolitiqueConfidentialitePage />} />
         <Route path="/confidentialite" element={<ConfidentialitePage />} />
+        <Route path="/cgu" element={<CguPage />} />
+        <Route path="/cgv" element={<CgvPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route path="/login" element={<LoginPage />} />
