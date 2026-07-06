@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
@@ -53,11 +53,14 @@ export default function AppModal({
   children,
   ariaLabel,
 }) {
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     if (!open) return undefined
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape' && !disableClose) onClose?.()
+      if (event.key === 'Escape' && !disableClose) onCloseRef.current?.()
     }
 
     lockBodyScroll()
@@ -66,12 +69,12 @@ export default function AppModal({
       window.removeEventListener('keydown', onKeyDown)
       unlockBodyScroll()
     }
-  }, [open, disableClose, onClose])
+  }, [open, disableClose])
 
   if (!open) return null
 
   const handleBackdrop = () => {
-    if (closeOnBackdrop && !disableClose) onClose?.()
+    if (closeOnBackdrop && !disableClose) onCloseRef.current?.()
   }
 
   return createPortal(
@@ -89,7 +92,7 @@ export default function AppModal({
       />
 
       <div
-        className={`relative z-10 flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
+        className={`relative z-10 isolate flex max-h-[min(90dvh,90vh)] w-full flex-col overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-2xl ${SIZE_CLASS[size] || SIZE_CLASS.lg}`}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b-2 border-slate-200 bg-white px-4 py-4 sm:px-5">
@@ -115,7 +118,7 @@ export default function AppModal({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-white px-4 py-4 sm:px-5 sm:py-5">
           {children}
         </div>
 

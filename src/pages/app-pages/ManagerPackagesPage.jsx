@@ -536,21 +536,20 @@ export default function ManagerPackagesPage() {
             />
             <Field
               hint="Utilisez un point ou une virgule pour les décimales (ex. 1290,50)."
+              inputMode="decimal"
               label="Prix TTC (€) *"
-              min="0.01"
-              step="0.01"
-              type="number"
+              type="text"
               value={form.priceTtc}
               onChange={(v) => setForm((c) => ({ ...c, priceTtc: v }))}
             />
-            <Field label="Heures incluses *" min="0" step="1" type="number" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
-            <Field label="Frais administratifs TTC (€)" min="0" step="0.01" type="number" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
+            <Field inputMode="numeric" label="Heures incluses *" type="text" value={form.includedHours} onChange={(v) => setForm((c) => ({ ...c, includedHours: v }))} />
+            <Field inputMode="decimal" label="Frais administratifs TTC (€)" type="text" value={form.adminFeeTtc} onChange={(v) => setForm((c) => ({ ...c, adminFeeTtc: v }))} />
             <label className="flex items-center gap-2 text-sm font-bold">
               <input type="checkbox" checked={form.examPresentationIncluded} onChange={(e) => setForm((c) => ({ ...c, examPresentationIncluded: e.target.checked }))} />
               Présentation examen incluse
             </label>
             {form.examPresentationIncluded && (
-              <Field label="Montant présentation examen TTC (€)" type="number" value={form.examPresentationTtc} onChange={(v) => setForm((c) => ({ ...c, examPresentationTtc: v }))} />
+              <Field inputMode="decimal" label="Montant présentation examen TTC (€)" type="text" value={form.examPresentationTtc} onChange={(v) => setForm((c) => ({ ...c, examPresentationTtc: v }))} />
             )}
             {form.packageFamily === 'permis_b' && form.formation === 'aac' && (
             <fieldset className="rounded-2xl border-2 border-slate-300 bg-slate-50/80 p-4">
@@ -580,7 +579,7 @@ export default function ManagerPackagesPage() {
               </div>
             </fieldset>
             )}
-            <Field label="Prix heure supplémentaire TTC (€)" type="number" value={form.extraHourPriceTtc} onChange={(v) => setForm((c) => ({ ...c, extraHourPriceTtc: v }))} />
+            <Field inputMode="decimal" label="Prix heure supplémentaire TTC (€)" type="text" value={form.extraHourPriceTtc} onChange={(v) => setForm((c) => ({ ...c, extraHourPriceTtc: v }))} />
             <label className="flex items-center gap-2 text-sm font-bold">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((c) => ({ ...c, isActive: e.target.checked }))} />
               Formule disponible pour les inscriptions
@@ -605,14 +604,13 @@ export default function ManagerPackagesPage() {
   )
 }
 
-function Field({ label, value, onChange, type = 'text', hint, min, step }) {
+function Field({ label, value, onChange, type = 'text', hint, inputMode }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
       {label}
       <input
         className="pd-input mt-1 w-full"
-        min={min}
-        step={step}
+        inputMode={inputMode}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -636,9 +634,10 @@ function RvpField({ label, included, price, onIncludedChange, onPriceChange }) {
       </label>
       {!included && (
         <Field
+          inputMode="decimal"
           label="Prix TTC (€)"
           onChange={onPriceChange}
-          type="number"
+          type="text"
           value={price}
         />
       )}
