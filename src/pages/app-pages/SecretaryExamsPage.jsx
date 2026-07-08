@@ -1,45 +1,103 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from '../../components/ui/EmptyState'
 import AppModal, { AppModalFooter } from '../../components/ui/AppModal'
 import WeekdayDatePicker from '../../components/ui/WeekdayDatePicker'
+import { useAuth } from '../../context/AuthContext'
+import { getUserFacingError } from '../../lib/userFacingError'
+import { studentLabel, todayIso } from '../../services/finance'
+import {
+  createExam,
+  deleteExam,
+  listExams,
+  subscribeToExams,
+  updateExam,
+} from '../../services/exams'
+import { listOrganizationTeachers, listStudents } from '../../services/students'
 
-const initialExams = []
-
-// Créneaux horaires disponibles : 8h → 16h par tranches de 30 min,
-// pause déjeuner 12h-13h exclue. (Avant 8h et après 16h non proposés.)
 const TIME_SLOTS = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
 ]
 
-// Les dimanches ne sont pas sélectionnables (lundi au samedi uniquement).
+const EXAM_TYPES = ['Code', 'Permis B', 'AAC', 'Boîte auto', 'Examen blanc']
+const EXAM_STATUSES = ['Confirmé', 'À confirmer', 'Dossier incomplet']
+
 function isSunday(value) {
   if (!value) return false
   return new Date(`${value}T12:00:00`).getDay() === 0
 }
 
-export default function SecretaryExamsPage() {
-  const [exams, setExams] = useState(initialExams)
-  const [selectedId, setSelectedId] = useState(1)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState({
-    student: '',
+function emptyForm(date = todayIso()) {
+  return {
+    studentId: '',
     type: 'Permis B',
-    date: '2026-05-30',
+    date,
     hour: '09:00',
-    teacher: '',
+    teacherId: '',
     center: '',
     status: 'À confirmer',
-  })
+  }
+}
+
+function referentTeacherId(student) {
+  const assignments = student?.student_assignments || []
+  const referent = assignments.find((row) => row.is_referent)
+  return referent?.teacher_id || assignments[0]?.teacher_id || ''
+}
+
+export default function SecretaryExamsPage() {
+  const { profileId, organizationId } = useAuth()
+  const [exams, setExams] = useState([])
+  const [students, setStudents] = useState([])
+  const [teachers, setTeachers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [form, setForm] = useState(emptyForm())
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState(null)
+
+  const refresh = useCallback(async () => {
+    if (!profileId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setLoadError(null)
+    const [examsRes, studentsRes, teachersRows] = await Promise.all([
+      listExams(),
+      listStudents(),
+      listOrganizationTeachers(),
+    ])
+    if (examsRes.error || studentsRes.error) {
+      setLoadError('Impossible de charger les examens.')
+    }
+    setExams(examsRes.exams || [])
+    setStudents(studentsRes.students || [])
+    setTeachers(teachersRows || [])
+    setLoading(false)
+  }, [profileId])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  useEffect(() => {
+    if (!profileId) return undefined
+    return subscribeToExams(refresh)
+  }, [profileId, refresh])
 
   const handleDateChange = (value) => setForm((current) => ({ ...current, date: value }))
 
   const dateInvalid = !form.date || isSunday(form.date)
+  const canSubmit = Boolean(form.studentId) && !dateInvalid && !saving
 
   const openCreate = () => {
     setEditingId(null)
-    setForm({ student: '', type: 'Permis B', date: '2026-05-30', hour: '09:00', teacher: '', center: '', status: 'À confirmer' })
+    setForm(emptyForm())
+    setFormError(null)
     setShowForm(true)
   }
 
@@ -47,23 +105,35 @@ export default function SecretaryExamsPage() {
     setEditingId(exam.id)
     setSelectedId(exam.id)
     setForm({
-      student: exam.student,
-      type: exam.type,
-      date: exam.date,
-      hour: exam.hour,
-      teacher: exam.teacher,
-      center: exam.center,
-      status: exam.status,
+      studentId: exam.student_id || '',
+      type: exam.type || 'Permis B',
+      date: exam.exam_date || todayIso(),
+      hour: exam.exam_time || '09:00',
+      teacherId: exam.teacher_id || '',
+      center: exam.center || '',
+      status: exam.status || 'À confirmer',
     })
+    setFormError(null)
     setShowForm(true)
   }
 
   const closeForm = () => {
     setShowForm(false)
     setEditingId(null)
+    setFormError(null)
   }
 
-  const selectedExam = exams.find((exam) => exam.id === selectedId) || exams[0]
+  const handleStudentChange = (studentId) => {
+    const student = students.find((row) => row.id === studentId)
+    setForm((current) => ({
+      ...current,
+      studentId,
+      teacherId: referentTeacherId(student) || current.teacherId,
+    }))
+  }
+
+  const selectedExam = exams.find((exam) => exam.id === selectedId) || exams[0] || null
+
   const stats = useMemo(
     () => ({
       confirmed: exams.filter((exam) => exam.status === 'Confirmé').length,
@@ -73,27 +143,68 @@ export default function SecretaryExamsPage() {
     [exams],
   )
 
-  const saveExam = (event) => {
+  const saveExam = async (event) => {
     event.preventDefault()
-    if (dateInvalid) return
-    if (editingId) {
-      setExams((current) => current.map((exam) => (exam.id === editingId ? { ...exam, ...form } : exam)))
-      setSelectedId(editingId)
-    } else {
-      const nextExam = { ...form, id: Date.now() }
-      setExams((current) => [nextExam, ...current])
-      setSelectedId(nextExam.id)
+    if (!canSubmit || !organizationId) return
+    setSaving(true)
+    setFormError(null)
+
+    const payload = {
+      studentId: form.studentId,
+      teacherId: form.teacherId || null,
+      type: form.type,
+      examDate: form.date,
+      examTime: form.hour,
+      center: form.center,
+      status: form.status,
+    }
+
+    const result = editingId
+      ? await updateExam(editingId, payload)
+      : await createExam({ organizationId, ...payload })
+
+    setSaving(false)
+    if (result.error) {
+      setFormError(getUserFacingError(result.error))
+      return
+    }
+
+    if (result.exam) {
+      setSelectedId(result.exam.id)
+      setExams((current) => {
+        if (editingId) {
+          return current.map((exam) => (exam.id === editingId ? result.exam : exam))
+        }
+        return [result.exam, ...current]
+      })
     }
     closeForm()
   }
 
-  const updateStatus = (examId, status) => {
-    setExams((current) => current.map((exam) => (exam.id === examId ? { ...exam, status } : exam)))
+  const updateStatus = async (examId, status) => {
+    const { exam, error } = await updateExam(examId, { status })
+    if (error) return
+    if (exam) {
+      setExams((current) => current.map((row) => (row.id === examId ? exam : row)))
+    }
   }
 
-  const deleteExam = (examId) => {
-    setExams((current) => current.filter((exam) => exam.id !== examId))
-    setSelectedId(exams[0]?.id || null)
+  const removeExam = async (examId) => {
+    const { error } = await deleteExam(examId)
+    if (error) return
+    setExams((current) => {
+      const next = current.filter((exam) => exam.id !== examId)
+      setSelectedId((currentSelected) => (currentSelected === examId ? next[0]?.id || null : currentSelected))
+      return next
+    })
+  }
+
+  if (!profileId) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte secrétariat." icon="🎫" />
+      </div>
+    )
   }
 
   return (
@@ -107,7 +218,7 @@ export default function SecretaryExamsPage() {
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Planification des examens</h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
-                Réservations, centres, enseignants référents, statuts et dossiers incomplets.
+                Réservations, centres, enseignants référents, statuts et dossiers incomplets. L&apos;élève est notifié automatiquement.
               </p>
             </div>
             <button className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-navy-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-white" onClick={openCreate} type="button">
@@ -116,6 +227,10 @@ export default function SecretaryExamsPage() {
           </div>
         </div>
       </section>
+
+      {loadError && (
+        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadError}</p>
+      )}
 
       <section className="grid gap-4 md:grid-cols-3">
         <Kpi label="Confirmés" value={stats.confirmed} />
@@ -127,15 +242,17 @@ export default function SecretaryExamsPage() {
         <div className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-2xl font-extrabold text-slate-950">Sessions à venir</h2>
           <div className="mt-5 grid gap-3">
-            {exams.length === 0 ? (
-              <EmptyState title="Aucun résultat disponible" message="Aucun résultat disponible pour le moment." icon="🎫" />
+            {loading ? (
+              <p className="text-sm font-medium text-slate-500">Chargement…</p>
+            ) : exams.length === 0 ? (
+              <EmptyState title="Aucun examen planifié" message="Planifiez une session pour un élève de votre auto-école." icon="🎫" />
             ) : (
               exams.map((exam) => (
-                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-300 bg-slate-50'}`} key={exam.id} onClick={() => openEdit(exam)} type="button">
+                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-300 bg-slate-50'}`} key={exam.id} onClick={() => { setSelectedId(exam.id); openEdit(exam) }} type="button">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                      <h3 className="font-extrabold text-slate-950">{exam.student}</h3>
-                      <p className="mt-1 text-sm text-slate-500">{exam.type} · {exam.date} à {exam.hour} · {exam.center}</p>
+                      <h3 className="font-extrabold text-slate-950">{exam.studentName}</h3>
+                      <p className="mt-1 text-sm text-slate-500">{exam.type} · {exam.exam_date} à {exam.exam_time} · {exam.center || '—'}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700">{exam.status}</span>
                   </div>
@@ -148,11 +265,11 @@ export default function SecretaryExamsPage() {
         {selectedExam && (
           <aside className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
             <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Fiche examen</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{selectedExam.student}</h2>
-            <p className="mt-2 text-sm text-slate-500">{selectedExam.type} · {selectedExam.center}</p>
+            <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{selectedExam.studentName}</h2>
+            <p className="mt-2 text-sm text-slate-500">{selectedExam.type} · {selectedExam.center || '—'}</p>
             <div className="mt-5 grid gap-3">
-              <Info label="Date" value={`${selectedExam.date} à ${selectedExam.hour}`} />
-              <Info label="Enseignant" value={selectedExam.teacher} />
+              <Info label="Date" value={`${selectedExam.exam_date || '—'} à ${selectedExam.exam_time || '—'}`} />
+              <Info label="Enseignant" value={selectedExam.teacherName} />
               <Info label="Statut" value={selectedExam.status} />
             </div>
             <div className="mt-5 grid gap-2">
@@ -165,7 +282,7 @@ export default function SecretaryExamsPage() {
               <button className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100" onClick={() => updateStatus(selectedExam.id, 'Dossier incomplet')} type="button">
                 Dossier incomplet
               </button>
-              <button className="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-rose-500" onClick={() => deleteExam(selectedExam.id)} type="button">
+              <button className="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-rose-500" onClick={() => removeExam(selectedExam.id)} type="button">
                 Supprimer
               </button>
             </div>
@@ -183,19 +300,42 @@ export default function SecretaryExamsPage() {
           <AppModalFooter
             onClose={closeForm}
             submitForm="exam-form"
-            submitLabel={editingId ? 'Enregistrer les modifications' : 'Enregistrer'}
-            submitDisabled={dateInvalid}
+            submitLabel={saving ? 'Enregistrement…' : editingId ? 'Enregistrer les modifications' : 'Enregistrer'}
+            submitDisabled={!canSubmit}
           />
         )}
       >
         <form id="exam-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveExam}>
-          <Field label="Élève" onChange={(value) => setForm((current) => ({ ...current, student: value }))} value={form.student} />
-          <Select label="Type" onChange={(value) => setForm((current) => ({ ...current, type: value }))} options={['Code', 'Permis B', 'AAC', 'Boîte auto', 'Examen blanc']} value={form.type} />
+          <StudentSelect
+            label="Élève *"
+            onChange={handleStudentChange}
+            students={students}
+            value={form.studentId}
+          />
+          <Select label="Type" onChange={(value) => setForm((current) => ({ ...current, type: value }))} options={EXAM_TYPES} value={form.type} />
           <WeekdayDatePicker label="Date (lundi au samedi)" value={form.date} onChange={handleDateChange} />
           <Select label="Heure" onChange={(value) => setForm((current) => ({ ...current, hour: value }))} options={TIME_SLOTS} value={form.hour} />
-          <Field label="Enseignant référent" onChange={(value) => setForm((current) => ({ ...current, teacher: value }))} value={form.teacher} />
+          <TeacherSelect
+            label="Enseignant référent"
+            onChange={(value) => setForm((current) => ({ ...current, teacherId: value }))}
+            teachers={teachers}
+            value={form.teacherId}
+          />
           <Field label="Centre d'examen" onChange={(value) => setForm((current) => ({ ...current, center: value }))} value={form.center} />
-          <Select label="Statut" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={['Confirmé', 'À confirmer', 'Dossier incomplet']} value={form.status} />
+          <Select label="Statut" onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={EXAM_STATUSES} value={form.status} />
+          {!form.studentId && (
+            <p className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              Sélectionnez un élève de votre auto-école pour enregistrer l&apos;examen. L&apos;élève recevra une notification automatique.
+            </p>
+          )}
+          {students.length === 0 && (
+            <p className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+              Aucun dossier élève disponible dans votre auto-école.
+            </p>
+          )}
+          {formError && (
+            <p className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{formError}</p>
+          )}
         </form>
       </AppModal>
     </div>
@@ -218,6 +358,45 @@ function Info({ label, value }) {
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="font-extrabold text-slate-900">{value}</p>
     </div>
+  )
+}
+
+function StudentSelect({ label, onChange, students, value }) {
+  return (
+    <label className="block md:col-span-2">
+      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <select
+        className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        onChange={(event) => onChange(event.target.value)}
+        required
+        value={value}
+      >
+        <option value="">Sélectionner un élève…</option>
+        {students.map((student) => (
+          <option key={student.id} value={student.id}>
+            {studentLabel(student)} · {student.file_number || student.id.slice(0, 8)}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function TeacherSelect({ label, onChange, teachers, value }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <select
+        className="mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        <option value="">Aucun enseignant</option>
+        {teachers.map((teacher) => (
+          <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
+        ))}
+      </select>
+    </label>
   )
 }
 

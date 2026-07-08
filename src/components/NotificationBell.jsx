@@ -112,6 +112,13 @@ export default function NotificationBell({ role, unreadCount }) {
       }
     }
 
+    if (notification.notification_type === 'exam_scheduled') {
+      if (role === 'student') {
+        navigate('/student/dashboard')
+        return
+      }
+    }
+
     if (!messagesRoute || !notification?.conversation_id) return
     navigate(messagesRoute, { state: { conversationId: notification.conversation_id } })
   }
