@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/generate-favicons.mjs && node scripts/generate-blog-covers.mjs && node scripts/generate-sitemap.mjs && vite build",
+    "build:capacitor": "node scripts/generate-favicons.mjs && node scripts/generate-blog-covers.mjs && node scripts/generate-sitemap.mjs && VITE_CAPACITOR=1 vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "supabase:login": "npx supabase login",
@@ -30,9 +31,24 @@
     "preprod:audit": "node scripts/preprod-audit.mjs",
     "preprod:email": "node scripts/preprod-email-check.mjs",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "cap:assets": "node scripts/generate-ios-app-icon.mjs",
+    "ios:icons": "node scripts/generate-ios-app-icon.mjs",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync:ios": "npm run build:capacitor && npx cap sync ios && node scripts/patch-ios-info-plist.mjs && node scripts/copy-ios-privacy-manifest.mjs",
+    "cap:open:ios": "npx cap open ios",
+    "ios:prepare": "npm run build:capacitor && npx cap sync ios && node scripts/patch-ios-info-plist.mjs && node scripts/copy-ios-privacy-manifest.mjs && npm run ios:icons",
+    "ios:open": "npm run ios:prepare && npm run cap:open:ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.4.1",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@supabase/supabase-js": "^2.106.2",
     "@tailwindcss/vite": "^4.3.0",
     "exceljs": "^4.4.0",
@@ -47,6 +63,7 @@
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@types/react": "^19.2.14",
