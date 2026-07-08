@@ -1,4 +1,10 @@
 import { supabase } from '../lib/supabase'
+import {
+  LESSON_MODULE_IDS_BY_COMPETENCY,
+  LESSON_MODULE_STORAGE_KEYS,
+  REMC_COMPETENCY_ORDER,
+} from '../data/lessonCompetencyModules'
+import { subscribePostgresChanges } from './realtime'
 
 export const QCU_PASS_PERCENTAGE = 80
 
@@ -65,13 +71,62 @@ export async function fetchLatestPassedQcu(studentId) {
   return { latest, error: null }
 }
 
-export async function fetchLessonModuleProgressMap(studentId) {
-  const { progress, error } = await listLessonModuleProgressForStudent(studentId)
-  if (error) return { progressByModuleId: {}, error }
-  const progressByModuleId = Object.fromEntries(
-    progress.map((row) => [row.moduleId, normalizeModuleProgress(row)]),
+function lessonProgressStorageKey(storageKey, ownerId) {
+  if (!storageKey || !ownerId) return null
+  return `${storageKey}:${ownerId}`
+}
+
+function readLocalModuleProgress(moduleId, ownerId) {
+  const storageKey = LESSON_MODULE_STORAGE_KEYS[moduleId]
+  const scopedKey = lessonProgressStorageKey(storageKey, ownerId)
+  if (!scopedKey || typeof window === 'undefined') {
+    return normalizeModuleProgress({ completed: false })
+  }
+  try {
+    const saved = window.localStorage.getItem(scopedKey)
+    return saved ? normalizeModuleProgress(JSON.parse(saved)) : normalizeModuleProgress({ completed: false })
+  } catch {
+    return normalizeModuleProgress({ completed: false })
+  }
+}
+
+function mergeModuleProgress(localProgress, remoteProgress) {
+  const local = normalizeModuleProgress(localProgress)
+  const remote = normalizeModuleProgress(remoteProgress)
+  const qcuPassed = local.qcuPassed || remote.qcuPassed
+  return normalizeModuleProgress({
+    courseReadComplete: local.courseReadComplete || remote.courseReadComplete,
+    courseReadAt: remote.courseReadAt || local.courseReadAt,
+    qcuPassed,
+    score: qcuPassed ? (remote.score ?? local.score) : (local.score ?? remote.score),
+    total: qcuPassed ? (remote.total ?? local.total) : (local.total ?? remote.total),
+    percentage: qcuPassed ? (remote.percentage ?? local.percentage) : (local.percentage ?? remote.percentage),
+    qcuValidatedAt: remote.qcuValidatedAt || local.qcuValidatedAt,
+    completed: qcuPassed,
+  })
+}
+
+export async function fetchLessonModuleProgressMap(studentId, profileId = null) {
+  const ownerId = studentId || profileId
+  const { progress, error } = studentId
+    ? await listLessonModuleProgressForStudent(studentId)
+    : { progress: [], error: null }
+
+  const remoteByModuleId = Object.fromEntries(
+    (progress || []).map((row) => [row.moduleId, normalizeModuleProgress(row)]),
   )
-  return { progressByModuleId, error: null }
+
+  const moduleIds = Object.keys(LESSON_MODULE_STORAGE_KEYS)
+  const progressByModuleId = Object.fromEntries(
+    moduleIds.map((moduleId) => [
+      moduleId,
+      ownerId
+        ? mergeModuleProgress(readLocalModuleProgress(moduleId, ownerId), remoteByModuleId[moduleId])
+        : normalizeModuleProgress(remoteByModuleId[moduleId]),
+    ]),
+  )
+
+  return { progressByModuleId, error }
 }
 
 export async function markCourseReadComplete({ moduleId, moduleTitle }) {
@@ -119,4 +174,58 @@ export function formatQcuValidatedAt(iso) {
   } catch {
     return '—'
   }
+}
+
+/** Progression par compétence à partir des QCU réussis dans les modules leçons. */
+export function computeLessonProgressByCompetency(progressByModuleId = {}) {
+  return REMC_COMPETENCY_ORDER.reduce((acc, code) => {
+    const moduleIds = LESSON_MODULE_IDS_BY_COMPETENCY[code] || []
+    if (!moduleIds.length) {
+      acc[code] = 0
+      return acc
+    }
+    const passedCount = moduleIds.filter((id) => progressByModuleId[id]?.qcuPassed).length
+    acc[code] = Math.round((passedCount / moduleIds.length) * 100)
+    return acc
+  }, {})
+}
+
+/** Fusionne la progression REMC (enseignant) et la progression QCU (modules leçons). */
+export function mergeRemcAndLessonProgress(remcProgress, lessonByCompetency = {}) {
+  const byCompetency = { ...(remcProgress?.byCompetency || {}) }
+
+  REMC_COMPETENCY_ORDER.forEach((code) => {
+    const remcPct = byCompetency[code] ?? 0
+    const lessonPct = lessonByCompetency[code] ?? 0
+    byCompetency[code] = Math.max(remcPct, lessonPct)
+  })
+
+  const global = REMC_COMPETENCY_ORDER.length
+    ? Math.round(
+        REMC_COMPETENCY_ORDER.reduce((sum, code) => sum + (byCompetency[code] || 0), 0)
+          / REMC_COMPETENCY_ORDER.length,
+      )
+    : 0
+
+  return {
+    ...(remcProgress || {}),
+    byCompetency,
+    global: Math.max(remcProgress?.global || 0, global),
+  }
+}
+
+export function subscribeLessonModuleProgress(studentId, onChange) {
+  if (!studentId) return () => {}
+  return subscribePostgresChanges({
+    topicBase: `lesson-module-progress:${studentId}`,
+    listeners: [{
+      config: {
+        event: '*',
+        schema: 'public',
+        table: 'student_lesson_module_progress',
+        filter: `student_id=eq.${studentId}`,
+      },
+      callback: onChange,
+    }],
+  })
 }

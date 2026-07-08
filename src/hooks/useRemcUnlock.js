@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { computeRemcProgress } from '../data/remcTemplate'
 import { fetchRemcProgress, subscribeRemcProgress } from '../services/remcItems'
 import {
+  computeLessonProgressByCompetency,
+  fetchLessonModuleProgressMap,
+  mergeRemcAndLessonProgress,
+  subscribeLessonModuleProgress,
+} from '../services/lessonModuleProgress'
+import {
   DEFAULT_UNLOCK_STATE,
   buildEffectiveUnlockState,
   computeGlobalRemcProgress,
@@ -33,15 +39,22 @@ export function useRemcUnlock(profileId) {
     const resolvedId = await resolveStudentRecordId(profileId)
     setStudentId(resolvedId)
 
-    const [{ unlockState: nextState }, { remc: nextRemc, progress: nextItemProgress }] =
+    const [{ unlockState: nextState }, { remc: nextRemc, progress: nextItemProgress }, { progressByModuleId }] =
       await Promise.all([
         fetchCompetencyValidations(resolvedId),
         fetchRemcProgress(resolvedId, { organizationId }),
+        fetchLessonModuleProgressMap(resolvedId, profileId),
       ])
+
+    const lessonByCompetency = computeLessonProgressByCompetency(progressByModuleId)
+    const mergedProgress = mergeRemcAndLessonProgress(
+      nextItemProgress || computeRemcProgress(nextRemc || []),
+      lessonByCompetency,
+    )
 
     setUnlockState(nextState || DEFAULT_UNLOCK_STATE)
     setRemc(nextRemc || [])
-    setItemProgress(nextItemProgress || computeRemcProgress([]))
+    setItemProgress(mergedProgress)
     setLoading(false)
   }, [profileId, organizationId])
 
@@ -51,7 +64,12 @@ export function useRemcUnlock(profileId) {
 
   useEffect(() => {
     if (!studentId) return undefined
-    return subscribeRemcProgress(studentId, refresh)
+    const unsubRemc = subscribeRemcProgress(studentId, refresh)
+    const unsubLessons = subscribeLessonModuleProgress(studentId, refresh)
+    return () => {
+      unsubRemc()
+      unsubLessons()
+    }
   }, [studentId, refresh])
 
   const effectiveUnlockState = useMemo(
