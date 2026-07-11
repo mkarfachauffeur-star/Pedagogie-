@@ -70,11 +70,27 @@ export default function AdminPlanningPage() {
   const [teacherFilter, setTeacherFilter] = useState('')
   const [vehicleFilter, setVehicleFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(false)
   const [form, setForm] = useState(() => emptyForm())
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
   const week = useMemo(() => getWeekRange(weekAnchor), [weekAnchor])
+
+  const applyPlanningOptions = useCallback((planningOptions) => {
+    setOptions({
+      students: planningOptions.students || [],
+      teachers: planningOptions.teachers || [],
+      vehicles: planningOptions.vehicles || [],
+    })
+    if (planningOptions.error) {
+      setFeedback({
+        type: 'error',
+        text: getUserFacingError(planningOptions.error, 'load')
+          || 'Certaines listes (élèves, enseignants ou véhicules) n\'ont pas pu être chargées.',
+      })
+    }
+  }, [])
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -91,29 +107,24 @@ export default function AdminPlanningPage() {
     if (error) setLoadError('Impossible de charger le planning.')
     else setLoadError(null)
     setAppointments(rows)
-    setOptions({
-      students: planningOptions.students || [],
-      teachers: planningOptions.teachers || [],
-      vehicles: planningOptions.vehicles || [],
-    })
-    if (planningOptions.error) {
-      setFeedback({
-        type: 'error',
-        text: getUserFacingError(planningOptions.error, 'load')
-          || 'Certaines listes (élèves, enseignants ou véhicules) n\'ont pas pu être chargées.',
-      })
-    }
+    applyPlanningOptions(planningOptions)
     setLoading(false)
-  }, [teacherFilter, vehicleFilter, week.from, week.to])
+  }, [applyPlanningOptions, teacherFilter, vehicleFilter, week.from, week.to])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  const openCreateModal = () => {
+  const openCreateModal = async () => {
     setForm(emptyForm())
     setModalOpen(true)
+    setOptionsLoading(true)
+    const planningOptions = await loadPlanningOptions()
+    applyPlanningOptions(planningOptions)
+    setOptionsLoading(false)
   }
+
+  const hasPlanningChoices = options.students.length > 0 && options.teachers.length > 0
 
   const saveLesson = async (event) => {
     event.preventDefault()
@@ -163,8 +174,13 @@ export default function AdminPlanningPage() {
               Organisez les créneaux de conduite par enseignant, élève et véhicule.
             </p>
           </div>
-          <button type="button" onClick={openCreateModal} className="pd-btn-primary shrink-0" disabled={!canWrite}>
-            Nouvelle leçon
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="pd-btn-primary shrink-0"
+            disabled={!canWrite || loading || optionsLoading}
+          >
+            {loading || optionsLoading ? 'Chargement…' : 'Nouvelle leçon'}
           </button>
         </div>
       </section>
@@ -291,10 +307,19 @@ export default function AdminPlanningPage() {
             onClose={() => setModalOpen(false)}
             submitForm="planning-lesson-form"
             submitLabel={saving ? 'Enregistrement…' : 'Planifier la leçon'}
-            submitDisabled={saving || !canWrite}
+            submitDisabled={saving || !canWrite || optionsLoading || !hasPlanningChoices}
           />
         )}
       >
+        {optionsLoading ? (
+          <p className="text-sm font-medium text-slate-500">Chargement des élèves, enseignants et véhicules…</p>
+        ) : !hasPlanningChoices ? (
+          <EmptyState
+            title="Listes indisponibles"
+            message="Aucun élève ou enseignant actif n'a été trouvé. Vérifiez que des comptes sont bien créés dans votre auto-école, puis réessayez."
+            icon="📋"
+          />
+        ) : null}
         <form id="planning-lesson-form" className="grid gap-4 md:grid-cols-2" onSubmit={saveLesson}>
           <Field label="Date *">
             <input className="pd-input mt-2 w-full" type="date" required value={form.date} onChange={(e) => setForm((c) => ({ ...c, date: e.target.value }))} />
@@ -319,7 +344,13 @@ export default function AdminPlanningPage() {
             </select>
           </Field>
           <Field label="Élève *">
-            <select className="pd-input mt-2 w-full" required value={form.studentId} onChange={(e) => setForm((c) => ({ ...c, studentId: e.target.value }))}>
+            <select
+              className="pd-input mt-2 w-full"
+              required
+              disabled={optionsLoading || !options.students.length}
+              value={form.studentId}
+              onChange={(e) => setForm((c) => ({ ...c, studentId: e.target.value }))}
+            >
               <option value="">— Sélectionner —</option>
               {options.students.map((student) => (
                 <option key={student.id} value={student.id}>{student.label}</option>
@@ -327,7 +358,13 @@ export default function AdminPlanningPage() {
             </select>
           </Field>
           <Field label="Enseignant *">
-            <select className="pd-input mt-2 w-full" required value={form.teacherId} onChange={(e) => setForm((c) => ({ ...c, teacherId: e.target.value }))}>
+            <select
+              className="pd-input mt-2 w-full"
+              required
+              disabled={optionsLoading || !options.teachers.length}
+              value={form.teacherId}
+              onChange={(e) => setForm((c) => ({ ...c, teacherId: e.target.value }))}
+            >
               <option value="">— Sélectionner —</option>
               {options.teachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>{teacher.label}</option>
@@ -335,7 +372,12 @@ export default function AdminPlanningPage() {
             </select>
           </Field>
           <Field label="Véhicule">
-            <select className="pd-input mt-2 w-full" value={form.vehicleId} onChange={(e) => setForm((c) => ({ ...c, vehicleId: e.target.value }))}>
+            <select
+              className="pd-input mt-2 w-full"
+              disabled={optionsLoading || !options.vehicles.length}
+              value={form.vehicleId}
+              onChange={(e) => setForm((c) => ({ ...c, vehicleId: e.target.value }))}
+            >
               <option value="">— Aucun —</option>
               {options.vehicles.map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>{vehicle.label}</option>

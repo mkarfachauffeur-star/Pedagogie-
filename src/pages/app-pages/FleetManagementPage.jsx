@@ -5,7 +5,7 @@ import PanelTabs from '../../components/ui/PanelTabs'
 import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
 import { useClientPagination } from '../../hooks/useClientPagination'
-import { createEmptyFleetVehicle, listFleetVehicles, saveFleetVehicle } from '../../services/vehicles'
+import { createEmptyFleetVehicle, listFleetVehicles, saveFleetVehicle, VEHICLE_GEARBOX_OPTIONS } from '../../services/vehicles'
 import { listOrganizationUsers, staffToSelectOptions } from '../../services/users'
 
 const maintenanceTypes = [
@@ -726,6 +726,12 @@ export default function FleetManagementPage({ role = 'secretary' }) {
             <Field label="Modèle *" onChange={(value) => setVehicleForm((current) => ({ ...current, model: value }))} value={vehicleForm.model} />
             <Field label="Immatriculation *" onChange={(value) => setVehicleForm((current) => ({ ...current, plate: value }))} value={vehicleForm.plate} />
             <Select label="Énergie" onChange={(value) => setVehicleForm((current) => ({ ...current, energy: value }))} options={['essence', 'diesel', 'électrique', 'hybride']} value={vehicleForm.energy} />
+            <Select
+              label="Boîte de vitesses"
+              onChange={(value) => setVehicleForm((current) => ({ ...current, gearbox: value }))}
+              options={VEHICLE_GEARBOX_OPTIONS}
+              value={vehicleForm.gearbox || 'manuelle'}
+            />
             <Field label="Kilométrage actuel" onChange={(value) => setVehicleForm((current) => ({ ...current, mileage: Number(value) || 0 }))} type="number" value={String(vehicleForm.mileage)} />
             <Select label="Disponibilité véhicule" onChange={(value) => setVehicleForm((current) => ({ ...current, availability: value }))} options={['Disponible', 'Maintenance', 'Indisponible']} value={vehicleForm.availability} />
             <Select label="Propreté" onChange={(value) => setVehicleForm((current) => ({ ...current, cleanliness: value }))} options={['propre', 'à nettoyer', 'urgent lavage']} value={vehicleForm.cleanliness} />

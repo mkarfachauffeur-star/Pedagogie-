@@ -1,6 +1,9 @@
 import { supabase } from '../lib/supabase'
+import { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
 import { toUserError } from '../lib/userFacingError'
-import { filterBookableStudents } from './students'
+import { filterBookableStudents, listStudents } from './students'
+import { listTeachers } from './teachers'
+import { listFleetVehicles, formatVehiclePlanningLabel } from './vehicles'
 
 const APPOINTMENT_SELECT = `
   id,
@@ -101,64 +104,44 @@ export async function loadPlanningOptions() {
   }
 
   const [studentsRes, vehiclesRes, teachersRes] = await Promise.all([
-    supabase
-      .from('students')
-      .select('id, first_name, last_name, file_number, status, license_result, is_archived')
-      .order('last_name'),
-    supabase.from('vehicles').select('id, brand, model, plate').order('created_at'),
-    supabase
-      .from('teachers')
-      .select('profile_id')
-      .eq('resource_type', 'teacher')
-      .order('created_at'),
+    listStudents(),
+    listFleetVehicles(),
+    listTeachers(),
   ])
 
   if (studentsRes.error) {
     result.warnings.push('élèves')
   } else {
-    result.students = filterBookableStudents(studentsRes.data || []).map((s) => ({
-      id: s.id,
-      label: `${s.last_name || ''} ${s.first_name || ''}`.trim() || s.file_number || s.id,
+    result.students = filterBookableStudents(studentsRes.students || []).map((student) => ({
+      id: student.id,
+      label: `${student.last_name || ''} ${student.first_name || ''}`.trim()
+        || student.file_number
+        || student.id,
     }))
   }
 
   if (vehiclesRes.error) {
     result.warnings.push('véhicules')
   } else {
-    result.vehicles = (vehiclesRes.data || []).map((v) => ({
-      id: v.id,
-      label: vehicleLabel(v),
+    result.vehicles = (vehiclesRes.vehicles || []).map((vehicle) => ({
+      id: vehicle.id,
+      label: formatVehiclePlanningLabel(vehicle),
     }))
   }
 
   if (teachersRes.error) {
     result.warnings.push('enseignants')
   } else {
-    const teacherRows = teachersRes.data || []
-    const profileIds = [...new Set(teacherRows.map((row) => row.profile_id).filter(Boolean))]
-    const profileNames = new Map()
-
-    if (profileIds.length) {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', profileIds)
-
-      if (profilesError) {
-        result.warnings.push('enseignants')
-      } else {
-        for (const profile of profiles || []) {
-          profileNames.set(profile.id, profile.full_name)
-        }
-      }
-    }
-
-    if (!result.warnings.includes('enseignants')) {
-      result.teachers = teacherRows.map((t) => ({
-        id: t.profile_id,
-        label: profileNames.get(t.profile_id)?.trim() || 'Enseignant',
+    result.teachers = (teachersRes.teachers || [])
+      .filter((teacher) => (
+        teacher.resource_type === TEACHING_RESOURCE_TYPES.TEACHER
+        && teacher.is_active !== false
+        && teacher.account_is_active !== false
+      ))
+      .map((teacher) => ({
+        id: teacher.profile_id,
+        label: teacher.full_name?.trim() || 'Enseignant',
       }))
-    }
   }
 
   if (result.warnings.length) {

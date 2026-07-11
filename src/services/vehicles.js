@@ -6,6 +6,7 @@ const DEFAULT_FLEET_DETAILS = {
   monthlyKm: 0,
   availability: 'Disponible',
   cleanliness: 'propre',
+  gearbox: 'manuelle',
   tires: 'OK',
   oil: 'OK',
   coolant: 'OK',
@@ -30,6 +31,29 @@ export function createEmptyFleetVehicle() {
     energy: 'essence',
     ...DEFAULT_FLEET_DETAILS,
   }
+}
+
+export const VEHICLE_GEARBOX_OPTIONS = [
+  { value: 'manuelle', label: 'Boîte manuelle' },
+  { value: 'automatique', label: 'Boîte automatique' },
+]
+
+export function normalizeVehicleGearbox(value) {
+  const normalized = String(value || 'manuelle').trim().toLowerCase()
+  if (normalized === 'automatique' || normalized === 'auto') return 'automatique'
+  return 'manuelle'
+}
+
+export function vehicleGearboxPlanningSuffix(gearbox) {
+  return normalizeVehicleGearbox(gearbox) === 'automatique'
+    ? '(boite automatique)'
+    : '(boite manuel)'
+}
+
+export function formatVehiclePlanningLabel(vehicle) {
+  if (!vehicle) return '—'
+  const base = [vehicle.brand, vehicle.model, vehicle.plate].filter(Boolean).join(' · ') || 'Véhicule'
+  return `${base} ${vehicleGearboxPlanningSuffix(vehicle.gearbox)}`
 }
 
 function mapDbToFleetVehicle(row) {

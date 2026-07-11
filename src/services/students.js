@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
+import { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
 import { subscribePostgresChanges } from './realtime'
 import { allowsActiveBookings } from '../lib/studentJourney'
+import { listTeachers } from './teachers'
 
 const STUDENT_SELECT_FIELDS = `
   id,
@@ -142,20 +144,18 @@ export function filterBookableStudents(students = []) {
 }
 
 export async function listOrganizationTeachers() {
-  try {
-    const { data, error } = await supabase
-      .from('teachers')
-      .select('profile_id, profiles:profile_id(id, full_name)')
-      .eq('resource_type', 'teacher')
-      .order('created_at', { ascending: true })
-    if (error) throw error
-    return (data || []).map((row) => ({
-      id: row.profile_id,
-      name: row.profiles?.full_name?.trim() || 'Enseignant',
+  const { teachers, error } = await listTeachers()
+  if (error) return []
+  return (teachers || [])
+    .filter((teacher) => (
+      teacher.resource_type === TEACHING_RESOURCE_TYPES.TEACHER
+      && teacher.is_active !== false
+      && teacher.account_is_active !== false
+    ))
+    .map((teacher) => ({
+      id: teacher.profile_id,
+      name: teacher.full_name?.trim() || 'Enseignant',
     }))
-  } catch {
-    return []
-  }
 }
 
 export async function createStudent(payload) {
