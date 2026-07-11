@@ -16,7 +16,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import AuthHashRedirect from './components/AuthHashRedirect'
-import GoogleAnalytics from './components/analytics/GoogleAnalytics'
+import Analytics from './components/analytics/Analytics'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
 import ManagerStudentsPage from './pages/app-pages/AdminStudentsPage'
@@ -37,6 +37,7 @@ import PlatformDashboardPage from './pages/platform/PlatformDashboardPage'
 import PlatformOrganizationsPage from './pages/platform/PlatformOrganizationsPage'
 import PlatformSubscriptionsPage from './pages/platform/PlatformSubscriptionsPage'
 import PlatformAuditPage from './pages/platform/PlatformAuditPage'
+import PlatformReviewsPage from './pages/platform/PlatformReviewsPage'
 import PlatformProspectsPage from './pages/platform/PlatformProspectsPage'
 import PlatformPricingPage from './pages/platform/PlatformPricingPage'
 import PlatformSettingsPage from './pages/platform/PlatformSettingsPage'
@@ -62,6 +63,7 @@ import StudentPedagogicalAppointmentsPage from './pages/app-pages/StudentPedagog
 import StudentTrackRoute from './components/StudentTrackRoute'
 import StudentAccountGate from './components/StudentAccountGate'
 import StudentCharterGate from './components/students/StudentCharterGate'
+import StudentReviewGate from './components/students/StudentReviewGate'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 
 import TeacherDashboardPage from './pages/app-pages/TeacherDashboardPage'
@@ -118,9 +120,11 @@ function StudentRouteShell({ children, fullWidth = false, suspenseLabel = null }
         <RouteErrorBoundary>
           <StudentAccountGate>
             <StudentCharterGate>
-              <StudentTrackRoute>
-                {content}
-              </StudentTrackRoute>
+              <StudentReviewGate>
+                <StudentTrackRoute>
+                  {content}
+                </StudentTrackRoute>
+              </StudentReviewGate>
             </StudentCharterGate>
           </StudentAccountGate>
         </RouteErrorBoundary>
@@ -144,7 +148,7 @@ function withStudentLayoutLazy(LazyPage, fullWidth = false, suspenseLabel = 'Cha
 function App() {
   return (
     <BrowserRouter>
-      <GoogleAnalytics />
+      <Analytics />
       <AuthHashRedirect />
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
@@ -276,6 +280,7 @@ function App() {
         <Route path="/platform/subscriptions" element={withPlatformLayout(PlatformSubscriptionsPage)} />
         <Route path="/platform/payments" element={withPlatformLayout(PlatformPaymentsPage)} />
         <Route path="/platform/audit" element={withPlatformLayout(PlatformAuditPage)} />
+        <Route path="/platform/reviews" element={withPlatformLayout(PlatformReviewsPage)} />
       </Routes>
     </BrowserRouter>
   )
