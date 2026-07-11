@@ -86,6 +86,7 @@ begin
   insert into public.vehicles (organization_id, brand, model, plate, energy, details)
   values
     (v_org_id, 'Renault', 'Clio V', 'AB-123-CD', 'essence', jsonb_build_object(
+      'gearbox', 'manuelle',
       'mileage', 45230, 'monthlyKm', 1180, 'availability', 'Disponible', 'cleanliness', 'propre',
       'fuelLevel', 72, 'averageConsumption', 5.8, 'estimatedRange', 420, 'generalState', 'Bon',
       'technicalControl', '2026-12-15', 'insuranceExpiry', '2027-06-30',
@@ -99,6 +100,7 @@ begin
       ))
     )),
     (v_org_id, 'Peugeot', '208', 'EF-456-GH', 'diesel', jsonb_build_object(
+      'gearbox', 'automatique',
       'mileage', 62100, 'monthlyKm', 1420, 'availability', 'Disponible', 'cleanliness', 'propre',
       'fuelLevel', 55, 'averageConsumption', 4.9, 'estimatedRange', 510, 'generalState', 'Bon',
       'technicalControl', '2027-03-20', 'insuranceExpiry', '2027-08-01',
@@ -108,6 +110,7 @@ begin
       ))
     )),
     (v_org_id, 'Citroën', 'C3', 'IJ-789-KL', 'hybride', jsonb_build_object(
+      'gearbox', 'manuelle',
       'mileage', 18400, 'monthlyKm', 890, 'availability', 'En leçon', 'cleanliness', 'propre',
       'fuelLevel', 88, 'batteryLevel', 76, 'chargingStatus', 'Chargé', 'averageConsumption', 4.2,
       'estimatedRange', 380, 'generalState', 'Excellent', 'technicalControl', '2027-01-10',
