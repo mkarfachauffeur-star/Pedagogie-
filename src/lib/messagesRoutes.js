@@ -15,6 +15,7 @@ const EXPIRY_REMINDER_ROUTE_BY_ROLE = {
     teacher_authorization: '/manager/teachers',
     simulator_authorization: '/manager/teachers',
     vehicle_technical_control: '/manager/vehicles',
+    fleet_monthly_maintenance: '/manager/vehicles',
   },
   secretary: {
     teacher_authorization: '/secretary/dashboard',

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import NotificationBell from '../components/NotificationBell'
+import PlatformNotificationBell from '../components/PlatformNotificationBell'
 import OrgStatusBanner from '../components/OrgStatusBanner'
 import PageSeo from '../components/seo/PageSeo'
 import { NAVIGATION } from '../config/navigation'
@@ -10,8 +11,10 @@ import { useAuth } from '../context/AuthContext'
 import { SITE_NAME } from '../lib/seo'
 import { useStudentTrack } from '../hooks/useStudentTrack'
 import { useProspectNotifications } from '../hooks/useProspectNotifications'
+import { usePlatformUnreadCount } from '../hooks/usePlatformUnreadCount'
 import { useUnreadCount } from '../hooks/useUnreadCount'
 import { runExpirationRemindersCheck } from '../services/expirationReminders'
+import { runFleetMaintenanceRemindersCheck } from '../services/fleetMaintenanceReminders'
 import { getTrackLabel } from '../lib/studentTrack'
 import ManagerOnboardingTutorial from '../components/onboarding/ManagerOnboardingTutorial'
 
@@ -34,6 +37,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   // (compteur Supabase temps réel ; 0 tant qu'aucune session réelle).
   const notificationCount = useUnreadCount()
   const { newCount: newProspectCount } = useProspectNotifications()
+  const { count: platformNotificationCount } = usePlatformUnreadCount(role === 'super_admin' ? profileId : null)
 
   // Chaque changement de page repart du haut (évite d'atterrir en bas sur les longues pages).
   useEffect(() => {
@@ -43,6 +47,11 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   useEffect(() => {
     if (!profileId || !['manager', 'secretary'].includes(role)) return
     runExpirationRemindersCheck()
+  }, [profileId, role])
+
+  useEffect(() => {
+    if (!profileId || role !== 'manager') return
+    runFleetMaintenanceRemindersCheck()
   }, [profileId, role])
 
   useEffect(() => {
@@ -195,6 +204,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
               const active = location.pathname === item.href
               const showMessagesBadge = isMessagesNavItem(item.href)
               const showProspectBadge = role === 'super_admin' && item.badgeKey === 'prospects' && newProspectCount > 0
+              const showReviewBadge = role === 'super_admin' && item.badgeKey === 'reviews' && platformNotificationCount > 0
               return (
                 <Link
                   key={item.href}
@@ -220,6 +230,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                     {showProspectBadge && sidebarCollapsed && (
                       <span className="hidden lg:block">{renderNavBadge(newProspectCount, true)}</span>
                     )}
+                    {showReviewBadge && sidebarCollapsed && (
+                      <span className="hidden lg:block">{renderNavBadge(platformNotificationCount, true)}</span>
+                    )}
                   </span>
                   <span
                     className={`truncate transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
@@ -231,6 +244,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
                   )}
                   {showProspectBadge && (
                     <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{renderNavBadge(newProspectCount)}</span>
+                  )}
+                  {showReviewBadge && (
+                    <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{renderNavBadge(platformNotificationCount)}</span>
                   )}
                 </Link>
               )
@@ -282,7 +298,9 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {role !== 'super_admin' && (
+            {role === 'super_admin' ? (
+              <PlatformNotificationBell unreadCount={platformNotificationCount} />
+            ) : (
               <NotificationBell role={role} unreadCount={notificationCount} />
             )}
             {sidebarUser && (
