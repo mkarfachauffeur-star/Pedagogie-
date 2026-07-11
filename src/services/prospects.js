@@ -1,3 +1,4 @@
+import { trackBeginTrial, trackSignUp } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 
 export const PROSPECT_STATUS = {
@@ -143,10 +144,30 @@ export async function refuseProspect(prospectId) {
 
 export async function acceptProspect(prospectId) {
   try {
+    const { data: prospect } = await supabase
+      .from('demo_requests')
+      .select('school_name')
+      .eq('id', prospectId)
+      .maybeSingle()
+
     const data = await invokePlatformProspect({
       action: 'accept_prospect',
       prospect_id: prospectId,
     })
+
+    if (data?.organization_id) {
+      trackSignUp({
+        organizationName: prospect?.school_name,
+        organizationId: data.organization_id,
+        planSelected: 'starter',
+      })
+      trackBeginTrial({
+        organizationId: data.organization_id,
+        plan: 'starter',
+        trialDays: 30,
+      })
+    }
+
     return { data, error: null }
   } catch (error) {
     return { data: null, error: normalizeError(error) }

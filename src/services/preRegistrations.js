@@ -91,10 +91,16 @@ export async function reviewPreRegistration(preRegistrationId, action) {
   if (error) return { error: toUserError(error, 'reviewPreRegistration') }
   if (data?.error) return { error: toUserError(data.error, 'reviewPreRegistration') }
 
+  const student = data.student || null
+  if (student?.organization_id && action === 'accept') {
+    const { trackFirstStudentMilestones } = await import('../lib/analytics')
+    void trackFirstStudentMilestones(student.organization_id)
+  }
+
   return {
     error: null,
     preRegistration: mapPreRegistration(data.pre_registration),
-    student: data.student || null,
+    student,
     message: data.message || '',
     tempPassword: data.temp_password || null,
   }

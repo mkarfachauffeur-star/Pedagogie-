@@ -1,3 +1,4 @@
+import { trackAutomaticNotificationSent } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 
 const SESSION_KEY = 'pd:fleet-maintenance-reminders:last-run'
@@ -18,7 +19,11 @@ export async function runFleetMaintenanceRemindersCheck() {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(SESSION_KEY, monthKey)
     }
-    return { sent: data?.sent ?? 0, skipped: false, error: null }
+    const sent = data?.sent ?? 0
+    if (sent > 0) {
+      trackAutomaticNotificationSent({ sent, source: 'fleet_maintenance_reminders' })
+    }
+    return { sent, skipped: false, error: null }
   } catch (error) {
     return { sent: 0, skipped: false, error }
   }

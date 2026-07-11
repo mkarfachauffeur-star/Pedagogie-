@@ -118,6 +118,10 @@ export async function uploadStudentDocument({
     await supabase.storage.from('student-documents').remove([storagePath])
     return { error: toUserError(error, 'document') }
   }
+  if (organizationId) {
+    const { trackFirstDocumentMilestone } = await import('../lib/analytics')
+    void trackFirstDocumentMilestone(organizationId)
+  }
   return { error: null }
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { trackFirstLogin } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import BrandLogo from '../components/BrandLogo'
 import PageSeo from '../components/seo/PageSeo'
@@ -114,6 +115,7 @@ export default function AcceptInvitePage() {
     }
 
     if (userData.user?.id) {
+      trackFirstLogin(userData.user.id, profileRole)
       console.info('[AcceptInvitePage] Compte activé — redirection vers', destination)
     }
 

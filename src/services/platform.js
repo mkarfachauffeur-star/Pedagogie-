@@ -1,3 +1,11 @@
+import {
+  trackBeginTrial,
+  trackDeleteAccount,
+  trackPurchase,
+  trackSignUp,
+  trackSubscriptionCancelled,
+  trackSubscriptionRenewed,
+} from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import {
   PAYING_PLAN_CODES,
@@ -218,6 +226,18 @@ export async function createOrganization({ name, email, phone }) {
       p_phone: phone || null,
     })
     if (error) throw error
+    if (data) {
+      trackSignUp({
+        organizationName: name,
+        organizationId: data,
+        planSelected: 'starter',
+      })
+      trackBeginTrial({
+        organizationId: data,
+        plan: 'starter',
+        trialDays: 30,
+      })
+    }
     return { organizationId: data, error: null }
   } catch (error) {
     return { organizationId: null, error }
@@ -233,6 +253,7 @@ export async function deleteOrganization(orgId) {
     if (error || payload.error) {
       throw new Error(payload.error || error?.message || 'Suppression impossible.')
     }
+    trackDeleteAccount({ organizationId: orgId, scope: 'organization' })
     return { error: null }
   } catch (error) {
     return { error }
@@ -382,22 +403,27 @@ export async function updateSubscriptionBySuperAdmin(subscriptionId, payload) {
   try {
     const { data: current, error: readError } = await supabase
       .from('subscriptions')
-      .select('id, organization_id, metadata, plan_id')
+      .select(`
+        id, organization_id, metadata, plan_id, status, current_period_end,
+        plan:plan_id(code, price_cents, billing_interval)
+      `)
       .eq('id', subscriptionId)
       .single()
     if (readError) throw readError
 
     const patch = { updated_at: new Date().toISOString() }
+    let resolvedPlan = current.plan
 
     if (payload.planCode) {
       const { data: plan, error: planError } = await supabase
         .from('plans')
-        .select('id, code')
+        .select('id, code, price_cents, billing_interval')
         .eq('code', payload.planCode)
         .maybeSingle()
       if (planError) throw planError
       if (!plan) throw new Error('Plan introuvable.')
       patch.plan_id = plan.id
+      resolvedPlan = plan
     }
 
     if (payload.trialEndsAt !== undefined) patch.trial_ends_at = payload.trialEndsAt || null
@@ -436,6 +462,36 @@ export async function updateSubscriptionBySuperAdmin(subscriptionId, payload) {
       notes: 'Modification Super Admin',
     })
 
+    const planCode = resolvedPlan?.code || payload.planCode
+    const orgId = current.organization_id
+    const wasPaying = PAYING_PLAN_CODES.has(current.plan?.code || '')
+    const isPayingActivation =
+      payload.status === 'active'
+      && planCode
+      && PAYING_PLAN_CODES.has(planCode)
+      && (current.status !== 'active' || !wasPaying || (payload.planCode && payload.planCode !== current.plan?.code))
+
+    if (isPayingActivation) {
+      trackPurchase({
+        organizationId: orgId,
+        subscriptionPlan: planCode,
+        amount: planPriceCents(resolvedPlan) / 100,
+        currency: 'EUR',
+        billingCycle: resolvedPlan?.billing_interval || 'monthly',
+      })
+    }
+
+    if (payload.currentPeriodEnd) {
+      const previousEnd = current.current_period_end ? new Date(current.current_period_end) : null
+      const nextEnd = new Date(payload.currentPeriodEnd)
+      if (!Number.isNaN(nextEnd.getTime()) && (!previousEnd || nextEnd > previousEnd)) {
+        trackSubscriptionRenewed({
+          organizationId: orgId,
+          subscriptionPlan: planCode || undefined,
+        })
+      }
+    }
+
     return { subscription: data, error: null }
   } catch (error) {
     return { subscription: null, error }
@@ -459,11 +515,23 @@ export async function reactivateSubscription(subscriptionId, orgId) {
 }
 
 export async function cancelSubscription(subscriptionId, orgId) {
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('plan:plan_id(code)')
+    .eq('id', subscriptionId)
+    .maybeSingle()
+
   const now = new Date().toISOString()
   await supabase
     .from('subscriptions')
     .update({ status: 'cancelled', cancelled_at: now, updated_at: now })
     .eq('id', subscriptionId)
+
+  trackSubscriptionCancelled({
+    organizationId: orgId,
+    subscriptionPlan: sub?.plan?.code || undefined,
+  })
+
   return updateOrganizationStatus(orgId, 'cancelled')
 }
 

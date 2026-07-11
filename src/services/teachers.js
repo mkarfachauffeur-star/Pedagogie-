@@ -373,6 +373,15 @@ export async function createTeacher(payload) {
   if (saveError) return { teacher: null, error: saveError }
 
   const { teacher: row } = await getTeacher(profileId)
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', profileId)
+    .maybeSingle()
+  if (profileRow?.organization_id) {
+    const { trackFirstTeacherMilestone } = await import('../lib/analytics')
+    void trackFirstTeacherMilestone(profileRow.organization_id)
+  }
   return { teacher: row, error: null }
 }
 

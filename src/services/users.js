@@ -1,3 +1,4 @@
+import { trackDeleteAccount } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { formatPersonName } from '../lib/staffAccounts'
 import { inviteUser } from './invitations'
@@ -70,6 +71,9 @@ export async function manageUser(action, userId, { newEmail } = {}) {
   const { data, error } = await supabase.functions.invoke('manage-user', { body })
   if (error) return { error: toUserError(error, 'permission') }
   if (data?.error) return { error: toUserError(data.error, 'permission') }
+  if (action === 'delete') {
+    trackDeleteAccount({ userId, scope: 'user' })
+  }
   return { error: null, message: data?.message || 'Action effectuée.' }
 }
 

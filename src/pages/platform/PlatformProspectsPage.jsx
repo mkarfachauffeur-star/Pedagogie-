@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import { BETA_PILOT_ORG_LIMIT } from '../../config/beta'
-import { trackOrganizationCreated } from '../../lib/analytics'
 import { formatPlatformDateTime } from '../../lib/platformPlans'
 import { supabase } from '../../lib/supabase'
 import { fetchBetaPilotStatus } from '../../services/beta'
@@ -104,9 +103,6 @@ export default function PlatformProspectsPage() {
         ? `Demande acceptée. Invitation envoyée à ${prospect.email}.`
         : 'Demande acceptée.',
     })
-    if (data?.organization_id) {
-      trackOrganizationCreated(data.organization_id)
-    }
     refresh()
   }
 

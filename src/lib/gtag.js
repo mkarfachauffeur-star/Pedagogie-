@@ -3,6 +3,7 @@
 const FALLBACK_MEASUREMENT_ID = ''
 
 let initialized = false
+let debugMode = false
 
 function readEnv(name) {
   if (typeof import.meta !== 'undefined' && import.meta.env?.[name]) {
@@ -12,6 +13,12 @@ function readEnv(name) {
     return String(process.env[name]).trim()
   }
   return ''
+}
+
+function isTruthyEnv(value) {
+  if (!value) return false
+  const normalized = value.toLowerCase()
+  return normalized === '1' || normalized === 'true' || normalized === 'yes'
 }
 
 /** ID GA4 — NEXT_PUBLIC_GA_MEASUREMENT_ID (Next.js / Vercel) ou VITE_GA_MEASUREMENT_ID (Vite). */
@@ -41,16 +48,42 @@ function isProduction() {
   return false
 }
 
+function hasUrlDebugFlag() {
+  if (typeof window === 'undefined') return false
+  try {
+    return new URLSearchParams(window.location.search).get('ga_debug') === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Active GA4 DebugView (prod, dev avec flag, ou ?ga_debug=1). */
+export function isGaDebugEnabled() {
+  return (
+    isTruthyEnv(readEnv('NEXT_PUBLIC_GA_DEBUG'))
+    || isTruthyEnv(readEnv('VITE_GA_DEBUG'))
+    || hasUrlDebugFlag()
+  )
+}
+
+function shouldSendAnalytics() {
+  return isProduction() || isGaDebugEnabled()
+}
+
 function hasGtag() {
   return typeof window !== 'undefined' && typeof window.gtag === 'function'
 }
 
 /** Charge gtag.js — à appeler une seule fois (SPA ou après next/script). */
 export function initGoogleAnalytics(measurementId = getGaMeasurementId()) {
-  if (!isProduction() || initialized || !measurementId || typeof document === 'undefined') {
+  if (initialized || !measurementId || typeof document === 'undefined') {
+    return false
+  }
+  if (!shouldSendAnalytics()) {
     return false
   }
 
+  debugMode = isGaDebugEnabled()
   initialized = true
 
   window.dataLayer = window.dataLayer || []
@@ -62,6 +95,7 @@ export function initGoogleAnalytics(measurementId = getGaMeasurementId()) {
   window.gtag('config', measurementId, {
     send_page_view: false,
     anonymize_ip: true,
+    ...(debugMode ? { debug_mode: true } : {}),
   })
 
   if (!document.querySelector(`script[src="${getGaScriptSrc(measurementId)}"]`)) {
@@ -71,11 +105,15 @@ export function initGoogleAnalytics(measurementId = getGaMeasurementId()) {
     document.head.appendChild(script)
   }
 
+  if (debugMode && typeof console !== 'undefined') {
+    console.info('[GA4] DebugView activé — événements visibles dans Analytics → DebugView')
+  }
+
   return true
 }
 
 export function trackPageView(pagePath, measurementId = getGaMeasurementId()) {
-  if (!isProduction() || !measurementId || !hasGtag()) return
+  if (!shouldSendAnalytics() || !measurementId || !hasGtag()) return
 
   window.gtag('event', 'page_view', {
     page_path: pagePath,
@@ -85,6 +123,6 @@ export function trackPageView(pagePath, measurementId = getGaMeasurementId()) {
 }
 
 export function trackGtagEvent(eventName, params = {}) {
-  if (!isProduction() || !hasGtag()) return
+  if (!shouldSendAnalytics() || !hasGtag()) return
   window.gtag('event', eventName, params)
 }

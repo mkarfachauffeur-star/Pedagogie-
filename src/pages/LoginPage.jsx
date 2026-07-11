@@ -17,7 +17,7 @@ import PageSeo from '../components/seo/PageSeo'
 import StorePlatformBadges from '../components/StorePlatformBadges'
 import { useAuth } from '../context/AuthContext'
 import { useMarketingTheme } from '../hooks/useMarketingTheme'
-import { trackLogin } from '../lib/analytics'
+import { trackLogin, trackFirstLogin } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
@@ -211,6 +211,8 @@ export default function LoginPage() {
       return
     }
     const destination = roleDestinations[realRole] || '/'
+    const { data: sessionData } = await supabase.auth.getUser()
+    trackFirstLogin(sessionData.user?.id, realRole)
     trackLogin(realRole)
     navigate(destination, { replace: true })
   }
@@ -239,6 +241,8 @@ export default function LoginPage() {
     }
     setMustChangePassword(false)
     const destination = roleDestinations[pendingRole] || '/'
+    const { data: sessionData } = await supabase.auth.getUser()
+    trackFirstLogin(sessionData.user?.id, pendingRole)
     trackLogin(pendingRole)
     navigate(destination, { replace: true })
   }

@@ -67,7 +67,12 @@ export async function createExam({
       .select(EXAM_SELECT)
       .single()
     if (error) throw error
-    return { exam: mapExamRow(data), error: null }
+    const exam = mapExamRow(data)
+    if (organizationId) {
+      const { trackFirstExamMilestone } = await import('../lib/analytics')
+      void trackFirstExamMilestone(organizationId)
+    }
+    return { exam, error: null }
   } catch (error) {
     return { exam: null, error: toUserError(error, 'save') }
   }

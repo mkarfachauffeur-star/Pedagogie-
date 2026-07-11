@@ -88,7 +88,12 @@ export async function createAppointment({
       .select(APPOINTMENT_SELECT)
       .single()
     if (error) throw error
-    return { appointment: mapAppointmentRow(data), error: null }
+    const appointment = mapAppointmentRow(data)
+    if (organizationId) {
+      const { trackFirstLessonMilestone } = await import('../lib/analytics')
+      void trackFirstLessonMilestone(organizationId)
+    }
+    return { appointment, error: null }
   } catch (error) {
     return { appointment: null, error: toUserError(error, 'save') }
   }

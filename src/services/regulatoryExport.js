@@ -208,6 +208,20 @@ async function logExport(exportType, format, filters) {
   }
 }
 
+async function getCurrentOrganizationId() {
+  const { data } = await supabase.from('organizations').select('id').maybeSingle()
+  return data?.id || null
+}
+
+async function trackRegulatoryExportAnalytics(format, exportType) {
+  const organizationId = await getCurrentOrganizationId()
+  if (!organizationId) return
+  const { trackExportCsv, trackExportExcel, trackExportPdf } = await import('../lib/analytics')
+  if (format === 'xlsx') trackExportExcel(organizationId, exportType)
+  else if (format === 'pdf') trackExportPdf(organizationId, exportType)
+  else trackExportCsv(organizationId, exportType)
+}
+
 async function fetchOrgMeta() {
   const { data, error } = await supabase
     .from('organizations')
@@ -510,6 +524,7 @@ async function downloadRegulatoryTable({
   }
 
   await logExport(exportType, format, filters)
+  await trackRegulatoryExportAnalytics(format, exportType)
 }
 
 export async function exportRegulatoryStudents(filters = {}, format = 'csv') {

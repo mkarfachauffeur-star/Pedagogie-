@@ -1,23 +1,49 @@
-import { GA_MEASUREMENT_ID, trackGtagEvent } from './gtag'
+export {
+  GA_MEASUREMENT_ID,
+  getGaMeasurementId,
+  getGaScriptSrc,
+  initGoogleAnalytics,
+  isGaDebugEnabled,
+  trackGtagEvent,
+  trackPageView,
+} from './gtag'
 
-export { GA_MEASUREMENT_ID, getGaMeasurementId, getGaScriptSrc } from './gtag'
+export {
+  trackEvent,
+  trackDemoRequestClick,
+  trackDemoFormSubmit,
+  trackBookDemo,
+  trackLogin,
+  trackOrganizationCreated,
+  trackSignUp,
+  trackBeginTrial,
+  trackFirstLogin,
+  trackPurchase,
+  trackSubscriptionRenewed,
+  trackSubscriptionCancelled,
+  trackDeleteAccount,
+  trackContactFormSubmit,
+  trackAutomaticNotificationSent,
+  trackExportCsv,
+  trackExportExcel,
+  trackExportPdf,
+} from './analytics/events'
 
-export function trackEvent(eventName, params = {}) {
-  trackGtagEvent(eventName, params)
-}
+export {
+  hasTrackedOnce,
+  markTrackedOnce,
+  onceKey,
+  trackOnce,
+  trackOrgOnce,
+  trackUserOnce,
+} from './analytics/once'
 
-export function trackDemoRequestClick(source = 'unknown') {
-  trackEvent('demo_request_click', { source })
-}
-
-export function trackDemoFormSubmit() {
-  trackEvent('demo_form_submit')
-}
-
-export function trackLogin(role) {
-  trackEvent('login', { method: 'password', role: role || 'unknown' })
-}
-
-export function trackOrganizationCreated(organizationId) {
-  trackEvent('organization_created', { organization_id: organizationId || undefined })
-}
+export {
+  trackFirstStudentMilestones,
+  trackFirstTeacherMilestone,
+  trackFirstVehicleMilestone,
+  trackFirstLessonMilestone,
+  trackFirstExamMilestone,
+  trackFirstMessageMilestone,
+  trackFirstDocumentMilestone,
+} from './analytics/milestones'

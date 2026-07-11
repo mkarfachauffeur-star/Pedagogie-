@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { trackDemoFormSubmit } from '../../lib/analytics'
+import { trackBookDemo, trackDemoFormSubmit } from '../../lib/analytics'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { submitDemoRequest } from '../../services/demoRequests'
 
@@ -57,6 +57,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
       message: 'Demande enregistrée. Nous vous recontacterons rapidement pour organiser une démonstration.',
     })
     trackDemoFormSubmit()
+    trackBookDemo({ school_name: form.schoolName.trim() || undefined })
     setForm({
       schoolName: '',
       contactName: '',

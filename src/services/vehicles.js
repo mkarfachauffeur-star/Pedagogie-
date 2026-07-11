@@ -130,7 +130,12 @@ export async function saveFleetVehicle(vehicle, organizationId) {
       .select('id, brand, model, plate, energy, details')
       .single()
     if (error) throw error
-    return { vehicle: mapDbToFleetVehicle(data), error: null }
+    const vehicle = mapDbToFleetVehicle(data)
+    if (organizationId) {
+      const { trackFirstVehicleMilestone } = await import('../lib/analytics')
+      void trackFirstVehicleMilestone(organizationId)
+    }
+    return { vehicle, error: null }
   } catch (error) {
     return { vehicle: null, error: toUserError(error, 'save') }
   }

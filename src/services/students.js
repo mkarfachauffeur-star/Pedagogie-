@@ -164,6 +164,13 @@ export async function createStudent(payload) {
   })
   if (error) return { error: toUserError(error, 'createStudent') }
   if (data?.error) return { error: toUserError(data.error, 'createStudent') }
+
+  const organizationId = data.student?.organization_id || payload?.organizationId
+  if (organizationId) {
+    const { trackFirstStudentMilestones } = await import('../lib/analytics')
+    void trackFirstStudentMilestones(organizationId)
+  }
+
   return {
     error: null,
     student: data.student,

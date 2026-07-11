@@ -1,3 +1,4 @@
+import { trackBeginTrial, trackSignUp } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 
@@ -5,6 +6,21 @@ export async function registerOrganization(payload) {
   const { data, error } = await supabase.functions.invoke('register-organization', { body: payload })
   if (error) return { error: toUserError(error, 'signup') }
   if (data?.error) return { error: toUserError(data.error, 'signup') }
+
+  const organizationId = data?.organization_id || data?.organizationId
+  if (organizationId) {
+    trackSignUp({
+      organizationName: payload?.schoolName || payload?.name,
+      organizationId,
+      planSelected: data?.plan_code || data?.plan || 'starter',
+    })
+    trackBeginTrial({
+      organizationId,
+      plan: data?.plan_code || data?.plan || 'starter',
+      trialDays: Number(data?.trial_days) || 30,
+    })
+  }
+
   return { data, error: null }
 }
 

@@ -129,6 +129,10 @@ export async function sendMessage({ conversationId, organizationId, senderId, bo
     body,
   })
   if (error) throw error
+  if (organizationId) {
+    const { trackFirstMessageMilestone } = await import('../lib/analytics')
+    void trackFirstMessageMilestone(organizationId)
+  }
   return {
     id: messageId,
     conversation_id: conversationId,
