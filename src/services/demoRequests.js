@@ -13,19 +13,18 @@ export async function submitDemoRequest(payload) {
       message: payload.message?.trim() || null,
     }
 
-    const { data, error } = await supabase.from('demo_requests').insert(row).select('id').single()
+    // INSERT seul : le RETURNING (.select) est bloqué par RLS pour anon et rôles non Super Admin.
+    const { error } = await supabase.from('demo_requests').insert(row)
     if (error) throw error
 
     trackSignUp({
       organizationName: row.school_name,
       email: row.email,
-      requestId: data?.id,
       planSelected: 'starter',
     })
     trackAePendingValidation({
       organizationName: row.school_name,
       email: row.email,
-      requestId: data?.id,
       planSelected: 'starter',
     })
 
