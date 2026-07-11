@@ -1,5 +1,5 @@
 import { trackGtagEvent } from '../gtag'
-import { trackOnce, trackOrgOnce, trackUserOnce } from './once'
+import { onceKey, trackOnce, trackOrgOnce, trackUserOnce } from './once'
 
 export function trackEvent(eventName, params = {}) {
   trackGtagEvent(eventName, params)
@@ -30,18 +30,57 @@ export function trackOrganizationCreated(organizationId) {
 
 // ——— Inscription & essai ———
 
-export function trackSignUp({ organizationName, organizationId, planSelected }) {
-  if (!organizationId) return
-  trackOrgOnce(organizationId, 'sign_up', {
+export function trackSignUp({ organizationName, organizationId, planSelected, email, requestId }) {
+  if (!organizationId && !email && !requestId) return false
+  const dedupKey = organizationId
+    ? onceKey('org', organizationId, 'sign_up')
+    : onceKey('signup', email || requestId, 'sign_up')
+  return trackOnce(dedupKey, 'sign_up', {
     organization_name: organizationName || undefined,
-    organization_id: organizationId,
+    organization_id: organizationId || undefined,
     plan_selected: planSelected || 'starter',
   })
 }
 
+export function trackAePendingValidation({
+  organizationName,
+  organizationId,
+  planSelected,
+  email,
+  requestId,
+} = {}) {
+  if (!organizationId && !email && !requestId) return false
+  const dedupKey = organizationId
+    ? onceKey('org', organizationId, 'ae_pending_validation')
+    : onceKey('signup', email || requestId, 'ae_pending_validation')
+  return trackOnce(dedupKey, 'ae_pending_validation', {
+    organization_name: organizationName || undefined,
+    organization_id: organizationId || undefined,
+    plan_selected: planSelected || 'starter',
+  })
+}
+
+export function trackAeApproved({
+  organizationId,
+  organizationName,
+  approvedBy,
+  approvedAt,
+  trialDays = 30,
+  planSelected = 'starter',
+} = {}) {
+  if (!organizationId) return false
+  return trackOrgOnce(organizationId, 'ae_approved', {
+    organization_name: organizationName || undefined,
+    approved_by: approvedBy || undefined,
+    approved_at: approvedAt || new Date().toISOString(),
+    trial_days: trialDays,
+    plan_selected: planSelected,
+  })
+}
+
 export function trackBeginTrial({ organizationId, plan = 'starter', trialDays = 30 } = {}) {
-  if (!organizationId) return
-  trackOrgOnce(organizationId, 'begin_trial', {
+  if (!organizationId) return false
+  return trackOrgOnce(organizationId, 'begin_trial', {
     organization_id: organizationId,
     plan,
     trial_days: trialDays,

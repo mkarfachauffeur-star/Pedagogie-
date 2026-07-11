@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { trackAePendingValidation, trackSignUp } from '../lib/analytics'
 import { toUserError } from '../lib/userFacingError'
 
 export async function submitDemoRequest(payload) {
@@ -12,8 +13,21 @@ export async function submitDemoRequest(payload) {
       message: payload.message?.trim() || null,
     }
 
-    const { error } = await supabase.from('demo_requests').insert(row)
+    const { data, error } = await supabase.from('demo_requests').insert(row).select('id').single()
     if (error) throw error
+
+    trackSignUp({
+      organizationName: row.school_name,
+      email: row.email,
+      requestId: data?.id,
+      planSelected: 'starter',
+    })
+    trackAePendingValidation({
+      organizationName: row.school_name,
+      email: row.email,
+      requestId: data?.id,
+      planSelected: 'starter',
+    })
 
     const { error: notifyError } = await supabase.functions.invoke('notify-demo-request', {
       body: {

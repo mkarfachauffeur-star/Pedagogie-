@@ -65,12 +65,17 @@ export default function PlatformSubscriptionsPage() {
     event.preventDefault()
     if (!editing) return
     const form = new FormData(event.currentTarget)
-    const { error } = await updateSubscriptionBySuperAdmin(editing.id, {
-      planCode: form.get('planCode') || undefined,
+    const planCode = form.get('planCode') || undefined
+    const payload = {
+      planCode,
       trialEndsAt: form.get('trialEndsAt') || null,
       currentPeriodEnd: form.get('currentPeriodEnd') || null,
       paymentMethod: form.get('paymentMethod') || null,
-    })
+    }
+    if (planCode && planCode !== 'trial') {
+      payload.status = 'active'
+    }
+    const { error } = await updateSubscriptionBySuperAdmin(editing.id, payload)
     if (error) {
       setFeedback({ type: 'error', message: error.message || 'Enregistrement impossible.' })
       return

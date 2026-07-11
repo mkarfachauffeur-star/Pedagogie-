@@ -1,4 +1,4 @@
-import { trackBeginTrial, trackSignUp } from '../lib/analytics'
+import { trackAeApproved, trackBeginTrial } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 
 export const PROSPECT_STATUS = {
@@ -156,15 +156,23 @@ export async function acceptProspect(prospectId) {
     })
 
     if (data?.organization_id) {
-      trackSignUp({
-        organizationName: prospect?.school_name,
+      const { data: authData } = await supabase.auth.getUser()
+      const approvedBy = authData?.user?.email || authData?.user?.id || undefined
+      const approvedAt = new Date().toISOString()
+      const trialDays = 30
+
+      trackAeApproved({
         organizationId: data.organization_id,
+        organizationName: prospect?.school_name,
+        approvedBy,
+        approvedAt,
+        trialDays,
         planSelected: 'starter',
       })
       trackBeginTrial({
         organizationId: data.organization_id,
         plan: 'starter',
-        trialDays: 30,
+        trialDays,
       })
     }
 

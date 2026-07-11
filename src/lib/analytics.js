@@ -16,6 +16,8 @@ export {
   trackLogin,
   trackOrganizationCreated,
   trackSignUp,
+  trackAePendingValidation,
+  trackAeApproved,
   trackBeginTrial,
   trackFirstLogin,
   trackPurchase,

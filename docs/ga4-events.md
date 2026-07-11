@@ -40,12 +40,18 @@ Clés stockées : `pd_ga_once:…` dans `localStorage`. Un même événement n'e
 
 `first_visit` est géré nativement par GA4.
 
-### Inscription auto-école
+### Inscription auto-école (tunnel de conversion)
+
+Ordre logique :
+
+`sign_up` → `ae_pending_validation` → `ae_approved` → `begin_trial` → `first_login` → `create_student` → `create_teacher` → `purchase` → `subscription_renewed` → `subscription_cancelled`
 
 | Événement | Paramètres | Déclencheur | Fichier |
 |-----------|------------|-------------|---------|
-| `sign_up` | `organization_name`, `organization_id`, `plan_selected` | Acceptation prospect, création org Super Admin, inscription publique | `src/services/prospects.js`, `src/services/platform.js`, `src/services/organization.js` |
-| `begin_trial` | `plan`, `trial_days` (30) | Même moment que `sign_up` | Idem |
+| `sign_up` | `organization_name`, `organization_id` (si dispo), `plan_selected` | L'auto-école soumet une pré-inscription ou une demande de démo | `src/services/organizationSignupRequests.js`, `src/services/demoRequests.js`, `src/services/organization.js` |
+| `ae_pending_validation` | `organization_name`, `organization_id` (si dispo), `plan_selected` | Immédiatement après `sign_up`, compte en attente de validation Super Admin | Idem |
+| `ae_approved` | `organization_id`, `organization_name`, `approved_by`, `approved_at`, `trial_days`, `plan_selected` | Super Admin accepte une demande (prospect ou création directe) | `src/services/prospects.js`, `src/services/platform.js` |
+| `begin_trial` | `organization_id`, `plan`, `trial_days` (30) | Essai gratuit démarré **après** validation Super Admin | `src/services/prospects.js`, `src/services/platform.js`, `src/services/organization.js` (inscription auto-activée) |
 
 ### Connexion
 
@@ -77,7 +83,7 @@ Comptage : `src/lib/analytics/milestones.js` interroge Supabase (RLS = périmèt
 
 | Événement | Paramètres | Déclencheur | Fichier |
 |-----------|------------|-------------|---------|
-| `purchase` | `subscription_plan`, `amount`, `value`, `currency`, `billing_cycle` | Activation d'un plan payant (Super Admin) | `src/services/platform.js` → `updateSubscriptionBySuperAdmin` |
+| `purchase` | `organization_id`, `subscription_plan`, `amount`, `value`, `currency`, `billing_cycle` | Statut abonnement passé à `active` avec un plan payant (Premium, Starter, monthly) | `src/services/platform.js` → `updateSubscriptionBySuperAdmin` |
 | `subscription_renewed` | `subscription_plan` | Prolongation de `current_period_end` | Idem |
 | `subscription_cancelled` | `subscription_plan` | Résiliation | `src/services/platform.js` → `cancelSubscription` |
 

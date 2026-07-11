@@ -1,4 +1,4 @@
-import { trackBeginTrial, trackSignUp } from '../lib/analytics'
+import { trackAeApproved, trackAePendingValidation, trackBeginTrial, trackSignUp } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 
@@ -8,16 +8,35 @@ export async function registerOrganization(payload) {
   if (data?.error) return { error: toUserError(data.error, 'signup') }
 
   const organizationId = data?.organization_id || data?.organizationId
+  const email = payload?.email?.trim()?.toLowerCase()
   if (organizationId) {
     trackSignUp({
-      organizationName: payload?.schoolName || payload?.name,
+      organizationName: payload?.schoolName || payload?.name || payload?.org_name,
       organizationId,
+      planSelected: data?.plan_code || data?.plan || 'starter',
+    })
+    trackAeApproved({
+      organizationId,
+      organizationName: payload?.schoolName || payload?.name || payload?.org_name,
+      approvedBy: 'self_service',
+      trialDays: Number(data?.trial_days) || 30,
       planSelected: data?.plan_code || data?.plan || 'starter',
     })
     trackBeginTrial({
       organizationId,
       plan: data?.plan_code || data?.plan || 'starter',
       trialDays: Number(data?.trial_days) || 30,
+    })
+  } else if (email) {
+    trackSignUp({
+      organizationName: payload?.schoolName || payload?.name || payload?.org_name,
+      email,
+      planSelected: 'starter',
+    })
+    trackAePendingValidation({
+      organizationName: payload?.schoolName || payload?.name || payload?.org_name,
+      email,
+      planSelected: 'starter',
     })
   }
 

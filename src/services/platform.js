@@ -1,8 +1,8 @@
 import {
+  trackAeApproved,
   trackBeginTrial,
   trackDeleteAccount,
   trackPurchase,
-  trackSignUp,
   trackSubscriptionCancelled,
   trackSubscriptionRenewed,
 } from '../lib/analytics'
@@ -18,6 +18,18 @@ import {
 } from '../lib/platformPlans'
 
 export { formatPlatformEur }
+
+function mapBillingCycle(interval) {
+  if (interval === 'year') return 'yearly'
+  if (interval === 'month') return 'monthly'
+  if (interval === 'trial') return 'trial'
+  return interval || 'monthly'
+}
+
+async function currentSuperAdminLabel() {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.email || user?.id || undefined
+}
 
 async function readFunctionPayload(error, data) {
   if (data && typeof data === 'object') return data
@@ -227,15 +239,22 @@ export async function createOrganization({ name, email, phone }) {
     })
     if (error) throw error
     if (data) {
-      trackSignUp({
-        organizationName: name,
+      const approvedBy = await currentSuperAdminLabel()
+      const approvedAt = new Date().toISOString()
+      const trialDays = 30
+
+      trackAeApproved({
         organizationId: data,
+        organizationName: name,
+        approvedBy,
+        approvedAt,
+        trialDays,
         planSelected: 'starter',
       })
       trackBeginTrial({
         organizationId: data,
         plan: 'starter',
-        trialDays: 30,
+        trialDays,
       })
     }
     return { organizationId: data, error: null }
@@ -422,7 +441,7 @@ export async function updateSubscriptionBySuperAdmin(subscriptionId, payload) {
       .from('subscriptions')
       .select(`
         id, organization_id, metadata, plan_id, status, current_period_end,
-        plan:plan_id(code, price_cents, billing_interval)
+        plan:plan_id(code, price_cents, interval)
       `)
       .eq('id', subscriptionId)
       .single()
@@ -434,13 +453,17 @@ export async function updateSubscriptionBySuperAdmin(subscriptionId, payload) {
     if (payload.planCode) {
       const { data: plan, error: planError } = await supabase
         .from('plans')
-        .select('id, code, price_cents, billing_interval')
+        .select('id, code, price_cents, interval')
         .eq('code', payload.planCode)
         .maybeSingle()
       if (planError) throw planError
       if (!plan) throw new Error('Plan introuvable.')
       patch.plan_id = plan.id
       resolvedPlan = plan
+    }
+
+    if (payload.planCode && PAYING_PLAN_CODES.has(payload.planCode) && !payload.status) {
+      patch.status = 'active'
     }
 
     if (payload.trialEndsAt !== undefined) patch.trial_ends_at = payload.trialEndsAt || null
@@ -481,20 +504,23 @@ export async function updateSubscriptionBySuperAdmin(subscriptionId, payload) {
 
     const planCode = resolvedPlan?.code || payload.planCode
     const orgId = current.organization_id
+    const previousStatus = current.status
+    const newStatus = data?.status ?? patch.status ?? current.status
     const wasPaying = PAYING_PLAN_CODES.has(current.plan?.code || '')
-    const isPayingActivation =
-      payload.status === 'active'
-      && planCode
-      && PAYING_PLAN_CODES.has(planCode)
-      && (current.status !== 'active' || !wasPaying || (payload.planCode && payload.planCode !== current.plan?.code))
+    const isPayingPlan = planCode && PAYING_PLAN_CODES.has(planCode)
+    const becameActive = newStatus === 'active' && previousStatus !== 'active'
+    const activatedPayingPlan =
+      isPayingPlan
+      && newStatus === 'active'
+      && (becameActive || !wasPaying || (payload.planCode && payload.planCode !== current.plan?.code))
 
-    if (isPayingActivation) {
+    if (activatedPayingPlan) {
       trackPurchase({
         organizationId: orgId,
         subscriptionPlan: planCode,
         amount: planPriceCents(resolvedPlan) / 100,
         currency: 'EUR',
-        billingCycle: resolvedPlan?.billing_interval || 'monthly',
+        billingCycle: mapBillingCycle(resolvedPlan?.interval),
       })
     }
 
