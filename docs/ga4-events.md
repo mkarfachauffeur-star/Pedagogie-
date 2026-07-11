@@ -1,6 +1,6 @@
 # Google Analytics 4 — Pedagogia Drive
 
-Measurement ID : **`G-WJP7BG8917`** (`NEXT_PUBLIC_GA_MEASUREMENT_ID` / `VITE_GA_MEASUREMENT_ID`).
+Measurement ID : **`G-2F56CZDDBQ`** (`NEXT_PUBLIC_GA_MEASUREMENT_ID` / `VITE_GA_MEASUREMENT_ID`).
 
 ## Architecture
 
@@ -113,7 +113,7 @@ Comptage : `src/lib/analytics/milestones.js` interroge Supabase (RLS = périmèt
 ## Variables d'environnement
 
 ```env
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-WJP7BG8917
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-2F56CZDDBQ
 # Optionnel — DebugView en local
 # NEXT_PUBLIC_GA_DEBUG=true
 # VITE_GA_DEBUG=true
