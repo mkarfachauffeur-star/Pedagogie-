@@ -68,6 +68,11 @@ const CONTAINS_RULES = [
     message: 'La base de données doit être mise à jour. Contactez le support ou réessayez après migration Supabase.',
   },
   {
+    pattern: /PGRST201|more than one relationship was found|Could not embed because/i,
+    message: null,
+    exportEmbed: true,
+  },
+  {
     pattern: /sqlstate|pgrst|postgres|duplicate key value|violates unique constraint|violates foreign key|syntax error at/i,
     message: ERROR_CONTEXT.generic,
   },
@@ -149,6 +154,11 @@ export function getUserFacingError(error, context = 'generic') {
       return context === 'export'
         ? 'Le fichier n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
         : 'Le module d\'export est indisponible. Rechargez la page puis réessayez.'
+    }
+    if (rule.exportEmbed) {
+      return context === 'export'
+        ? 'Le chargement des données d\'export a échoué. Rechargez la page (Cmd+Shift+R) puis réessayez.'
+        : ERROR_CONTEXT.load
     }
     if (rule.edgeFunction) {
       return EDGE_FUNCTION_MESSAGES[context] || EDGE_FUNCTION_MESSAGES.default

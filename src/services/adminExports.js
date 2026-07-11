@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { listTeachers } from './teachers'
 import {
   addMinutes,
   buildCsvContent,
@@ -124,10 +125,12 @@ export async function fetchExportLessons({ dateFrom, dateTo, teacherId, studentI
 }
 
 export async function fetchExportFilterOptions() {
-  const [{ data: students }, { data: teachers }] = await Promise.all([
+  const [{ data: students }, { teachers, error: teachersError }] = await Promise.all([
     supabase.from('students').select('id, first_name, last_name, file_number').order('last_name'),
-    supabase.from('teachers').select('profile_id, profiles:profile_id(full_name)').order('created_at'),
+    listTeachers(),
   ])
+  if (teachersError) throw teachersError
+
   return {
     students: (students || []).map((s) => ({
       id: s.id,
@@ -135,7 +138,7 @@ export async function fetchExportFilterOptions() {
     })),
     teachers: (teachers || []).map((t) => ({
       id: t.profile_id,
-      label: t.profiles?.full_name?.trim() || 'Enseignant',
+      label: t.full_name?.trim() || 'Enseignant',
     })),
   }
 }
