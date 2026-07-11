@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
+import { filterBookableStudents } from './students'
 
 const APPOINTMENT_SELECT = `
   id,
@@ -91,34 +92,78 @@ export async function createAppointment({
 }
 
 export async function loadPlanningOptions() {
-  try {
-    const [{ data: students, error: studentsError }, { data: teachers, error: teachersError }, { data: vehicles, error: vehiclesError }] =
-      await Promise.all([
-        supabase.from('students').select('id, first_name, last_name, file_number').order('last_name'),
-        supabase.from('teachers').select('profile_id, profiles:profile_id(full_name)').eq('resource_type', 'teacher').order('created_at'),
-        supabase.from('vehicles').select('id, brand, model, plate').order('created_at'),
-      ])
-
-    if (studentsError) throw studentsError
-    if (teachersError) throw teachersError
-    if (vehiclesError) throw vehiclesError
-
-    return {
-      students: (students || []).map((s) => ({
-        id: s.id,
-        label: `${s.last_name || ''} ${s.first_name || ''}`.trim() || s.file_number || s.id,
-      })),
-      teachers: (teachers || []).map((t) => ({
-        id: t.profile_id,
-        label: t.profiles?.full_name?.trim() || 'Enseignant',
-      })),
-      vehicles: (vehicles || []).map((v) => ({
-        id: v.id,
-        label: vehicleLabel(v),
-      })),
-      error: null,
-    }
-  } catch (error) {
-    return { students: [], teachers: [], vehicles: [], error }
+  const result = {
+    students: [],
+    teachers: [],
+    vehicles: [],
+    error: null,
+    warnings: [],
   }
+
+  const [studentsRes, vehiclesRes, teachersRes] = await Promise.all([
+    supabase
+      .from('students')
+      .select('id, first_name, last_name, file_number, status, license_result, is_archived')
+      .order('last_name'),
+    supabase.from('vehicles').select('id, brand, model, plate').order('created_at'),
+    supabase
+      .from('teachers')
+      .select('profile_id')
+      .eq('resource_type', 'teacher')
+      .order('created_at'),
+  ])
+
+  if (studentsRes.error) {
+    result.warnings.push('élèves')
+  } else {
+    result.students = filterBookableStudents(studentsRes.data || []).map((s) => ({
+      id: s.id,
+      label: `${s.last_name || ''} ${s.first_name || ''}`.trim() || s.file_number || s.id,
+    }))
+  }
+
+  if (vehiclesRes.error) {
+    result.warnings.push('véhicules')
+  } else {
+    result.vehicles = (vehiclesRes.data || []).map((v) => ({
+      id: v.id,
+      label: vehicleLabel(v),
+    }))
+  }
+
+  if (teachersRes.error) {
+    result.warnings.push('enseignants')
+  } else {
+    const teacherRows = teachersRes.data || []
+    const profileIds = [...new Set(teacherRows.map((row) => row.profile_id).filter(Boolean))]
+    const profileNames = new Map()
+
+    if (profileIds.length) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', profileIds)
+
+      if (profilesError) {
+        result.warnings.push('enseignants')
+      } else {
+        for (const profile of profiles || []) {
+          profileNames.set(profile.id, profile.full_name)
+        }
+      }
+    }
+
+    if (!result.warnings.includes('enseignants')) {
+      result.teachers = teacherRows.map((t) => ({
+        id: t.profile_id,
+        label: profileNames.get(t.profile_id)?.trim() || 'Enseignant',
+      }))
+    }
+  }
+
+  if (result.warnings.length) {
+    result.error = new Error(`Impossible de charger : ${result.warnings.join(', ')}.`)
+  }
+
+  return result
 }

@@ -70,7 +70,7 @@ export default function AdminPlanningPage() {
   const [teacherFilter, setTeacherFilter] = useState('')
   const [vehicleFilter, setVehicleFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState(() => emptyForm())
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
@@ -89,8 +89,20 @@ export default function AdminPlanningPage() {
       loadPlanningOptions(),
     ])
     if (error) setLoadError('Impossible de charger le planning.')
+    else setLoadError(null)
     setAppointments(rows)
-    setOptions(planningOptions)
+    setOptions({
+      students: planningOptions.students || [],
+      teachers: planningOptions.teachers || [],
+      vehicles: planningOptions.vehicles || [],
+    })
+    if (planningOptions.error) {
+      setFeedback({
+        type: 'error',
+        text: getUserFacingError(planningOptions.error, 'load')
+          || 'Certaines listes (élèves, enseignants ou véhicules) n\'ont pas pu être chargées.',
+      })
+    }
     setLoading(false)
   }, [teacherFilter, vehicleFilter, week.from, week.to])
 
