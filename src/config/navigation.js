@@ -76,6 +76,7 @@ export const NAVIGATION = {
     items: [
       { href: '/platform/dashboard', icon: '\u{1F4CA}', label: 'Dashboard' },
       { href: '/platform/prospects', icon: '\u{1F4E9}', label: 'Prospects', badgeKey: 'prospects' },
+      { href: '/platform/reviews', icon: '\u2B50', label: 'Avis utilisateurs', badgeKey: 'reviews' },
       { href: '/platform/organizations', icon: '\u{1F3E2}', label: 'Auto-écoles' },
       { href: '/platform/subscriptions', icon: '\u{1F4E6}', label: 'Abonnements' },
       { href: '/platform/payments', icon: '\u{1F4B0}', label: 'Paiements' },
