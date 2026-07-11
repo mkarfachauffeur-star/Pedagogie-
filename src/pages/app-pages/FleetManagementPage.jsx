@@ -1075,10 +1075,10 @@ function FuelLevelBar({ compact = false, value = 0 }) {
         : { label: 'Correct', bar: 'from-emerald-600 to-green-400', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' }
 
   return (
-    <div className={`rounded-2xl border ${status.border} ${status.bg} ${compact ? 'px-3 py-2' : 'p-3'}`}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Carburant</p>
-        <span className={`rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black ${status.text}`}>
+    <div className={`rounded-2xl border ${status.border} ${status.bg} ${compact ? 'col-span-2 px-3 py-2' : 'p-3'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-black uppercase tracking-wide leading-none text-slate-400">Carburant</p>
+        <span className={`inline-flex shrink-0 items-center rounded-full bg-white px-2.5 py-1 text-xs font-bold leading-none ${status.text}`}>
           {status.label}
         </span>
       </div>
