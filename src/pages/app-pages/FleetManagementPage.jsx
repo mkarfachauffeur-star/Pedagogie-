@@ -82,7 +82,6 @@ function applyFuelLogToVehicle(vehicle, log, { isEdit = false } = {}) {
   return {
     ...vehicle,
     mileage: isEdit ? vehicle.mileage : mileage,
-    fuelLevel: isEdit ? vehicle.fuelLevel : 100,
     estimatedRange: isEdit
       ? vehicle.estimatedRange
       : Math.round((100 / Math.max(nextConsumption, 1)) * 55),
@@ -514,10 +513,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
                       <MiniInfo label="Recharge" value={vehicle.chargingStatus} />
                     </>
                   ) : (
-                    <>
-                      <FuelLevelBar value={vehicle.fuelLevel} compact />
-                      <MiniInfo label="Conso" value={`${vehicle.averageConsumption} L/100`} />
-                    </>
+                    <MiniInfo label="Conso" value={`${vehicle.averageConsumption} L/100`} />
                   )}
                   <MiniInfo label="Propreté" value={vehicle.cleanliness} />
                 </div>
@@ -555,7 +551,6 @@ export default function FleetManagementPage({ role = 'secretary' }) {
               </>
             ) : (
               <>
-                <FuelLevelBar value={selectedVehicle.fuelLevel} />
                 <Info label="Consommation moyenne" value={`${selectedVehicle.averageConsumption} L/100`} />
                 <Info label="Huile" value={selectedVehicle.oil} />
                 <Info label="Liquide refroidissement" value={selectedVehicle.coolant} />
@@ -741,9 +736,7 @@ export default function FleetManagementPage({ role = 'secretary' }) {
                 <Field label="Niveau batterie (%)" onChange={(value) => setVehicleForm((current) => ({ ...current, batteryLevel: Number(value) }))} type="number" value={String(vehicleForm.batteryLevel || 0)} />
                 <Field label="État de recharge" onChange={(value) => setVehicleForm((current) => ({ ...current, chargingStatus: value }))} value={vehicleForm.chargingStatus || ''} />
               </>
-            ) : (
-              <Field label="Niveau carburant (%)" onChange={(value) => setVehicleForm((current) => ({ ...current, fuelLevel: Number(value) }))} type="number" value={String(vehicleForm.fuelLevel)} />
-            )}
+            ) : null}
             <Field label="Contrôle technique" onChange={(value) => setVehicleForm((current) => ({ ...current, technicalControl: value }))} type="date" value={vehicleForm.technicalControl} />
             {saveError && (
               <p className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -770,7 +763,7 @@ function Hero({ canAddVehicle, onAddVehicle, role }) {
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Gestion des véhicules</h1>
             <p className="mt-3 max-w-3xl text-base leading-7 text-blue-50">
-              Suivi complet de flotte auto-école : état, carburant, entretien, alertes et coûts.
+              Suivi complet de flotte auto-école : état, pleins enregistrés, entretien, alertes et coûts.
             </p>
           </div>
           {canAddVehicle && (
@@ -1060,33 +1053,6 @@ function RechargeSlider({ currentLevel = 0, onChange, value }) {
         ) : (
           <p className="mt-2 text-xs font-medium text-slate-500">Déplacez le curseur vers la droite pour enregistrer une recharge.</p>
         )}
-      </div>
-    </div>
-  )
-}
-
-function FuelLevelBar({ compact = false, value = 0 }) {
-  const level = Math.max(0, Math.min(100, Number(value) || 0))
-  const status =
-    level <= 20
-      ? { label: 'Critique', bar: 'from-rose-600 to-red-400', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' }
-      : level <= 40
-        ? { label: 'Faible', bar: 'from-amber-500 to-orange-400', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' }
-        : { label: 'Correct', bar: 'from-emerald-600 to-green-400', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' }
-
-  return (
-    <div className={`rounded-2xl border ${status.border} ${status.bg} ${compact ? 'col-span-2 px-3 py-2' : 'p-3'}`}>
-      <div className="flex min-h-[1.375rem] items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-wide leading-none text-slate-400">Carburant</p>
-        <span className={`pd-fleet-fuel-pill ${status.text}`}>
-          {status.label}
-        </span>
-      </div>
-      <div className={`${compact ? 'mt-2 h-2' : 'mt-3 h-3'} overflow-hidden rounded-full bg-white/80 shadow-inner`}>
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${status.bar} transition-all duration-500`}
-          style={{ width: `${level}%` }}
-        />
       </div>
     </div>
   )
