@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase'
 import { formatPersonName } from '../lib/staffAccounts'
 import { fetchExportStudents } from './adminExports'
+import { listTeachers } from './teachers'
 import { formatRecommendedHours } from '../lib/initialAssessmentUtils'
-import { getResourceTypeLabel } from '../lib/teachingResources'
 import {
   downloadProfessionalCsv,
   downloadXlsxSheet,
@@ -214,21 +214,62 @@ async function fetchOrgMeta() {
   return data
 }
 
-async function fetchTeachers(filters = {}) {
-  let query = supabase
-    .from('teachers')
-    .select(`
-      profile_id, created_at, resource_type, authorization_number, authorization_expires_at, authorized_categories,
-      profiles:profile_id(full_name, email, phone)
-    `)
-    .order('created_at')
-
-  if (filters.dateFrom) query = query.gte('created_at', `${filters.dateFrom}T00:00:00`)
-  if (filters.dateTo) query = query.lte('created_at', `${filters.dateTo}T23:59:59`)
-
-  const { data, error } = await query
+async function loadProfilesById(profileIds = []) {
+  const ids = [...new Set(profileIds.filter(Boolean))]
+  if (!ids.length) return new Map()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, phone')
+    .in('id', ids)
   if (error) throw error
-  return data || []
+  return new Map((data || []).map((profile) => [profile.id, profile]))
+}
+
+async function loadStudentsById(studentIds = []) {
+  const ids = [...new Set(studentIds.filter(Boolean))]
+  if (!ids.length) return new Map()
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, first_name, last_name, file_number')
+    .in('id', ids)
+  if (error) throw error
+  return new Map((data || []).map((student) => [student.id, student]))
+}
+
+async function loadPackagesById(packageIds = []) {
+  const ids = [...new Set(packageIds.filter(Boolean))]
+  if (!ids.length) return new Map()
+  const { data, error } = await supabase
+    .from('pricing_packages')
+    .select('id, name')
+    .in('id', ids)
+  if (error) throw error
+  return new Map((data || []).map((pkg) => [pkg.id, pkg]))
+}
+
+async function loadVehiclesById(vehicleIds = []) {
+  const ids = [...new Set(vehicleIds.filter(Boolean))]
+  if (!ids.length) return new Map()
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('id, brand, model, plate')
+    .in('id', ids)
+  if (error) throw error
+  return new Map((data || []).map((vehicle) => [vehicle.id, vehicle]))
+}
+
+async function fetchTeachers(filters = {}) {
+  const { teachers, error } = await listTeachers()
+  if (error) throw error
+
+  let rows = teachers || []
+  if (filters.dateFrom) {
+    rows = rows.filter((teacher) => teacher.created_at >= `${filters.dateFrom}T00:00:00`)
+  }
+  if (filters.dateTo) {
+    rows = rows.filter((teacher) => teacher.created_at <= `${filters.dateTo}T23:59:59`)
+  }
+  return rows
 }
 
 async function fetchInitialAssessmentsMap(studentIds = []) {
@@ -244,11 +285,7 @@ async function fetchInitialAssessmentsMap(studentIds = []) {
 async function fetchLessonObservations(filters = {}) {
   let query = supabase
     .from('student_lesson_observations')
-    .select(`
-      id, student_id, lesson_date, lesson_time, duration, observations, skills, opened_at,
-      student:student_id(id, first_name, last_name),
-      teacher:teacher_id(full_name)
-    `)
+    .select('id, student_id, teacher_id, lesson_date, lesson_time, duration, observations, skills, opened_at')
     .order('opened_at', { ascending: true })
 
   if (filters.dateFrom) query = query.gte('lesson_date', filters.dateFrom)
@@ -258,16 +295,24 @@ async function fetchLessonObservations(filters = {}) {
 
   const { data, error } = await query
   if (error) throw error
-  return data || []
+
+  const rows = data || []
+  const [studentsById, profilesById] = await Promise.all([
+    loadStudentsById(rows.map((row) => row.student_id)),
+    loadProfilesById(rows.map((row) => row.teacher_id)),
+  ])
+
+  return rows.map((row) => ({
+    ...row,
+    student: studentsById.get(row.student_id) || null,
+    teacher: profilesById.get(row.teacher_id) || null,
+  }))
 }
 
 async function fetchAppointmentVehicleMap(filters = {}) {
   let query = supabase
     .from('appointments')
-    .select(`
-      starts_at, student_id,
-      vehicle:vehicle_id(brand, model, plate)
-    `)
+    .select('starts_at, student_id, vehicle_id')
     .order('starts_at', { ascending: true })
 
   if (filters.dateFrom) query = query.gte('starts_at', `${filters.dateFrom}T00:00:00`)
@@ -278,11 +323,12 @@ async function fetchAppointmentVehicleMap(filters = {}) {
   const { data, error } = await query
   if (error) throw error
 
+  const vehiclesById = await loadVehiclesById((data || []).map((row) => row.vehicle_id))
   const map = new Map()
   ;(data || []).forEach((appointment) => {
     const dateKey = appointment.starts_at?.slice(0, 10)
     if (!dateKey || !appointment.student_id) return
-    map.set(`${appointment.student_id}_${dateKey}`, vehicleLabel(appointment.vehicle))
+    map.set(`${appointment.student_id}_${dateKey}`, vehicleLabel(vehiclesById.get(appointment.vehicle_id)))
   })
   return map
 }
@@ -290,10 +336,7 @@ async function fetchAppointmentVehicleMap(filters = {}) {
 async function fetchPayments(filters = {}) {
   let query = supabase
     .from('payments')
-    .select(`
-      id, amount, paid_at, method, comment, receipt_number, payment_reference,
-      student:student_id(first_name, last_name)
-    `)
+    .select('id, amount, paid_at, method, comment, receipt_number, payment_reference, student_id')
     .order('paid_at', { ascending: true })
 
   if (filters.dateFrom) query = query.gte('paid_at', filters.dateFrom)
@@ -302,17 +345,18 @@ async function fetchPayments(filters = {}) {
 
   const { data, error } = await query
   if (error) throw error
-  return data || []
+
+  const studentsById = await loadStudentsById((data || []).map((row) => row.student_id))
+  return (data || []).map((payment) => ({
+    ...payment,
+    student: studentsById.get(payment.student_id) || null,
+  }))
 }
 
 async function fetchContracts(filters = {}) {
   let query = supabase
     .from('contracts')
-    .select(`
-      id, contract_total, signed_at, updated_at, status,
-      student:student_id(first_name, last_name, file_number),
-      package:package_id(name)
-    `)
+    .select('id, contract_total, signed_at, updated_at, status, student_id, package_id')
     .order('updated_at', { ascending: true })
 
   if (filters.dateFrom) query = query.gte('signed_at', filters.dateFrom)
@@ -321,7 +365,18 @@ async function fetchContracts(filters = {}) {
 
   const { data, error } = await query
   if (error) throw error
-  return data || []
+
+  const rows = data || []
+  const [studentsById, packagesById] = await Promise.all([
+    loadStudentsById(rows.map((row) => row.student_id)),
+    loadPackagesById(rows.map((row) => row.package_id)),
+  ])
+
+  return rows.map((contract) => ({
+    ...contract,
+    student: studentsById.get(contract.student_id) || null,
+    package: packagesById.get(contract.package_id) || null,
+  }))
 }
 
 async function fetchVehicles() {
@@ -363,14 +418,13 @@ function mapStudentRows(students, assessmentsMap) {
 
 function mapTeacherRows(teachers) {
   return teachers.map((teacher) => {
-    const { firstName, lastName } = splitFullName(teacher.profiles?.full_name || '')
+    const { firstName, lastName } = splitFullName(teacher.full_name || '')
     return {
-      Type: getResourceTypeLabel(teacher.resource_type),
       Nom: lastName,
       Prénom: firstName,
-      Email: teacher.profiles?.email || '',
-      Téléphone: teacher.profiles?.phone || '',
-      'N° autorisation': teacher.authorization_number || '',
+      Email: teacher.email || '',
+      Téléphone: teacher.phone || '',
+      'N° autorisation d\'enseigner': teacher.authorization_number || '',
       'Date de validité': formatDateFr(teacher.authorization_expires_at),
       'Catégories autorisées': (teacher.authorized_categories || []).join(', '),
       'Date d\'affectation': formatDateFr(teacher.created_at),

@@ -1,5 +1,7 @@
 /** CSV UTF-8 BOM + séparateur point-virgule (Excel France). */
 
+import ExcelJS from 'exceljs'
+
 function escapeCsvCell(value) {
   const text = value == null ? '' : String(value)
   if (/[;"\r\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`
@@ -18,7 +20,8 @@ export function formatGeneratedAt(date = new Date()) {
 }
 
 export function buildProfessionalCsv(headers, rows) {
-  const lines = [headers.map(escapeCsvCell).join(';')]
+  const lines = ['sep=;']
+  lines.push(headers.map(escapeCsvCell).join(';'))
   rows.forEach((row) => {
     lines.push(headers.map((header) => escapeCsvCell(row[header])).join(';'))
   })
@@ -31,7 +34,6 @@ export function downloadProfessionalCsv(filename, headers, rows) {
 }
 
 export async function downloadXlsxSheet({ filename, sheetName, headers, rows }) {
-  const ExcelJS = (await import('exceljs')).default
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'PEDAGOGIA DRIVE'
   workbook.created = new Date()

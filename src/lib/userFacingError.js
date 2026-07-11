@@ -30,7 +30,13 @@ const EXACT_RULES = [
 const CONTAINS_RULES = [
   {
     pattern: /failed to fetch|networkerror|network request failed|load failed|net::/i,
-    message: 'Impossible de contacter le serveur. Vérifiez votre connexion Internet.',
+    message: null,
+    network: true,
+  },
+  {
+    pattern: /dynamically imported module|import\(\)/i,
+    message: null,
+    exportChunk: true,
   },
   {
     pattern: /edge function|non-2xx status|functionsfetcherror|functionsrelayerror|failed to send a request to the edge function/i,
@@ -134,6 +140,14 @@ export function getUserFacingError(error, context = 'generic') {
 
   for (const rule of CONTAINS_RULES) {
     if (!rule.pattern.test(raw)) continue
+    if (rule.network) {
+      return context === 'export'
+        ? 'Le fichier Excel n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
+        : 'Impossible de contacter le serveur. Vérifiez votre connexion Internet.'
+    }
+    if (rule.exportChunk) {
+      return 'Le fichier Excel n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
+    }
     if (rule.edgeFunction) {
       return EDGE_FUNCTION_MESSAGES[context] || EDGE_FUNCTION_MESSAGES.default
     }

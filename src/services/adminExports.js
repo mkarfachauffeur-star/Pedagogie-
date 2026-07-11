@@ -41,7 +41,7 @@ export async function fetchExportStudents({ dateFrom, dateTo, teacherId, student
       birth_place, street_number, street, postal_code, city, neph,
       license_category, package_name, formation_type, driving_type,
       code_status, registration_date, status,
-      student_assignments(is_referent, teacher_id, created_at, teacher:teacher_id(id, full_name))
+      student_assignments(is_referent, teacher_id, created_at)
     `)
     .order('last_name', { ascending: true })
 
@@ -58,7 +58,32 @@ export async function fetchExportStudents({ dateFrom, dateTo, teacherId, student
       (student.student_assignments || []).some((assignment) => assignment.teacher_id === teacherId),
     )
   }
-  return rows
+
+  const teacherIds = [...new Set(
+    rows.flatMap((student) => (student.student_assignments || []).map((assignment) => assignment.teacher_id)),
+  )]
+  const teacherProfilesById = new Map()
+  if (teacherIds.length) {
+    const { data: teacherProfiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', teacherIds)
+    if (profilesError) throw profilesError
+    for (const profile of teacherProfiles || []) {
+      teacherProfilesById.set(profile.id, profile)
+    }
+  }
+
+  return rows.map((student) => ({
+    ...student,
+    student_assignments: (student.student_assignments || []).map((assignment) => ({
+      ...assignment,
+      teacher: {
+        id: assignment.teacher_id,
+        full_name: teacherProfilesById.get(assignment.teacher_id)?.full_name ?? null,
+      },
+    })),
+  }))
 }
 
 export async function fetchExportTeachers({ dateFrom, dateTo } = {}) {
