@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { formatPersonName } from '../lib/staffAccounts'
 import { fetchExportStudents } from './adminExports'
 import { listTeachers } from './teachers'
@@ -207,10 +209,11 @@ async function logExport(exportType, format, filters) {
 }
 
 async function fetchOrgMeta() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('organizations')
     .select('name, siret, prefecture_approval, address, city, postal_code, phone, email')
-    .single()
+    .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -631,11 +634,6 @@ export async function exportRegulatoryPdf(filters = {}) {
   const teacherRows = mapTeacherRows(teachers)
   const vehicleRows = mapVehicleRows(vehicles)
   const paymentRows = mapPaymentRows(payments)
-
-  const [{ jsPDF }, { autoTable }] = await Promise.all([
-    import('jspdf'),
-    import('jspdf-autotable'),
-  ])
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()

@@ -142,11 +142,13 @@ export function getUserFacingError(error, context = 'generic') {
     if (!rule.pattern.test(raw)) continue
     if (rule.network) {
       return context === 'export'
-        ? 'Le fichier Excel n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
+        ? 'Le fichier n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
         : 'Impossible de contacter le serveur. Vérifiez votre connexion Internet.'
     }
     if (rule.exportChunk) {
-      return 'Le fichier Excel n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
+      return context === 'export'
+        ? 'Le fichier n\'a pas pu être généré. Réessayez ou utilisez le format CSV.'
+        : 'Le module d\'export est indisponible. Rechargez la page puis réessayez.'
     }
     if (rule.edgeFunction) {
       return EDGE_FUNCTION_MESSAGES[context] || EDGE_FUNCTION_MESSAGES.default
