@@ -124,5 +124,15 @@ export function trackPageView(pagePath, measurementId = getGaMeasurementId()) {
 
 export function trackGtagEvent(eventName, params = {}) {
   if (!shouldSendAnalytics() || !hasGtag()) return
-  window.gtag('event', eventName, params)
+
+  const payload = { ...params }
+  if (isGaDebugEnabled()) {
+    payload.debug_mode = true
+  }
+
+  window.gtag('event', eventName, payload)
+
+  if (isGaDebugEnabled() && typeof console !== 'undefined') {
+    console.info(`[GA4] event → ${eventName}`, payload)
+  }
 }

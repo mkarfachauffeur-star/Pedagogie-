@@ -1,4 +1,4 @@
-import { trackGtagEvent } from '../gtag'
+import { isGaDebugEnabled, trackGtagEvent } from '../gtag'
 
 const STORAGE_PREFIX = 'pd_ga_once:'
 
@@ -26,9 +26,19 @@ export function markTrackedOnce(key) {
 
 /** Envoie un événement GA4 une seule fois par clé (localStorage). */
 export function trackOnce(key, eventName, params = {}) {
-  if (!key || hasTrackedOnce(key)) return false
+  if (!key) return false
+
+  const debug = isGaDebugEnabled()
+  if (!debug && hasTrackedOnce(key)) {
+    return false
+  }
+
+  if (debug && hasTrackedOnce(key) && typeof console !== 'undefined') {
+    console.info(`[GA4] dedup bypass (debug) → ${eventName}`, { key })
+  }
+
   trackGtagEvent(eventName, params)
-  markTrackedOnce(key)
+  if (!debug) markTrackedOnce(key)
   return true
 }
 

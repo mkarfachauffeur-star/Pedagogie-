@@ -22,7 +22,7 @@ Pour voir tous les événements en temps réel dans **Google Analytics → Admin
 1. **Production** : ajouter `?ga_debug=1` à l'URL, ou
 2. **Local / preview** : définir `NEXT_PUBLIC_GA_DEBUG=true` ou `VITE_GA_DEBUG=true` dans `.env`
 
-Le mode debug active `debug_mode: true` dans la config gtag et autorise l'envoi hors production.
+Le mode debug active `debug_mode: true` sur **chaque** événement (pas seulement `page_view`) et désactive la déduplication `localStorage` pour faciliter les tests DebugView.
 
 ## Déduplication des événements « premier »
 
