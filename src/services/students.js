@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { toUserError } from '../lib/userFacingError'
 import { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
 import { subscribePostgresChanges } from './realtime'
@@ -159,6 +160,12 @@ export async function listOrganizationTeachers() {
 }
 
 export async function createStudent(payload) {
+  try {
+    await assertOrgCanWrite()
+  } catch (error) {
+    return { error: toUserError(error, 'createStudent') }
+  }
+
   const { data, error } = await supabase.functions.invoke('create-student', {
     body: payload,
   })
@@ -184,6 +191,12 @@ export async function createStudent(payload) {
 }
 
 export async function resendStudentAccessEmail(studentId) {
+  try {
+    await assertOrgCanWrite()
+  } catch (error) {
+    return { error: toUserError(error, 'invite'), message: null, tempPassword: null, emailSent: false }
+  }
+
   const { data, error } = await supabase.functions.invoke('resend-student-access', {
     body: { student_id: studentId },
   })

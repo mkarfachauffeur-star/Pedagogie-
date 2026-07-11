@@ -103,8 +103,8 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('new') === '1') setModalOpen(true)
-  }, [])
+    if (params.get('new') === '1' && canWrite) setModalOpen(true)
+  }, [canWrite])
 
   useEffect(() => {
     setPage(1)
@@ -163,7 +163,12 @@ export default function AdminStudentsPage() {
               Créez les comptes élèves, consultez les dossiers et suivez les inscriptions de votre auto-école.
             </p>
           </div>
-          <button type="button" onClick={() => setModalOpen(true)} className="pd-btn-primary shrink-0">
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="pd-btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!canWrite}
+          >
             Ajouter un élève
           </button>
         </div>

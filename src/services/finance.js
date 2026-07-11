@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { formatPersonName } from '../lib/staffAccounts'
 import { toUserError } from '../lib/userFacingError'
 
@@ -72,6 +73,7 @@ export async function listPayments(filters = {}) {
 
 export async function createPayment(payload) {
   try {
+    await assertOrgCanWrite()
     const { data, error } = await supabase
       .from('payments')
       .insert({
@@ -125,6 +127,7 @@ export async function listExpenses(filters = {}) {
 
 export async function createExpense(payload) {
   try {
+    await assertOrgCanWrite()
     const { data, error } = await supabase
       .from('expenses')
       .insert({

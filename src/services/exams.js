@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { studentLabel } from './finance'
 import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
@@ -52,6 +53,7 @@ export async function createExam({
   status,
 }) {
   try {
+    await assertOrgCanWrite()
     const { data, error } = await supabase
       .from('exams')
       .insert({

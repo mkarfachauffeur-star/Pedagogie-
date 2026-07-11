@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
 
@@ -57,6 +58,7 @@ export async function createPreRegistration({
   notes,
 }) {
   try {
+    await assertOrgCanWrite()
     const { data, error } = await supabase
       .from('pre_registrations')
       .insert({
@@ -81,6 +83,12 @@ export async function createPreRegistration({
 }
 
 export async function reviewPreRegistration(preRegistrationId, action) {
+  try {
+    await assertOrgCanWrite()
+  } catch (error) {
+    return { error: toUserError(error, 'reviewPreRegistration') }
+  }
+
   const { data, error } = await supabase.functions.invoke('review-pre-registration', {
     body: {
       pre_registration_id: preRegistrationId,

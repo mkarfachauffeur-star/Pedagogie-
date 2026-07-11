@@ -269,6 +269,23 @@ export async function updateOrganizationStatus(orgId, status) {
       .select('id, name, status')
       .single()
     if (error) throw error
+
+    const subscriptionPatch = { updated_at: new Date().toISOString() }
+    if (status === 'suspended') {
+      subscriptionPatch.status = 'suspended'
+    } else if (status === 'cancelled') {
+      subscriptionPatch.status = 'cancelled'
+      subscriptionPatch.cancelled_at = new Date().toISOString()
+    } else if (status === 'active' || status === 'trial') {
+      subscriptionPatch.status = 'active'
+      subscriptionPatch.cancelled_at = null
+    }
+
+    await supabase
+      .from('subscriptions')
+      .update(subscriptionPatch)
+      .eq('organization_id', orgId)
+
     await supabase.from('billing_history').insert({
       organization_id: orgId,
       event_type: status === 'suspended' ? 'suspended' : 'reactivated',

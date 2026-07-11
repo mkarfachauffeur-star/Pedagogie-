@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { toUserError } from '../lib/userFacingError'
 
 const DEFAULT_FLEET_DETAILS = {
@@ -111,6 +112,7 @@ export async function listFleetVehicles() {
 
 export async function saveFleetVehicle(vehicle, organizationId) {
   try {
+    await assertOrgCanWrite()
     const row = mapFleetToDb(vehicle, organizationId)
     if (vehicle.id) {
       const { id: _id, ...updateRow } = row

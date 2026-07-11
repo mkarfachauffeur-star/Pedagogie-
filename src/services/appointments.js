@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { TEACHING_RESOURCE_TYPES } from '../lib/teachingResources'
 import { toUserError } from '../lib/userFacingError'
 import { filterBookableStudents, listStudents } from './students'
@@ -72,6 +73,7 @@ export async function createAppointment({
   notes,
 }) {
   try {
+    await assertOrgCanWrite()
     const { data, error } = await supabase
       .from('appointments')
       .insert({

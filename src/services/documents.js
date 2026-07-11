@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { formatPersonName } from '../lib/staffAccounts'
+import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
 
 export const DOCUMENT_CATEGORIES = [
@@ -90,6 +92,11 @@ export async function uploadStudentDocument({
   senderName = null,
 }) {
   if (!file) return { error: new Error('Un fichier est requis.') }
+  try {
+    await assertOrgCanWrite()
+  } catch (error) {
+    return { error: toUserError(error, 'document') }
+  }
   const safeName = file.name.replace(/[^\w.-]+/g, '_')
   const storagePath = `${studentId}/${Date.now()}-${safeName}`
   const { error: upError } = await supabase.storage

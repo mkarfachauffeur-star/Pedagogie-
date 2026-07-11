@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { inviteUser } from './invitations'
 import { subscribePostgresChanges } from './realtime'
 import { toUserError } from '../lib/userFacingError'
@@ -322,6 +323,12 @@ export async function createSimulatorResource(fullName) {
 }
 
 export async function createTeacher(payload) {
+  try {
+    await assertOrgCanWrite()
+  } catch (error) {
+    return { teacher: null, error: toUserError(error, 'save') }
+  }
+
   const resourceType = normalizeTeachingResourceType(payload.resourceType)
   const firstName = String(payload.firstName || '').trim()
   const lastName = String(payload.lastName || '').trim()

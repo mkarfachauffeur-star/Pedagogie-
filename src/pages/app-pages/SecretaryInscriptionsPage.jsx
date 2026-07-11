@@ -26,7 +26,7 @@ function formatDateFr(value) {
 }
 
 export default function SecretaryInscriptionsPage() {
-  const { profileId } = useAuth()
+  const { profileId, canWrite } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const highlightStudentId = searchParams.get('student')
   const highlightedRef = useRef(null)
@@ -162,7 +162,8 @@ export default function SecretaryInscriptionsPage() {
               </p>
             </div>
             <button
-              className="pd-btn-primary shrink-0"
+              className="pd-btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!canWrite}
               onClick={() => setShowForm(true)}
               type="button"
             >

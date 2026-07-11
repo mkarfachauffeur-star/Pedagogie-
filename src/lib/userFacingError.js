@@ -24,6 +24,7 @@ const EXACT_RULES = [
   { pattern: /^email not confirmed\.?$/i, message: 'Veuillez confirmer votre adresse e-mail avant de vous connecter.' },
   { pattern: /^user not found\.?$/i, message: 'Aucun compte trouvé avec cette adresse e-mail.' },
   { pattern: /^compte désactivé\.?$/i, message: 'Votre compte est désactivé. Contactez votre auto-école.' },
+  { pattern: /^compte en lecture seule/i, message: null, passthrough: true },
   { pattern: /^non authentifié\.?$/i, message: 'Votre session a expiré. Veuillez vous reconnecter.' },
 ]
 
@@ -140,7 +141,9 @@ export function getUserFacingError(error, context = 'generic') {
   if (isLikelyUserFrenchMessage(raw)) return raw
 
   for (const rule of EXACT_RULES) {
-    if (rule.pattern.test(raw)) return rule.message
+    if (!rule.pattern.test(raw)) continue
+    if (rule.passthrough) return raw
+    return rule.message
   }
 
   for (const rule of CONTAINS_RULES) {

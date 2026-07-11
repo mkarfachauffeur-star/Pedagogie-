@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { assertOrgCanWrite } from '../lib/orgAccess'
 import { listAttachmentsForMessages, uploadAttachment } from './attachments'
 import { listStudentSecretaryContacts } from './directory'
 import { subscribePostgresChanges } from './realtime'
@@ -120,6 +121,7 @@ export async function listMessagesWithReads(conversationId, profileId) {
 }
 
 export async function sendMessage({ conversationId, organizationId, senderId, body }) {
+  await assertOrgCanWrite()
   const messageId = newId()
   const { error } = await supabase.from('messages').insert({
     id: messageId,

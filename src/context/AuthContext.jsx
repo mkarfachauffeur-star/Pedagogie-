@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { computeCanWrite } from '../lib/orgAccess'
 import { supabase } from '../lib/supabase'
 import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
 import { checkIsSuperAdmin } from '../services/platform'
@@ -12,16 +13,6 @@ function resolveRoleFromUser(user) {
   if (!user) return null
   const candidate = user.app_metadata?.role || user.user_metadata?.role || null
   return VALID_ROLES.includes(candidate) ? candidate : null
-}
-
-function computeCanWrite(organization, subscription) {
-  if (!organization) return false
-  if (['suspended', 'cancelled'].includes(organization.status)) return false
-  if (subscription?.status && ['suspended', 'expired', 'cancelled'].includes(subscription.status)) return false
-  if (organization.status === 'trial' && subscription?.trial_ends_at) {
-    if (new Date(subscription.trial_ends_at) < new Date()) return false
-  }
-  return true
 }
 
 export function AuthProvider({ children }) {
@@ -110,6 +101,46 @@ export function AuthProvider({ children }) {
     }
   }, [loadProfile])
 
+  useEffect(() => {
+    const orgId = profile?.organization_id
+    if (!orgId || isSuperAdmin) return undefined
+
+    const refreshOrgState = async () => {
+      const [orgRes, subRes, countRes] = await Promise.all([
+        fetchOrganization(),
+        fetchSubscription(),
+        fetchStudentCount(),
+      ])
+      setOrganization(orgRes.organization)
+      setSubscription(subRes.subscription)
+      setStudentCount(countRes.count)
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshOrgState()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    const channel = supabase
+      .channel(`org-access-${orgId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'organizations', filter: `id=eq.${orgId}` },
+        () => { void refreshOrgState() },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'subscriptions', filter: `organization_id=eq.${orgId}` },
+        () => { void refreshOrgState() },
+      )
+      .subscribe()
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      void supabase.removeChannel(channel)
+    }
+  }, [profile?.organization_id, isSuperAdmin])
+
   const signInWithPassword = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null, mustChangePassword: false }
@@ -181,6 +212,7 @@ export function AuthProvider({ children }) {
     () => computeCanWrite(organization, subscription),
     [organization, subscription],
   )
+  const isReadOnly = Boolean(organization) && !canWrite
 
   const value = useMemo(
     () => ({
@@ -194,6 +226,7 @@ export function AuthProvider({ children }) {
       studentCount,
       isSuperAdmin,
       canWrite,
+      isReadOnly,
       isTrial,
       role,
       mustChangePassword,
@@ -204,7 +237,7 @@ export function AuthProvider({ children }) {
       signOut,
       refreshOrg: loadProfile,
     }),
-    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isTrial, role, mustChangePassword, loading, signInWithPassword, completePasswordChange, signOut, loadProfile],
+    [session, profile, organization, subscription, studentCount, isSuperAdmin, canWrite, isReadOnly, isTrial, role, mustChangePassword, loading, signInWithPassword, completePasswordChange, signOut, loadProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

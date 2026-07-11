@@ -79,6 +79,10 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (!canWrite) {
+      setSubmitError('Compte en lecture seule — consultation et exports autorisés.')
+      return
+    }
     const nextErrors = validateStudentRegistrationForm(form)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
