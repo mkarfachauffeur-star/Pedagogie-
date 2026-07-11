@@ -44,7 +44,7 @@ export function useStudentAccount() {
     if (!fetchedProfile) {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, email, is_active')
+        .select('id, organization_id, role, full_name, email, is_active, access_expires_at')
         .eq('id', userId)
         .maybeSingle()
 
@@ -132,6 +132,15 @@ export function useStudentAccount() {
       return {
         code: 'inactive',
         message: 'Votre compte élève est désactivé.',
+      }
+    }
+    if (
+      profile?.access_expires_at
+      && new Date(profile.access_expires_at) <= new Date()
+    ) {
+      return {
+        code: 'access_expired',
+        message: 'Votre accès Pedagogia Drive a expiré. Contactez votre auto-école pour le réactiver.',
       }
     }
     if (studentError) {

@@ -11,7 +11,16 @@ export const DOCUMENT_OPTIONS = [
   'Résultat ETG (code de la route)',
 ]
 
-export const STATUS_OPTIONS = ['En attente', 'En cours', 'Validé', 'Pièces manquantes', 'Archivé']
+export const STATUS_OPTIONS = [
+  'En attente',
+  'En cours',
+  'Validé',
+  'Pièces manquantes',
+  'En formation',
+  'Examen pratique en attente de résultat',
+  'Permis non obtenu',
+  'Archivé',
+]
 
 export const CODE_STATUS_OPTIONS = ['Non obtenu', 'Obtenu']
 

@@ -97,6 +97,7 @@ export const NAVIGATION = {
       { href: '/secretary/paiements', icon: '\u{1F4B0}', label: 'Paiements' },
       { href: '/secretary/documents', icon: '\u{1F4C1}', label: 'Documents' },
       { href: '/secretary/exams', icon: '\u{1F3AF}', label: 'Examens' },
+      { href: '/secretary/license-results', icon: '\u{1F393}', label: 'Résultat du permis' },
       { href: '/secretary/messages', icon: '\u{1F4AC}', label: 'Messages' },
     ],
   },

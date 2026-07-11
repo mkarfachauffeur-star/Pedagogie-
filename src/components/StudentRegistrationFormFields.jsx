@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import {
-  CODE_STATUS_OPTIONS,
   DOCUMENT_OPTIONS,
   LICENSE_CATEGORY_OPTIONS,
   PACKAGE_OPTIONS,
@@ -157,11 +156,10 @@ export default function StudentRegistrationFormFields({
         <Field label="Heures supplémentaires" error={errors.extraHours} hint="Tarif horaire défini par le gérant dans les forfaits.">
           <input className={inputClass} type="text" inputMode="decimal" value={form.extraHours} onChange={(e) => onChange('extraHours', e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Code de la route">
+        <Field label="Code obtenu">
           <select className={inputClass} value={form.codeStatus} onChange={(e) => onChange('codeStatus', e.target.value)}>
-            {CODE_STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
+            <option value="Non obtenu">Non</option>
+            <option value="Obtenu">Oui</option>
           </select>
         </Field>
         <Field label="Enseignant référent (optionnel)" className="md:col-span-2 xl:col-span-4">

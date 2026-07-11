@@ -34,3 +34,21 @@ export function getPreRegistrationsRoute(role) {
 export function getExpiryReminderRoute(role, expiryKind) {
   return EXPIRY_REMINDER_ROUTE_BY_ROLE[role]?.[expiryKind] || null
 }
+
+const STUDENT_DOSSIER_ROUTE_BY_ROLE = {
+  manager: '/manager/students',
+  secretary: '/secretary/inscriptions',
+}
+
+export function getStudentDossierRoute(role, studentId) {
+  const base = STUDENT_DOSSIER_ROUTE_BY_ROLE[role]
+  if (!base || !studentId) return null
+  return `${base}?student=${encodeURIComponent(studentId)}`
+}
+
+export function getAutomatedReminderRoute(role, reminderKind, studentId) {
+  if (reminderKind === 'code_missing' || reminderKind === 'license_obtained') {
+    return getStudentDossierRoute(role, studentId)
+  }
+  return null
+}

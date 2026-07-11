@@ -80,6 +80,7 @@ import SecretaryVehiclesPage from './pages/app-pages/SecretaryVehiclesPage'
 import SecretaryPaiementsPage from './pages/app-pages/SecretaryPaiementsPage'
 import SecretaryDocumentsPage from './pages/app-pages/SecretaryDocumentsPage'
 import SecretaryExamsPage from './pages/app-pages/SecretaryExamsPage'
+import SecretaryLicenseResultsPage from './pages/app-pages/SecretaryLicenseResultsPage'
 import SecretaryMessagesPage from './pages/app-pages/SecretaryMessagesPage'
 import PreRegistrationsPage from './pages/app-pages/PreRegistrationsPage'
 import SimulatorSessionsPage from './pages/app-pages/SimulatorSessionsPage'
@@ -254,6 +255,10 @@ function App() {
         <Route
           path="/secretary/exams"
           element={withProtectedLayout('secretary', SecretaryExamsPage)}
+        />
+        <Route
+          path="/secretary/license-results"
+          element={withProtectedLayout('secretary', SecretaryLicenseResultsPage)}
         />
         <Route
           path="/secretary/messages"

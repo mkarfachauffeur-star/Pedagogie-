@@ -121,12 +121,24 @@ export function AuthProvider({ children }) {
       else {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('role, is_active')
+          .select('role, is_active, access_expires_at')
           .eq('id', data.user?.id)
           .maybeSingle()
         if (prof && prof.is_active === false) {
           await supabase.auth.signOut()
           return { error: new Error('Compte désactivé.'), role: null, mustChangePassword: false }
+        }
+        if (
+          prof?.role === 'student'
+          && prof.access_expires_at
+          && new Date(prof.access_expires_at) <= new Date()
+        ) {
+          await supabase.auth.signOut()
+          return {
+            error: new Error('Votre accès Pedagogia Drive a expiré. Contactez votre auto-école pour le réactiver.'),
+            role: null,
+            mustChangePassword: false,
+          }
         }
         nextRole = prof?.role ?? resolveRoleFromUser(data.user) ?? null
       }

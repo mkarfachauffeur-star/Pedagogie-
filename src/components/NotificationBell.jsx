@@ -2,7 +2,13 @@ import { Bell } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getExpiryReminderRoute, getMessagesRoute, getPreRegistrationsRoute } from '../lib/messagesRoutes'
+import {
+  getAutomatedReminderRoute,
+  getExpiryReminderRoute,
+  getMessagesRoute,
+  getPreRegistrationsRoute,
+  getStudentDossierRoute,
+} from '../lib/messagesRoutes'
 import {
   getNotificationPreview,
   getNotificationTitle,
@@ -27,6 +33,13 @@ const formatWhen = (iso) => {
   } catch {
     return ''
   }
+}
+
+function unreadIndicatorClass(notification) {
+  if (notification.notification_type === 'automated_reminder') {
+    return 'bg-red-500'
+  }
+  return 'bg-blue-600'
 }
 
 export default function NotificationBell({ role, unreadCount }) {
@@ -84,13 +97,17 @@ export default function NotificationBell({ role, unreadCount }) {
     }
   }, [open])
 
-  const openNotification = async (notification) => {
+  const markRead = async (notification) => {
     if (!notification?.is_read) {
       await markNotificationRead(notification.id)
       setItems((current) =>
         current.map((item) => (item.id === notification.id ? { ...item, is_read: true } : item)),
       )
     }
+  }
+
+  const openNotification = async (notification) => {
+    await markRead(notification)
     setOpen(false)
 
     if (notification.notification_type === 'pre_registration') {
@@ -119,8 +136,40 @@ export default function NotificationBell({ role, unreadCount }) {
       }
     }
 
+    if (notification.notification_type === 'automated_reminder') {
+      const route = getAutomatedReminderRoute(role, notification.reminder_kind, notification.student_id)
+      if (route) {
+        navigate(route)
+        return
+      }
+    }
+
+    if (notification.notification_type === 'license_obtained') {
+      const route = getStudentDossierRoute(role, notification.student_id)
+        || getAutomatedReminderRoute(role, notification.reminder_kind, notification.student_id)
+      if (route) {
+        navigate(route)
+        return
+      }
+    }
+
+    if (notification.notification_type === 'access_expiring' && role === 'student') {
+      navigate('/student/dashboard')
+      return
+    }
+
     if (!messagesRoute || !notification?.conversation_id) return
     navigate(messagesRoute, { state: { conversationId: notification.conversation_id } })
+  }
+
+  const openStudentDossier = async (event, notification) => {
+    event.stopPropagation()
+    const route = getStudentDossierRoute(role, notification.student_id)
+      || getAutomatedReminderRoute(role, notification.reminder_kind, notification.student_id)
+    if (!route) return
+    await markRead(notification)
+    setOpen(false)
+    navigate(route)
   }
 
   const openMessages = () => {
@@ -192,34 +241,58 @@ export default function NotificationBell({ role, unreadCount }) {
                 {items.map((item) => {
                   const senderName = getNotificationTitle(item)
                   const unread = !item.is_read
+                  const showDossierAction = (
+                    (item.notification_type === 'automated_reminder' || item.notification_type === 'license_obtained')
+                    && item.student_id
+                  )
                   return (
                     <li key={item.id}>
-                      <button
-                        type="button"
+                      <div
                         role="menuitem"
-                        onClick={() => openNotification(item)}
-                        className={`flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-blue-50/80 ${
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            openNotification(item)
+                          }
+                        }}
+                        className={`flex w-full flex-col gap-2 px-4 py-3 text-left transition hover:bg-blue-50/80 ${
                           unread ? 'bg-blue-50/40' : ''
                         }`}
                       >
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-2">
-                            {unread && (
-                              <span
-                                aria-hidden
-                                className="h-2 w-2 shrink-0 rounded-full bg-blue-600"
-                              />
-                            )}
-                            <span className={`truncate text-sm ${unread ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'}`}>
-                              {senderName}
+                        <button
+                          type="button"
+                          onClick={() => openNotification(item)}
+                          className="flex w-full flex-col gap-2 text-left"
+                        >
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="flex min-w-0 items-center gap-2">
+                              {unread && (
+                                <span
+                                  aria-hidden
+                                  className={`h-2 w-2 shrink-0 rounded-full ${unreadIndicatorClass(item)}`}
+                                />
+                              )}
+                              <span className={`truncate text-sm ${unread ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'}`}>
+                                {senderName}
+                              </span>
                             </span>
+                            <span className="shrink-0 text-[11px] text-slate-400">{formatWhen(item.created_at)}</span>
                           </span>
-                          <span className="shrink-0 text-[11px] text-slate-400">{formatWhen(item.created_at)}</span>
-                        </span>
-                        <span className={`line-clamp-2 text-sm ${unread ? 'text-slate-600' : 'text-slate-500'}`}>
-                          {getNotificationPreview(item)}
-                        </span>
-                      </button>
+                          <span className={`line-clamp-3 text-sm ${unread ? 'text-slate-600' : 'text-slate-500'}`}>
+                            {getNotificationPreview(item)}
+                          </span>
+                        </button>
+                        {showDossierAction && (
+                          <button
+                            type="button"
+                            onClick={(event) => openStudentDossier(event, item)}
+                            className="inline-flex w-fit items-center gap-1 rounded-xl bg-navy-950 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-cyan-700"
+                          >
+                            ➡️ Ouvrir le dossier élève
+                          </button>
+                        )}
+                      </div>
                     </li>
                   )
                 })}

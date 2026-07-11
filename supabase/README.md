@@ -90,6 +90,9 @@ Realtime. Aucune logique de sécurité côté client → cohérence web + mobile
 | `create-student` | Création dossier élève + compte Auth |
 | `manage-user` | `reset_password`, `resend_invite`, `disable`, `enable`, `delete`, `change_email` |
 | `register-organization` | Inscription nouvelle auto-école |
+| `check-expiration-reminders` | Alertes J-15 (autorisations, CT véhicules) |
+| `check-automated-reminders` | Rappels hebdomadaires (code de la route, extensible) |
+| `check-student-access-expiry` | Alerte J-15 et désactivation compte élève à J+365 |
 
 ```bash
 # Depuis la racine du projet, avec Supabase CLI connecté au projet
@@ -97,7 +100,12 @@ supabase functions deploy invite-user
 supabase functions deploy create-student
 supabase functions deploy manage-user
 supabase functions deploy register-organization
+supabase functions deploy check-expiration-reminders
+supabase functions deploy check-automated-reminders
+supabase functions deploy check-student-access-expiry
 ```
+
+Planification cron : voir [docs/automated-reminders.md](../docs/automated-reminders.md).
 
 Variables d'environnement requises côté Edge Functions :
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (injectées automatiquement)

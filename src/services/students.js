@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 import { subscribePostgresChanges } from './realtime'
+import { allowsActiveBookings } from '../lib/studentJourney'
 
 const STUDENT_SELECT_FIELDS = `
   id,
@@ -18,7 +19,12 @@ const STUDENT_SELECT_FIELDS = `
   formation_type,
   status,
   registration_date,
-  profile_id
+  profile_id,
+  code_status,
+  license_result,
+  license_obtained_at,
+  archived_at,
+  is_archived
 `
 
 function mergeStudentsWithAssignments(students, assignments, teacherProfilesById) {
@@ -129,6 +135,10 @@ export async function listStudents({ teacherId = null } = {}) {
   } catch (error) {
     return { students: [], error, teacherProfile: null }
   }
+}
+
+export function filterBookableStudents(students = []) {
+  return students.filter(allowsActiveBookings)
 }
 
 export async function listOrganizationTeachers() {

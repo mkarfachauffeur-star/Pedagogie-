@@ -73,8 +73,18 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'enable') {
-      await admin.from('profiles').update({ is_active: true }).eq('id', userId)
-      return json({ ok: true, message: 'Compte réactivé.' })
+      const updates: Record<string, unknown> = { is_active: true }
+      if (targetProfile.role === 'student') {
+        updates.access_expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        updates.access_expiry_warned_at = null
+      }
+      await admin.from('profiles').update(updates).eq('id', userId)
+      return json({
+        ok: true,
+        message: targetProfile.role === 'student'
+          ? 'Compte élève réactivé pour 365 jours.'
+          : 'Compte réactivé.',
+      })
     }
 
     if (action === 'delete') {

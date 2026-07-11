@@ -12,7 +12,7 @@ import {
   subscribeToExams,
   updateExam,
 } from '../../services/exams'
-import { listOrganizationTeachers, listStudents } from '../../services/students'
+import { filterBookableStudents, listOrganizationTeachers, listStudents } from '../../services/students'
 
 const TIME_SLOTS = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -58,6 +58,7 @@ export default function SecretaryExamsPage() {
   const [form, setForm] = useState(emptyForm())
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
+  const [statusFeedback, setStatusFeedback] = useState(null)
 
   const refresh = useCallback(async () => {
     if (!profileId) {
@@ -75,7 +76,7 @@ export default function SecretaryExamsPage() {
       setLoadError('Impossible de charger les examens.')
     }
     setExams(examsRes.exams || [])
-    setStudents(studentsRes.students || [])
+    setStudents(filterBookableStudents(studentsRes.students || []))
     setTeachers(teachersRows || [])
     setLoading(false)
   }, [profileId])
@@ -186,6 +187,7 @@ export default function SecretaryExamsPage() {
     if (error) return
     if (exam) {
       setExams((current) => current.map((row) => (row.id === examId ? exam : row)))
+      setStatusFeedback({ examId, status: exam.status })
     }
   }
 
@@ -248,7 +250,7 @@ export default function SecretaryExamsPage() {
               <EmptyState title="Aucun examen planifié" message="Planifiez une session pour un élève de votre auto-école." icon="🎫" />
             ) : (
               exams.map((exam) => (
-                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-300 bg-slate-50'}`} key={exam.id} onClick={() => { setSelectedId(exam.id); openEdit(exam) }} type="button">
+                <button className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${selectedId === exam.id ? 'border-cyan-300 bg-cyan-50' : 'border-slate-300 bg-slate-50'}`} key={exam.id} onClick={() => { setSelectedId(exam.id); setStatusFeedback(null); openEdit(exam) }} type="button">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <h3 className="font-extrabold text-slate-950">{exam.studentName}</h3>
@@ -272,16 +274,32 @@ export default function SecretaryExamsPage() {
               <Info label="Enseignant" value={selectedExam.teacherName} />
               <Info label="Statut" value={selectedExam.status} />
             </div>
+            {selectedExam.status === 'Confirmé' && (
+              <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                Examen confirmé et enregistré.
+              </p>
+            )}
+            {statusFeedback?.examId === selectedExam.id && statusFeedback.status !== 'Confirmé' && (
+              <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                {statusSavedMessage(statusFeedback.status)}
+              </p>
+            )}
             <div className="mt-5 grid gap-2">
-              <button className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => updateStatus(selectedExam.id, 'Confirmé')} type="button">
-                Confirmer
-              </button>
-              <button className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-extrabold text-amber-700 transition hover:bg-amber-100" onClick={() => updateStatus(selectedExam.id, 'À confirmer')} type="button">
-                Mettre en attente
-              </button>
-              <button className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100" onClick={() => updateStatus(selectedExam.id, 'Dossier incomplet')} type="button">
-                Dossier incomplet
-              </button>
+              {selectedExam.status !== 'Confirmé' && (
+                <button className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => updateStatus(selectedExam.id, 'Confirmé')} type="button">
+                  Confirmer
+                </button>
+              )}
+              {selectedExam.status !== 'À confirmer' && (
+                <button className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-extrabold text-amber-700 transition hover:bg-amber-100" onClick={() => updateStatus(selectedExam.id, 'À confirmer')} type="button">
+                  Mettre en attente
+                </button>
+              )}
+              {selectedExam.status !== 'Dossier incomplet' && (
+                <button className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100" onClick={() => updateStatus(selectedExam.id, 'Dossier incomplet')} type="button">
+                  Dossier incomplet
+                </button>
+              )}
               <button className="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-rose-500" onClick={() => removeExam(selectedExam.id)} type="button">
                 Supprimer
               </button>
@@ -340,6 +358,12 @@ export default function SecretaryExamsPage() {
       </AppModal>
     </div>
   )
+}
+
+function statusSavedMessage(status) {
+  if (status === 'À confirmer') return 'Examen mis en attente et enregistré.'
+  if (status === 'Dossier incomplet') return 'Dossier incomplet enregistré.'
+  return 'Statut enregistré.'
 }
 
 function Kpi({ label, tone = 'cyan', value }) {

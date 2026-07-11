@@ -3,14 +3,9 @@ import { formatPersonName } from '../lib/staffAccounts'
 import { formatDateFr, formatEur, studentLabel } from './finance'
 import { listAppointments } from './appointments'
 import { fetchProfitabilityDashboard } from './profitability'
+import { ACTIVE_STUDENT_STATUSES } from '../lib/studentJourney'
 
-const ACTIVE_STATUSES = new Set([
-  'En cours',
-  'En formation',
-  'Validé',
-  'En attente',
-  'Pièces manquantes',
-])
+const ACTIVE_STATUSES = ACTIVE_STUDENT_STATUSES
 
 function localTodayIso() {
   const now = new Date()

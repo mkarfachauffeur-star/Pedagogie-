@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddStudentModal from '../../components/AddStudentModal'
 import EmptyState from '../../components/ui/EmptyState'
 import ListSearchField from '../../components/ui/ListSearchField'
@@ -12,6 +12,12 @@ import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../..
 import { listStudents, resendStudentAccessEmail, subscribeStudents } from '../../services/students'
 import { getUserFacingError } from '../../lib/userFacingError'
 import StudentCharterStatusBadge from '../../components/students/StudentCharterStatusBadge'
+import {
+  isArchivedStudent,
+  LICENSE_RESULT,
+  statusBadgeClass,
+} from '../../lib/studentJourney'
+import { reactivateStudentAccess } from '../../services/studentJourney'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -36,8 +42,23 @@ export default function AdminStudentsPage() {
   const [loadError, setLoadError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewTab, setViewTab] = useState('active')
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
+
+  const filteredStudents = useMemo(() => {
+    if (viewTab === 'archived') {
+      return students.filter(isArchivedStudent)
+    }
+    return students.filter((student) => !isArchivedStudent(student))
+  }, [students, viewTab])
+
+  const archivedCount = useMemo(
+    () => students.filter(isArchivedStudent).length,
+    [students],
+  )
+
+  const activeCount = students.length - archivedCount
 
   const {
     page,
@@ -46,7 +67,7 @@ export default function AdminStudentsPage() {
     totalItems,
     pageItems,
     pageSize,
-  } = useClientPagination(students, {
+  } = useClientPagination(filteredStudents, {
     pageSize: 8,
     query: searchQuery,
     filterFn: matchStudentSearch,
@@ -85,6 +106,10 @@ export default function AdminStudentsPage() {
     if (params.get('new') === '1') setModalOpen(true)
   }, [])
 
+  useEffect(() => {
+    setPage(1)
+  }, [viewTab, setPage])
+
   const runResendAccess = async (student) => {
     if (!canWrite || !student.profile_id || !student.email) return
     const name = formatPersonName(student)
@@ -104,6 +129,25 @@ export default function AdminStudentsPage() {
       type: emailSent ? 'ok' : 'warn',
       text: message || 'Accès renvoyé.',
     })
+  }
+
+  const runReactivateAccess = async (student) => {
+    if (!canWrite || !student.profile_id) return
+    const name = formatPersonName(student)
+    if (!window.confirm(`Réactiver l'accès Pedagogia Drive de ${name} pour 365 jours ?`)) return
+
+    setActionBusy(student.id)
+    setFeedback(null)
+    const { error } = await reactivateStudentAccess(student.id)
+    setActionBusy(null)
+
+    if (error) {
+      setFeedback({ type: 'error', text: getUserFacingError(error, 'save') })
+      return
+    }
+
+    setFeedback({ type: 'ok', text: `Accès de ${name} réactivé pour 365 jours.` })
+    refresh()
   }
 
   return (
@@ -146,8 +190,40 @@ export default function AdminStudentsPage() {
           <EmptyState title="Erreur de chargement" message={loadError} icon="⚠️" />
         ) : students.length === 0 ? (
           <EmptyState title="Aucun élève enregistré" message="Ajoutez votre premier élève pour créer son compte et son dossier." icon="🎓" />
+        ) : filteredStudents.length === 0 ? (
+          <EmptyState
+            title={viewTab === 'archived' ? 'Aucun dossier archivé' : 'Aucun dossier actif'}
+            message={viewTab === 'archived'
+              ? 'Les dossiers archivés apparaissent ici après l\'obtention du permis.'
+              : 'Tous les élèves sont dans les dossiers archivés.'}
+            icon="🎓"
+          />
         ) : (
           <>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setViewTab('active')}
+                className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${
+                  viewTab === 'active'
+                    ? 'bg-navy-950 text-white'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Dossiers actifs ({activeCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewTab('archived')}
+                className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${
+                  viewTab === 'archived'
+                    ? 'bg-emerald-700 text-white'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Dossiers archivés ({archivedCount})
+              </button>
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <ListSearchField onChange={setSearchQuery} value={searchQuery} />
               <p className="text-xs font-semibold text-slate-500">{totalItems} élève(s)</p>
@@ -201,14 +277,24 @@ export default function AdminStudentsPage() {
                         {getTrackLabel(track)}
                       </span>
                       <StudentCharterStatusBadge studentId={student.id} />
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                      {student.license_result === LICENSE_RESULT.OBTAINED && (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                          ✅ Permis obtenu
+                        </span>
+                      )}
+                      <span className={`rounded-full px-3 py-1 text-xs font-black ${statusBadgeClass(student.status, student.license_result)}`}>
                         {student.status || 'En attente'}
                       </span>
+                      {student.license_obtained_at && (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                          Obtenu le {formatDateFr(student.license_obtained_at)}
+                        </span>
+                      )}
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
                         Inscrit le {formatDateFr(student.registration_date)}
                       </span>
                     </div>
-                    {canWrite && student.profile_id && student.email && (
+                    {canWrite && student.profile_id && student.email && !isArchivedStudent(student) && (
                       <button
                         type="button"
                         className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 disabled:opacity-50"
@@ -217,6 +303,21 @@ export default function AdminStudentsPage() {
                       >
                         {actionBusy === student.id ? 'Envoi…' : 'Renvoyer l\'accès par e-mail'}
                       </button>
+                    )}
+                    {canWrite && isArchivedStudent(student) && student.profile_id && (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-50"
+                        disabled={actionBusy === student.id}
+                        onClick={() => runReactivateAccess(student)}
+                      >
+                        {actionBusy === student.id ? 'Réactivation…' : 'Réactiver l\'accès élève (365 j)'}
+                      </button>
+                    )}
+                    {isArchivedStudent(student) && (
+                      <p className="text-xs font-medium text-slate-500">
+                        Dossier en lecture seule — formation terminée
+                      </p>
                     )}
                   </div>
                 </div>

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AddStudentModal from '../../components/AddStudentModal'
 import EmptyState from '../../components/ui/EmptyState'
 import ListSearchField from '../../components/ui/ListSearchField'
@@ -9,6 +10,11 @@ import { listStudents, subscribeStudents } from '../../services/students'
 import { contractsMap, getStudentSummary } from '../../services/finance'
 import { supabase } from '../../lib/supabase'
 import { formatPersonName } from '../../lib/staffAccounts'
+import {
+  isArchivedStudent,
+  LICENSE_RESULT,
+  statusBadgeClass,
+} from '../../lib/studentJourney'
 
 function formatDateFr(value) {
   if (!value) return ''
@@ -21,6 +27,9 @@ function formatDateFr(value) {
 
 export default function SecretaryInscriptionsPage() {
   const { profileId } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const highlightStudentId = searchParams.get('student')
+  const highlightedRef = useRef(null)
   const [students, setStudents] = useState([])
   const [contracts, setContracts] = useState([])
   const [payments, setPayments] = useState([])
@@ -28,6 +37,21 @@ export default function SecretaryInscriptionsPage() {
   const [loadError, setLoadError] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewTab, setViewTab] = useState('active')
+
+  const filteredStudents = useMemo(() => {
+    if (viewTab === 'archived') {
+      return students.filter(isArchivedStudent)
+    }
+    return students.filter((student) => !isArchivedStudent(student))
+  }, [students, viewTab])
+
+  const archivedCount = useMemo(
+    () => students.filter(isArchivedStudent).length,
+    [students],
+  )
+
+  const activeCount = students.length - archivedCount
 
   const {
     page,
@@ -36,7 +60,7 @@ export default function SecretaryInscriptionsPage() {
     totalItems,
     pageItems,
     pageSize,
-  } = useClientPagination(students, {
+  } = useClientPagination(filteredStudents, {
     pageSize: 8,
     query: searchQuery,
     filterFn: matchStudentSearch,
@@ -89,6 +113,38 @@ export default function SecretaryInscriptionsPage() {
 
   const contractTotals = useMemo(() => contractsMap(contracts), [contracts])
 
+  const highlightedStudent = useMemo(
+    () => students.find((student) => student.id === highlightStudentId) || null,
+    [students, highlightStudentId],
+  )
+
+  useEffect(() => {
+    setPage(1)
+  }, [viewTab, setPage])
+
+  useEffect(() => {
+    if (!highlightStudentId || !students.length) return
+    const highlighted = students.find((student) => student.id === highlightStudentId)
+    if (highlighted && isArchivedStudent(highlighted)) {
+      setViewTab('archived')
+    }
+    const index = filteredStudents.findIndex((student) => student.id === highlightStudentId)
+    if (index >= 0) {
+      setPage(Math.floor(index / 8) + 1)
+    }
+  }, [highlightStudentId, students, filteredStudents, setPage])
+
+  useEffect(() => {
+    if (!highlightStudentId || !highlightedRef.current) return
+    highlightedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [highlightStudentId, page, students.length])
+
+  const clearHighlightedStudent = () => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('student')
+    setSearchParams(next, { replace: true })
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
@@ -116,6 +172,27 @@ export default function SecretaryInscriptionsPage() {
         </div>
       </section>
 
+      {highlightedStudent && (
+        <section className="rounded-[1.5rem] border-2 border-red-200 bg-red-50 p-4 shadow-[var(--shadow-soft)]">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-red-700">Rappel — dossier à suivre</p>
+              <h2 className="mt-1 text-xl font-extrabold text-slate-950">{formatPersonName(highlightedStudent)}</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Code de la route : {highlightedStudent.code_status === 'Obtenu' ? 'obtenu' : 'non obtenu'}
+              </p>
+            </div>
+            <button
+              className="rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-100"
+              onClick={clearHighlightedStudent}
+              type="button"
+            >
+              Fermer
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="rounded-[2rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-card)]">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -124,6 +201,30 @@ export default function SecretaryInscriptionsPage() {
               Chaque inscription enregistrée apparaît immédiatement ici.
             </p>
           </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setViewTab('active')}
+            className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${
+              viewTab === 'active'
+                ? 'bg-navy-950 text-white'
+                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            Dossiers actifs ({activeCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewTab('archived')}
+            className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${
+              viewTab === 'archived'
+                ? 'bg-emerald-700 text-white'
+                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            Dossiers archivés ({archivedCount})
+          </button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <ListSearchField onChange={setSearchQuery} value={searchQuery} />
@@ -140,13 +241,30 @@ export default function SecretaryInscriptionsPage() {
             <EmptyState title="Erreur de chargement" message={loadError} icon="⚠️" />
           ) : students.length === 0 ? (
             <EmptyState title="Aucun dossier disponible" message="Créez une nouvelle inscription pour commencer." icon="🗂️" />
+          ) : filteredStudents.length === 0 ? (
+            <EmptyState
+              title={viewTab === 'archived' ? 'Aucun dossier archivé' : 'Aucun dossier actif'}
+              message={viewTab === 'archived'
+                ? 'Les dossiers archivés apparaissent ici après l\'obtention du permis.'
+                : 'Créez une nouvelle inscription pour commencer.'}
+              icon="🗂️"
+            />
           ) : pageItems.length === 0 ? (
             <EmptyState title="Aucun résultat" message="Aucun dossier ne correspond à votre recherche." icon="🔍" />
           ) : (
             pageItems.map((student) => {
               const summary = getStudentSummary(student.id, payments, contractTotals)
+              const isHighlighted = student.id === highlightStudentId
               return (
-                <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={student.id}>
+                <article
+                  className={`rounded-2xl border-2 p-4 ${
+                    isHighlighted
+                      ? 'border-red-300 bg-red-50/70 shadow-md ring-2 ring-red-200'
+                      : 'border-slate-300 bg-slate-50'
+                  }`}
+                  key={student.id}
+                  ref={isHighlighted ? highlightedRef : null}
+                >
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <h3 className="font-extrabold text-slate-950">
@@ -170,9 +288,19 @@ export default function SecretaryInscriptionsPage() {
                       >
                         Code {student.code_status === 'Obtenu' ? 'obtenu' : 'non obtenu'}
                       </span>
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                      {student.license_result === LICENSE_RESULT.OBTAINED && (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                          ✅ Permis obtenu
+                        </span>
+                      )}
+                      <span className={`rounded-full px-3 py-1 text-xs font-black ${statusBadgeClass(student.status, student.license_result)}`}>
                         {student.status || 'En attente'}
                       </span>
+                      {student.license_obtained_at && (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                          Obtenu le {formatDateFr(student.license_obtained_at)}
+                        </span>
+                      )}
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
                         Reste {summary.remaining.toFixed(0)} €
                       </span>
@@ -188,7 +316,7 @@ export default function SecretaryInscriptionsPage() {
             })
           )}
         </div>
-        {!loading && students.length > 0 && (
+        {!loading && filteredStudents.length > 0 && (
           <PaginationBar
             className="mt-4"
             onPageChange={setPage}
