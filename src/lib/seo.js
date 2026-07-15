@@ -1,4 +1,4 @@
-import { MARKETING_FAQ } from './marketingContent'
+import { LIVRET_SEO_FAQ, MARKETING_FAQ } from './marketingContent'
 
 export const SITE_URL = 'https://www.pedagogia-drive.fr'
 export const SITE_NAME = 'Pedagogia Drive'
@@ -11,16 +11,33 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
 export const OG_IMAGE_WIDTH = 1200
 export const OG_IMAGE_HEIGHT = 630
 export const DEFAULT_OG_IMAGE_ALT =
-  'Pedagogia Drive — logiciel tout-en-un pour auto-écoles'
+  'Pedagogia Drive — livret numérique auto-école et livret pédagogique numérique REMC'
 export const CONTACT_EMAIL = 'contact@pedagogia-drive.fr'
 
-export const SEO_KEYWORDS =
-  'logiciel auto école, SaaS auto école, livret numérique, REMC, suivi pédagogique, gestion élèves, messagerie auto école, planning auto école'
+/** Requêtes cibles + variantes sans accent et expressions proches. */
+export const SEO_TARGET_KEYWORDS = [
+  'livret numérique auto-école',
+  'livret pédagogique d\'apprentissage auto-école',
+  'livret pedagogique numerique auto ecole',
+  'livret pédagogique numérique auto-école',
+]
+
+export const SEO_KEYWORDS = [
+  ...SEO_TARGET_KEYWORDS,
+  'logiciel auto école',
+  'SaaS auto école',
+  'livret numérique REMC',
+  'suivi pédagogique auto-école',
+  'QCM auto-école',
+  'gestion élèves auto-école',
+  'messagerie auto école',
+  'planning auto école',
+].join(', ')
 
 export const SEO_DEFAULT_TITLE =
-  'Pedagogia Drive | Logiciel tout-en-un pour auto-écoles — Bêta privée'
+  'Livret numérique auto-école | Pedagogia Drive — REMC & QCM'
 export const SEO_DEFAULT_DESCRIPTION =
-  'Gérez vos élèves, enseignants, livrets pédagogiques, documents, messagerie et suivi REMC depuis une seule plateforme. Demandez une démonstration gratuite — essai 30 jours.'
+  'Livret numérique auto-école et livret pédagogique d\'apprentissage conforme REMC : QCM, suivi des élèves, messagerie et gestion d\'équipe. Essai gratuit 30 jours.'
 
 export const SEO_PAGES = {
   home: {
@@ -33,7 +50,7 @@ export const SEO_PAGES = {
     path: '/login',
     title: 'Connexion | Pedagogia Drive — Livret numérique auto-école',
     description:
-      'Connectez-vous à Pedagogia Drive, le livret numérique pour auto-écoles : QCM REMC, suivi pédagogique, messagerie et gestion des élèves, enseignants et secrétariat.',
+      'Connectez-vous à Pedagogia Drive, votre livret numérique auto-école et livret pédagogique d\'apprentissage : QCM REMC, suivi pédagogique et messagerie.',
     ogType: 'website',
   },
   contact: {
@@ -91,6 +108,14 @@ export const SEO_PAGES = {
     description:
       'Blog Pedagogia Drive : guides SEO pour gérants d\'auto-école sur le livret numérique, le REMC, le suivi pédagogique, les QCM et la digitalisation.',
     ogType: 'website',
+  },
+  livretNumerique: {
+    path: '/livret-numerique-auto-ecole',
+    title: 'Livret numérique auto-école | Livret pédagogique d\'apprentissage — Pedagogia Drive',
+    description:
+      'Découvrez le livret pédagogique numérique auto-école Pedagogia Drive : suivi REMC, QCM intégrés, espace élève et moniteur. Remplacez le livret papier par un livret numérique conforme.',
+    ogType: 'website',
+    keywords: SEO_KEYWORDS,
   },
 }
 
@@ -159,7 +184,11 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
         name: 'France',
       },
       description:
-        'Pedagogia Drive édite un livret numérique et un logiciel SaaS auto-école pour le suivi pédagogique REMC.',
+        'Pedagogia Drive édite un livret numérique auto-école et un livret pédagogique d\'apprentissage conforme REMC pour les auto-écoles.',
+      alternateName: [
+        'Livret pédagogique numérique auto-école',
+        'Livret pédagogique d\'apprentissage auto-école',
+      ],
     },
     {
       '@type': 'WebSite',
@@ -190,12 +219,21 @@ export function buildHomeJsonLd(faqItems = MARKETING_FAQ) {
     {
       '@type': 'SoftwareApplication',
       '@id': softwareId,
-      name: SITE_NAME,
+      name: `${SITE_NAME} — Livret numérique auto-école`,
+      alternateName: SEO_TARGET_KEYWORDS,
       applicationCategory: 'EducationalApplication',
       operatingSystem: 'Web',
       url: SITE_URL,
       inLanguage: 'fr-FR',
       description,
+      keywords: SEO_TARGET_KEYWORDS.join(', '),
+      featureList: [
+        'Livret pédagogique numérique conforme REMC',
+        'QCM et QCU intégrés',
+        'Suivi des compétences et sous-compétences',
+        'Espace élève et moniteur',
+        'Messagerie interne auto-école',
+      ],
       offers: {
         '@type': 'Offer',
         priceCurrency: 'EUR',
@@ -252,6 +290,7 @@ export function breadcrumbsForPage(pageKey) {
     cgv: { name: 'CGV', path: '/cgv' },
     cookies: { name: 'Politique de cookies', path: '/cookies' },
     blog: { name: 'Blog', path: '/blog' },
+    livretNumerique: { name: 'Livret numérique auto-école', path: '/livret-numerique-auto-ecole' },
   }
 
   const current = labels[pageKey]
@@ -265,6 +304,36 @@ export function breadcrumbsForBlogArticle(article) {
     { name: 'Blog', path: '/blog' },
     { name: article.title, path: `/blog/${article.slug}` },
   ]
+}
+
+export function buildLivretNumeriqueJsonLd(faqItems = LIVRET_SEO_FAQ) {
+  const page = SEO_PAGES.livretNumerique
+  const breadcrumbs = breadcrumbListNode(breadcrumbsForPage('livretNumerique'))
+  const graph = [
+    {
+      '@type': 'WebPage',
+      '@id': `${canonicalUrl(page.path)}#webpage`,
+      url: canonicalUrl(page.path),
+      name: page.title,
+      description: page.description,
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      inLanguage: 'fr-FR',
+      about: {
+        '@type': 'SoftwareApplication',
+        name: 'Pedagogia Drive — Livret numérique auto-école',
+        applicationCategory: 'EducationalApplication',
+        operatingSystem: 'Web',
+        keywords: SEO_TARGET_KEYWORDS.join(', '),
+      },
+    },
+    ...(breadcrumbs ? [breadcrumbs] : []),
+    ...(faqItems.length ? [buildFaqJsonLd(faqItems)] : []),
+  ]
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': graph,
+  }
 }
 
 export function buildBlogListJsonLd() {

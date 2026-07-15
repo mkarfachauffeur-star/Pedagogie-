@@ -3,6 +3,7 @@ import BrandLogo from '../BrandLogo'
 import { LEGAL_ENTITY } from '../../config/legal'
 
 const LEGAL_LINKS = [
+  { label: 'Livret numérique auto-école', to: '/livret-numerique-auto-ecole' },
   { label: 'Mentions légales', to: '/mentions-legales' },
   { label: 'Politique de confidentialité', to: '/politique-confidentialite' },
   { label: 'CGU', to: '/cgu' },

@@ -12,11 +12,11 @@ import {
 } from 'lucide-react'
 
 export const LANDING_HERO = {
-  title: 'Le logiciel tout-en-un nouvelle génération pour les auto-écoles.',
+  title: 'Livret numérique auto-école : la plateforme tout-en-un pour votre équipe pédagogique',
   subtitle:
-    'Gérez vos élèves, enseignants, livrets pédagogiques, documents, messagerie et suivi pédagogique depuis une seule plateforme.',
+    'Pedagogia Drive est un livret pédagogique d\'apprentissage auto-école et un livret pédagogique numérique conforme REMC : élèves, enseignants, QCM, documents et messagerie sur une seule plateforme.',
   primaryCta: 'Demander une démonstration gratuite',
-  secondaryCta: 'Découvrir les fonctionnalités',
+  secondaryCta: 'Découvrir le livret numérique',
 }
 
 export const LANDING_FEATURES = [
@@ -32,7 +32,7 @@ export const LANDING_FEATURES = [
   },
   {
     title: 'Livret pédagogique numérique',
-    description: 'Leçons, QCM et contenus interactifs accessibles entre les séances.',
+    description: 'Livret numérique auto-école conforme REMC : leçons, QCM et progression accessible entre les séances.',
     icon: BookOpen,
   },
   {
@@ -112,6 +112,21 @@ export const LANDING_WHY = [
 
 export const MARKETING_FAQ = [
   {
+    question: 'Qu\'est-ce qu\'un livret numérique auto-école ?',
+    answer:
+      'Un livret numérique auto-école est la version digitale du livret pédagogique d\'apprentissage : il centralise le suivi REMC, les compétences validées, les QCM et la progression de chaque élève, accessible en ligne par les moniteurs et les candidats au permis.',
+  },
+  {
+    question: 'Pedagogia Drive remplace-t-il le livret papier ?',
+    answer:
+      'Oui. Pedagogia Drive est un livret pédagogique numérique auto-école qui remplace le livret papier tout en respectant le référentiel REMC : traçabilité, commentaires des moniteurs et historique des séances.',
+  },
+  {
+    question: 'Le livret pédagogique d\'apprentissage est-il conforme au REMC ?',
+    answer:
+      'Oui. Le livret pédagogique d\'apprentissage auto-école Pedagogia Drive structure le parcours autour des compétences et sous-compétences officielles, avec validations, QCM et suivi pédagogique en temps réel.',
+  },
+  {
     question: 'Comment fonctionne l\'essai gratuit ?',
     answer:
       'Après votre demande de démonstration, nous créons votre espace pilote. Vous bénéficiez de 30 jours d\'essai gratuit avec l\'ensemble des fonctionnalités essentielles, accompagné par notre équipe.',
@@ -160,6 +175,63 @@ export const MARKETING_FAQ = [
 
 /** FAQ réduite sur la page d'accueil. */
 export const LANDING_FAQ_HOME = MARKETING_FAQ.slice(0, 5)
+
+/** Contenu SEO — page dédiée livret numérique. */
+export const LIVRET_SEO_SECTIONS = [
+  {
+    id: 'definition',
+    title: 'Qu\'est-ce qu\'un livret numérique auto-école ?',
+    paragraphs: [
+      'Le livret numérique auto-école est l\'équivalent digital du livret pédagogique d\'apprentissage utilisé en formation à la conduite. Il regroupe les compétences REMC, les évaluations des moniteurs, les QCM et la progression de chaque élève dans un espace en ligne sécurisé.',
+      'Contrairement au livret papier, le livret pédagogique numérique auto-école se met à jour en temps réel, se partage entre enseignants et reste consultable par l\'élève entre deux leçons — sur ordinateur, tablette ou smartphone.',
+    ],
+  },
+  {
+    id: 'remc',
+    title: 'Un livret pédagogique d\'apprentissage auto-école conforme REMC',
+    paragraphs: [
+      'Pedagogia Drive aligne chaque séance sur le Référentiel pour l\'Éducation à une Mobilité Citoyenne (REMC). Les moniteurs valident les sous-compétences depuis la voiture ou le bureau ; la direction visualise l\'avancement par élève, par promotion ou par enseignant.',
+      'Ce livret pédagogique d\'apprentissage auto-école garantit une traçabilité complète : dates, commentaires, niveaux d\'acquisition — utile pour les contrôles, les examens et la relation de confiance avec les familles.',
+    ],
+  },
+  {
+    id: 'fonctionnalites',
+    title: 'Fonctionnalités du livret pédagogique numérique',
+    bullets: [
+      'Arborescence REMC intégrée (compétences C1 à C4)',
+      'QCM et QCU pédagogiques liés aux leçons',
+      'Espace personnel élève : progression, lexique, messages',
+      'Comptes moniteurs et secrétariat synchronisés',
+      'Aucune installation : 100 % navigateur web',
+    ],
+  },
+  {
+    id: 'pourquoi',
+    title: 'Pourquoi choisir un livret pedagogique numerique auto ecole ?',
+    paragraphs: [
+      'Les auto-écoles qui adoptent un livret pedagogique numerique auto ecole gagnent en productivité (moins de ressaisie), en qualité pédagogique (suivi continu) et en image professionnelle auprès des candidats au permis.',
+      'Pedagogia Drive va plus loin qu\'un simple livret : planning, documents, messagerie et statistiques sont intégrés pour éviter la multiplication d\'outils.',
+    ],
+  },
+]
+
+export const LIVRET_SEO_FAQ = [
+  {
+    question: 'Quelle différence entre livret numérique et livret papier ?',
+    answer:
+      'Le livret numérique auto-école permet une saisie en direct, un partage instantané entre moniteurs, un accès élève 24 h/24 et une conformité REMC toujours à jour. Le livret papier reste statique, difficile à archiver et sans lien avec les QCM.',
+  },
+  {
+    question: 'Pedagogia Drive convient-il aux petites auto-écoles ?',
+    answer:
+      'Oui. Le livret pédagogique numérique s\'adapte à toute taille d\'établissement : déploiement rapide, essai 30 jours et accompagnement à la prise en main.',
+  },
+  {
+    question: 'Les élèves peuvent-ils consulter leur livret pédagogique d\'apprentissage ?',
+    answer:
+      'Oui. Chaque élève dispose d\'un espace sécurisé pour suivre ses compétences REMC, réviser les QCM et échanger avec son auto-école.',
+  },
+]
 
 export const LANDING_FINAL_CTA = {
   title: 'Prêt à moderniser votre auto-école ?',

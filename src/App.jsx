@@ -9,6 +9,7 @@ import CguPage from './pages/CguPage'
 import CgvPage from './pages/CgvPage'
 import CookiesPage from './pages/CookiesPage'
 import ContactPage from './pages/ContactPage'
+import LivretNumeriquePage from './pages/LivretNumeriquePage'
 import BlogListPage from './pages/BlogListPage'
 import BlogArticlePage from './pages/BlogArticlePage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
@@ -162,6 +163,7 @@ function App() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/accept-invite" element={<AcceptInvitePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/livret-numerique-auto-ecole" element={<LivretNumeriquePage />} />
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
 

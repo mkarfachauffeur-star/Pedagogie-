@@ -56,6 +56,7 @@ export default function PageSeo({
   image = DEFAULT_OG_IMAGE,
   imageAlt = DEFAULT_OG_IMAGE_ALT,
   ogType = 'website',
+  keywords = SEO_KEYWORDS,
   noindex = false,
   jsonLd = null,
 }) {
@@ -70,7 +71,7 @@ export default function PageSeo({
     document.title = title
 
     upsertMeta('name', 'description', description)
-    upsertMeta('name', 'keywords', SEO_KEYWORDS)
+    upsertMeta('name', 'keywords', keywords)
     upsertMeta('name', 'robots', robots)
     upsertMeta('name', 'author', SITE_NAME)
     upsertMeta('name', 'application-name', SITE_NAME)
@@ -100,7 +101,7 @@ export default function PageSeo({
     return () => {
       removeJsonLd()
     }
-  }, [title, description, path, image, imageAlt, ogType, noindex, jsonLdKey])
+  }, [title, description, path, image, imageAlt, ogType, keywords, noindex, jsonLdKey])
 
   return null
 }

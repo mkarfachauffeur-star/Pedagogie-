@@ -8,7 +8,7 @@ const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 const staticPages = [
   { path: '/', changeFrequency: 'weekly', priority: '1.0' },
-  { path: '/blog', changeFrequency: 'weekly', priority: '0.9' },
+  { path: '/livret-numerique-auto-ecole', changeFrequency: 'weekly', priority: '0.95' },
   { path: '/login', changeFrequency: 'monthly', priority: '0.8' },
   { path: '/contact', changeFrequency: 'monthly', priority: '0.8' },
   { path: '/mentions-legales', changeFrequency: 'yearly', priority: '0.5' },

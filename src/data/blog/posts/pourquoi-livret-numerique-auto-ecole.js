@@ -1,11 +1,11 @@
 export default {
   slug: "pourquoi-livret-numerique-auto-ecole",
-  title: "Pourquoi choisir un livret numérique en auto-école ?",
+  title: "Livret numérique auto-école : pourquoi l'adopter ?",
   category: "livret-numerique",
   popular: true,
-  excerpt: "Le livret numérique transforme le suivi pédagogique en auto-école : traçabilité REMC, accès élève 24 h/24 et gain de temps pour les équipes.",
-  metaDescription: "Découvrez pourquoi adopter un livret numérique en auto-école améliore le suivi REMC, la communication avec les élèves et la productivité de votre équipe.",
-  coverImageAlt: "Illustration d'un livret numérique utilisé en auto-école pour le suivi pédagogique REMC",
+  excerpt: "Le livret numérique auto-école transforme le suivi pédagogique : traçabilité REMC, accès élève 24 h/24 et gain de temps pour les équipes.",
+  metaDescription: "Livret numérique auto-école : découvrez pourquoi adopter un livret pédagogique d'apprentissage numérique améliore le REMC, la communication et la productivité.",
+  coverImageAlt: "Livret numérique auto-école — suivi pédagogique REMC avec Pedagogia Drive",
   sections: [
     {
       type: "h2",

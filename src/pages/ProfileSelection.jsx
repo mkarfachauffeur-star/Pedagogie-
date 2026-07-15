@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import DemoRequestForm from '../components/marketing/DemoRequestForm'
 import MarketingFaq from '../components/marketing/MarketingFaq'
 import MarketingFeaturesGrid from '../components/marketing/MarketingFeaturesGrid'
+import MarketingLivretSeoSection from '../components/marketing/MarketingLivretSeoSection'
 import MarketingHowItWorks from '../components/marketing/MarketingHowItWorks'
 import MarketingWhySection from '../components/marketing/MarketingWhySection'
 import MarketingThemeToggle from '../components/marketing/MarketingThemeToggle'
@@ -23,6 +24,7 @@ import { marketingSkin } from '../lib/marketingTheme'
 
 const primaryNavLinks = [
   { label: 'Accueil', href: '#accueil' },
+  { label: 'Livret numérique', href: '/livret-numerique-auto-ecole', route: true },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
   { label: 'Comment ça marche', href: '#comment-ca-marche' },
   { label: 'Pourquoi nous', href: '#pourquoi' },
@@ -356,7 +358,7 @@ export default function ProfileSelection() {
                 </a>
                 <a
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black backdrop-blur sm:w-auto ${skin.loginBtn}`}
-                  href="#fonctionnalites"
+                  href="#livret-numerique"
                 >
                   {LANDING_HERO.secondaryCta}
                 </a>
@@ -369,6 +371,7 @@ export default function ProfileSelection() {
         </section>
 
         <MarketingFeaturesGrid compact isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} />
+        <MarketingLivretSeoSection isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} />
         <MarketingHowItWorks isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} />
         <MarketingWhySection isDark={isDark} shouldReduceMotion={shouldReduceMotion} skin={skin} compact />
 
