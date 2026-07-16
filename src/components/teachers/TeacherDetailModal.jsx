@@ -5,8 +5,8 @@ import {
   computeTeacherStatus,
   formatDateFr,
   formatDateTimeFr,
+  staffRoleLabel,
   STATUS_BADGE,
-  USER_ROLE_LABELS,
 } from '../../lib/staffAccounts'
 import { getTeacherAuthorizationSignedUrls } from '../../services/teachers'
 import {
@@ -69,7 +69,7 @@ export default function TeacherDetailModal({ open, teacher, onClose, onEdit }) {
           </div>
           <div>
             <dt className="font-bold text-slate-500">Rôle</dt>
-            <dd className="font-semibold text-slate-900">{USER_ROLE_LABELS.teacher}</dd>
+            <dd className="font-semibold text-slate-900">{staffRoleLabel('teacher', teacher.gender)}</dd>
           </div>
           <div>
             <dt className="font-bold text-slate-500">Statut du compte</dt>

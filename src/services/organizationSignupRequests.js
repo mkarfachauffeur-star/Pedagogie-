@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { trackAePendingValidation, trackSignUp } from '../lib/analytics'
+import { normalizeGender } from '../lib/genderedRoles'
 import { toUserError } from '../lib/userFacingError'
 
 export async function submitOrganizationSignupRequest(payload) {
@@ -9,6 +10,7 @@ export async function submitOrganizationSignupRequest(payload) {
       org_name: payload.orgName.trim(),
       manager_first_name: payload.managerFirstName.trim(),
       manager_last_name: payload.managerLastName.trim(),
+      manager_gender: normalizeGender(payload.managerGender),
       email,
       phone: payload.phone.trim(),
       address: payload.address?.trim() || null,

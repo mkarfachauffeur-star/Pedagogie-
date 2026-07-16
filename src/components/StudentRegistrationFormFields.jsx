@@ -6,6 +6,7 @@ import {
   STATUS_OPTIONS,
   computeRegistrationCompletion,
 } from '../lib/studentRegistration'
+import { GENDER_OPTIONS } from '../lib/genderedRoles'
 import {
   formatPackageSelectLabel,
   groupPackagesForSelect,
@@ -95,6 +96,29 @@ export default function StudentRegistrationFormFields({
         </Field>
         <Field label="Prénom" required error={errors.firstName}>
           <input className={inputClass} value={form.firstName} onChange={(e) => onChange('firstName', e.target.value)} autoComplete="given-name" />
+        </Field>
+        <Field label="Genre" required error={errors.gender} className="md:col-span-2 xl:col-span-2">
+          <div className="mt-2 flex flex-wrap gap-3">
+            {GENDER_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className={`inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold transition ${
+                  form.gender === option.value
+                    ? 'border-cyan-400 bg-cyan-50 text-cyan-900'
+                    : 'border-slate-300 bg-white text-slate-700'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="student-gender"
+                  className="accent-cyan-600"
+                  checked={form.gender === option.value}
+                  onChange={() => onChange('gender', option.value)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
         </Field>
         <Field label="E-mail" required error={errors.email}>
           <input className={inputClass} type="email" value={form.email} onChange={(e) => onChange('email', e.target.value)} autoComplete="email" />

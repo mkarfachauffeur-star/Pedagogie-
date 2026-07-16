@@ -7,7 +7,7 @@ import { useConversations } from '../../hooks/useConversations'
 import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { ensureStudentSecretaryConversation, sendMessageWithAttachments } from '../../services/messaging'
 import { listStudentSecretaryContacts } from '../../services/directory'
-import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
+import { AttachmentList, ChatMessageBubble, MessageComposer } from '../../components/messaging/Attachments'
 
 const formatTime = (iso) => {
   if (!iso) return ''
@@ -179,7 +179,7 @@ export default function StudentMessagesPage() {
               <p className="text-sm text-slate-600">Documents, inscriptions et questions administratives</p>
             </header>
 
-            <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6">
+            <div className="flex-1 space-y-3 overflow-y-auto p-4 md:p-6">
               {!activeConversation && !opening && (
                 <EmptyState title="Conversation indisponible" message={openError || 'Le secrétariat n\'est pas joignable pour le moment.'} icon="💬" />
               )}
@@ -187,45 +187,30 @@ export default function StudentMessagesPage() {
                 <EmptyState title="Aucun message" message="Envoyez votre premier message au secrétariat." icon="💬" />
               )}
               {messages.map((message) => (
-                <article key={message.id} className={`flex animate-slide-up ${message.mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xl ${message.mine ? 'pd-msg-bubble-sent' : 'pd-msg-bubble-received'}`}>
-                    <p className="leading-7">{message.body}</p>
-                    <AttachmentList attachments={message.attachments} />
-                    <p className={`mt-2 text-[11px] font-medium ${message.mine ? 'text-white/75' : 'text-slate-500'}`}>
-                      {formatTime(message.created_at)}{message.mine && message.status ? ` · ${message.status}` : ''}
-                    </p>
-                  </div>
-                </article>
+                <ChatMessageBubble key={message.id} mine={message.mine} className="animate-slide-up">
+                  <p className="leading-7">{message.body}</p>
+                  <AttachmentList attachments={message.attachments} />
+                  <p className={`mt-2 text-[11px] font-medium ${message.mine ? 'text-white/75' : 'text-slate-500'}`}>
+                    {formatTime(message.created_at)}{message.mine && message.status ? ` · ${message.status}` : ''}
+                  </p>
+                </ChatMessageBubble>
               ))}
             </div>
 
-            <footer className="pd-msg-chat-footer">
-              {sendError && (
-                <p className="mb-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">{sendError}</p>
-              )}
-              <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} disabled={!activeConversation} />
-                <input
-                  className="pd-input-dark"
-                  onChange={(event) => setDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') handleSend()
-                  }}
-                  placeholder="Écrire un message…"
-                  value={draft}
-                  disabled={!activeConversation}
-                />
-                <button
-                  className="rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-600 px-5 py-3 text-sm font-semibold text-slate-900 shadow-md transition hover:-translate-y-0.5 hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={handleSend}
-                  type="button"
-                  disabled={!activeConversation}
-                >
-                  Envoyer
-                </button>
-              </div>
-            </footer>
+            <MessageComposer
+              className="px-4 pb-4"
+              value={draft}
+              onChange={setDraft}
+              onSubmit={(event) => {
+                event.preventDefault()
+                handleSend()
+              }}
+              files={files}
+              onAddFiles={(f) => setFiles((cur) => [...cur, ...f])}
+              onRemoveFile={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))}
+              disabled={!activeConversation}
+              error={sendError}
+            />
           </div>
         </section>
       )}

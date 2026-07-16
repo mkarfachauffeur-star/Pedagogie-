@@ -47,9 +47,14 @@ Deno.serve(async (req) => {
     const prefectureApproval = String(body.prefecture_approval || '').trim()
     const logoBase64 = body.logo_base64 ? String(body.logo_base64) : null
     const logoMime = body.logo_mime ? String(body.logo_mime) : 'image/png'
+    const rawGender = String(body.gender || body.manager_gender || '').trim().toLowerCase()
+    const gender = rawGender === 'male' || rawGender === 'female' ? rawGender : null
 
     if (!orgName || !managerFirst || !managerLast || !email || !password) {
       return json({ error: 'Nom auto-école, gérant, e-mail et mot de passe sont obligatoires.' }, 400)
+    }
+    if (!gender) {
+      return json({ error: 'Le genre est obligatoire.' }, 400)
     }
     if (password.length < 8) {
       return json({ error: 'Le mot de passe doit contenir au moins 8 caractères.' }, 400)
@@ -112,6 +117,7 @@ Deno.serve(async (req) => {
         organization_id: orgId,
         role: 'manager',
         full_name: fullName,
+        gender,
       },
     })
 
@@ -126,7 +132,10 @@ Deno.serve(async (req) => {
     const userId = authData.user?.id
     if (!userId) return json({ error: 'Création compte gérant impossible.' }, 500)
 
-    await admin.from('profiles').update({ phone: phone || null, full_name: fullName }).eq('id', userId)
+    await admin
+      .from('profiles')
+      .update({ phone: phone || null, full_name: fullName, gender })
+      .eq('id', userId)
 
     let logoPath: string | null = null
     if (logoBase64) {

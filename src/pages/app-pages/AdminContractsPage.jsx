@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Download, FileText, Trash2, Upload } from 'lucide-react'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
-import { formatDateTimeFr, USER_ROLE_LABELS } from '../../lib/staffAccounts'
+import { formatDateTimeFr, staffRoleLabel } from '../../lib/staffAccounts'
 import { getUserFacingError } from '../../lib/userFacingError'
 import {
   STAFF_CONTRACT_ROLES,
@@ -141,7 +141,7 @@ function StaffContractUploadForm({ staff, disabled, organizationId, profileId, o
         <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
           <p>
             <span className="font-bold text-slate-800">Fonction :</span>{' '}
-            {USER_ROLE_LABELS[selectedMember.role] || selectedMember.role}
+            {staffRoleLabel(selectedMember.role, selectedMember.gender)}
           </p>
           <p className="mt-1">
             <span className="font-bold text-slate-800">E-mail :</span> {selectedMember.email || '—'}
@@ -259,7 +259,7 @@ function StaffContractsList({ contracts, disabled, onRefresh }) {
                   {contract.profile?.full_name || 'Membre inconnu'}
                 </p>
                 <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-700">
-                  {USER_ROLE_LABELS[contract.profile?.role] || contract.profile?.role || ''}
+                  {staffRoleLabel(contract.profile?.role, contract.profile?.gender)}
                 </span>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badgeClass}`}>
                   {status}

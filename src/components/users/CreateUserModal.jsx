@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { createOrganizationUser } from '../../services/users'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { USER_ROLE_LABELS } from '../../lib/staffAccounts'
+import { GENDER_OPTIONS, normalizeGender } from '../../lib/genderedRoles'
 import AppModal, { AppModalFooter } from '../ui/AppModal'
 
 const FORM_ID = 'create-user-form'
@@ -16,7 +17,7 @@ const ROLE_OPTIONS = [
 ]
 
 function emptyForm() {
-  return { firstName: '', lastName: '', email: '', phone: '', role: 'teacher' }
+  return { firstName: '', lastName: '', email: '', phone: '', role: 'teacher', gender: '' }
 }
 
 function validate(form) {
@@ -26,6 +27,9 @@ function validate(form) {
   if (!form.email.trim()) errors.email = "L'e-mail est obligatoire."
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'E-mail invalide.'
   if (!form.role) errors.role = 'Le rôle est obligatoire.'
+  if (form.role !== 'secretary' && !normalizeGender(form.gender)) {
+    errors.gender = 'Le genre est obligatoire.'
+  }
   return errors
 }
 
@@ -122,6 +126,34 @@ export default function CreateUserModal({ open, onClose, onCreated }) {
               {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
+          {form.role !== 'secretary' && (
+            <fieldset className="block">
+              <legend className="text-sm font-bold text-slate-700">Genre *</legend>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {GENDER_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold transition ${
+                      form.gender === option.value
+                        ? 'border-cyan-400 bg-cyan-50 text-cyan-900'
+                        : 'border-slate-300 bg-white text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="create-user-gender"
+                      className="accent-cyan-600"
+                      checked={form.gender === option.value}
+                      disabled={!canWrite || busy}
+                      onChange={() => update('gender', option.value)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              {errors.gender && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.gender}</p>}
+            </fieldset>
+          )}
           {submitError && (
             <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{submitError}</p>
           )}

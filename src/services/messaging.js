@@ -121,24 +121,40 @@ export async function listMessagesWithReads(conversationId, profileId) {
 }
 
 export async function sendMessage({ conversationId, organizationId, senderId, body }) {
+  let orgId = organizationId
+  if (!orgId && senderId) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', senderId)
+      .maybeSingle()
+    orgId = prof?.organization_id || null
+  }
+  if (!orgId) {
+    throw new Error('Organisation introuvable pour envoyer le message.')
+  }
+
   await assertOrgCanWrite()
   const messageId = newId()
   const { error } = await supabase.from('messages').insert({
     id: messageId,
     conversation_id: conversationId,
-    organization_id: organizationId,
+    organization_id: orgId,
     sender_id: senderId,
     body,
   })
-  if (error) throw error
-  if (organizationId) {
+  if (error) {
+    logDbError('[messaging] sendMessage', error)
+    throw error
+  }
+  if (orgId) {
     const { trackFirstMessageMilestone } = await import('../lib/analytics')
-    void trackFirstMessageMilestone(organizationId)
+    void trackFirstMessageMilestone(orgId)
   }
   return {
     id: messageId,
     conversation_id: conversationId,
-    organization_id: organizationId,
+    organization_id: orgId,
     sender_id: senderId,
     body,
   }

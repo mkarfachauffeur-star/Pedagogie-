@@ -32,7 +32,7 @@ export async function listStaffContracts({ profileId, employmentStatus } = {}) {
       .from('staff_employment_contracts')
       .select(`
         id, title, employment_status, file_name, storage_path, storage_bucket, notes, created_at,
-        profile:profile_id(id, full_name, role, email, phone),
+        profile:profile_id(id, full_name, role, email, phone, gender),
         uploader:uploaded_by(full_name)
       `)
       .order('created_at', { ascending: false })
@@ -103,7 +103,7 @@ export async function uploadStaffContract({
     })
     .select(`
       id, title, employment_status, file_name, storage_path, storage_bucket, notes, created_at,
-      profile:profile_id(id, full_name, role, email, phone)
+      profile:profile_id(id, full_name, role, email, phone, gender)
     `)
     .single()
 

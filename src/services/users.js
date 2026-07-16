@@ -1,6 +1,7 @@
 import { trackDeleteAccount } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { formatPersonName } from '../lib/staffAccounts'
+import { normalizeGender } from '../lib/genderedRoles'
 import { inviteUser } from './invitations'
 import { subscribePostgresChanges } from './realtime'
 import { toUserError } from '../lib/userFacingError'
@@ -18,7 +19,7 @@ export async function listOrganizationUsers() {
       try {
         const { data, error: profileError } = await supabase
           .from('profiles')
-          .select('id, email, full_name, phone, role, is_active')
+          .select('id, email, full_name, phone, role, is_active, gender')
           .in('role', ['manager', 'teacher', 'secretary'])
           .order('full_name')
         if (profileError) throw profileError
@@ -44,16 +45,28 @@ export function staffToSelectOptions(users, { roles } = {}) {
     .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
 }
 
-export async function createOrganizationUser({ firstName, lastName, email, phone, role }) {
+export async function createOrganizationUser({ firstName, lastName, email, phone, role, gender }) {
   const fullName = formatPersonName({ firstName, lastName })
-  const { error: inviteError, userId } = await inviteUser({ email, role, fullName })
+  const normalizedGender = role === 'secretary' ? null : normalizeGender(gender)
+  const { error: inviteError, userId } = await inviteUser({
+    email,
+    role,
+    fullName,
+    gender: normalizedGender,
+  })
   if (inviteError) return { user: null, error: inviteError }
+
+  const profilePatch = {
+    phone: phone?.trim() || null,
+    full_name: fullName,
+  }
+  if (normalizedGender) profilePatch.gender = normalizedGender
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .update({ phone: phone?.trim() || null, full_name: fullName })
+    .update(profilePatch)
     .eq('id', userId)
-    .select('id, full_name, email, phone, role, is_active')
+    .select('id, full_name, email, phone, role, is_active, gender')
     .single()
 
   if (profileError) return { user: null, error: toUserError(profileError, 'save') }

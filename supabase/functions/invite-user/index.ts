@@ -50,6 +50,11 @@ Deno.serve(async (req) => {
     const resourceType = String(body.resource_type || 'teacher').trim().toLowerCase()
     const isSimulator = resourceType === 'simulator'
     let email = String(body.email || '').trim().toLowerCase()
+    const rawGender = String(body.gender || '').trim().toLowerCase()
+    const gender =
+      !isSimulator && role !== 'secretary' && (rawGender === 'male' || rawGender === 'female')
+        ? rawGender
+        : null
 
     if (!ALLOWED_ROLES.includes(role)) {
       return json({ error: 'Paramètres invalides (role)' }, 400)
@@ -82,19 +87,30 @@ Deno.serve(async (req) => {
       return json({ error: 'Paramètres invalides (email, role)' }, 400)
     }
 
+    if ((role === 'manager' || role === 'teacher') && !gender) {
+      return json({ error: 'Le genre est obligatoire pour ce rôle.' }, 400)
+    }
+
     const redirectTo = acceptInviteUrl()
 
     console.log('[invite-user] invitation', { email, role, redirectTo, org: callerProfile.organization_id })
 
+    const inviteData: Record<string, unknown> = {
+      organization_id: callerProfile.organization_id,
+      role,
+      full_name: fullName,
+    }
+    if (gender) inviteData.gender = gender
+
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        organization_id: callerProfile.organization_id,
-        role,
-        full_name: fullName,
-      },
+      data: inviteData,
       redirectTo,
     })
     if (error) return json({ error: error.message }, 400)
+
+    if (gender && data.user?.id) {
+      await admin.from('profiles').update({ gender }).eq('id', data.user.id)
+    }
 
     return json({ ok: true, user_id: data.user?.id })
   } catch (err) {

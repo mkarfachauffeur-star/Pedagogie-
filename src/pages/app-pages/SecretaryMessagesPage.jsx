@@ -7,7 +7,7 @@ import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../../services/messaging'
 import { getStudentIdByProfile, listInternalContacts, listStudentContacts } from '../../services/directory'
 import { linkAttachmentToDocument } from '../../services/attachments'
-import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
+import { AttachmentList, ChatMessageBubble, MessageComposer } from '../../components/messaging/Attachments'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { contactDisplayName, roleLabel } from '../../utils/messagingLabels'
 
@@ -29,6 +29,8 @@ export default function SecretaryMessagesPage() {
   useConversationFromLocation(setActiveId)
   const [newMessage, setNewMessage] = useState('')
   const [files, setFiles] = useState([])
+  const [sendError, setSendError] = useState(null)
+  const [sending, setSending] = useState(false)
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerTab, setPickerTab] = useState('internal')
@@ -99,16 +101,20 @@ export default function SecretaryMessagesPage() {
   const handleSend = async (event) => {
     event.preventDefault()
     const body = newMessage.trim()
-    if ((!body && !files.length) || !activeId || !profileId) return
+    if ((!body && !files.length) || !activeId || !profileId || sending) return
     const toSend = files
-    setNewMessage('')
-    setFiles([])
+    setSending(true)
+    setSendError(null)
     try {
       await sendMessageWithAttachments({ conversationId: activeId, organizationId, senderId: profileId, body, files: toSend })
-    } catch {
-      // ignore
+      setNewMessage('')
+      setFiles([])
+      await refresh()
+    } catch (error) {
+      setSendError(getUserFacingError(error, 'messaging'))
+    } finally {
+      setSending(false)
     }
-    refresh()
   }
 
   // Classer une pièce jointe d'une conversation élève dans son dossier administratif.
@@ -263,10 +269,10 @@ export default function SecretaryMessagesPage() {
                   </button>
                 </div>
 
-                <div className="mt-4 grid max-h-[420px] gap-3 overflow-y-auto pr-1">
+                <div className="pd-msg-thread-list">
                   {messages.length === 0 && <p className="text-sm text-slate-500">Aucun message. Démarrez la conversation.</p>}
                   {messages.map((message) => (
-                    <article key={message.id} className={`max-w-[92%] ${message.mine ? 'ml-auto pd-msg-bubble-sent' : 'pd-msg-bubble-received'}`}>
+                    <ChatMessageBubble key={message.id} mine={message.mine}>
                       <p>{message.body}</p>
                       <AttachmentList
                         attachments={message.attachments}
@@ -276,25 +282,20 @@ export default function SecretaryMessagesPage() {
                         {formatTime(message.created_at)}
                         {message.mine && message.status ? ` · ${message.status}` : ''}
                       </p>
-                    </article>
+                    </ChatMessageBubble>
                   ))}
                 </div>
 
-                <form className="mt-4 border-t-2 border-slate-300 pt-4" onSubmit={handleSend}>
-                  <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} />
-                    <input
-                      className="pd-input-dark"
-                      onChange={(event) => setNewMessage(event.target.value)}
-                      placeholder="Écrire un message…"
-                      value={newMessage}
-                    />
-                    <button className="rounded-2xl bg-gradient-to-r from-cyan-600/95 to-cyan-500/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_20px_rgba(6,182,212,0.18)] transition hover:-translate-y-0.5 hover:brightness-[1.03]" type="submit">
-                      Envoyer
-                    </button>
-                  </div>
-                </form>
+                <MessageComposer
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onSubmit={handleSend}
+                  files={files}
+                  onAddFiles={(f) => setFiles((cur) => [...cur, ...f])}
+                  onRemoveFile={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))}
+                  sending={sending}
+                  error={sendError}
+                />
               </>
             ) : (
               <div className="pd-msg-empty">Sélectionnez une conversation ou démarrez-en une nouvelle.</div>

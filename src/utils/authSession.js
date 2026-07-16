@@ -1,3 +1,5 @@
+import { roleLabelFor } from '../lib/genderedRoles'
+
 export const roleDestinations = {
   student: '/student/dashboard',
   teacher: '/teacher/dashboard',
@@ -6,12 +8,18 @@ export const roleDestinations = {
   super_admin: '/platform/dashboard',
 }
 
+/** Libellés neutres / masculins par défaut (listes génériques). */
 export const roleLabels = {
   student: 'Élève',
   teacher: 'Enseignant',
   secretary: 'Secrétariat',
   manager: 'Gérant',
   super_admin: 'Super Admin',
+}
+
+/** Libellé conjugué pour une personne (sidebar, fiches). */
+export function personRoleLabel(role, gender) {
+  return roleLabelFor(role, gender)
 }
 
 /** Purge les clés localStorage héritées du mode démo (appelé au démarrage). */

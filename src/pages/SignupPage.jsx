@@ -5,6 +5,7 @@ import BrandLogo from '../components/BrandLogo'
 import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner'
 import PublicFooter from '../components/marketing/PublicFooter'
 import { submitOrganizationSignupRequest } from '../services/organizationSignupRequests'
+import { GENDER_OPTIONS, normalizeGender } from '../lib/genderedRoles'
 import { getUserFacingError } from '../lib/userFacingError'
 
 const inputClass =
@@ -33,6 +34,10 @@ function validatePreRegistrationForm(form) {
 
   if (!/^\d{5}$/.test(form.postalCode.trim())) {
     return 'Le code postal doit contenir 5 chiffres.'
+  }
+
+  if (!normalizeGender(form.managerGender)) {
+    return 'Le genre est obligatoire.'
   }
 
   const email = form.email.trim()
@@ -105,6 +110,7 @@ export default function SignupPage() {
     orgName: '',
     managerFirstName: '',
     managerLastName: '',
+    managerGender: '',
     email: '',
     phone: '',
     address: '',
@@ -135,6 +141,7 @@ export default function SignupPage() {
       orgName: form.orgName,
       managerFirstName: form.managerFirstName,
       managerLastName: form.managerLastName,
+      managerGender: form.managerGender,
       email: form.email,
       phone: form.phone,
       address: form.address,
@@ -248,6 +255,30 @@ export default function SignupPage() {
                       <span className="text-sm font-bold text-slate-700">Prénom *</span>
                       <input className={inputClass} required value={form.managerFirstName} onChange={(e) => update('managerFirstName', e.target.value)} />
                     </label>
+                    <fieldset className="block sm:col-span-2">
+                      <legend className="text-sm font-bold text-slate-700">Genre *</legend>
+                      <div className="mt-2 flex flex-wrap gap-3">
+                        {GENDER_OPTIONS.map((option) => (
+                          <label
+                            key={option.value}
+                            className={`inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold transition ${
+                              form.managerGender === option.value
+                                ? 'border-cyan-400 bg-cyan-50 text-cyan-900'
+                                : 'border-slate-300 bg-white text-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="manager-gender"
+                              className="accent-cyan-600"
+                              checked={form.managerGender === option.value}
+                              onChange={() => update('managerGender', option.value)}
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
                     <label className="block">
                       <span className="text-sm font-bold text-slate-700">E-mail *</span>
                       <input className={inputClass} required type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />

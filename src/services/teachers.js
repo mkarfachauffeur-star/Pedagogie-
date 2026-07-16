@@ -4,6 +4,7 @@ import { inviteUser } from './invitations'
 import { subscribePostgresChanges } from './realtime'
 import { toUserError } from '../lib/userFacingError'
 import { joinFullName } from '../lib/staffAccounts'
+import { normalizeGender } from '../lib/genderedRoles'
 import { teacherAddressPayload } from '../lib/address'
 import { normalizePhoneDigits } from '../lib/phone'
 import {
@@ -221,7 +222,19 @@ export async function listTeachers() {
 export async function getTeacher(profileId) {
   const { teachers, error } = await listTeachers()
   if (error) return { teacher: null, error }
-  return { teacher: teachers.find((row) => row.profile_id === profileId) || null, error: null }
+  const teacher = teachers.find((row) => row.profile_id === profileId) || null
+  if (!teacher) return { teacher: null, error: null }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('gender')
+    .eq('id', profileId)
+    .maybeSingle()
+
+  return {
+    teacher: { ...teacher, gender: profile?.gender || null },
+    error: null,
+  }
 }
 
 export async function listTeacherRoleProfilesWithoutRecord() {
@@ -351,24 +364,35 @@ export async function createTeacher(payload) {
     const { error: ensureError } = await supabase.rpc('ensure_teacher_record', { p_profile_id: profileId })
     if (ensureError) return { teacher: null, error: toUserError(ensureError, 'save') }
 
+    const gender = normalizeGender(payload.gender)
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ phone: normalizePhoneDigits(payload.phone) || null, full_name: fullName })
+      .update({
+        phone: normalizePhoneDigits(payload.phone) || null,
+        full_name: fullName,
+        ...(gender ? { gender } : {}),
+      })
       .eq('id', profileId)
     if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
   } else {
+    const gender = normalizeGender(payload.gender)
     const { error: inviteError, userId } = await inviteUser({
       email,
       role: 'teacher',
       fullName,
       resourceType,
+      gender,
     })
     if (inviteError) return { teacher: null, error: inviteError }
     profileId = userId
 
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ phone: normalizePhoneDigits(payload.phone) || null, full_name: fullName })
+      .update({
+        phone: normalizePhoneDigits(payload.phone) || null,
+        full_name: fullName,
+        ...(gender ? { gender } : {}),
+      })
       .eq('id', profileId)
     if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }
 
@@ -400,12 +424,14 @@ export async function updateTeacher(profileId, payload) {
     ? lastName
     : joinFullName(firstName, lastName)
 
+  const gender = normalizeGender(payload.gender)
   const { error: profileError } = await supabase
     .from('profiles')
     .update({
       full_name: fullName,
       email: payload.email?.trim().toLowerCase() || null,
       phone: normalizePhoneDigits(payload.phone) || null,
+      ...(gender ? { gender } : {}),
     })
     .eq('id', profileId)
   if (profileError) return { teacher: null, error: toUserError(profileError, 'save') }

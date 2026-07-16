@@ -170,6 +170,8 @@ Deno.serve(async (req) => {
     const lastName = String(body.last_name || '').trim()
     const email = String(body.email || '').trim().toLowerCase()
     const phone = String(body.phone || '').trim()
+    const rawGender = String(body.gender || '').trim().toLowerCase()
+    const gender = rawGender === 'male' || rawGender === 'female' ? rawGender : null
     const birthDate = body.birth_date ? String(body.birth_date) : null
     const birthPlace = String(body.birth_place || '').trim()
     const streetNumber = String(body.street_number || '').trim()
@@ -195,6 +197,9 @@ Deno.serve(async (req) => {
     if (!firstName || !lastName || !email) {
       return json({ error: 'Nom, prénom et e-mail sont obligatoires.' }, 400)
     }
+    if (!gender) {
+      return json({ error: 'Le genre est obligatoire.' }, 400)
+    }
 
     const fullName = `${lastName} ${firstName}`.trim()
     const tempPassword = generateTempPassword()
@@ -207,6 +212,7 @@ Deno.serve(async (req) => {
         organization_id: orgId,
         role: 'student',
         full_name: fullName,
+        gender,
       },
     })
 
@@ -227,6 +233,7 @@ Deno.serve(async (req) => {
       full_name: fullName,
       email,
       phone: phone || null,
+      gender,
     }, { onConflict: 'id' })
 
     if (profileUpsertError) {

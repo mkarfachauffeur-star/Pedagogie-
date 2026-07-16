@@ -24,59 +24,64 @@ export function AttachmentList({ attachments, classify }) {
   if (!attachments || !attachments.length) return null
   return (
     <>
-      <div className="mt-2 grid gap-2">
+      <div className="mt-2 grid w-full min-w-0 gap-2">
         {attachments.map((a) => {
           const image = isImageAttachment(a)
           const pdf = isPdf(a.mime_type)
           return (
-            <div key={a.id} className="rounded-xl border-2 border-slate-300 bg-white/90 p-2 text-xs text-slate-700">
+            <div
+              key={a.id}
+              className="min-w-0 overflow-hidden rounded-xl border-2 border-slate-300 bg-white p-2.5 text-xs text-slate-700 shadow-sm"
+            >
               {image && a.url && (
                 <button
                   type="button"
                   onClick={() => setPreview(a)}
-                  className="block w-full cursor-zoom-in overflow-hidden rounded-lg border-2 border-slate-300 transition hover:border-cyan-300 hover:shadow-sm"
+                  className="mb-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border-2 border-slate-300 transition hover:border-cyan-300 hover:shadow-sm"
                   title="Agrandir l'image"
                 >
                   <img
                     src={a.url}
                     alt={a.file_name}
-                    className="max-h-44 w-auto"
+                    className="mx-auto max-h-44 w-auto max-w-full object-contain"
                     draggable={false}
                   />
                 </button>
               )}
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <span className="truncate font-semibold">{a.file_name}</span>
-                {a.url ? (
-                  <span className="flex shrink-0 gap-2">
-                    {image && (
-                      <button
-                        type="button"
-                        className="font-bold text-cyan-700 underline"
-                        onClick={() => setPreview(a)}
-                      >
-                        Aperçu
-                      </button>
-                    )}
-                    {pdf && (
-                      <a className="font-bold text-cyan-700 underline" href={a.url} target="_blank" rel="noreferrer">Aperçu</a>
-                    )}
+              <p className="truncate font-semibold text-slate-800" title={a.file_name}>
+                {a.file_name}
+              </p>
+              {a.url ? (
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {image && (
                     <button
                       type="button"
                       className="font-bold text-cyan-700 underline"
-                      onClick={() => (image ? downloadAttachment(a) : window.open(a.url, '_blank', 'noopener,noreferrer'))}
+                      onClick={() => setPreview(a)}
                     >
-                      Télécharger
+                      Aperçu
                     </button>
-                  </span>
-                ) : (
-                  <span className="opacity-60">Indisponible</span>
-                )}
-              </div>
+                  )}
+                  {pdf && (
+                    <a className="font-bold text-cyan-700 underline" href={a.url} target="_blank" rel="noreferrer">
+                      Aperçu
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    className="font-bold text-cyan-700 underline"
+                    onClick={() => (image ? downloadAttachment(a) : window.open(a.url, '_blank', 'noopener,noreferrer'))}
+                  >
+                    Télécharger
+                  </button>
+                </div>
+              ) : (
+                <span className="mt-1 block opacity-60">Indisponible</span>
+              )}
               {classify && (
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <select
-                    className="min-h-8 flex-1 rounded-lg border-2 border-slate-300 bg-white px-2 text-[11px] font-medium text-slate-700 outline-none"
+                    className="min-h-8 min-w-0 flex-1 rounded-lg border-2 border-slate-300 bg-white px-2 text-[11px] font-medium text-slate-700 outline-none"
                     value={types[a.id] || DOC_TYPES[0]}
                     onChange={(event) => setTypes((current) => ({ ...current, [a.id]: event.target.value }))}
                   >
@@ -112,6 +117,7 @@ export function AttachButton({ onAdd, disabled }) {
         type="file"
         multiple
         className="hidden"
+        disabled={disabled}
         onChange={(event) => {
           onAdd(Array.from(event.target.files || []))
           event.target.value = ''
@@ -129,12 +135,68 @@ export function PendingFiles({ files, onRemove }) {
       {files.map((file, index) => (
         <span
           key={`${file.name}-${index}`}
-          className="inline-flex items-center gap-2 rounded-full border-2 border-slate-300 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700"
+          className="inline-flex max-w-full items-center gap-2 rounded-full border-2 border-slate-300 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700"
         >
-          {file.name}
-          <button type="button" onClick={() => onRemove(index)} className="text-slate-500 hover:text-slate-800">×</button>
+          <span className="min-w-0 truncate">{file.name}</span>
+          <button type="button" onClick={() => onRemove(index)} className="shrink-0 text-slate-500 hover:text-slate-800">×</button>
         </span>
       ))}
     </div>
+  )
+}
+
+/** Bulle de chat alignée (envoyés à droite, reçus à gauche). */
+export function ChatMessageBubble({ mine, children, className = '' }) {
+  return (
+    <div className={`flex w-full ${mine ? 'justify-end' : 'justify-start'}`}>
+      <article className={`pd-msg-bubble ${mine ? 'pd-msg-bubble-sent' : 'pd-msg-bubble-received'} ${className}`}>
+        {children}
+      </article>
+    </div>
+  )
+}
+
+/** Barre d’envoi : trombone + champ + bouton. */
+export function MessageComposer({
+  value,
+  onChange,
+  onSubmit,
+  files = [],
+  onAddFiles,
+  onRemoveFile,
+  sending = false,
+  disabled = false,
+  error = null,
+  placeholder = 'Écrire un message…',
+  submitLabel = 'Envoyer',
+  className = '',
+}) {
+  const busy = sending || disabled
+  return (
+    <form className={`pd-msg-composer ${className}`.trim()} onSubmit={onSubmit}>
+      {error && (
+        <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+          {error}
+        </p>
+      )}
+      <PendingFiles files={files} onRemove={onRemoveFile} />
+      <div className="flex items-center gap-2">
+        <AttachButton onAdd={onAddFiles} disabled={busy} />
+        <input
+          className="pd-input-dark min-w-0"
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          value={value}
+          disabled={busy}
+        />
+        <button
+          className="pd-msg-send-btn"
+          type="submit"
+          disabled={busy || (!String(value || '').trim() && !files.length)}
+        >
+          {sending ? '…' : submitLabel}
+        </button>
+      </div>
+    </form>
   )
 }

@@ -17,16 +17,22 @@ import { runExpirationRemindersCheck } from '../services/expirationReminders'
 import { runFleetMaintenanceRemindersCheck } from '../services/fleetMaintenanceReminders'
 import { getTrackLabel } from '../lib/studentTrack'
 import ManagerOnboardingTutorial from '../components/onboarding/ManagerOnboardingTutorial'
+import { roleLabelFor } from '../lib/genderedRoles'
 
 export default function DashboardLayout({ role, children, fullWidth = false }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut, profileId, profile } = useAuth()
+  const { signOut, profileId, profile, user } = useAuth()
   const config = NAVIGATION[role]
+  const displayName =
+    profile?.full_name?.trim()
+    || String(user?.user_metadata?.full_name || '').trim()
+    || String(profile?.email || user?.email || '').split('@')[0]?.trim()
+    || ''
   const sidebarUser = config?.user
     ? {
-        ...config.user,
-        name: profile?.full_name?.trim() || config.user.name,
+        name: displayName || 'Mon compte',
+        role: roleLabelFor(role, profile?.gender),
       }
     : null
   const { navItems, track, loading: trackLoading } = useStudentTrack(role === 'student' ? profileId : null)
@@ -179,14 +185,10 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
 
           {sidebarUser && (
             <div
-              className={`mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-blue-100/80 bg-blue-50/70 p-3 transition-all duration-300 ${sidebarCollapsed ? 'lg:mx-3 lg:justify-center lg:px-2' : ''}`}
+              className={`mx-4 mt-4 rounded-2xl border border-blue-100/80 bg-blue-50/70 p-3 text-center transition-all duration-300 ${sidebarCollapsed ? 'lg:mx-3 lg:px-2' : ''}`}
             >
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-lg text-white shadow-sm">
-                {sidebarUser.avatar}
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
-              </div>
               <div
-                className={`min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+                className={`min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:hidden' : ''}`}
               >
                 <p className="truncate text-sm font-semibold text-slate-900">{sidebarUser.name}</p>
                 {sidebarUser.role && (
@@ -304,8 +306,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
               <NotificationBell role={role} unreadCount={notificationCount} />
             )}
             {sidebarUser && (
-              <div className="hidden items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
-                <span className="text-lg">{sidebarUser.avatar}</span>
+              <div className="hidden items-center rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:flex">
                 <span className="text-sm font-medium text-slate-700">{sidebarUser.name}</span>
               </div>
             )}

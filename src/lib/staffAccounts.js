@@ -1,9 +1,17 @@
 /** Utilitaires partagés comptes utilisateurs / enseignants. */
 
+import { roleLabelFor } from './genderedRoles'
+
+/** Libellés masculins par défaut (sélecteurs de rôle, etc.). */
 export const USER_ROLE_LABELS = {
   manager: 'Gérant',
   teacher: 'Enseignant',
-  secretary: 'Secrétaire',
+  secretary: 'Secrétariat',
+}
+
+/** Libellé de rôle pour une personne, conjugué selon le genre. */
+export function staffRoleLabel(role, gender) {
+  return roleLabelFor(role, gender) || USER_ROLE_LABELS[role] || role || ''
 }
 
 export const STAFF_ROLES = ['manager', 'teacher', 'secretary']

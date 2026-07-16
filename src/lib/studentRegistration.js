@@ -30,6 +30,7 @@ export function createEmptyStudentForm() {
   return {
     lastName: '',
     firstName: '',
+    gender: '',
     birthDate: '',
     birthPlace: '',
     streetNumber: '',
@@ -73,6 +74,7 @@ export function computeRegistrationCompletion(form) {
   const required = [
     'lastName',
     'firstName',
+    'gender',
     'birthDate',
     'birthPlace',
     'phone',
@@ -87,13 +89,16 @@ export function computeRegistrationCompletion(form) {
   const completed =
     required.filter((field) => String(form[field] ?? '').trim()).length +
     (form.documents?.length ? 1 : 0)
-  return Math.round((completed / 13) * 100)
+  return Math.round((completed / 14) * 100)
 }
 
 export function validateStudentRegistrationForm(form) {
   const errors = {}
   if (!form.lastName?.trim()) errors.lastName = 'Le nom est obligatoire.'
   if (!form.firstName?.trim()) errors.firstName = 'Le prénom est obligatoire.'
+  if (!form.gender || !['male', 'female'].includes(form.gender)) {
+    errors.gender = 'Le genre est obligatoire.'
+  }
   if (!form.email?.trim()) errors.email = 'L’e-mail est obligatoire.'
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
     errors.email = 'Adresse e-mail invalide.'
@@ -117,6 +122,7 @@ export function buildCreateStudentPayload(form) {
   return {
     first_name: form.firstName.trim(),
     last_name: form.lastName.trim(),
+    gender: form.gender || null,
     email: form.email.trim().toLowerCase(),
     phone: form.phone.trim() || null,
     birth_date: form.birthDate || null,

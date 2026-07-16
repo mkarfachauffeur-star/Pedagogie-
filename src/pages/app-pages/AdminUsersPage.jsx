@@ -9,8 +9,8 @@ import { normalizeSearchText, useClientPagination } from '../../hooks/useClientP
 import {
   computeAccountStatus,
   formatDateTimeFr,
+  staffRoleLabel,
   STATUS_BADGE,
-  USER_ROLE_LABELS,
 } from '../../lib/staffAccounts'
 import { getUserFacingError } from '../../lib/userFacingError'
 import { listOrganizationUsers, manageUser, sendStaffPasswordReset, setStaffAccountActive, subscribeOrganizationUsers } from '../../services/users'
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
     query: searchQuery,
     filterFn: (user, query) => {
       const haystack = normalizeSearchText(
-        `${user.full_name || ''} ${user.email || ''} ${USER_ROLE_LABELS[user.role] || user.role || ''}`,
+        `${user.full_name || ''} ${user.email || ''} ${staffRoleLabel(user.role, user.gender) || ''}`,
       )
       const q = normalizeSearchText(query)
       return q.split(/\s+/).filter(Boolean).every((part) => haystack.includes(part))
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3 text-slate-600">{user.email || '—'}</td>
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700">
-                          {USER_ROLE_LABELS[user.role] || user.role}
+                          {staffRoleLabel(user.role, user.gender) || user.role}
                         </span>
                       </td>
                       <td className="px-4 py-3">

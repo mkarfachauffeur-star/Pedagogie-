@@ -6,8 +6,9 @@ import { useConversations } from '../../hooks/useConversations'
 import { useConversationMessages } from '../../hooks/useConversationMessages'
 import { findOrCreateDirectConversation, sendMessageWithAttachments } from '../../services/messaging'
 import { listInternalContacts, listStudentContacts } from '../../services/directory'
-import { AttachButton, AttachmentList, PendingFiles } from '../../components/messaging/Attachments'
+import { AttachmentList, ChatMessageBubble, MessageComposer } from '../../components/messaging/Attachments'
 import { contactDisplayName, roleLabel } from '../../utils/messagingLabels'
+import { getUserFacingError } from '../../lib/userFacingError'
 
 const formatTime = (iso) => {
   if (!iso) return ''
@@ -27,6 +28,8 @@ export default function TeacherMessagesPage() {
   useConversationFromLocation(setActiveId)
   const [newMessage, setNewMessage] = useState('')
   const [files, setFiles] = useState([])
+  const [sendError, setSendError] = useState(null)
+  const [sending, setSending] = useState(false)
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerTab, setPickerTab] = useState('internal')
@@ -70,24 +73,34 @@ export default function TeacherMessagesPage() {
       await refresh()
       setActiveId(id)
       setPickerOpen(false)
-    } catch {
-      // ignore
+    } catch (error) {
+      setSendError(getUserFacingError(error, 'messaging'))
     }
   }
 
   const handleSend = async (event) => {
     event.preventDefault()
     const body = newMessage.trim()
-    if ((!body && !files.length) || !activeId || !profileId) return
+    if ((!body && !files.length) || !activeId || !profileId || sending) return
     const toSend = files
-    setNewMessage('')
-    setFiles([])
+    setSending(true)
+    setSendError(null)
     try {
-      await sendMessageWithAttachments({ conversationId: activeId, organizationId, senderId: profileId, body, files: toSend })
-    } catch {
-      // ignore
+      await sendMessageWithAttachments({
+        conversationId: activeId,
+        organizationId,
+        senderId: profileId,
+        body,
+        files: toSend,
+      })
+      setNewMessage('')
+      setFiles([])
+      await refresh()
+    } catch (error) {
+      setSendError(getUserFacingError(error, 'messaging'))
+    } finally {
+      setSending(false)
     }
-    refresh()
   }
 
   return (
@@ -169,7 +182,7 @@ export default function TeacherMessagesPage() {
             </div>
           </aside>
 
-          <section className="flex flex-col bg-slate-50/80 p-5 md:p-6">
+          <section className="flex min-h-[28rem] flex-col bg-slate-50/80 p-5 md:p-6">
             {activeConversation ? (
               <>
                 <div className="pd-msg-chat-divider flex items-center justify-between gap-3">
@@ -180,27 +193,29 @@ export default function TeacherMessagesPage() {
                   <button type="button" onClick={() => setActiveId(null)} className="pd-msg-close-btn">Fermer</button>
                 </div>
 
-                <div className="mt-4 grid max-h-[420px] gap-3 overflow-y-auto pr-1">
+                <div className="pd-msg-thread-list">
                   {messages.length === 0 && <p className="text-sm text-slate-500">Aucun message. Démarrez la conversation.</p>}
                   {messages.map((message) => (
-                    <article key={message.id} className={`max-w-[85%] ${message.mine ? 'ml-auto pd-msg-bubble-sent' : 'pd-msg-bubble-received'}`}>
+                    <ChatMessageBubble key={message.id} mine={message.mine}>
                       <p>{message.body}</p>
                       <AttachmentList attachments={message.attachments} />
                       <p className={`mt-2 text-[11px] font-medium ${message.mine ? 'text-white/75' : 'text-slate-500'}`}>
                         {formatTime(message.created_at)}{message.mine && message.status ? ` · ${message.status}` : ''}
                       </p>
-                    </article>
+                    </ChatMessageBubble>
                   ))}
                 </div>
 
-                <form className="mt-4 border-t-2 border-slate-300 pt-4" onSubmit={handleSend}>
-                  <PendingFiles files={files} onRemove={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))} />
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <AttachButton onAdd={(f) => setFiles((cur) => [...cur, ...f])} />
-                    <input className="pd-input-dark" onChange={(event) => setNewMessage(event.target.value)} placeholder="Écrire un message…" value={newMessage} />
-                    <button className="rounded-2xl bg-gradient-to-r from-cyan-600/95 to-cyan-500/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_20px_rgba(6,182,212,0.18)] transition hover:-translate-y-0.5 hover:brightness-[1.03]" type="submit">Envoyer</button>
-                  </div>
-                </form>
+                <MessageComposer
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onSubmit={handleSend}
+                  files={files}
+                  onAddFiles={(f) => setFiles((cur) => [...cur, ...f])}
+                  onRemoveFile={(i) => setFiles((cur) => cur.filter((_, idx) => idx !== i))}
+                  sending={sending}
+                  error={sendError}
+                />
               </>
             ) : (
               <EmptyState title="Aucune conversation" message="Sélectionnez une conversation ou démarrez-en une nouvelle." icon="💬" />

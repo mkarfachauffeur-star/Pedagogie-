@@ -13,6 +13,7 @@ import { getUserFacingError } from '../../lib/userFacingError'
 import { teacherAddressFromRecord } from '../../lib/address'
 import { normalizePhoneDigits, validatePhoneDigits } from '../../lib/phone'
 import { splitFullName } from '../../lib/staffAccounts'
+import { GENDER_OPTIONS, normalizeGender } from '../../lib/genderedRoles'
 import {
   AUTHORIZATION_NUMBER_HINTS,
   getAuthorizationFieldLabel,
@@ -48,6 +49,7 @@ function teacherToForm(teacher) {
     postalCode: address.postalCode,
     city: address.city,
     employmentStatus: teacher?.employment_status || 'Salarié',
+    gender: teacher?.gender || '',
   }
 }
 
@@ -76,6 +78,10 @@ function validate(form, isEdit) {
   if (!isSimulator) {
     const phoneError = validatePhoneDigits(form.phone)
     if (phoneError) errors.phone = phoneError
+  }
+
+  if (!isSimulator && !normalizeGender(form.gender)) {
+    errors.gender = 'Le genre est obligatoire.'
   }
 
   return errors
@@ -314,6 +320,35 @@ export default function TeacherFormModal({ open, mode = 'create', teacher, onClo
             </label>
           )}
         </div>
+
+        {!isSimulator && (
+          <fieldset className="block">
+            <legend className="text-sm font-bold text-slate-700">Genre *</legend>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {GENDER_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold transition ${
+                    form.gender === option.value
+                      ? 'border-cyan-400 bg-cyan-50 text-cyan-900'
+                      : 'border-slate-300 bg-white text-slate-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="teacher-gender"
+                    className="accent-cyan-600"
+                    checked={form.gender === option.value}
+                    disabled={readOnly || !canWrite || busy}
+                    onChange={() => update('gender', option.value)}
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+            {errors.gender && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.gender}</p>}
+          </fieldset>
+        )}
 
         {!isSimulator && (
         <div className="grid gap-4 sm:grid-cols-2">
