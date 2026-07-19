@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
 
     const { error: passwordError } = await admin.auth.admin.updateUserById(student.profile_id, {
       password: tempPassword,
+      user_metadata: { must_change_password: true },
     })
     if (passwordError) return json({ error: passwordError.message }, 400)
 

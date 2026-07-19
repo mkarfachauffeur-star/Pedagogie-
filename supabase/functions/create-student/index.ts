@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
         role: 'student',
         full_name: fullName,
         gender,
+        must_change_password: true,
       },
     })
 

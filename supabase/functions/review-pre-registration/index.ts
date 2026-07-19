@@ -212,6 +212,7 @@ Deno.serve(async (req) => {
         organization_id: preReg.organization_id,
         role: 'student',
         full_name: fullName,
+        must_change_password: true,
       },
     })
 
