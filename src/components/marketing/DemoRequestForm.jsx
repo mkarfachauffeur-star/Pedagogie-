@@ -161,7 +161,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
           </label>
 
           <label className={`${labelClass} sm:col-span-2`}>
-            Adresse *
+            Adresse de l&apos;auto-école *
             <input
               autoComplete="street-address"
               className={inputClass}
