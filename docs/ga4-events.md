@@ -48,7 +48,7 @@ Ordre logique :
 
 | Événement | Paramètres | Déclencheur | Fichier |
 |-----------|------------|-------------|---------|
-| `sign_up` | `organization_name`, `organization_id` (si dispo), `plan_selected` | L'auto-école soumet une pré-inscription ou une demande de démo | `src/services/organizationSignupRequests.js`, `src/services/demoRequests.js`, `src/services/organization.js` |
+| `sign_up` | `organization_name`, `organization_id` (si dispo), `plan_selected` | L'auto-école soumet une demande de démo | `src/services/demoRequests.js`, `src/services/organization.js` |
 | `ae_pending_validation` | `organization_name`, `organization_id` (si dispo), `plan_selected` | Immédiatement après `sign_up`, compte en attente de validation Super Admin | Idem |
 | `ae_approved` | `organization_id`, `organization_name`, `approved_by`, `approved_at`, `trial_days`, `plan_selected` | Super Admin accepte une demande (prospect ou création directe) | `src/services/prospects.js`, `src/services/platform.js` |
 | `begin_trial` | `organization_id`, `plan`, `trial_days` (30) | Essai gratuit démarré **après** validation Super Admin | `src/services/prospects.js`, `src/services/platform.js`, `src/services/organization.js` (inscription auto-activée) |

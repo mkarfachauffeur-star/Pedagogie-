@@ -51,7 +51,7 @@ export function isValidOptionalUrl(value) {
 }
 
 /**
- * Validation formulaire profil / pré-inscription.
+ * Validation formulaire profil auto-école / demande de démo.
  * @returns {{ ok: boolean, errors: Record<string, string>, message: string|null }}
  */
 export function validateOrgProfileForm(form, { requireApproval = false } = {}) {
