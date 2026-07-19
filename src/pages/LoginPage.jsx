@@ -23,6 +23,7 @@ import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
 import { breadcrumbsForPage, buildPageJsonLd, SEO_PAGES } from '../lib/seo'
 import { roleDestinations } from '../utils/authSession'
+import { isPasswordPolicyMet, PASSWORD_POLICY_HINT, validatePassword } from '../lib/passwordPolicy'
 
 function LoginRoadArt() {
   return (
@@ -220,8 +221,9 @@ export default function LoginPage() {
   const handlePasswordChange = async (event) => {
     event.preventDefault()
     setAuthError('')
-    if (newPassword.length < 8) {
-      setAuthError('Le nouveau mot de passe doit contenir au moins 8 caractères.')
+    const policy = validatePassword(newPassword)
+    if (!policy.ok) {
+      setAuthError(policy.error)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -331,6 +333,7 @@ export default function LoginPage() {
                       <p className="mt-2 text-sm">
                         Pour des raisons de sécurité, définissez un nouveau mot de passe personnel avant d&apos;accéder à votre espace.
                       </p>
+                      <p className="mt-2 text-xs font-semibold opacity-80">{PASSWORD_POLICY_HINT}</p>
                     </div>
                     <label className={skin.loginLabel}>
                       Nouveau mot de passe
@@ -341,7 +344,7 @@ export default function LoginPage() {
                           className={skin.loginInput}
                           minLength={8}
                           onChange={(event) => setNewPassword(event.target.value)}
-                          placeholder="Minimum 8 caractères"
+                          placeholder="Ex. Pedagogia1"
                           required
                           type={showNewPassword ? 'text' : 'password'}
                           value={newPassword}
@@ -375,7 +378,7 @@ export default function LoginPage() {
                     {authError && <p className={skin.loginError}>{authError}</p>}
                     <button
                       className="group mt-1 flex w-full overflow-hidden rounded-xl shadow-lg shadow-blue-900/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
-                      disabled={submitting || newPassword.length < 8 || !confirmPassword}
+                      disabled={submitting || !isPasswordPolicyMet(newPassword) || !confirmPassword}
                       type="submit"
                     >
                       <span className="flex flex-1 items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">

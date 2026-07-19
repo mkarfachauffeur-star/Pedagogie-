@@ -62,7 +62,7 @@ const CONTAINS_RULES = [
   },
   {
     pattern: /password should be at least|weak password|password.*8/i,
-    message: 'Le mot de passe doit contenir au moins 8 caractères.',
+    message: 'Le mot de passe doit contenir au moins 8 caractères, dont 1 majuscule, 1 minuscule et 1 chiffre.',
   },
   {
     pattern: /resource_type|save_teaching_resource|teaching_resource_type|simulator_sessions|list_organization_simulator_sessions|fiche ressource introuvable|column .* does not exist/i,

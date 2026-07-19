@@ -12,6 +12,7 @@ import {
   logAuthHash,
 } from '../lib/authHashParams'
 import { roleDestinations } from '../utils/authSession'
+import { PASSWORD_POLICY_HINT, validatePassword } from '../lib/passwordPolicy'
 
 const inputClass =
   'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
@@ -77,8 +78,9 @@ export default function AcceptInvitePage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (password.length < 8) {
-      setError('Mot de passe : 8 caractères minimum.')
+    const policy = validatePassword(password)
+    if (!policy.ok) {
+      setError(policy.error)
       return
     }
     if (password !== confirm) {
@@ -104,9 +106,10 @@ export default function AcceptInvitePage() {
     const isNewManager = profileRole === 'manager'
     const { error: updateError } = await supabase.auth.updateUser({
       password,
-      ...(isNewManager
-        ? { data: { manager_onboarding_pending: true } }
-        : {}),
+      data: {
+        must_change_password: false,
+        ...(isNewManager ? { manager_onboarding_pending: true } : {}),
+      },
     })
     if (updateError) {
       setBusy(false)
@@ -174,8 +177,10 @@ export default function AcceptInvitePage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
+              placeholder="Ex. Pedagogia1"
               disabled={blocked || !ready}
             />
+            <span className="mt-1 block text-xs font-semibold text-slate-500">{PASSWORD_POLICY_HINT}</span>
           </label>
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Confirmation</span>

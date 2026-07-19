@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
 import { checkIsSuperAdmin } from '../services/platform'
 import { getUserFacingError } from '../lib/userFacingError'
+import { validatePassword } from '../lib/passwordPolicy'
 
 export const VALID_ROLES = ['student', 'teacher', 'secretary', 'manager', 'super_admin']
 
@@ -182,6 +183,8 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const completePasswordChange = useCallback(async (newPassword) => {
+    const policy = validatePassword(newPassword)
+    if (!policy.ok) return { error: new Error(policy.error) }
     const { data, error } = await supabase.auth.updateUser({
       password: newPassword,
       data: { must_change_password: false },
