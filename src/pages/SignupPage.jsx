@@ -6,54 +6,50 @@ import BetaDevelopmentBanner from '../components/marketing/BetaDevelopmentBanner
 import PublicFooter from '../components/marketing/PublicFooter'
 import { submitOrganizationSignupRequest } from '../services/organizationSignupRequests'
 import { GENDER_OPTIONS, normalizeGender } from '../lib/genderedRoles'
+import {
+  isValidSiret,
+  sanitizePhoneInput,
+  sanitizePostalCode,
+  sanitizeSiret,
+  validateOrgProfileForm,
+} from '../lib/orgProfile'
 import { getUserFacingError } from '../lib/userFacingError'
 
 const inputClass =
   'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100'
 
 function validatePreRegistrationForm(form) {
-  const requiredFields = [
-    ['orgName', "Le nom de l'auto-école est obligatoire."],
-    ['address', "L'adresse est obligatoire."],
-    ['postalCode', 'Le code postal est obligatoire.'],
-    ['city', 'La ville est obligatoire.'],
-    ['prefectureApproval', "Le numéro d'agrément préfectoral est obligatoire."],
-    ['managerFirstName', 'Le prénom est obligatoire.'],
-    ['managerLastName', 'Le nom est obligatoire.'],
-    ['email', "L'e-mail est obligatoire."],
-    ['phone', 'Le téléphone est obligatoire.'],
-  ]
-
-  for (const [field, message] of requiredFields) {
-    if (!String(form[field] || '').trim()) return message
-  }
-
-  if (form.siret.length !== 14) {
-    return 'Le SIRET doit contenir exactement 14 chiffres.'
-  }
-
-  if (!/^\d{5}$/.test(form.postalCode.trim())) {
-    return 'Le code postal doit contenir 5 chiffres.'
-  }
+  const { message, errors } = validateOrgProfileForm(
+    {
+      orgName: form.orgName,
+      managerFirstName: form.managerFirstName,
+      managerLastName: form.managerLastName,
+      address: form.address,
+      postalCode: form.postalCode,
+      city: form.city,
+      email: form.email,
+      phone: form.phone,
+      siret: form.siret,
+      prefectureApproval: form.prefectureApproval,
+      website: form.website,
+    },
+    { requireApproval: false },
+  )
+  if (message) return { message, errors }
 
   if (!normalizeGender(form.managerGender)) {
-    return 'Le genre est obligatoire.'
+    return { message: 'Le genre est obligatoire.', errors: { managerGender: 'Le genre est obligatoire.' } }
   }
 
-  const email = form.email.trim()
-  if (!email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return "L'e-mail doit être valide et contenir un @."
-  }
-
-  return null
+  return { message: null, errors: {} }
 }
 
-function SiretInput({ value, onChange, invalid }) {
+function SiretInput({ value, onChange, invalid, error }) {
   const inputRef = useRef(null)
   const [focused, setFocused] = useState(false)
 
   const handleChange = (raw) => {
-    onChange(raw.replace(/\D/g, '').slice(0, 14))
+    onChange(sanitizeSiret(raw))
   }
 
   return (
@@ -101,6 +97,10 @@ function SiretInput({ value, onChange, invalid }) {
           })}
         </div>
       </div>
+      {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
+      {!error && value.length > 0 && value.length < 14 && (
+        <p className="mt-1 text-xs font-medium text-slate-500">{value.length}/14 chiffres</p>
+      )}
     </div>
   )
 }
@@ -118,21 +118,32 @@ export default function SignupPage() {
     city: '',
     siret: '',
     prefectureApproval: '',
+    website: '',
   })
+  const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
 
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
-  const siretInvalid = form.siret.length > 0 && form.siret.length !== 14
+  const update = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
+  const siretInvalid = form.siret.length > 0 && !isValidSiret(form.siret)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError(null)
 
-    const validationError = validatePreRegistrationForm(form)
-    if (validationError) {
-      setError(validationError)
+    const { message, errors } = validatePreRegistrationForm(form)
+    if (message) {
+      setFieldErrors(errors)
+      setError(message)
       return
     }
 
@@ -149,6 +160,7 @@ export default function SignupPage() {
       city: form.city,
       siret: form.siret,
       prefectureApproval: form.prefectureApproval,
+      website: form.website,
     })
     setBusy(false)
 
@@ -179,7 +191,7 @@ export default function SignupPage() {
           <div className="rounded-[2rem] border border-white/10 bg-white p-6 shadow-2xl md:p-8">
             <h1 className="text-3xl font-extrabold text-slate-950">Pré-inscription</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Pedagogia Drive est en version bêta. Déposez votre demande — notre équipe vous
+              Pedagogia Drive est en version bêta. Déposez le profil de votre auto-école — notre équipe vous
               contactera pour activer votre accès.
             </p>
 
@@ -193,12 +205,14 @@ export default function SignupPage() {
                 </Link>
               </div>
             ) : (
-              <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              <form className="mt-8 space-y-8" onSubmit={handleSubmit} noValidate>
                 <section>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <h2 className="text-lg font-extrabold text-slate-900">Auto-école</h2>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="block sm:col-span-2">
                       <span className="text-sm font-bold text-slate-700">Nom de l&apos;auto-école *</span>
                       <input className={inputClass} required value={form.orgName} onChange={(e) => update('orgName', e.target.value)} />
+                      {fieldErrors.orgName && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.orgName}</p>}
                     </label>
                     <label className="block sm:col-span-2">
                       <span className="text-sm font-bold text-slate-700">Adresse *</span>
@@ -210,6 +224,7 @@ export default function SignupPage() {
                         value={form.address}
                         onChange={(e) => update('address', e.target.value)}
                       />
+                      {fieldErrors.address && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.address}</p>}
                     </label>
                     <label className="block">
                       <span className="text-sm font-bold text-slate-700">Code postal *</span>
@@ -220,8 +235,9 @@ export default function SignupPage() {
                         maxLength={5}
                         required
                         value={form.postalCode}
-                        onChange={(e) => update('postalCode', e.target.value.replace(/\D/g, '').slice(0, 5))}
+                        onChange={(e) => update('postalCode', sanitizePostalCode(e.target.value))}
                       />
+                      {fieldErrors.postalCode && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.postalCode}</p>}
                     </label>
                     <label className="block">
                       <span className="text-sm font-bold text-slate-700">Ville *</span>
@@ -232,14 +248,33 @@ export default function SignupPage() {
                         value={form.city}
                         onChange={(e) => update('city', e.target.value)}
                       />
+                      {fieldErrors.city && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.city}</p>}
                     </label>
                     <label className="block" htmlFor="siret">
                       <span className="text-sm font-bold text-slate-700">SIRET *</span>
-                      <SiretInput invalid={siretInvalid} value={form.siret} onChange={(value) => update('siret', value)} />
+                      <SiretInput
+                        error={fieldErrors.siret}
+                        invalid={siretInvalid || Boolean(fieldErrors.siret)}
+                        value={form.siret}
+                        onChange={(value) => update('siret', value)}
+                      />
                     </label>
                     <label className="block">
-                      <span className="text-sm font-bold text-slate-700">N° agrément préfectoral *</span>
-                      <input className={inputClass} required value={form.prefectureApproval} onChange={(e) => update('prefectureApproval', e.target.value)} />
+                      <span className="text-sm font-bold text-slate-700">N° agrément préfectoral</span>
+                      <span className="ml-1 text-xs font-medium text-slate-400">(facultatif)</span>
+                      <input className={inputClass} value={form.prefectureApproval} onChange={(e) => update('prefectureApproval', e.target.value)} />
+                    </label>
+                    <label className="block sm:col-span-2">
+                      <span className="text-sm font-bold text-slate-700">Site internet</span>
+                      <span className="ml-1 text-xs font-medium text-slate-400">(facultatif)</span>
+                      <input
+                        className={inputClass}
+                        placeholder="https://www.exemple.fr"
+                        type="url"
+                        value={form.website}
+                        onChange={(e) => update('website', e.target.value)}
+                      />
+                      {fieldErrors.website && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.website}</p>}
                     </label>
                   </div>
                 </section>
@@ -255,6 +290,9 @@ export default function SignupPage() {
                       <span className="text-sm font-bold text-slate-700">Prénom *</span>
                       <input className={inputClass} required value={form.managerFirstName} onChange={(e) => update('managerFirstName', e.target.value)} />
                     </label>
+                    {(fieldErrors.managerName) && (
+                      <p className="sm:col-span-2 text-xs font-semibold text-rose-600">{fieldErrors.managerName}</p>
+                    )}
                     <fieldset className="block sm:col-span-2">
                       <legend className="text-sm font-bold text-slate-700">Genre *</legend>
                       <div className="mt-2 flex flex-wrap gap-3">
@@ -278,14 +316,27 @@ export default function SignupPage() {
                           </label>
                         ))}
                       </div>
+                      {fieldErrors.managerGender && (
+                        <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.managerGender}</p>
+                      )}
                     </fieldset>
                     <label className="block">
                       <span className="text-sm font-bold text-slate-700">E-mail *</span>
                       <input className={inputClass} required type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
+                      {fieldErrors.email && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.email}</p>}
                     </label>
                     <label className="block">
                       <span className="text-sm font-bold text-slate-700">Téléphone *</span>
-                      <input className={inputClass} required type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+                      <input
+                        className={inputClass}
+                        required
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="06 12 34 56 78"
+                        value={form.phone}
+                        onChange={(e) => update('phone', sanitizePhoneInput(e.target.value))}
+                      />
+                      {fieldErrors.phone && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.phone}</p>}
                     </label>
                   </div>
                 </section>
@@ -294,9 +345,18 @@ export default function SignupPage() {
                   <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>
                 )}
 
-                <button className="pd-btn-primary w-full disabled:opacity-60" disabled={busy} type="submit">
+                <button
+                  className="pd-btn-primary w-full disabled:opacity-60"
+                  disabled={busy || !isValidSiret(form.siret)}
+                  type="submit"
+                >
                   {busy ? 'Envoi en cours…' : 'Envoyer ma pré-inscription'}
                 </button>
+                {!isValidSiret(form.siret) && form.siret.length > 0 && (
+                  <p className="text-center text-xs font-medium text-rose-600">
+                    Le SIRET doit contenir exactement 14 chiffres pour valider le formulaire.
+                  </p>
+                )}
               </form>
             )}
           </div>

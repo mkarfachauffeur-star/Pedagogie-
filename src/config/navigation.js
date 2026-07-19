@@ -51,7 +51,7 @@ export const NAVIGATION = {
       { href: '/manager/exports', icon: '\u{1F4E4}', label: 'Exports réglementaires' },
       { href: '/manager/messages', icon: '\u{1F4AC}', label: 'Messages' },
       { href: '/manager/statistics', icon: '\u{1F4C8}', label: 'Évolution du CA' },
-      { href: '/manager/settings', icon: '\u2699\uFE0F', label: 'Paramètres' },
+      { href: '/manager/settings', icon: '\u2699\uFE0F', label: 'Profil auto-école' },
     ],
   },
   student: {

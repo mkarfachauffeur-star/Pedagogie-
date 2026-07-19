@@ -6,6 +6,7 @@ import PageShell from '../../components/ui/PageShell'
 import { useAuth } from '../../context/AuthContext'
 import { formatEur } from '../../services/finance'
 import { fetchManagerDashboard } from '../../services/managerDashboard'
+import { orgLogoUrl } from '../../services/organization'
 
 const priorityTone = {
   amber: 'border-amber-200 bg-amber-50 text-amber-900',
@@ -15,7 +16,7 @@ const priorityTone = {
 }
 
 export default function AdminDashboardPage() {
-  const { profileId, organizationId, organization, loading: authLoading } = useAuth()
+  const { profileId, organizationId, organization, profile, loading: authLoading } = useAuth()
   const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -39,7 +40,10 @@ export default function AdminDashboardPage() {
     refresh()
   }, [refresh])
 
-  const orgLabel = organization?.name || 'Votre auto-école'
+  const orgName = organization?.name || 'Votre auto-école'
+  const managerName = organization?.manager_name || profile?.full_name || ''
+  const city = organization?.city || ''
+  const logoUrl = orgLogoUrl(organization?.logo_storage_path)
   const todayLabel = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -52,8 +56,36 @@ export default function AdminDashboardPage() {
       <PageHero
         eyebrow="Gérant"
         title="Tableau de bord"
-        subtitle={`${orgLabel} — ${todayLabel}`}
+        subtitle={todayLabel}
       />
+
+      {organizationId && (
+        <section className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border-2 border-slate-300 bg-white p-4 shadow-[var(--shadow-soft)] sm:p-5">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={`Logo ${orgName}`}
+              className="h-14 w-14 shrink-0 rounded-2xl border border-slate-200 object-cover sm:h-16 sm:w-16"
+            />
+          ) : (
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-slate-100 text-2xl sm:h-16 sm:w-16">
+              🏫
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-extrabold text-slate-950">{orgName}</p>
+            <p className="mt-0.5 text-sm text-slate-600">
+              {[managerName, city].filter(Boolean).join(' · ') || 'Complétez le profil dans Paramètres'}
+            </p>
+          </div>
+          <Link
+            to="/manager/settings"
+            className="shrink-0 rounded-xl border-2 border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800"
+          >
+            Profil auto-école
+          </Link>
+        </section>
+      )}
 
       {authLoading || loading ? (
         <p className="text-sm text-slate-500">Chargement du tableau de bord…</p>

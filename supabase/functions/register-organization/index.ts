@@ -45,6 +45,10 @@ Deno.serve(async (req) => {
     const city = String(body.city || '').trim()
     const siret = String(body.siret || '').trim()
     const prefectureApproval = String(body.prefecture_approval || '').trim()
+    const websiteRaw = String(body.website || '').trim()
+    const website = websiteRaw
+      ? (websiteRaw.startsWith('http') ? websiteRaw : `https://${websiteRaw}`)
+      : null
     const logoBase64 = body.logo_base64 ? String(body.logo_base64) : null
     const logoMime = body.logo_mime ? String(body.logo_mime) : 'image/png'
     const rawGender = String(body.gender || body.manager_gender || '').trim().toLowerCase()
@@ -62,6 +66,13 @@ Deno.serve(async (req) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return json({ error: 'Adresse e-mail invalide.' }, 400)
     }
+    const siretDigits = siret.replace(/\D/g, '')
+    if (siretDigits && siretDigits.length !== 14) {
+      return json({ error: 'Le SIRET doit contenir exactement 14 chiffres.' }, 400)
+    }
+    if (postalCode && !/^\d{5}$/.test(postalCode)) {
+      return json({ error: 'Le code postal doit contenir exactement 5 chiffres.' }, 400)
+    }
 
     const fullName = `${managerLast} ${managerFirst}`.trim()
 
@@ -69,13 +80,15 @@ Deno.serve(async (req) => {
       .from('organizations')
       .insert({
         name: orgName,
+        manager_name: fullName,
         email,
         phone: phone || null,
         address: address || null,
         postal_code: postalCode || null,
         city: city || null,
-        siret: siret || null,
+        siret: siretDigits || null,
         prefecture_approval: prefectureApproval || null,
+        website,
         status: 'trial',
       })
       .select('id')

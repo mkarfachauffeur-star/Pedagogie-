@@ -5,7 +5,6 @@ import EmptyState from '../../components/ui/EmptyState'
 import PageHero from '../../components/ui/PageHero'
 import { useAuth } from '../../context/AuthContext'
 import {
-  fetchOrganization,
   orgLogoUrl,
   updateOrganization,
   uploadOrgLogo,
@@ -14,12 +13,23 @@ import {
   SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS,
   normalizeSupervisorMode,
 } from '../../lib/simulatorSessions'
+import {
+  isValidSiret,
+  sanitizePhoneInput,
+  sanitizePostalCode,
+  sanitizeSiret,
+  toOrganizationPatch,
+  validateOrgProfileForm,
+} from '../../lib/orgProfile'
 import StudentCharterAdminSection from '../../components/students/StudentCharterAdminSection'
 
+const inputClass = 'pd-input mt-2 w-full disabled:bg-slate-50'
+
 export default function AdminSettingsPage() {
-  const { profileId, user, organizationId, organization, canWrite, refreshOrg } = useAuth()
+  const { profileId, user, profile, organizationId, organization, canWrite, refreshOrg } = useAuth()
   const [form, setForm] = useState({
     name: '',
+    managerName: '',
     email: '',
     phone: '',
     address: '',
@@ -30,13 +40,17 @@ export default function AdminSettingsPage() {
     prefecture_approval: '',
     simulator_session_supervisor_mode: 'admin_supervisor',
   })
+  const [fieldErrors, setFieldErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [logoBusy, setLogoBusy] = useState(false)
   const [message, setMessage] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!organization) return
     setForm({
       name: organization.name || '',
+      managerName: organization.manager_name || profile?.full_name || '',
       email: organization.email || '',
       phone: organization.phone || '',
       address: organization.address || '',
@@ -47,36 +61,104 @@ export default function AdminSettingsPage() {
       prefecture_approval: organization.prefecture_approval || '',
       simulator_session_supervisor_mode: organization.simulator_session_supervisor_mode || 'admin_supervisor',
     })
-  }, [organization])
+  }, [organization, profile?.full_name])
+
+  const update = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
 
   const save = async (e) => {
     e.preventDefault()
     if (!canWrite || !organizationId) return
+    setMessage(null)
+    setError(null)
+
+    const { ok, errors, message: validationMessage } = validateOrgProfileForm({
+      orgName: form.name,
+      managerName: form.managerName,
+      address: form.address,
+      postalCode: form.postal_code,
+      city: form.city,
+      email: form.email,
+      phone: form.phone,
+      siret: form.siret,
+      prefectureApproval: form.prefecture_approval,
+      website: form.website,
+    })
+    if (!ok) {
+      setFieldErrors({
+        name: errors.orgName,
+        managerName: errors.managerName,
+        address: errors.address,
+        postal_code: errors.postalCode,
+        city: errors.city,
+        email: errors.email,
+        phone: errors.phone,
+        siret: errors.siret,
+        website: errors.website,
+      })
+      setError(validationMessage)
+      return
+    }
+
     setSaving(true)
-    const { error } = await updateOrganization(organizationId, form)
+    const patch = {
+      ...toOrganizationPatch({
+        name: form.name,
+        managerName: form.managerName,
+        address: form.address,
+        postalCode: form.postal_code,
+        city: form.city,
+        email: form.email,
+        phone: form.phone,
+        siret: form.siret,
+        prefectureApproval: form.prefecture_approval,
+        website: form.website,
+      }),
+      simulator_session_supervisor_mode: form.simulator_session_supervisor_mode,
+    }
+    const { error: saveError } = await updateOrganization(organizationId, patch)
     setSaving(false)
-    setMessage(error ? 'Erreur de sauvegarde.' : 'Paramètres enregistrés.')
-    if (!error) refreshOrg?.(user?.id)
+    if (saveError) {
+      setError('Erreur de sauvegarde.')
+      return
+    }
+    setMessage('Profil de l’auto-école enregistré.')
+    refreshOrg?.(user?.id)
   }
 
   const onLogo = async (e) => {
     const file = e.target.files?.[0]
     if (!file || !organizationId || !canWrite) return
-    const { path, error } = await uploadOrgLogo(organizationId, file)
-    if (!error && path) {
-      await updateOrganization(organizationId, { logo_storage_path: path })
-      refreshOrg?.(profileId)
+    setLogoBusy(true)
+    setError(null)
+    const { path, error: uploadError } = await uploadOrgLogo(organizationId, file)
+    if (uploadError || !path) {
+      setLogoBusy(false)
+      setError('Impossible d’importer le logo.')
+      return
     }
+    await updateOrganization(organizationId, { logo_storage_path: path })
+    setLogoBusy(false)
+    setMessage('Logo mis à jour.')
+    refreshOrg?.(profileId)
   }
 
   const logoUrl = orgLogoUrl(organization?.logo_storage_path)
+  const siretOk = !form.siret || isValidSiret(form.siret)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHero
         eyebrow="Paramètres"
-        title="Configuration de l'auto-école"
-        subtitle="Identité, coordonnées et logo de votre établissement."
+        title="Profil de l'auto-école"
+        subtitle="Identité, coordonnées et logo — réutilisés pour vos documents administratifs."
       />
 
       {!profileId ? (
@@ -97,90 +179,213 @@ export default function AdminSettingsPage() {
             </Link>
           </section>
 
-          <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
-            <h2 className="text-lg font-extrabold text-slate-950">Séances simulateur</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Paramètre enregistré avec le formulaire ci-dessous — compatible RdvPermis.
-            </p>
-          </section>
+          <form className="space-y-6 rounded-2xl border-2 border-slate-300 bg-white p-6" noValidate onSubmit={save}>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950">Logo</h2>
+              <p className="mt-1 text-sm text-slate-500">Affiché sur le tableau de bord et prêt pour vos documents PDF.</p>
+              <div className="mt-4 flex items-center gap-4">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={`Logo ${form.name || 'auto-école'}`} className="h-20 w-20 rounded-2xl border-2 border-slate-200 object-cover" />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 text-3xl">🏫</div>
+                )}
+                {canWrite && (
+                  <label className="cursor-pointer text-sm font-bold text-cyan-700">
+                    {logoBusy ? 'Import…' : logoUrl ? 'Changer le logo' : 'Importer un logo'}
+                    <input type="file" accept="image/*" className="hidden" disabled={logoBusy} onChange={onLogo} />
+                  </label>
+                )}
+              </div>
+            </div>
 
-      <form className="space-y-6 rounded-2xl border-2 border-slate-300 bg-white p-6" onSubmit={save}>
-        <div>
-          <h3 className="text-sm font-extrabold text-slate-900">Mode d&apos;encadrement simulateur</h3>
-          <div className="mt-4 space-y-3">
-            {SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${
-                  normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value
-                    ? 'border-cyan-300 bg-cyan-50'
-                    : 'border-slate-300 bg-white hover:border-slate-400'
-                } ${!canWrite ? 'cursor-default opacity-80' : ''}`}
-              >
-                <input
-                  checked={normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value}
-                  className="mt-1"
+            <hr className="border-slate-300" />
+
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950">Identité</h2>
+              <div className="mt-4 space-y-4">
+                <Field
                   disabled={!canWrite}
-                  name="simulator_session_supervisor_mode"
-                  onChange={() => setForm((current) => ({
-                    ...current,
-                    simulator_session_supervisor_mode: option.value,
-                  }))}
-                  type="radio"
-                  value={option.value}
+                  error={fieldErrors.name}
+                  label="Nom de l'auto-école *"
+                  value={form.name}
+                  onChange={(v) => update('name', v)}
                 />
-                <span>
-                  <span className="block text-sm font-extrabold text-slate-900">{option.label}</span>
-                  <span className="mt-1 block text-sm text-slate-600">{option.description}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
+                <Field
+                  disabled={!canWrite}
+                  error={fieldErrors.managerName}
+                  label="Nom du gérant *"
+                  value={form.managerName}
+                  onChange={(v) => update('managerName', v)}
+                />
+              </div>
+            </div>
 
-        <hr className="border-slate-300" />
-        <div className="flex items-center gap-4">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-16 w-16 rounded-xl object-cover" />
-          ) : (
-            <div className="grid h-16 w-16 place-items-center rounded-xl bg-slate-100 text-2xl">🏫</div>
-          )}
-          {canWrite && (
-            <label className="text-sm font-bold text-cyan-700 cursor-pointer">
-              Changer le logo
-              <input type="file" accept="image/*" className="hidden" onChange={onLogo} />
-            </label>
-          )}
-        </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950">Coordonnées</h2>
+              <div className="mt-4 space-y-4">
+                <Field
+                  disabled={!canWrite}
+                  error={fieldErrors.address}
+                  label="Adresse *"
+                  value={form.address}
+                  onChange={(v) => update('address', v)}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    disabled={!canWrite}
+                    error={fieldErrors.postal_code}
+                    inputMode="numeric"
+                    label="Code postal *"
+                    maxLength={5}
+                    value={form.postal_code}
+                    onChange={(v) => update('postal_code', sanitizePostalCode(v))}
+                  />
+                  <Field
+                    disabled={!canWrite}
+                    error={fieldErrors.city}
+                    label="Ville *"
+                    value={form.city}
+                    onChange={(v) => update('city', v)}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    disabled={!canWrite}
+                    error={fieldErrors.phone}
+                    label="Téléphone *"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(v) => update('phone', sanitizePhoneInput(v))}
+                  />
+                  <Field
+                    disabled={!canWrite}
+                    error={fieldErrors.email}
+                    label="E-mail *"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => update('email', v)}
+                  />
+                </div>
+                <Field
+                  disabled={!canWrite}
+                  error={fieldErrors.website}
+                  hint="Facultatif"
+                  label="Site internet"
+                  placeholder="https://www.exemple.fr"
+                  value={form.website}
+                  onChange={(v) => update('website', v)}
+                />
+              </div>
+            </div>
 
-        <Field label="Nom auto-école" value={form.name} onChange={(v) => setForm((c) => ({ ...c, name: v }))} disabled={!canWrite} />
-        <Field label="E-mail" value={form.email} onChange={(v) => setForm((c) => ({ ...c, email: v }))} disabled={!canWrite} />
-        <Field label="Téléphone" value={form.phone} onChange={(v) => setForm((c) => ({ ...c, phone: v }))} disabled={!canWrite} />
-        <Field label="Adresse" value={form.address} onChange={(v) => setForm((c) => ({ ...c, address: v }))} disabled={!canWrite} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Code postal" value={form.postal_code} onChange={(v) => setForm((c) => ({ ...c, postal_code: v }))} disabled={!canWrite} />
-          <Field label="Ville" value={form.city} onChange={(v) => setForm((c) => ({ ...c, city: v }))} disabled={!canWrite} />
-        </div>
-        <Field label="Site web" value={form.website} onChange={(v) => setForm((c) => ({ ...c, website: v }))} disabled={!canWrite} />
-        <Field label="SIRET" value={form.siret} onChange={(v) => setForm((c) => ({ ...c, siret: v }))} disabled={!canWrite} />
-        <Field label="N° agrément préfectoral" value={form.prefecture_approval} onChange={(v) => setForm((c) => ({ ...c, prefecture_approval: v }))} disabled={!canWrite} />
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950">Administratif</h2>
+              <div className="mt-4 space-y-4">
+                <label className="block text-sm font-bold text-slate-700">
+                  SIRET *
+                  <input
+                    className={inputClass}
+                    disabled={!canWrite}
+                    inputMode="numeric"
+                    maxLength={14}
+                    value={form.siret}
+                    onChange={(e) => update('siret', sanitizeSiret(e.target.value))}
+                  />
+                  {fieldErrors.siret && <p className="mt-1 text-xs font-semibold text-rose-600">{fieldErrors.siret}</p>}
+                  {!fieldErrors.siret && form.siret && !siretOk && (
+                    <p className="mt-1 text-xs font-semibold text-rose-600">
+                      Le SIRET doit contenir exactement 14 chiffres ({form.siret.length}/14).
+                    </p>
+                  )}
+                </label>
+                <Field
+                  disabled={!canWrite}
+                  hint="Facultatif"
+                  label="N° agrément préfectoral"
+                  value={form.prefecture_approval}
+                  onChange={(v) => update('prefecture_approval', v)}
+                />
+              </div>
+            </div>
 
-        {message && <p className="text-sm font-semibold text-emerald-700">{message}</p>}
-        {canWrite && (
-          <button type="submit" disabled={saving} className="pd-btn-primary">{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
-        )}
-      </form>
+            <hr className="border-slate-300" />
+
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950">Séances simulateur</h2>
+              <p className="mt-1 text-sm text-slate-500">Paramètre compatible RdvPermis.</p>
+              <div className="mt-4 space-y-3">
+                {SIMULATOR_SESSION_SUPERVISOR_MODE_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${
+                      normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value
+                        ? 'border-cyan-300 bg-cyan-50'
+                        : 'border-slate-300 bg-white hover:border-slate-400'
+                    } ${!canWrite ? 'cursor-default opacity-80' : ''}`}
+                  >
+                    <input
+                      checked={normalizeSupervisorMode(form.simulator_session_supervisor_mode) === option.value}
+                      className="mt-1"
+                      disabled={!canWrite}
+                      name="simulator_session_supervisor_mode"
+                      onChange={() => update('simulator_session_supervisor_mode', option.value)}
+                      type="radio"
+                      value={option.value}
+                    />
+                    <span>
+                      <span className="block text-sm font-extrabold text-slate-900">{option.label}</span>
+                      <span className="mt-1 block text-sm text-slate-600">{option.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {error && <p className="text-sm font-semibold text-rose-700">{error}</p>}
+            {message && <p className="text-sm font-semibold text-emerald-700">{message}</p>}
+            {canWrite && (
+              <button
+                type="submit"
+                disabled={saving || !siretOk}
+                className="pd-btn-primary disabled:opacity-60"
+              >
+                {saving ? 'Enregistrement…' : 'Enregistrer le profil'}
+              </button>
+            )}
+          </form>
         </>
       )}
     </div>
   )
 }
 
-function Field({ label, value, onChange, disabled }) {
+function Field({
+  label,
+  value,
+  onChange,
+  disabled,
+  error,
+  hint,
+  type = 'text',
+  inputMode,
+  maxLength,
+  placeholder,
+}) {
   return (
     <label className="block text-sm font-bold text-slate-700">
       {label}
-      <input className="pd-input mt-2 w-full disabled:bg-slate-50" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+      {hint && <span className="ml-1 text-xs font-medium text-slate-400">({hint})</span>}
+      <input
+        className={inputClass}
+        disabled={disabled}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
     </label>
   )
 }

@@ -1,4 +1,5 @@
 import { trackAeApproved, trackAePendingValidation, trackBeginTrial, trackSignUp } from '../lib/analytics'
+import { buildOrgDocumentProfile } from '../lib/orgProfile'
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 
@@ -103,6 +104,15 @@ export function orgLogoUrl(storagePath) {
   if (!storagePath) return null
   const { data } = supabase.storage.from('org-assets').getPublicUrl(storagePath)
   return data?.publicUrl || null
+}
+
+/** Profil documentaire (PDF, attestations…) avec URL logo résolue. */
+export function getOrgDocumentProfile(organization, { managerNameFallback } = {}) {
+  if (!organization) return null
+  return buildOrgDocumentProfile(organization, {
+    managerNameFallback,
+    logoUrl: orgLogoUrl(organization.logo_storage_path),
+  })
 }
 
 export async function uploadOrgLogo(organizationId, file) {
