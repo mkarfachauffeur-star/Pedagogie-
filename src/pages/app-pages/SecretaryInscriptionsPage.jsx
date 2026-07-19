@@ -10,6 +10,8 @@ import { listStudents, subscribeStudents } from '../../services/students'
 import { contractsMap, getStudentSummary } from '../../services/finance'
 import { supabase } from '../../lib/supabase'
 import { formatPersonName } from '../../lib/staffAccounts'
+import { isAacFormation } from '../../lib/studentTrack'
+import AacPanel from '../../components/aac/AacPanel'
 import {
   isArchivedStudent,
   LICENSE_RESULT,
@@ -26,7 +28,7 @@ function formatDateFr(value) {
 }
 
 export default function SecretaryInscriptionsPage() {
-  const { profileId, canWrite } = useAuth()
+  const { profileId, canWrite, organizationId } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const highlightStudentId = searchParams.get('student')
   const highlightedRef = useRef(null)
@@ -191,6 +193,17 @@ export default function SecretaryInscriptionsPage() {
               Fermer
             </button>
           </div>
+          {isAacFormation(highlightedStudent) && (
+            <div className="mt-4 rounded-[1.25rem] border border-white bg-white p-4">
+              <AacPanel
+                birthDate={highlightedStudent.birth_date}
+                mode="staff"
+                organizationId={organizationId || highlightedStudent.organization_id}
+                studentId={highlightedStudent.id}
+                userId={profileId}
+              />
+            </div>
+          )}
         </section>
       )}
 

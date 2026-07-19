@@ -45,6 +45,7 @@ export const PERMIS_B_ONLY_ROUTES = [
   '/student/lessons',
   '/student/competency-reports',
   '/student/pedagogical-appointments',
+  '/student/accompanied-driving',
   '/student/practice-exams',
   '/student/exams',
   '/student/lexicon',

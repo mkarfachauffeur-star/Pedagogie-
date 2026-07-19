@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useStudentRemcProgress } from '../../hooks/useStudentRemcProgress'
 import InitialAssessmentWizard from '../../components/initial-assessment/InitialAssessmentWizard'
-import { isPermisBStudent, resolveStudentTrack, STUDENT_TRACKS } from '../../lib/studentTrack'
+import { isAacFormation, isPermisBStudent, resolveStudentTrack, STUDENT_TRACKS } from '../../lib/studentTrack'
+import AacPanel from '../../components/aac/AacPanel'
 import { formatPersonName } from '../../lib/staffAccounts'
 import { normalizeInitialAssessment, formatRecommendedHours } from '../../lib/initialAssessmentUtils'
 import { formatAssessmentStatus, getInitialAssessmentForStudent } from '../../services/initialAssessment'
@@ -252,6 +253,7 @@ export default function TeacherStudentsPage() {
   )
 
   const selectedIsPermisB = isPermisBStudent(selectedApiStudent || selectedStudent)
+  const selectedIsAac = isAacFormation(selectedApiStudent || selectedStudent)
 
   const initialAssessmentCompleted = initialAssessment?.status === 'completed'
 
@@ -508,10 +510,8 @@ export default function TeacherStudentsPage() {
                   {formatPersonName(student)}
                 </p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{student.permisSummary}</p>
-                {student.aacTracking && (
-                  <p className="mt-1 text-[11px] font-bold text-cyan-700">
-                    AAC début : {formatDateFr(student.aacTracking.startDate)} · Min fin : {formatDateFr(student.aacTracking.minimumEndDate)}
-                  </p>
+                {isAacFormation(apiStudents.find((row) => row.id === student.id) || student) && (
+                  <p className="mt-1 text-[11px] font-bold text-cyan-700">Formule AAC</p>
                 )}
                 {selectedStudentId === student.id && selectedRemcProgress?.global > 0 && (
                   <>
@@ -594,9 +594,9 @@ export default function TeacherStudentsPage() {
                     ? ` · Sous-compétences ${selectedRemcProgress.global}%`
                     : ''}
                 </p>
-                {selectedStudent.aacTracking && (
+                {selectedIsAac && (
                   <p className="mt-1 text-xs font-bold text-cyan-700">
-                    AAC {selectedStudent.aacTracking.kilometersCurrent}/{selectedStudent.aacTracking.kilometersTarget} km · Début {formatDateFr(selectedStudent.aacTracking.startDate)}
+                    Conduite accompagnée — onglet AAC ci-dessous
                   </p>
                 )}
                 <div className="mt-2">
@@ -605,17 +605,38 @@ export default function TeacherStudentsPage() {
               </div>
             </div>
 
-            {selectedIsPermisB && !initialAssessmentCompleted && (
+            {(selectedIsPermisB || selectedIsAac) && (
               <div className="mt-4 flex flex-wrap gap-2">
                 <StudentPanelTab
-                  active={studentPanelTab === 'initial-assessment'}
+                  active={studentPanelTab === 'lessons'}
                   onClick={() => {
-                    setStudentPanelTab('initial-assessment')
-                    setLessonFormOpen(false)
+                    setStudentPanelTab('lessons')
                   }}
                 >
-                  Évaluation de départ
+                  Leçons
                 </StudentPanelTab>
+                {selectedIsAac && (
+                  <StudentPanelTab
+                    active={studentPanelTab === 'aac'}
+                    onClick={() => {
+                      setStudentPanelTab('aac')
+                      setLessonFormOpen(false)
+                    }}
+                  >
+                    Conduite accompagnée
+                  </StudentPanelTab>
+                )}
+                {selectedIsPermisB && !initialAssessmentCompleted && (
+                  <StudentPanelTab
+                    active={studentPanelTab === 'initial-assessment'}
+                    onClick={() => {
+                      setStudentPanelTab('initial-assessment')
+                      setLessonFormOpen(false)
+                    }}
+                  >
+                    Évaluation de départ
+                  </StudentPanelTab>
+                )}
               </div>
             )}
 
@@ -923,6 +944,19 @@ export default function TeacherStudentsPage() {
             </>
             )}
           </section>
+          )}
+
+          {studentPanelTab === 'aac' && selectedIsAac && (
+            <section className="card-panel-lg">
+              <AacPanel
+                birthDate={(selectedApiStudent || selectedStudent)?.birth_date}
+                mode="staff"
+                organizationId={organizationId}
+                senderName={profile?.full_name}
+                studentId={selectedStudent.id}
+                userId={profileId}
+              />
+            </section>
           )}
 
           {studentPanelTab === 'initial-assessment' && selectedIsPermisB && (

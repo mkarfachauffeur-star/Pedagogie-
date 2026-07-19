@@ -7,9 +7,9 @@ const PERMIS_B_ITEMS = [
   { href: '/student/lessons', icon: '\u{1F4DA}', label: 'Compétences', track: 'permis_b' },
   { href: '/student/competency-reports', icon: '\u{1F4D3}', label: 'Historique des leçons', track: 'permis_b' },
   {
-    href: '/student/pedagogical-appointments',
+    href: '/student/accompanied-driving',
     icon: '\u{1F697}',
-    label: 'Rendez-vous pédagogiques (AAC)',
+    label: 'Conduite accompagnée',
     track: 'permis_b',
     aacOnly: true,
   },

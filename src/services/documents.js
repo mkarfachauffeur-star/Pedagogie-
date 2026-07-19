@@ -12,6 +12,7 @@ export const DOCUMENT_CATEGORIES = [
   'Contrat signé',
   'Mandat de paiement',
   'Dossier ANTS',
+  'Attestation FFI',
   'Autres documents',
 ]
 
