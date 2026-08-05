@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AddStudentModal from '../../components/AddStudentModal'
+import AacPanel from '../../components/aac/AacPanel'
 import EmptyState from '../../components/ui/EmptyState'
 import ListSearchField from '../../components/ui/ListSearchField'
 import PaginationBar from '../../components/ui/PaginationBar'
 import { useAuth } from '../../context/AuthContext'
 import { matchStudentSearch, useClientPagination } from '../../hooks/useClientPagination'
-import { resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
+import { isAacFormation, resolveStudentTrack, getTrackLabel } from '../../lib/studentTrack'
 import { getAssessmentStatusStyles } from '../../data/initialAssessmentForm'
 import { formatPersonName } from '../../lib/staffAccounts'
 import { formatAssessmentStatus, listInitialAssessmentsForStudents } from '../../services/initialAssessment'
@@ -35,7 +37,9 @@ function referentTeacher(student) {
 }
 
 export default function AdminStudentsPage() {
-  const { profileId, canWrite } = useAuth()
+  const { profileId, canWrite, organizationId } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const highlightStudentId = searchParams.get('student')
   const [students, setStudents] = useState([])
   const [assessmentsByStudent, setAssessmentsByStudent] = useState({})
   const [loading, setLoading] = useState(true)
@@ -45,6 +49,7 @@ export default function AdminStudentsPage() {
   const [viewTab, setViewTab] = useState('active')
   const [actionBusy, setActionBusy] = useState(null)
   const [feedback, setFeedback] = useState(null)
+  const [selectedAacStudentId, setSelectedAacStudentId] = useState(null)
 
   const filteredStudents = useMemo(() => {
     if (viewTab === 'archived') {
@@ -109,6 +114,25 @@ export default function AdminStudentsPage() {
   useEffect(() => {
     setPage(1)
   }, [viewTab, setPage])
+
+  useEffect(() => {
+    if (highlightStudentId) setSelectedAacStudentId(highlightStudentId)
+  }, [highlightStudentId])
+
+  const aacStudent = useMemo(() => {
+    const id = selectedAacStudentId || highlightStudentId
+    if (!id) return null
+    return students.find((row) => row.id === id && isAacFormation(row)) || null
+  }, [students, selectedAacStudentId, highlightStudentId])
+
+  const clearAacPanel = () => {
+    setSelectedAacStudentId(null)
+    if (highlightStudentId) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('student')
+      setSearchParams(next, { replace: true })
+    }
+  }
 
   const runResendAccess = async (student) => {
     if (!canWrite || !student.profile_id || !student.email) return
@@ -184,6 +208,31 @@ export default function AdminStudentsPage() {
         }`}>
           {feedback.text}
         </p>
+      )}
+
+      {aacStudent && (
+        <section className="rounded-[1.5rem] border-2 border-cyan-200 bg-white p-4 shadow-[var(--shadow-soft)]">
+          <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Conduite accompagnée</p>
+              <h2 className="mt-1 text-xl font-extrabold text-slate-950">{formatPersonName(aacStudent)}</h2>
+            </div>
+            <button
+              className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+              onClick={clearAacPanel}
+              type="button"
+            >
+              Fermer
+            </button>
+          </div>
+          <AacPanel
+            birthDate={aacStudent.birth_date}
+            mode="staff"
+            organizationId={organizationId || aacStudent.organization_id}
+            studentId={aacStudent.id}
+            userId={profileId}
+          />
+        </section>
       )}
 
       <section className="rounded-[1.5rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)]">
@@ -307,6 +356,15 @@ export default function AdminStudentsPage() {
                         onClick={() => runResendAccess(student)}
                       >
                         {actionBusy === student.id ? 'Envoi…' : 'Renvoyer l\'accès par e-mail'}
+                      </button>
+                    )}
+                    {isAacFormation(student) && (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-navy-200 bg-navy-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-700"
+                        onClick={() => setSelectedAacStudentId(student.id)}
+                      >
+                        Suivi AAC
                       </button>
                     )}
                     {canWrite && isArchivedStudent(student) && student.profile_id && (

@@ -17,6 +17,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import AuthHashRedirect from './components/AuthHashRedirect'
+import ScrollToTop from './components/ScrollToTop'
 import Analytics from './components/analytics/Analytics'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
@@ -151,6 +152,7 @@ function App() {
     <BrowserRouter>
       <Analytics />
       <AuthHashRedirect />
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<ProfileSelection />} />
         <Route path="/signup" element={<Navigate replace to="/#demonstration" />} />

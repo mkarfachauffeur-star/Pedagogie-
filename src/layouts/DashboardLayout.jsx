@@ -45,10 +45,18 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   const { newCount: newProspectCount } = useProspectNotifications()
   const { count: platformNotificationCount } = usePlatformUnreadCount(role === 'super_admin' ? profileId : null)
 
-  // Chaque changement de page repart du haut (évite d'atterrir en bas sur les longues pages).
+  // Chaque navigation repart du haut (inclut les changements de query/hash).
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [location.pathname])
+    const scrollNow = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0
+      document.body.scrollTop = 0
+      document.documentElement.scrollTop = 0
+    }
+    scrollNow()
+    const raf = window.requestAnimationFrame(scrollNow)
+    return () => window.cancelAnimationFrame(raf)
+  }, [location.pathname, location.search, location.hash])
 
   useEffect(() => {
     if (!profileId || !['manager', 'secretary'].includes(role)) return
