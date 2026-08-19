@@ -36,10 +36,10 @@ const emptyForm = {
 export default function DemoRequestForm({ id = 'demonstration', isDark = true }) {
   const inputClass = isDark
     ? 'mt-2 min-h-12 w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 text-sm font-medium text-white outline-none placeholder:text-slate-500 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-500/20'
-    : 'mt-2 min-h-12 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+    : 'mt-2 min-h-12 w-full rounded-2xl border border-[#07111F]/12 bg-white px-4 text-sm font-medium text-[#07111F] outline-none placeholder:text-[#5B6B80]/70 focus:border-[#1769FF] focus:ring-2 focus:ring-[#1769FF]/15'
   const selectClass = isDark
     ? 'min-h-12 w-full appearance-none rounded-2xl border border-white/15 bg-white/[0.06] py-3 pl-4 pr-12 text-sm font-medium text-white outline-none focus:border-blue-400/50 focus:ring-2 focus:ring-blue-500/20'
-    : 'min-h-12 w-full appearance-none rounded-2xl border-2 border-slate-300 bg-white py-3 pl-4 pr-12 text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
+    : 'min-h-12 w-full appearance-none rounded-2xl border border-[#07111F]/12 bg-white py-3 pl-4 pr-12 text-sm font-medium text-[#07111F] outline-none focus:border-[#1769FF] focus:ring-2 focus:ring-[#1769FF]/15'
   const labelClass = `block text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`
   const errorClass = isDark ? 'mt-1 text-xs font-semibold text-rose-300' : 'mt-1 text-xs font-semibold text-rose-600'
   const hintClass = isDark ? 'ml-1 text-xs font-medium text-slate-500' : 'ml-1 text-xs font-medium text-slate-400'
@@ -120,7 +120,7 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
         className={
           isDark
             ? 'rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-blue-950/20 sm:p-8'
-            : 'rounded-[1.75rem] border-2 border-slate-300 bg-white p-6 shadow-xl sm:p-8'
+            : 'rounded-[1.75rem] border border-[#07111F]/[0.08] bg-white p-6 shadow-[0_24px_60px_-36px_rgba(7,17,31,0.28)] sm:p-8'
         }
       >
         <div className="mx-auto max-w-2xl text-center">
@@ -318,7 +318,9 @@ export default function DemoRequestForm({ id = 'demonstration', isDark = true })
 
           <div className="flex flex-col items-center gap-2 sm:col-span-2">
             <button
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
+              className={`inline-flex w-full items-center justify-center rounded-full px-7 py-4 text-sm font-semibold text-white shadow-xl transition hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto ${
+                isDark ? 'bg-gradient-to-r from-cyan-400 to-blue-600' : 'bg-[#1769FF] hover:bg-[#1258db]'
+              }`}
               disabled={submitting || (form.siret.length > 0 && !siretOk)}
               type="submit"
             >

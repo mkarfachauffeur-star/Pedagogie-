@@ -42,9 +42,11 @@ export const SEO_DEFAULT_DESCRIPTION =
 export const SEO_PAGES = {
   home: {
     path: '/',
-    title: SEO_DEFAULT_TITLE,
-    description: SEO_DEFAULT_DESCRIPTION,
+    title: 'Pedagogia Drive — Le suivi pédagogique des auto-écoles',
+    description:
+      'Pedagogia Drive centralise le suivi pédagogique des auto-écoles : élèves, compétences, QCU, ressources pédagogiques et suivi AAC/CS.',
     ogType: 'website',
+    imageAlt: 'Pedagogia Drive — suivi pédagogique des auto-écoles',
   },
   login: {
     path: '/login',

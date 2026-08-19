@@ -1242,3 +1242,93 @@
   object-position: center center;
   margin: auto;
 }
+
+.landing-page {
+  --lp-bg: #f8fafc;
+  --lp-bg-alt: #eef2f7;
+  --lp-ink: #07111f;
+  --lp-muted: #5b6b80;
+  --lp-card: #ffffff;
+  --lp-border: rgba(7, 17, 31, 0.08);
+  --lp-blue: #1769ff;
+  --lp-violet: #7c3aed;
+  --lp-red: #ef3340;
+  --lp-halo: rgba(23, 105, 255, 0.16);
+  --lp-halo-2: rgba(124, 58, 237, 0.1);
+  color: var(--lp-ink);
+  background: var(--lp-bg);
+}
+
+.landing-page[data-theme='dark'] {
+  --lp-bg: #050b18;
+  --lp-bg-alt: #081226;
+  --lp-ink: #f8fafc;
+  --lp-muted: #94a3b8;
+  --lp-card: #0b1630;
+  --lp-border: rgba(255, 255, 255, 0.1);
+  --lp-halo: rgba(23, 105, 255, 0.28);
+  --lp-halo-2: rgba(124, 58, 237, 0.18);
+}
+
+.landing-accent-text {
+  background: linear-gradient(135deg, #1769ff, #7c3aed, #ef3340);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-glow-hero {
+  background:
+    radial-gradient(ellipse 62% 58% at 82% 28%, var(--lp-halo), transparent 62%),
+    radial-gradient(ellipse 40% 36% at 12% 12%, var(--lp-halo-2), transparent 60%);
+}
+
+.landing-glow-gps {
+  background:
+    radial-gradient(ellipse 58% 70% at 18% 40%, var(--lp-halo), transparent 64%),
+    radial-gradient(ellipse 48% 55% at 88% 70%, var(--lp-halo-2), transparent 62%);
+}
+
+.landing-glow-cta {
+  background:
+    radial-gradient(ellipse 55% 70% at 18% 0%, rgba(23, 105, 255, 0.32), transparent 58%),
+    radial-gradient(ellipse 45% 55% at 82% 20%, rgba(124, 58, 237, 0.24), transparent 56%),
+    radial-gradient(ellipse 40% 50% at 50% 100%, rgba(239, 51, 64, 0.16), transparent 58%);
+}
+
+.landing-device-halo {
+  pointer-events: none;
+  position: absolute;
+  inset: -12% -8% -18%;
+  border-radius: 46%;
+  background: radial-gradient(circle at 50% 38%, var(--lp-halo), var(--lp-halo-2) 42%, transparent 70%);
+  filter: blur(18px);
+}
+
+.landing-shot-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -16% -8%;
+  border-radius: 42%;
+  filter: blur(22px);
+}
+
+.landing-shot-glow-blue {
+  background: radial-gradient(circle at 50% 42%, var(--lp-halo), transparent 68%);
+}
+
+.landing-shot-glow-violet {
+  background: radial-gradient(circle at 48% 40%, var(--lp-halo-2), transparent 68%);
+}
+
+.landing-shot-glow-red {
+  background: radial-gradient(circle at 50% 40%, rgba(239, 51, 64, 0.14), transparent 68%);
+}
+
+.landing-hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.landing-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
