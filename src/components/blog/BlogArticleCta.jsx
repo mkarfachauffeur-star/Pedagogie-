@@ -20,7 +20,7 @@ export default function BlogArticleCta({ isDark, skin }) {
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-6 py-3.5 text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5"
+          className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#EF3340] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#d92b38]"
           to="/#demonstration"
         >
           Demander une démonstration

@@ -21,7 +21,7 @@ export default function LegalPage({ seoKey, title, children, intro = null }) {
   return (
     <>
       <PageSeo {...page} jsonLd={jsonLd} />
-      <PublicPageLayout showBetaBanner={false} title={title}>
+      <PublicPageLayout title={title}>
         {intro ? <LegalParagraph>{intro}</LegalParagraph> : null}
         {children}
       </PublicPageLayout>

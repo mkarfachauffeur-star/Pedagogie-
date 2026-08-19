@@ -1,12 +1,13 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { BookOpen, Check, FileText, GraduationCap, Map, MessageSquare, Play, Route, Users } from 'lucide-react'
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import BrandLogo from '../../BrandLogo'
 import { LEGAL_ENTITY } from '../../../config/legal'
 import { trackDemoRequestClick } from '../../../lib/analytics'
 import { MARKETING_FAQ } from '../../../lib/marketingContent'
 import { LANDING_SCHEMAS } from './landingAssets'
+import { isLandingHome, landingHashPath } from './landingNav'
 import {
   DeviceStage,
   GpsScreen,
@@ -434,6 +435,25 @@ export function LandingFaq() {
   )
 }
 
+function FooterHashLink({ hash, className, children }) {
+  const { pathname } = useLocation()
+  const href = landingHashPath(hash, pathname)
+
+  if (isLandingHome(pathname)) {
+    return (
+      <a className={className} href={hash}>
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <Link className={className} to={href}>
+      {children}
+    </Link>
+  )
+}
+
 export function LandingFooter({ isDark }) {
   const linkClass = 'text-sm text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]'
 
@@ -442,18 +462,18 @@ export function LandingFooter({ isDark }) {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <BrandLogo animated={false} idPrefix="landing-footer" variant={isDark ? 'marketing' : 'light'} />
         <nav aria-label="Navigation footer" className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-7">
-          <a className={linkClass} href="#fonctionnalites">
+          <FooterHashLink className={linkClass} hash="#fonctionnalites">
             Fonctionnalités
-          </a>
+          </FooterHashLink>
           <Link className={linkClass} to="/blog">
-            Ressources
+            Blog
           </Link>
-          <a className={linkClass} href="#faq">
+          <FooterHashLink className={linkClass} hash="#faq">
             FAQ
-          </a>
-          <a className={linkClass} href="#demonstration">
+          </FooterHashLink>
+          <FooterHashLink className={linkClass} hash="#demonstration">
             Demander une démonstration
-          </a>
+          </FooterHashLink>
           <Link className={linkClass} to="/login">
             Se connecter
           </Link>
