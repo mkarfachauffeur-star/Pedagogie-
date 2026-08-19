@@ -66,6 +66,8 @@ export default function LandingHeader() {
   const navClass = 'text-sm font-medium text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]'
   const toggleClass =
     'inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--lp-border)] text-[var(--lp-ink)] transition hover:bg-[var(--lp-bg-alt)]'
+  const loginClass =
+    'inline-flex h-10 items-center justify-center rounded-[12px] border-2 border-[var(--lp-ink)] bg-[var(--lp-card)] px-4 text-sm font-semibold text-[var(--lp-ink)] shadow-sm transition hover:bg-[var(--lp-bg-alt)]'
   const demoClass =
     'inline-flex h-10 items-center justify-center rounded-[12px] bg-[#EF3340] px-5 text-sm font-semibold text-white transition hover:bg-[#d92b38]'
 
@@ -77,7 +79,7 @@ export default function LandingHeader() {
         scrolled ? 'border-[var(--lp-border)] bg-[var(--lp-bg)]/80' : 'border-transparent bg-[var(--lp-bg)]/55'
       }`}
     >
-      <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
+      <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 lg:gap-10 lg:px-8">
         {isHome ? (
           <a aria-label="PEDAGOGIA DRIVE - Accueil" className="inline-flex shrink-0 items-center" href="#accueil">
             {logo}
@@ -87,17 +89,17 @@ export default function LandingHeader() {
             {logo}
           </Link>
         )}
-        <nav aria-label="Navigation principale" className="hidden items-center gap-8 lg:flex">
+        <nav
+          aria-label="Navigation principale"
+          className="hidden min-w-0 items-center justify-center gap-5 lg:flex xl:gap-7"
+        >
           {LANDING_NAV_LINKS.map((item) => (
             <NavItem className={navClass} isHome={isHome} item={item} key={item.href} />
           ))}
         </nav>
-        <div className="flex items-center justify-end gap-2">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Link
-              className="inline-flex h-10 items-center rounded-[12px] px-4 text-sm font-medium text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]"
-              to="/login"
-            >
+        <div className="flex items-center justify-end gap-3">
+          <div className="hidden items-center gap-3 lg:flex">
+            <Link className={loginClass} to="/login">
               Se connecter
             </Link>
             {isHome ? (

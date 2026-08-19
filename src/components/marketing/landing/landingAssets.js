@@ -1,12 +1,12 @@
-import vehicleOrgansDiagramImage from '../../../assets/lessons/elements-essentiels-vehicule.png'
 import dashboardWarningLightsImage from '../../../assets/lessons/voyants-tableau-de-bord.png'
+import teacherStudentCarImage from '../../../assets/marketing/landing-teacher-student-car.png'
+
+export const LANDING_VIDEO_PREVIEW = {
+  src: teacherStudentCarImage,
+  alt: 'Enseignant et élève pendant une leçon de conduite',
+}
 
 export const LANDING_SCHEMAS = [
-  {
-    src: vehicleOrgansDiagramImage,
-    alt: 'Schéma pédagogique : les éléments essentiels du véhicule',
-    title: 'Éléments essentiels du véhicule',
-  },
   {
     src: dashboardWarningLightsImage,
     alt: 'Schéma pédagogique : voyants du tableau de bord',

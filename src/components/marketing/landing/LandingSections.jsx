@@ -6,7 +6,7 @@ import BrandLogo from '../../BrandLogo'
 import { LEGAL_ENTITY } from '../../../config/legal'
 import { trackDemoRequestClick } from '../../../lib/analytics'
 import { MARKETING_FAQ } from '../../../lib/marketingContent'
-import { LANDING_SCHEMAS } from './landingAssets'
+import { LANDING_SCHEMAS, LANDING_VIDEO_PREVIEW } from './landingAssets'
 import { isLandingHome, landingHashPath } from './landingNav'
 import {
   DeviceStage,
@@ -39,8 +39,8 @@ export function LandingHero({ shouldReduceMotion }) {
             Le livret numérique des auto-écoles
           </p>
           <h1 className="mt-5 text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.05em] text-[var(--lp-ink)] sm:text-5xl lg:text-[4.4rem] lg:leading-[1.02]">
-            Le suivi pédagogique de votre auto-école,{' '}
-            <span className="landing-accent-text">enfin vraiment numérique.</span>
+            Le suivi pédagogique de votre auto-école.{' '}
+            <span className="landing-accent-text">Réinventé.</span>
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-[var(--lp-muted)] sm:text-lg sm:leading-8">
             QCU, ressources pédagogiques, suivi des compétences et parcours AAC / CS : tout ce qu’il faut pour
@@ -163,8 +163,8 @@ export function LandingVideosSection({ shouldReduceMotion }) {
             className="overflow-hidden rounded-[22px] border border-[var(--lp-border)] bg-[var(--lp-card)]"
             {...reveal(shouldReduceMotion, 0.04)}
           >
-            <div className="max-h-64 overflow-hidden sm:max-h-72">
-              <QcuVoyantScreen chrome={false} />
+            <div className="h-64 overflow-hidden sm:h-72">
+              <QcuVoyantScreen chrome={false} compact />
             </div>
             <div className="border-t border-[var(--lp-border)] px-4 py-3">
               <p className="text-sm font-semibold text-[var(--lp-ink)]">QCU interactifs</p>
@@ -176,9 +176,19 @@ export function LandingVideosSection({ shouldReduceMotion }) {
             className="overflow-hidden rounded-[22px] border border-[var(--lp-border)] bg-[var(--lp-card)]"
             {...reveal(shouldReduceMotion, 0.08)}
           >
-            <div className="relative grid min-h-64 place-items-center bg-gradient-to-br from-[#0b1628] via-[#10233f] to-[#1e3a8a] sm:min-h-72">
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/25">
-                <Play className="h-5 w-5 fill-current" />
+            <div className="relative h-64 overflow-hidden sm:h-72">
+              <img
+                alt={LANDING_VIDEO_PREVIEW.alt}
+                className="h-full w-full object-cover object-center"
+                decoding="async"
+                loading="lazy"
+                src={LANDING_VIDEO_PREVIEW.src}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+              <div className="absolute inset-0 grid place-items-center">
+                <span className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white ring-1 ring-white/40 backdrop-blur-sm">
+                  <Play className="h-5 w-5 fill-current" />
+                </span>
               </div>
             </div>
             <div className="border-t border-[var(--lp-border)] px-4 py-3">
@@ -191,17 +201,14 @@ export function LandingVideosSection({ shouldReduceMotion }) {
             className="overflow-hidden rounded-[22px] border border-[var(--lp-border)] bg-[var(--lp-card)]"
             {...reveal(shouldReduceMotion, 0.12)}
           >
-            <div className="grid min-h-64 grid-cols-2 gap-2 bg-white p-3 sm:min-h-72">
-              {LANDING_SCHEMAS.map((schema) => (
-                <img
-                  alt={schema.alt}
-                  className="h-full w-full object-contain"
-                  decoding="async"
-                  key={schema.src}
-                  loading="lazy"
-                  src={schema.src}
-                />
-              ))}
+            <div className="flex h-64 items-center justify-center overflow-hidden bg-white p-3 sm:h-72">
+              <img
+                alt={LANDING_SCHEMAS[0].alt}
+                className="h-full w-full object-contain"
+                decoding="async"
+                loading="lazy"
+                src={LANDING_SCHEMAS[0].src}
+              />
             </div>
             <div className="border-t border-[var(--lp-border)] px-4 py-3">
               <p className="text-sm font-semibold text-[var(--lp-ink)]">Schémas et ressources</p>
@@ -209,12 +216,6 @@ export function LandingVideosSection({ shouldReduceMotion }) {
             </div>
           </motion.article>
         </div>
-
-        <motion.div className="mt-6" {...reveal(shouldReduceMotion, 0.14)}>
-          <Link className="text-sm font-semibold text-[#1769FF] transition hover:text-[#1258db]" to="/livret-numerique-auto-ecole">
-            Découvrir les ressources →
-          </Link>
-        </motion.div>
       </div>
     </section>
   )

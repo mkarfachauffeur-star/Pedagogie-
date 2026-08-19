@@ -131,6 +131,7 @@ export default function DashboardWarningIcon({
   interactive = true,
   pulse = false,
   className = '',
+  size = 72,
 }) {
   const src = voyantImagesById[type]
   if (!src) return null
@@ -141,7 +142,8 @@ export default function DashboardWarningIcon({
   return (
     <div
       className={[
-        'dashboard-voyant-icon grid shrink-0 place-items-center overflow-visible rounded-2xl bg-white p-[10px] shadow-sm ring-1',
+        'dashboard-voyant-icon grid shrink-0 place-items-center rounded-2xl bg-white shadow-sm ring-1',
+        size < 56 ? 'overflow-hidden p-1.5' : 'overflow-visible p-[10px]',
         severityRing[light?.severity] || 'ring-slate-300/80',
         interactive ? 'transition duration-300 ease-out hover:shadow-md' : '',
         pulse ? 'motion-safe:animate-[voyant-pulse_2s_ease-in-out_infinite]' : '',
@@ -149,7 +151,7 @@ export default function DashboardWarningIcon({
       ]
         .filter(Boolean)
         .join(' ')}
-      style={{ width: 72, height: 72, minWidth: 72, minHeight: 72 }}
+      style={{ width: size, height: size, minWidth: size, minHeight: size }}
     >
       <img
         alt={label}

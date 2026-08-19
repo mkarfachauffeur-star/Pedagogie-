@@ -229,8 +229,49 @@ export function QcuScreen() {
   )
 }
 
-export function QcuVoyantScreen({ chrome = true }) {
-  const screen = (
+export function QcuVoyantScreen({ chrome = true, compact = false }) {
+  const choices = compact ? REAL_VOYANT_QCU.choices.slice(0, 3) : REAL_VOYANT_QCU.choices
+  const letters = ['A', 'B', 'C', 'D']
+
+  const compactScreen = (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f4f7fb] p-3">
+      <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">QCU interactif</p>
+      <article className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2.5">
+        <div className="flex shrink-0 items-center gap-2.5">
+          <DashboardWarningIcon interactive={false} size={44} type={REAL_VOYANT_QCU.iconType} />
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-slate-500">{REAL_VOYANT_QCU.lesson}</p>
+            <p className="mt-0.5 text-sm font-semibold leading-5 text-slate-950">{REAL_VOYANT_QCU.question}</p>
+          </div>
+        </div>
+        <div className="mt-2 grid min-h-0 gap-1.5">
+          {choices.map((choice, index) => (
+            <div
+              className={`flex min-h-0 items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] font-medium leading-4 ${
+                index === 0
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-slate-200 bg-slate-50 text-slate-700'
+              }`}
+              key={choice}
+            >
+              <span
+                className={`grid h-4 w-4 shrink-0 place-items-center rounded text-[9px] font-bold ${
+                  index === 0 ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200'
+                }`}
+              >
+                {letters[index]}
+              </span>
+              <span className="min-w-0 truncate">{choice}</span>
+            </div>
+          ))}
+        </div>
+      </article>
+    </div>
+  )
+
+  const screen = compact ? (
+    compactScreen
+  ) : (
       <div className="bg-[#f4f7fb] p-4 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -272,7 +313,7 @@ export function QcuVoyantScreen({ chrome = true }) {
       </div>
   )
 
-  if (!chrome) return screen
+  if (!chrome || compact) return screen
   return <AppChrome title="Pedagogia Drive — QCU voyants">{screen}</AppChrome>
 }
 
@@ -548,14 +589,15 @@ export function DeviceStage({ children, variant = 'laptop', size = 'default', cl
           <>
             <div className="rounded-[20px] border border-[#c5ccd6] bg-gradient-to-b from-[#f4f6f8] via-[#d5dce6] to-[#a8b3c2] p-[8px] shadow-[0_40px_80px_-32px_rgba(7,17,31,0.5)] sm:rounded-[22px] sm:p-[11px]">
               <div className="overflow-hidden rounded-[12px] bg-[#0f131a] sm:rounded-[14px]">
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-                  <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-                  <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-                  <span className="mx-auto max-w-[11rem] truncate rounded-full bg-white/10 px-3 py-0.5 text-center text-[10px] font-medium text-white/55">
+                <div className="relative flex items-center px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+                    <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="pointer-events-none absolute left-1/2 max-w-[11rem] -translate-x-1/2 truncate rounded-full bg-white/10 px-3 py-0.5 text-center text-[10px] font-medium text-white/55">
                     Pedagogia Drive
                   </span>
-                  <span className="w-10" />
                 </div>
                 <div className="overflow-hidden bg-white">{children}</div>
               </div>
@@ -615,7 +657,7 @@ export function HeroAppScreen() {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
+        <div className="landing-hide-scrollbar flex justify-center gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
           {nav.slice(0, 4).map((item) => (
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${
