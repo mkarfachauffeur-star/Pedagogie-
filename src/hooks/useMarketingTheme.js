@@ -41,13 +41,12 @@ export function useMarketingTheme() {
   }, [])
 
   const setTheme = useCallback((nextTheme) => {
-    setThemeState((currentTheme) => {
-      const resolvedTheme = normalizeTheme(
-        typeof nextTheme === 'function' ? nextTheme(currentTheme) : nextTheme,
-      )
-      writeStoredTheme(resolvedTheme)
-      return resolvedTheme
-    })
+    const currentTheme = readStoredTheme()
+    const resolvedTheme = normalizeTheme(
+      typeof nextTheme === 'function' ? nextTheme(currentTheme) : nextTheme,
+    )
+    setThemeState(resolvedTheme)
+    writeStoredTheme(resolvedTheme)
   }, [])
 
   const toggleTheme = useCallback(() => {
