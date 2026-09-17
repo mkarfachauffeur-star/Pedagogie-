@@ -35,7 +35,7 @@ export default function ProfileSelection() {
   return (
     <div className="landing-page min-h-screen overflow-x-clip" data-theme={theme}>
       <a
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-xl focus:bg-[#1769FF] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-xl focus:bg-[#0F5CE8] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
         href="#main-content"
       >
         Aller au contenu principal

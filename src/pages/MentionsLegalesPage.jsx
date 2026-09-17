@@ -29,7 +29,7 @@ export default function MentionsLegalesPage() {
             </span>
           ))}
           <br />
-          <a className="font-semibold text-cyan-700 hover:text-cyan-800" href={LEGAL_HOSTING.website} rel="noopener noreferrer" target="_blank">
+          <a className="font-semibold text-[var(--lp-blue)] hover:text-[var(--lp-blue-hover)]" href={LEGAL_HOSTING.website} rel="noopener noreferrer" target="_blank">
             vercel.com
           </a>
         </LegalParagraph>
@@ -38,7 +38,7 @@ export default function MentionsLegalesPage() {
       <LegalSection id="nom-de-domaine" title="Nom de domaine">
         <LegalParagraph>
           Site web :{' '}
-          <a className="font-semibold text-cyan-700 hover:text-cyan-800" href={LEGAL_SITE.url}>
+          <a className="font-semibold text-[var(--lp-blue)] hover:text-[var(--lp-blue-hover)]" href={LEGAL_SITE.url}>
             {LEGAL_SITE.url}
           </a>
           <br />
@@ -82,7 +82,7 @@ export default function MentionsLegalesPage() {
       <LegalSection id="donnees-personnelles" title="Données personnelles">
         <LegalParagraph>
           Le traitement des données personnelles est décrit dans notre{' '}
-          <a className="font-semibold text-cyan-700 hover:text-cyan-800" href="/politique-confidentialite">
+          <a className="font-semibold text-[var(--lp-blue)] hover:text-[var(--lp-blue-hover)]" href="/politique-confidentialite">
             politique de confidentialité
           </a>
           .

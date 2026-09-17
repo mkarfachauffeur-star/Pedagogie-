@@ -3,7 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 export default function MarketingReassurance({ items, skin, isDark }) {
   const iconWrap = isDark
     ? 'inline-flex rounded-xl border border-blue-400/25 bg-blue-500/10 p-2 text-blue-300'
-    : 'inline-flex rounded-xl border border-blue-300 bg-blue-50 p-2 text-blue-600'
+    : 'inline-flex rounded-xl border border-[var(--lp-blue)] bg-[var(--lp-blue-soft)] p-2 text-[var(--lp-blue)]'
 
   return (
     <section aria-labelledby="reassurance-heading" className="mx-auto max-w-7xl" id="pourquoi">

@@ -1,6 +1,6 @@
-const lightOutline = 'border-2 border-slate-300'
-const lightOutlineBlue = 'border-2 border-blue-300'
-const lightDivider = 'border-slate-300'
+const lightOutline = 'border border-[var(--lp-border)]'
+const lightOutlineBlue = 'border border-[var(--lp-blue)]'
+const lightDivider = 'border-[var(--lp-border)]'
 
 export function marketingSkin(theme) {
   const isDark = theme !== 'light'
@@ -26,14 +26,14 @@ export function marketingSkin(theme) {
             : 'text-slate-900'
           : isDark
             ? 'text-slate-300'
-            : 'text-slate-600',
+            : 'text-[var(--lp-muted)]',
       ].join(' '),
     themeToggle: isDark
       ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 text-amber-300 transition hover:bg-white/10'
-      : 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-400 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50',
+      : 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--lp-border-strong)] bg-white text-[var(--lp-ink)] shadow-sm transition hover:bg-slate-50',
     menuToggle: isDark
       ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 2xl:hidden'
-      : `inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${lightOutline} bg-white text-slate-700 shadow-sm 2xl:hidden`,
+      : `inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${lightOutline} bg-white text-[var(--lp-ink)] shadow-sm 2xl:hidden`,
     loginBtn: isDark
       ? 'border border-white/15 bg-white/[0.04] text-white backdrop-blur transition hover:bg-white/10'
       : `${lightOutline} bg-slate-50 text-slate-900 shadow-sm transition hover:bg-slate-100 hover:border-slate-400`,
@@ -42,18 +42,18 @@ export function marketingSkin(theme) {
       : `max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain border-t-2 ${lightDivider} bg-white px-4 py-5 shadow-lg sm:px-6 2xl:hidden`,
     mobileNav: isDark
       ? 'flex min-h-11 items-center rounded-2xl px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/10'
-      : 'flex min-h-11 items-center rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100',
+      : 'flex min-h-11 items-center rounded-2xl px-4 py-3 text-sm font-bold text-[var(--lp-muted-strong)] hover:bg-slate-100',
     mobileDivider: isDark ? 'border-white/10' : lightDivider,
     mobileLogin: isDark
       ? 'border border-white/25 bg-white/10 text-white hover:bg-white/15'
       : `${lightOutline} bg-slate-50 text-slate-900 shadow-sm hover:border-slate-400 hover:bg-slate-100`,
     heroBadge: isDark
       ? 'inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-200'
-      : `inline-flex items-center gap-2 rounded-full ${lightOutlineBlue} bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-800 shadow-sm`,
+      : `inline-flex items-center gap-2 rounded-full ${lightOutlineBlue} bg-[var(--lp-blue-soft)] px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-blue)] shadow-sm`,
     heading: isDark ? 'text-white' : 'text-slate-900',
-    body: isDark ? 'text-slate-300' : 'text-slate-600',
-    bodyMuted: isDark ? 'text-slate-400' : 'text-slate-500',
-    listItem: isDark ? 'text-slate-200' : 'text-slate-700',
+    body: isDark ? 'text-slate-300' : 'text-[var(--lp-muted-strong)]',
+    bodyMuted: isDark ? 'text-slate-300' : 'text-[var(--lp-muted)]',
+    listItem: isDark ? 'text-slate-200' : 'text-[var(--lp-muted-strong)]',
     sectionAlt: isDark
       ? 'border-y border-white/10 bg-[#07111f]'
       : `border-y-2 ${lightDivider} bg-slate-50`,
@@ -67,10 +67,10 @@ export function marketingSkin(theme) {
       ? 'flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4'
       : `flex gap-4 rounded-2xl ${lightOutline} bg-white p-4 shadow-sm`,
     upcomingTitle: isDark ? 'font-black text-slate-200' : 'font-black text-slate-800',
-    upcomingText: isDark ? 'mt-1 text-sm leading-6 text-slate-500' : 'mt-1 text-sm leading-6 text-slate-500',
-    eyebrowBlue: isDark ? 'text-xs font-black uppercase tracking-[0.16em] text-blue-300' : 'text-xs font-black uppercase tracking-[0.16em] text-blue-600',
+    upcomingText: isDark ? 'mt-1 text-sm leading-6 text-slate-300' : 'mt-1 text-sm leading-6 text-[var(--lp-muted)]',
+    eyebrowBlue: isDark ? 'text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-blue)]' : 'text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-blue)]',
     eyebrowEmerald: isDark ? 'text-xs font-black uppercase tracking-[0.16em] text-emerald-300' : 'text-xs font-black uppercase tracking-[0.16em] text-emerald-600',
-    roleLabel: isDark ? 'text-[11px] font-black uppercase tracking-[0.12em] text-blue-300/80' : 'text-[11px] font-black uppercase tracking-[0.12em] text-blue-600/80',
+    roleLabel: isDark ? 'text-[11px] font-black uppercase tracking-[0.12em] text-blue-200' : 'text-[11px] font-black uppercase tracking-[0.12em] text-[var(--lp-blue)]',
     contactGlow: isDark
       ? 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.12),transparent_45%)]'
       : 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.06),transparent_45%)]',
@@ -88,26 +88,26 @@ export function marketingSkin(theme) {
     loginLabel: isDark ? 'block text-sm font-bold text-slate-200' : 'block text-sm font-bold text-slate-800',
     loginInputWrap: isDark
       ? 'mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#070d18] px-4 py-3'
-      : `mt-2 flex items-center gap-2.5 rounded-xl ${lightOutline} bg-white px-4 py-3 shadow-sm transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20`,
+      : `mt-2 flex items-center gap-2.5 rounded-xl ${lightOutline} bg-white px-4 py-3 shadow-sm transition focus-within:border-[var(--lp-blue)] focus-within:ring-2 focus-within:ring-blue-500/20`,
     loginInput: isDark
       ? 'w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-600'
       : 'w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400',
-    loginMuted: isDark ? 'text-slate-400' : 'text-slate-500',
-    loginSubtle: isDark ? 'text-slate-500' : 'text-slate-400',
-    loginLink: isDark ? 'font-semibold text-blue-400 transition hover:text-blue-300' : 'font-semibold text-blue-600 transition hover:text-blue-700',
-    loginBackLink: isDark ? 'text-sm font-bold text-blue-400 transition hover:text-blue-300' : 'text-sm font-bold text-blue-600 transition hover:text-blue-700',
+    loginMuted: isDark ? 'text-slate-300' : 'text-[var(--lp-muted)]',
+    loginSubtle: isDark ? 'text-slate-300' : 'text-[var(--lp-muted)]',
+    loginLink: isDark ? 'font-semibold text-[var(--lp-blue)] transition hover:text-[var(--lp-blue-hover)]' : 'font-semibold text-[var(--lp-blue)] transition hover:text-[var(--lp-blue-hover)]',
+    loginBackLink: isDark ? 'text-sm font-bold text-[var(--lp-blue)] transition hover:text-[var(--lp-blue-hover)]' : 'text-sm font-bold text-[var(--lp-blue)] transition hover:text-[var(--lp-blue-hover)]',
     loginFooterBorder: isDark ? 'border-white/10' : `border-t-2 ${lightDivider}`,
     loginForgotBox: isDark
       ? 'rounded-xl border border-blue-400/25 bg-blue-500/10 p-4 text-sm leading-6 text-slate-300'
-      : `rounded-xl ${lightOutlineBlue} bg-blue-50 p-4 text-sm leading-6 text-slate-700`,
+      : `rounded-xl ${lightOutlineBlue} bg-[var(--lp-blue-soft)] p-4 text-sm leading-6 text-[var(--lp-muted-strong)]`,
     loginHeroBadge: isDark
       ? 'inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-200'
-      : `inline-flex items-center gap-2 rounded-full ${lightOutlineBlue} bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-800 shadow-sm`,
+      : `inline-flex items-center gap-2 rounded-full ${lightOutlineBlue} bg-[var(--lp-blue-soft)] px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-blue)] shadow-sm`,
     loginFeatureIcon: isDark
       ? 'flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-500/10 text-blue-300'
-      : `flex h-10 w-10 items-center justify-center rounded-xl ${lightOutlineBlue} bg-blue-50 text-blue-600`,
+      : `flex h-10 w-10 items-center justify-center rounded-xl ${lightOutlineBlue} bg-[var(--lp-blue-soft)] text-[var(--lp-blue)]`,
     loginFeatureTitle: isDark ? 'mt-3 text-sm font-black text-white' : 'mt-3 text-sm font-black text-slate-900',
-    loginFeatureText: isDark ? 'mt-1 text-xs leading-5 text-slate-500' : 'mt-1 text-xs leading-5 text-slate-500',
+    loginFeatureText: isDark ? 'mt-1 text-xs leading-5 text-slate-300' : 'mt-1 text-xs leading-5 text-[var(--lp-muted)]',
     loginError: isDark
       ? 'rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200'
       : 'rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700',

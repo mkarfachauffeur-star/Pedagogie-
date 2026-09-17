@@ -102,7 +102,7 @@ export default function PolitiqueConfidentialitePage() {
       <LegalSection id="cookies" title="Cookies">
         <LegalParagraph>
           L&apos;utilisation des cookies est détaillée dans notre{' '}
-          <a className="font-semibold text-cyan-700 hover:text-cyan-800" href="/cookies">
+          <a className="font-semibold text-[var(--lp-blue)] hover:text-[var(--lp-blue-hover)]" href="/cookies">
             politique de cookies
           </a>
           .
@@ -122,7 +122,7 @@ export default function PolitiqueConfidentialitePage() {
         />
         <LegalParagraph>
           Pour exercer vos droits, contactez-nous à{' '}
-          <a className="font-semibold text-cyan-700 hover:text-cyan-800" href={legalMailto(LEGAL_ENTITY.dpoEmail)}>
+          <a className="font-semibold text-[var(--lp-blue)] hover:text-[var(--lp-blue-hover)]" href={legalMailto(LEGAL_ENTITY.dpoEmail)}>
             {LEGAL_ENTITY.dpoEmail}
           </a>
           .

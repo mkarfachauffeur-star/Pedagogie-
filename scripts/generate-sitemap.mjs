@@ -21,7 +21,7 @@ const staticPages = [
 const blogPages = BLOG_POSTS.map((post) => ({
   path: `/blog/${post.slug}`,
   changeFrequency: 'monthly',
-  priority: '0.7',
+  priority: '0.45',
   lastModified: post.publishedAt,
 }))
 

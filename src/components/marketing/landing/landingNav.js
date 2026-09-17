@@ -1,4 +1,5 @@
 export const LANDING_NAV_LINKS = [
+  { label: 'Accueil', href: '#accueil' },
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
   { label: 'Pour les auto-écoles', href: '#comment-ca-marche' },
   { label: 'Blog', href: '/blog', route: true },

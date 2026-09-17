@@ -96,12 +96,12 @@ export function TeacherScreen() {
               ].map((item) => (
                 <div className="rounded-2xl border border-slate-200/80 bg-white px-3 py-2.5" key={item.label}>
                   <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-400">{item.detail}</p>
+                  <p className="mt-0.5 text-[10px] text-slate-500">{item.detail}</p>
                 </div>
               ))}
             </div>
             <div className="mt-3 rounded-2xl border border-slate-200/80 bg-white p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Liste des élèves</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Liste des élèves</p>
               <div className="mt-3 space-y-2">
                 {[
                   { formation: 'Permis B', status: 'En formation' },
@@ -376,7 +376,7 @@ export function GpsScreen() {
               { label: 'Durée', value: 'Temps de conduite' },
             ].map((item) => (
               <div className="rounded-xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur" key={item.label}>
-                <p className="text-[10px] font-medium text-indigo-100/70">{item.label}</p>
+                <p className="text-[10px] font-medium text-indigo-100">{item.label}</p>
                 <p className="mt-1 text-[12px] font-semibold leading-4 text-white">{item.value}</p>
               </div>
             ))}
@@ -537,7 +537,7 @@ export function StudentScreen() {
                     }`}
                   />
                 </div>
-                <p className={`mt-2 text-[11px] font-medium ${open ? 'text-blue-600' : 'text-slate-400'}`}>
+                <p className={`mt-2 text-[11px] font-medium ${open ? 'text-blue-600' : 'text-slate-500'}`}>
                   {open ? 'QCU et exercices ouverts' : 'QCU et exercices verrouillés'}
                 </p>
               </div>
@@ -639,13 +639,13 @@ export function HeroAppScreen() {
   return (
     <div className="flex bg-[#f5f7fb] text-left">
       <aside className="hidden w-44 shrink-0 bg-[#0b1628] px-3 py-4 text-white lg:block">
-        <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Pedagogia</p>
+        <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">Pedagogia</p>
         <p className="px-2 text-sm font-semibold tracking-tight">Drive</p>
         <nav className="mt-6 space-y-1">
           {nav.map((item) => (
             <span
               className={`block rounded-lg px-2.5 py-2 text-[12px] font-medium ${
-                item.active ? 'bg-white/15 text-white' : 'text-white/60'
+                item.active ? 'bg-white/15 text-white' : 'text-white/75'
               }`}
               key={item.label}
             >
@@ -653,7 +653,7 @@ export function HeroAppScreen() {
             </span>
           ))}
         </nav>
-        <p className="mt-8 px-2 text-[11px] font-medium text-white/40">Espace élève</p>
+        <p className="mt-8 px-2 text-[11px] font-medium text-white/75">Espace élève</p>
       </aside>
 
       <div className="min-w-0 flex-1">
@@ -661,7 +661,7 @@ export function HeroAppScreen() {
           {nav.slice(0, 4).map((item) => (
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                item.active ? 'bg-[#1769FF] text-white' : 'bg-slate-100 text-slate-500'
+                item.active ? 'bg-[#0F5CE8] text-white' : 'bg-slate-100 text-slate-500'
               }`}
               key={item.label}
             >
@@ -686,7 +686,7 @@ export function HeroAppScreen() {
               <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]" key={item.label}>
                 <p className="text-[10px] font-medium text-slate-500">{item.label}</p>
                 <p className="mt-1 text-[13px] font-semibold leading-4 text-slate-950">{item.value}</p>
-                <p className="mt-1 line-clamp-1 text-[10px] text-slate-400">{item.detail}</p>
+                <p className="mt-1 line-clamp-1 text-[10px] text-slate-500">{item.detail}</p>
               </div>
             ))}
           </div>
@@ -694,18 +694,18 @@ export function HeroAppScreen() {
           <div className="rounded-xl border border-blue-100 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[13px] font-semibold text-slate-950">
-                <span className="text-[#1769FF]">C1</span> · Maîtriser le véhicule
+                <span className="text-[#0F5CE8]">C1</span> · Maîtriser le véhicule
               </p>
               <span className="text-[11px] font-semibold text-blue-700">En cours</span>
             </div>
             <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-[#1769FF] to-[#7C3AED]" />
+              <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-[#0F5CE8] to-[#6D28D9]" />
             </div>
             <div className="mt-3 space-y-1.5">
               {C1_MODULES.map((item) => (
                 <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2.5 py-2" key={item.title}>
                   <p className="min-w-0 truncate text-[12px] font-medium text-slate-800">{item.title}</p>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#1769FF] ring-1 ring-blue-100">
+                  <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#0F5CE8] ring-1 ring-blue-100">
                     {item.tag}
                   </span>
                 </div>
