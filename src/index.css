@@ -1247,12 +1247,21 @@
   --lp-bg: #f8fafc;
   --lp-bg-alt: #eef2f7;
   --lp-ink: #07111f;
-  --lp-muted: #5b6b80;
+  --lp-muted: #475569;
+  --lp-muted-strong: #334155;
   --lp-card: #ffffff;
-  --lp-border: rgba(7, 17, 31, 0.08);
-  --lp-blue: #1769ff;
-  --lp-violet: #7c3aed;
-  --lp-red: #ef3340;
+  --lp-border: rgba(7, 17, 31, 0.18);
+  --lp-border-strong: rgba(7, 17, 31, 0.72);
+  --lp-blue: #0f5ce8;
+  --lp-blue-hover: #0b4fbf;
+  --lp-blue-soft: #dbeafe;
+  --lp-violet: #6d28d9;
+  --lp-violet-soft: #ede9fe;
+  --lp-red: #c1121f;
+  --lp-red-soft: #fee2e2;
+  --lp-cta-bg: #c1121f;
+  --lp-cta-hover: #9f1239;
+  --lp-focus: #0f5ce8;
   --lp-halo: rgba(23, 105, 255, 0.16);
   --lp-halo-2: rgba(124, 58, 237, 0.1);
   color: var(--lp-ink);
@@ -1263,15 +1272,32 @@
   --lp-bg: #050b18;
   --lp-bg-alt: #081226;
   --lp-ink: #f8fafc;
-  --lp-muted: #94a3b8;
+  --lp-muted: #cbd5e1;
+  --lp-muted-strong: #e2e8f0;
   --lp-card: #0b1630;
-  --lp-border: rgba(255, 255, 255, 0.1);
+  --lp-border: rgba(226, 232, 240, 0.18);
+  --lp-border-strong: rgba(226, 232, 240, 0.78);
+  --lp-blue: #93c5fd;
+  --lp-blue-hover: #bfdbfe;
+  --lp-blue-soft: rgba(96, 165, 250, 0.16);
+  --lp-violet: #c4b5fd;
+  --lp-violet-soft: rgba(167, 139, 250, 0.16);
+  --lp-red: #fca5a5;
+  --lp-red-soft: rgba(248, 113, 113, 0.16);
+  --lp-cta-bg: #c1121f;
+  --lp-cta-hover: #ef3340;
+  --lp-focus: #93c5fd;
   --lp-halo: rgba(23, 105, 255, 0.28);
   --lp-halo-2: rgba(124, 58, 237, 0.18);
 }
 
+.landing-page :is(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--lp-focus);
+  outline-offset: 3px;
+}
+
 .landing-accent-text {
-  background: linear-gradient(135deg, #1769ff, #7c3aed, #ef3340);
+  background: linear-gradient(135deg, var(--lp-blue), var(--lp-violet), var(--lp-red));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

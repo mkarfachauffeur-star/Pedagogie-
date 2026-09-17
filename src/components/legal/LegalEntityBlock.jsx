@@ -12,7 +12,7 @@ export default function LegalEntityBlock() {
 
   return (
     <div className="space-y-1">
-      <p className="font-semibold text-slate-800">{LEGAL_ENTITY.companyName}</p>
+      <p className="font-semibold text-[var(--lp-muted-strong)]">{LEGAL_ENTITY.companyName}</p>
       {showTradeName ? <p>{LEGAL_ENTITY.tradeName}</p> : null}
       {hasLegalValue(LEGAL_ENTITY.legalForm) ? <p>{LEGAL_ENTITY.legalForm}</p> : null}
       {addressLines.map((line) => (

@@ -69,7 +69,7 @@ export default function LandingHeader() {
   const loginClass =
     'inline-flex h-10 items-center justify-center rounded-[12px] border-2 border-[var(--lp-ink)] bg-[var(--lp-card)] px-4 text-sm font-semibold text-[var(--lp-ink)] shadow-sm transition hover:bg-[var(--lp-bg-alt)]'
   const demoClass =
-    'inline-flex h-10 items-center justify-center rounded-[12px] bg-[#EF3340] px-5 text-sm font-semibold text-white transition hover:bg-[#d92b38]'
+    'inline-flex h-10 items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--lp-cta-hover)]'
 
   const logo = <BrandLogo animated={false} idPrefix="landing-nav" variant={isDark ? 'marketing' : 'light'} />
 
@@ -116,7 +116,7 @@ export default function LandingHeader() {
           <button
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--lp-border)] lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--lp-border)] text-[var(--lp-ink)] transition hover:bg-[var(--lp-bg-alt)] lg:hidden"
             onClick={() => setMobileOpen((value) => !value)}
             type="button"
           >
@@ -145,7 +145,7 @@ export default function LandingHeader() {
             </Link>
             {isHome ? (
               <a
-                className="flex h-11 items-center justify-center rounded-[12px] bg-[#EF3340] text-sm font-semibold text-white"
+                className="flex h-11 items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] text-sm font-semibold text-white"
                 href="#demonstration"
                 onClick={() => {
                   trackDemoRequestClick('mobile_menu')
@@ -156,7 +156,7 @@ export default function LandingHeader() {
               </a>
             ) : (
               <Link
-                className="flex h-11 items-center justify-center rounded-[12px] bg-[#EF3340] text-sm font-semibold text-white"
+                className="flex h-11 items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] text-sm font-semibold text-white"
                 onClick={() => {
                   trackDemoRequestClick('mobile_menu')
                   setMobileOpen(false)

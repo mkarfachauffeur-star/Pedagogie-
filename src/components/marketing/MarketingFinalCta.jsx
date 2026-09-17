@@ -27,7 +27,7 @@ export default function MarketingFinalCta({ isDark, skin, shouldReduceMotion }) 
         <h2 className={`text-2xl font-black sm:text-3xl ${skin.heading}`}>{LANDING_FINAL_CTA.title}</h2>
         <p className={`mt-4 text-base leading-8 ${skin.bodyMuted}`}>{LANDING_FINAL_CTA.subtitle}</p>
         <a
-          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
+          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--lp-cta-bg)] px-7 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-[var(--lp-cta-hover)] sm:w-auto"
           href="#demonstration"
           onClick={() => trackDemoRequestClick('final_cta')}
         >

@@ -35,7 +35,7 @@ export function LandingHero({ shouldReduceMotion }) {
       <div className="landing-glow-hero pointer-events-none absolute inset-0" />
       <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-8">
         <motion.div className="max-w-xl" {...reveal(shouldReduceMotion)}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1769FF]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-blue)]">
             Le livret numérique des auto-écoles
           </p>
           <h1 className="mt-5 text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.05em] text-[var(--lp-ink)] sm:text-5xl lg:text-[4.4rem] lg:leading-[1.02]">
@@ -48,14 +48,14 @@ export function LandingHero({ shouldReduceMotion }) {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
-              className="inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-[#EF3340] px-7 text-sm font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.75)] transition hover:-translate-y-0.5 hover:bg-[#d92b38] sm:w-auto"
+              className="inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] px-7 text-sm font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.75)] transition hover:-translate-y-0.5 hover:bg-[var(--lp-cta-hover)] sm:w-auto"
               href="#demonstration"
               onClick={() => trackDemoRequestClick('hero')}
             >
               Demander une démonstration
             </a>
             <a
-              className="inline-flex h-12 w-full items-center justify-center rounded-[12px] border border-[var(--lp-border)] bg-[var(--lp-card)] px-6 text-sm font-semibold text-[var(--lp-ink)] transition hover:border-[#1769FF]/35 sm:w-auto"
+              className="inline-flex h-12 w-full items-center justify-center rounded-[12px] border border-[var(--lp-border)] bg-[var(--lp-card)] px-6 text-sm font-semibold text-[var(--lp-ink)] transition hover:border-[var(--lp-blue)] sm:w-auto"
               href="#fonctionnalites"
             >
               Découvrir Pedagogia Drive
@@ -94,7 +94,7 @@ export function LandingTrustStrip({ shouldReduceMotion }) {
               className="rounded-[20px] border border-[var(--lp-border)] bg-[var(--lp-card)] p-5 shadow-[0_12px_32px_-28px_rgba(7,17,31,0.45)]"
               key={item.title}
             >
-              <span className="grid h-10 w-10 place-items-center rounded-[12px] bg-[#1769FF]/10 text-[#1769FF]">
+              <span className="grid h-10 w-10 place-items-center rounded-[12px] bg-[var(--lp-blue-soft)] text-[var(--lp-blue)]">
                 <Icon className="h-5 w-5" />
               </span>
               <h2 className="mt-4 text-sm font-semibold text-[var(--lp-ink)]">{item.title}</h2>
@@ -112,7 +112,7 @@ export function LandingQcuSection({ shouldReduceMotion }) {
     <section className="scroll-mt-24 overflow-x-clip bg-[var(--lp-bg-alt)] px-4 py-16 sm:px-6 lg:px-8 lg:py-20" id="qcu">
       <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-10">
         <motion.div {...reveal(shouldReduceMotion)}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1769FF]">QCU & compétences</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-blue)]">QCU & compétences</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.045em] text-[var(--lp-ink)] sm:text-5xl lg:leading-[1.08]">
             Vos élèves peuvent apprendre
             <span className="block">même en dehors de la voiture.</span>
@@ -124,7 +124,7 @@ export function LandingQcuSection({ shouldReduceMotion }) {
             {['Exercices entre les leçons', 'Progression visible', 'Moins de répétitions en conduite', 'Élève mieux préparé'].map(
               (item) => (
                 <li className="flex items-center gap-3" key={item}>
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#1769FF]/10 text-[#1769FF]">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--lp-blue-soft)] text-[var(--lp-blue)]">
                     <Check className="h-3.5 w-3.5" />
                   </span>
                   {item}
@@ -148,7 +148,7 @@ export function LandingVideosSection({ shouldReduceMotion }) {
     <section className="scroll-mt-24 overflow-x-clip px-4 py-16 sm:px-6 lg:px-8 lg:py-20" id="videos">
       <div className="mx-auto max-w-[1280px]" id="livret-numerique">
         <motion.div className="max-w-3xl" {...reveal(shouldReduceMotion)}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#EF3340]">Ressources pédagogiques</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-red)]">Ressources pédagogiques</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.045em] text-[var(--lp-ink)] sm:text-5xl lg:leading-[1.08]">
             Des ressources pédagogiques
             <span className="block">accessibles au bon moment.</span>
@@ -232,7 +232,7 @@ export function LandingGpsSection({ shouldReduceMotion }) {
           </ProductFrame>
         </motion.div>
         <motion.div className="order-1 lg:order-2" {...reveal(shouldReduceMotion, 0.08)}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7C3AED]">AAC / CS</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-violet)]">AAC / CS</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.045em] text-[var(--lp-ink)] sm:text-5xl lg:leading-[1.08]">
             Gardez une vision claire
             <span className="block">des parcours de vos élèves.</span>
@@ -282,7 +282,7 @@ export function LandingAllInOneSection({ shouldReduceMotion }) {
                 key={item.title}
                 {...reveal(shouldReduceMotion, index * 0.03)}
               >
-                <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#1769FF]/10 text-[#1769FF]">
+                <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--lp-blue-soft)] text-[var(--lp-blue)]">
                   <Icon className="h-4 w-4" />
                 </span>
                 <p className="mt-3 text-sm font-semibold leading-5 text-[var(--lp-ink)]">{item.title}</p>
@@ -318,11 +318,11 @@ export function LandingRolesSection({ shouldReduceMotion }) {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {roles.map((item, index) => (
             <motion.article
-              className="rounded-[22px] border border-[var(--lp-border)] bg-[var(--lp-card)] p-6 transition hover:-translate-y-1 hover:border-[#1769FF]/35 hover:shadow-[0_20px_40px_-28px_rgba(23,105,255,0.45)]"
+              className="rounded-[22px] border border-[var(--lp-border)] bg-[var(--lp-card)] p-6 transition hover:-translate-y-1 hover:border-[var(--lp-blue)] hover:shadow-[0_20px_40px_-28px_rgba(23,105,255,0.45)]"
               key={item.role}
               {...reveal(shouldReduceMotion, index * 0.06)}
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1769FF]">{item.role}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lp-blue)]">{item.role}</p>
               <p className="mt-4 text-lg font-semibold leading-7 text-[var(--lp-ink)]">{item.text}</p>
             </motion.article>
           ))}
@@ -350,7 +350,7 @@ export function LandingBenefitsSection({ shouldReduceMotion }) {
             Un livret numérique pensé pour les élèves, les enseignants, le secrétariat et les gérants.
           </p>
           <a
-            className="mt-7 inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-[#EF3340] px-7 text-sm font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.75)] transition hover:-translate-y-0.5 hover:bg-[#d92b38] sm:w-auto"
+            className="mt-7 inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] px-7 text-sm font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.75)] transition hover:-translate-y-0.5 hover:bg-[var(--lp-cta-hover)] sm:w-auto"
             href="#demonstration"
             onClick={() => trackDemoRequestClick('benefits')}
           >
@@ -360,7 +360,7 @@ export function LandingBenefitsSection({ shouldReduceMotion }) {
         <div className="mt-10 grid gap-8 md:grid-cols-3">
           {items.map((item, index) => (
             <motion.div key={item.title} {...reveal(shouldReduceMotion, 0.06 + index * 0.06)}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1769FF]">{item.title}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--lp-blue)]">{item.title}</p>
               <p className="mt-4 text-lg leading-8 text-[var(--lp-ink)]">{item.text}</p>
             </motion.div>
           ))}
@@ -379,11 +379,11 @@ export function LandingFinalCta({ shouldReduceMotion }) {
           Et si vos élèves progressaient
           <span className="mt-1 block">aussi entre les leçons ?</span>
         </h2>
-        <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/65">
+        <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/80">
           Découvrez une nouvelle façon de gérer le suivi pédagogique de votre auto-école.
         </p>
         <a
-          className="mt-8 inline-flex w-full items-center justify-center rounded-[12px] bg-[#EF3340] px-10 py-4 text-base font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.55)] transition hover:-translate-y-0.5 hover:bg-[#d92b38] sm:w-auto"
+          className="mt-8 inline-flex w-full items-center justify-center rounded-[12px] bg-[var(--lp-cta-bg)] px-10 py-4 text-base font-semibold text-white shadow-[0_16px_32px_-14px_rgba(239,51,64,0.55)] transition hover:-translate-y-0.5 hover:bg-[var(--lp-cta-hover)] sm:w-auto"
           href="#demonstration"
           onClick={() => trackDemoRequestClick('final_cta')}
         >
@@ -414,7 +414,7 @@ export function LandingFaq() {
   return (
     <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20" id="faq">
       <div className="text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1769FF]">Questions fréquentes</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-blue)]">Questions fréquentes</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--lp-ink)] sm:text-4xl">FAQ</h2>
       </div>
       <div className="mt-10 space-y-3">
@@ -423,7 +423,7 @@ export function LandingFaq() {
             <summary className="cursor-pointer list-none text-base font-semibold text-[var(--lp-ink)] marker:content-none [&::-webkit-details-marker]:hidden">
               <span className="flex items-start justify-between gap-4">
                 {item.question}
-                <span aria-hidden="true" className="mt-0.5 shrink-0 text-[#1769FF] transition group-open:rotate-45">
+                <span aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--lp-blue)] transition group-open:rotate-45">
                   +
                 </span>
               </span>

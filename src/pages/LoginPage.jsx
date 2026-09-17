@@ -102,8 +102,8 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { signInWithPassword, completePasswordChange, mustChangePassword: sessionMustChange, role: sessionRole } = useAuth()
-  const { isDark, toggleTheme } = useMarketingTheme()
-  const skin = marketingSkin(isDark ? 'dark' : 'light')
+  const { theme, isDark, toggleTheme } = useMarketingTheme()
+  const skin = marketingSkin(theme)
   const shouldReduceMotion = useReducedMotion()
   const [authError, setAuthError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -152,7 +152,7 @@ export default function LoginPage() {
   useEffect(() => {
     const previousBodyBg = document.body.style.backgroundColor
     const previousHtmlBg = document.documentElement.style.backgroundColor
-    const pageBg = isDark ? '#030712' : '#ffffff'
+    const pageBg = isDark ? '#050b18' : '#f8fafc'
 
     document.body.classList.add('login-page-active')
     document.body.style.backgroundColor = pageBg
@@ -258,7 +258,7 @@ export default function LoginPage() {
           transition: { duration: 0.45, delay, ease: 'easeOut' },
         }
 
-  const inputIconClass = isDark ? 'h-4 w-4 shrink-0 text-blue-400' : 'h-4 w-4 shrink-0 text-blue-600'
+  const inputIconClass = 'h-4 w-4 shrink-0 text-[var(--lp-blue)]'
   const passwordToggleClass = isDark
     ? 'shrink-0 text-slate-500 transition hover:text-slate-300'
     : 'shrink-0 text-slate-400 transition hover:text-slate-600'
@@ -268,7 +268,8 @@ export default function LoginPage() {
 
   return (
     <div
-      className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
+      className="landing-page login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden bg-[var(--lp-bg)] text-[var(--lp-ink)]"
+      data-theme={theme}
     >
       <PageSeo {...loginPage} jsonLd={loginJsonLd} />
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
@@ -302,7 +303,7 @@ export default function LoginPage() {
               Bienvenue sur{' '}
               <span className="block sm:inline">
                 PEDAGOGIA{' '}
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-red-400 bg-clip-text text-transparent">
+                <span className="landing-accent-text">
                   DRIVE
                 </span>
               </span>
@@ -381,7 +382,7 @@ export default function LoginPage() {
                       disabled={submitting || !isPasswordPolicyMet(newPassword) || !confirmPassword}
                       type="submit"
                     >
-                      <span className="flex flex-1 items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">
+                      <span className="flex flex-1 items-center justify-center gap-2 bg-[var(--lp-cta-bg)] py-3.5 text-sm font-black text-white transition group-hover:bg-[var(--lp-cta-hover)]">
                         Enregistrer et continuer
                         <ArrowRight className="h-4 w-4" />
                       </span>
@@ -455,7 +456,7 @@ export default function LoginPage() {
                             Un lien sécurisé sera envoyé à l&apos;adresse saisie ci-dessus pour définir un nouveau mot de passe.
                           </p>
                           <button
-                            className={`mt-3 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 disabled:opacity-50`}
+                            className="mt-3 rounded-lg bg-[#0F5CE8] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#0B4FBF] disabled:opacity-50"
                             disabled={forgotSending || !email.trim()}
                             onClick={handleForgotPassword}
                             type="button"
@@ -481,7 +482,7 @@ export default function LoginPage() {
                     disabled={!canSubmit || submitting}
                     className="group mt-1 flex w-full overflow-hidden rounded-xl shadow-lg shadow-blue-900/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
                   >
-                    <span className="flex w-full items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-red-500 py-3.5 text-sm font-black text-white">
+                    <span className="flex w-full items-center justify-center gap-2 bg-[var(--lp-cta-bg)] py-3.5 text-sm font-black text-white transition group-hover:bg-[var(--lp-cta-hover)]">
                       {submitting ? 'Connexion…' : 'Connexion'}
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </span>
@@ -524,7 +525,7 @@ export default function LoginPage() {
             <p
               className={`mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] ${skin.loginMuted}`}
             >
-              <Smartphone className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+              <Smartphone className="h-4 w-4 text-[var(--lp-blue)]" />
               Applications mobiles
             </p>
             <p className={`mt-2 max-w-md text-sm leading-6 ${skin.loginSubtle}`}>

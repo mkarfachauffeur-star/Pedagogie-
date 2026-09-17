@@ -38,7 +38,7 @@ export default function MarketingFeaturesGrid({ isDark, skin, shouldReduceMotion
                   className={`inline-flex rounded-xl border p-2.5 ${
                     isDark
                       ? 'border-blue-400/20 bg-blue-500/10 text-blue-300'
-                      : 'border-blue-300 bg-blue-50 text-blue-600'
+                      : 'border-[var(--lp-blue)] bg-[var(--lp-blue-soft)] text-[var(--lp-blue)]'
                   }`}
                 >
                   <Icon aria-hidden="true" className="h-4 w-4" />

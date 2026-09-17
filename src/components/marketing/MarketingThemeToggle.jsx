@@ -4,6 +4,7 @@ export default function MarketingThemeToggle({ isDark, onToggle, className = '' 
   return (
     <button
       aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
+      aria-pressed={isDark}
       className={className}
       onClick={onToggle}
       title={isDark ? 'Mode clair' : 'Mode sombre'}

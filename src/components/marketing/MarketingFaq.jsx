@@ -26,7 +26,7 @@ export default function MarketingFaq({ items, skin, isDark, showBlogLink = false
                 {item.question}
                 <span
                   aria-hidden="true"
-                  className={`mt-0.5 shrink-0 text-lg transition group-open:rotate-45 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}
+                  className={`mt-0.5 shrink-0 text-lg transition group-open:rotate-45 ${isDark ? 'text-blue-300' : 'text-[var(--lp-blue)]'}`}
                 >
                   +
                 </span>
@@ -40,7 +40,7 @@ export default function MarketingFaq({ items, skin, isDark, showBlogLink = false
       {showBlogLink && (
         <p className={`mt-8 text-center text-sm ${skin.bodyMuted}`}>
           Guides et conseils pour gérants d&apos;auto-école sur{' '}
-          <Link className={`font-bold underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`} to="/blog">
+          <Link className={`font-bold underline ${isDark ? 'text-blue-300' : 'text-[var(--lp-blue)]'}`} to="/blog">
             notre blog
           </Link>
           .
