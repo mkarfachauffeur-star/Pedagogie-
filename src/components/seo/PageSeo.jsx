@@ -58,13 +58,14 @@ export default function PageSeo({
   ogType = 'website',
   keywords = SEO_KEYWORDS,
   noindex = false,
+  robots: robotsOverride = null,
   jsonLd = null,
 }) {
   const jsonLdKey = jsonLd ? JSON.stringify(jsonLd) : ''
 
   useEffect(() => {
     const canonical = canonicalUrl(path)
-    const robots = noindex ? 'noindex, nofollow' : 'index, follow'
+    const robots = robotsOverride || (noindex ? 'noindex, nofollow' : 'index, follow')
 
     document.documentElement.lang = 'fr'
 
@@ -101,7 +102,7 @@ export default function PageSeo({
     return () => {
       removeJsonLd()
     }
-  }, [title, description, path, image, imageAlt, ogType, keywords, noindex, jsonLdKey])
+  }, [title, description, path, image, imageAlt, ogType, keywords, noindex, robotsOverride, jsonLdKey])
 
   return null
 }
