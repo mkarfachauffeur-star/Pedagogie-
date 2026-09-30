@@ -1,9 +1,14 @@
+export const LANDING_HOME_LINK = { label: 'Accueil', href: '/', route: true }
+
 export const LANDING_NAV_LINKS = [
+  LANDING_HOME_LINK,
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
   { label: 'Pour les auto-écoles', href: '#comment-ca-marche' },
   { label: 'Blog', href: '/blog', route: true },
   { label: 'FAQ', href: '#faq' },
 ]
+
+export const LANDING_MENU_LINKS = LANDING_NAV_LINKS.filter((item) => item.href !== '/')
 
 export function isLandingHome(pathname) {
   return pathname === '/'

@@ -6,9 +6,24 @@ import BrandLogo from '../../BrandLogo'
 import MarketingThemeToggle from '../MarketingThemeToggle'
 import { useMarketingTheme } from '../../../hooks/useMarketingTheme'
 import { trackDemoRequestClick } from '../../../lib/analytics'
-import { isLandingHome, LANDING_NAV_LINKS, scrollToLandingSection } from './landingNav'
+import { isLandingHome, LANDING_HOME_LINK, LANDING_MENU_LINKS, LANDING_NAV_LINKS, scrollToLandingSection } from './landingNav'
 
 function NavItem({ item, className, onNavigate, isHome }) {
+  if (item.href === '/') {
+    return (
+      <Link
+        className={className}
+        onClick={() => {
+          onNavigate?.()
+          if (isHome) window.scrollTo({ top: 0, behavior: 'smooth' })
+        }}
+        to="/"
+      >
+        {item.label}
+      </Link>
+    )
+  }
+
   if (item.route) {
     return (
       <Link className={className} onClick={onNavigate} to={item.href}>
@@ -127,7 +142,17 @@ export default function LandingHeader() {
       {mobileOpen && (
         <div className="border-t border-[var(--lp-border)] bg-[var(--lp-bg)]/95 px-4 py-5 backdrop-blur-xl lg:hidden">
           <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-1" initial={{ opacity: 0, y: -6 }}>
-            {LANDING_NAV_LINKS.map((item) => (
+            <Link
+              className="mb-1 flex min-h-11 items-center justify-center rounded-[12px] border-2 border-[var(--lp-ink)] bg-[var(--lp-card)] px-3 text-sm font-semibold text-[var(--lp-ink)] shadow-sm"
+              onClick={() => {
+                setMobileOpen(false)
+                if (isHome) window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+              to="/"
+            >
+              {LANDING_HOME_LINK.label}
+            </Link>
+            {LANDING_MENU_LINKS.map((item) => (
               <NavItem
                 className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium text-[var(--lp-ink)]"
                 isHome={isHome}
