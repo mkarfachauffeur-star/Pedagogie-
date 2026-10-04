@@ -1068,6 +1068,31 @@
     padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   }
 
+  .charter-acceptance-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    height: 100%;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    background: #f0f7ff;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  @supports (height: 100svh) {
+    html.capacitor-ios .charter-acceptance-overlay {
+      height: 100svh;
+      max-height: 100svh;
+    }
+  }
+
   html.capacitor-ios .pd-shell {
     min-height: 100dvh;
   }
