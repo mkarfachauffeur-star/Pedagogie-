@@ -56,7 +56,7 @@ export default function CharterContentView({ content, className = '' }) {
   const blocks = renderCharterBlocks(content)
 
   return (
-    <div className={`space-y-4 text-[15px] leading-7 text-slate-700 [overflow-wrap:anywhere] sm:text-sm ${className}`}>
+    <div className={`space-y-4 text-[15px] leading-7 text-slate-700 [overflow-wrap:break-word] sm:text-sm ${className}`}>
       {blocks.map((block, index) => {
         if (block.type === 'h1') {
           return (
