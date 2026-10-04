@@ -19,6 +19,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AuthHashRedirect from './components/AuthHashRedirect'
 import ScrollToTop from './components/ScrollToTop'
 import Analytics from './components/analytics/Analytics'
+import { MarketingThemeProvider } from './hooks/useMarketingTheme'
 
 import ManagerDashboardPage from './pages/app-pages/AdminDashboardPage'
 import ManagerStudentsPage from './pages/app-pages/AdminStudentsPage'
@@ -150,6 +151,7 @@ function withStudentLayoutLazy(LazyPage, fullWidth = false, suspenseLabel = 'Cha
 function App() {
   return (
     <BrowserRouter>
+      <MarketingThemeProvider>
       <Analytics />
       <AuthHashRedirect />
       <ScrollToTop />
@@ -286,6 +288,7 @@ function App() {
         <Route path="/platform/audit" element={withPlatformLayout(PlatformAuditPage)} />
         <Route path="/platform/reviews" element={withPlatformLayout(PlatformReviewsPage)} />
       </Routes>
+      </MarketingThemeProvider>
     </BrowserRouter>
   )
 }
