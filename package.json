@@ -39,9 +39,9 @@
     "ios:icons": "node scripts/generate-ios-app-icon.mjs",
     "cap:add:ios": "npx cap add ios",
     "cap:sync:ios": "npm run build:capacitor && npx cap sync ios && node scripts/patch-ios-info-plist.mjs && node scripts/copy-ios-privacy-manifest.mjs",
-    "cap:open:ios": "npx cap open ios",
+    "cap:open:ios": "node scripts/ios-open.mjs",
     "ios:prepare": "npm run build:capacitor && npx cap sync ios && node scripts/patch-ios-info-plist.mjs && node scripts/copy-ios-privacy-manifest.mjs && npm run ios:icons",
-    "ios:open": "npm run ios:prepare && npm run cap:open:ios"
+    "ios:open": "node scripts/ios-open.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
