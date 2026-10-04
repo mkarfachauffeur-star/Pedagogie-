@@ -15,6 +15,7 @@ export async function initNativeApp() {
   if (isIOS) {
     await StatusBar.setStyle({ style: Style.Light })
     await StatusBar.setBackgroundColor({ color: '#2563eb' })
+    await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {})
     await Keyboard.setScroll({ isDisabled: false })
 
     Keyboard.addListener('keyboardWillShow', () => {

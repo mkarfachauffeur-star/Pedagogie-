@@ -3,6 +3,7 @@ export default function EmptyState({
   message = 'Aucune donnée disponible pour le moment.',
   icon = '📭',
   className = '',
+  action = null,
 }) {
   return (
     <div
@@ -15,6 +16,7 @@ export default function EmptyState({
       </span>
       {title && <p className="text-base font-extrabold text-slate-700">{title}</p>}
       {message && <p className="max-w-md text-sm font-medium leading-6 text-slate-500">{message}</p>}
+      {action}
     </div>
   )
 }

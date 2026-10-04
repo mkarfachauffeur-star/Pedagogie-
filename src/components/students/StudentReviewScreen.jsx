@@ -140,11 +140,11 @@ function ReviewThankYou({ rating, onContinue }) {
   )
 }
 
-export default function StudentReviewScreen({ onCompleted }) {
+export default function StudentReviewScreen({ onCompleted, onLater }) {
   const [submittedRating, setSubmittedRating] = useState(null)
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col bg-[#f0f7ff]">
+    <div className="review-access-overlay">
       <div className="border-b-2 border-slate-300 bg-white px-4 py-5 sm:px-6">
         <h1 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
           ⭐ Votre avis compte
@@ -160,11 +160,24 @@ export default function StudentReviewScreen({ onCompleted }) {
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 [-webkit-overflow-scrolling:touch]">
         {submittedRating ? (
           <ReviewThankYou onContinue={onCompleted} rating={submittedRating} />
         ) : (
-          <ReviewForm onSubmitted={setSubmittedRating} />
+          <>
+            <ReviewForm onSubmitted={setSubmittedRating} />
+            {onLater && (
+              <div className="mx-auto mt-4 w-full max-w-xl text-center">
+                <button
+                  className="text-sm font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
+                  onClick={onLater}
+                  type="button"
+                >
+                  Plus tard
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

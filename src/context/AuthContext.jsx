@@ -39,11 +39,19 @@ export function AuthProvider({ children }) {
       const superAdmin = await checkIsSuperAdmin(userId)
       setIsSuperAdmin(superAdmin)
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, organization_id, role, full_name, avatar_emoji, email, is_active, gender')
-        .eq('id', userId)
-        .maybeSingle()
+      let data = null
+      let error = null
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const result = await supabase
+          .from('profiles')
+          .select('id, organization_id, role, full_name, avatar_emoji, email, is_active, gender')
+          .eq('id', userId)
+          .maybeSingle()
+        data = result.data
+        error = result.error
+        if (!error) break
+        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250))
+      }
       if (error) throw error
       setProfile(data ?? null)
 
@@ -146,7 +154,7 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: new Error(getUserFacingError(error, 'login')), role: null, mustChangePassword: false }
     const mustChangePassword = Boolean(data.user?.user_metadata?.must_change_password)
-    let nextRole = null
+    let nextRole
     try {
       const superAdmin = await checkIsSuperAdmin(data.user?.id)
       if (superAdmin) nextRole = 'super_admin'
@@ -172,10 +180,11 @@ export function AuthProvider({ children }) {
             mustChangePassword: false,
           }
         }
-        nextRole = prof?.role ?? resolveRoleFromUser(data.user) ?? null
+        nextRole = prof?.role || resolveRoleFromUser(data.user)
       }
-    } catch {
-      // ignore
+    } catch (roleError) {
+      console.error('[AuthContext] role lookup failed', roleError)
+      nextRole = resolveRoleFromUser(data.user)
     }
     await loadProfile(data.user?.id)
     if (nextRole !== 'super_admin') await logLoginAudit()

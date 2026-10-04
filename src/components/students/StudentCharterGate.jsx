@@ -10,18 +10,29 @@ export default function StudentCharterGate({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const { status: nextStatus, error: fetchError } = await fetchStudentCharterStatus()
+  const applyResult = useCallback((nextStatus, fetchError) => {
     setStatus(nextStatus)
     setError(fetchError)
     setLoading(false)
   }, [])
 
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const { status: nextStatus, error: fetchError } = await fetchStudentCharterStatus()
+    applyResult(nextStatus, fetchError)
+  }, [applyResult])
+
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let cancelled = false
+    fetchStudentCharterStatus().then(({ status: nextStatus, error: fetchError }) => {
+      if (cancelled) return
+      applyResult(nextStatus, fetchError)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [applyResult])
 
   if (loading) {
     return <LoadingSpinner label="Chargement de la charte d'engagement…" />
@@ -29,12 +40,19 @@ export default function StudentCharterGate({ children }) {
 
   if (error || !status) {
     return (
-      <EmptyState
-        className="border-amber-200 bg-amber-50/80"
-        icon="📜"
-        message={getUserFacingError(error, 'load') || 'Impossible de vérifier l\'acceptation de la charte d\'engagement.'}
-        title="Charte d'engagement indisponible"
-      />
+      <div className="px-4 py-8">
+        <EmptyState
+          className="border-amber-200 bg-amber-50/80"
+          icon="📜"
+          message={getUserFacingError(error, 'load') || 'Impossible de vérifier l\'acceptation de la charte d\'engagement.'}
+          title="Charte d'engagement indisponible"
+          action={(
+            <button className="pd-btn-primary mt-2" onClick={refresh} type="button">
+              Réessayer
+            </button>
+          )}
+        />
+      </div>
     )
   }
 
