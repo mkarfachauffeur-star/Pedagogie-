@@ -13,6 +13,7 @@ const fullLogo = path.join(publicDir, 'brand/pedagogia-drive-logo.png')
 const rasterIcons = [
   ['favicon-16x16.png', 16],
   ['favicon-32x32.png', 32],
+  ['favicon-48x48.png', 48],
   ['apple-touch-icon.png', 180],
   ['android-chrome-192x192.png', 192],
   ['android-chrome-512x512.png', 512],

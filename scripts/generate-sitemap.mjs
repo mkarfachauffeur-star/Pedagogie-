@@ -8,20 +8,21 @@ const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 const staticPages = [
   { path: '/', changeFrequency: 'weekly', priority: '1.0' },
-  { path: '/livret-numerique-auto-ecole', changeFrequency: 'weekly', priority: '0.95' },
-  { path: '/login', changeFrequency: 'monthly', priority: '0.8' },
-  { path: '/contact', changeFrequency: 'monthly', priority: '0.8' },
-  { path: '/mentions-legales', changeFrequency: 'yearly', priority: '0.5' },
-  { path: '/politique-confidentialite', changeFrequency: 'yearly', priority: '0.5' },
-  { path: '/cgu', changeFrequency: 'yearly', priority: '0.5' },
-  { path: '/cgv', changeFrequency: 'yearly', priority: '0.5' },
-  { path: '/cookies', changeFrequency: 'yearly', priority: '0.5' },
+  { path: '/livret-numerique-auto-ecole', changeFrequency: 'weekly', priority: '0.8' },
+  { path: '/login', changeFrequency: 'monthly', priority: '0.4' },
+  { path: '/contact', changeFrequency: 'monthly', priority: '0.6' },
+  { path: '/blog', changeFrequency: 'weekly', priority: '0.4' },
+  { path: '/mentions-legales', changeFrequency: 'yearly', priority: '0.3' },
+  { path: '/politique-confidentialite', changeFrequency: 'yearly', priority: '0.3' },
+  { path: '/cgu', changeFrequency: 'yearly', priority: '0.3' },
+  { path: '/cgv', changeFrequency: 'yearly', priority: '0.3' },
+  { path: '/cookies', changeFrequency: 'yearly', priority: '0.3' },
 ]
 
 const blogPages = BLOG_POSTS.map((post) => ({
   path: `/blog/${post.slug}`,
   changeFrequency: 'monthly',
-  priority: '0.7',
+  priority: '0.45',
   lastModified: post.publishedAt,
 }))
 

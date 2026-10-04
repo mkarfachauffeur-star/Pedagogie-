@@ -42,11 +42,12 @@ export const SEO_DEFAULT_DESCRIPTION =
 export const SEO_PAGES = {
   home: {
     path: '/',
-    title: 'Pedagogia Drive — Le suivi pédagogique des auto-écoles',
+    title: 'Livret numérique auto-école | Pedagogia Drive — suivi pédagogique REMC',
     description:
-      'Pedagogia Drive centralise le suivi pédagogique des auto-écoles : élèves, compétences, QCU, ressources pédagogiques et suivi AAC/CS.',
+      'Livret numérique auto-école Pedagogia Drive : suivi REMC, QCM, compétences, messagerie et gestion d\'équipe. Remplacez le livret papier. Démonstration gratuite.',
     ogType: 'website',
-    imageAlt: 'Pedagogia Drive — suivi pédagogique des auto-écoles',
+    imageAlt: 'Livret numérique auto-école Pedagogia Drive — suivi pédagogique REMC',
+    keywords: SEO_KEYWORDS,
   },
   login: {
     path: '/login',
@@ -106,9 +107,9 @@ export const SEO_PAGES = {
   },
   blog: {
     path: '/blog',
-    title: 'Blog | Pedagogia Drive — Livret numérique & auto-école',
+    title: 'Blog Pedagogia Drive | Conseils REMC et pédagogie',
     description:
-      'Blog Pedagogia Drive : guides SEO pour gérants d\'auto-école sur le livret numérique, le REMC, le suivi pédagogique, les QCM et la digitalisation.',
+      'Conseils et actualités pour les auto-écoles : REMC, formation des élèves, organisation de l\'équipe pédagogique et digitalisation.',
     ogType: 'website',
   },
   livretNumerique: {
