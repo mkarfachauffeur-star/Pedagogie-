@@ -162,10 +162,10 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
       )}
 
       <aside
-        className={`app-sidebar pointer-events-auto fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:sticky lg:z-50 lg:h-screen lg:max-h-screen lg:shrink-0 ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'} w-[min(280px,100vw)]
+        className={`app-sidebar fixed left-0 top-0 z-[80] h-[100dvh] max-h-[100dvh] overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] lg:pointer-events-auto lg:sticky lg:z-50 lg:h-screen lg:max-h-screen lg:shrink-0 ${sidebarCollapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'} w-[min(280px,100vw)]
           border-r border-blue-100/90 bg-white text-slate-800 shadow-[var(--shadow-sidebar)]
           transition-all duration-300 ease-out
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+          ${sidebarOpen ? 'is-open translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <button
           aria-label={sidebarCollapsed ? 'Déplier le menu' : 'Replier le menu'}
@@ -321,7 +321,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           </div>
         </header>
 
-        <main className="pd-main flex-1 overflow-x-hidden px-4 py-4 sm:px-5 md:px-6 lg:px-8">
+        <main className="pd-main min-w-0 flex-1 px-4 py-4 sm:px-5 md:px-6 lg:px-8">
           <OrgStatusBanner />
           <div className="page-shell w-full min-w-0" key={location.pathname}>
             {children}

@@ -5,7 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Pedagogia Drive',
   webDir: 'dist',
   ios: {
-    contentInset: 'automatic',
+    // 'automatic' réduit la zone scrollable WKWebView (encoche / barre d’accueil)
+    // et empêche d’atteindre le bas du contenu. Les safe areas sont gérées en CSS.
+    contentInset: 'never',
     preferredContentMode: 'mobile',
     scheme: 'Pedagogia Drive',
   },
@@ -20,7 +22,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#2563eb',
     },
     Keyboard: {
-      resize: 'body',
+      resize: 'native',
     },
   },
 }
