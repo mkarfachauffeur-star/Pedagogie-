@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  addAacPedagogicalAppointment,
   completeAacTrip,
   getAacBundle,
   markAacCompleted,
@@ -10,7 +11,15 @@ import {
   appendAacTripPoints,
 } from '../../services/aac'
 import { listTeachers } from '../../services/teachers'
-import { daysBetween, formatDateFr, statusLabel } from '../../lib/aacRules'
+import {
+  AAC_MAX_RVP_COUNT,
+  AAC_REQUIRED_RVP_COUNT,
+  countMandatoryRvpCompleted,
+  daysBetween,
+  formatDateFr,
+  rvpRequirementLabel,
+  statusLabel,
+} from '../../lib/aacRules'
 import {
   accumulateDistance,
   getCurrentPosition,
@@ -84,6 +93,17 @@ export default function AacPanel({
 
   const profile = bundle?.profile
   const rvp = bundle?.rvp || []
+  const visibleRvp = [
+    ...Array.from({ length: AAC_REQUIRED_RVP_COUNT }, (_, index) => {
+      const sequence = index + 1
+      return rvp.find((row) => Number(row.sequence) === sequence) || emptyRvp(sequence)
+    }),
+    ...rvp.filter(isShownExtra).sort((a, b) => Number(a.sequence) - Number(b.sequence)),
+  ]
+  const highestRvpSequence = rvp.reduce(
+    (max, row) => Math.max(max, Number(row.sequence) || 0),
+    AAC_REQUIRED_RVP_COUNT,
+  )
   const trips = bundle?.trips || []
   const conditions = profile?.conditions
   const progress = profile?.progress
@@ -207,6 +227,8 @@ export default function AacPanel({
       companionName: patch.companionName ?? current.companionName,
       observations: patch.observations ?? current.observations,
       completed: patch.completed ?? current.completed,
+      preserveExtraMarker: Boolean(current.preserveExtraMarker),
+      markAsAdditional: Boolean(patch.markAsAdditional),
     })
     if (saveError) setError(saveError.message)
     else await reload()
@@ -227,6 +249,15 @@ export default function AacPanel({
       senderName,
     })
     if (upError) setError(upError.message)
+    else await reload()
+    setSaving(false)
+  }
+
+  async function handleAddRvp() {
+    setSaving(true)
+    setError('')
+    const { error: addError } = await addAacPedagogicalAppointment(studentId)
+    if (addError) setError(addError.message)
     else await reload()
     setSaving(false)
   }
@@ -295,8 +326,8 @@ export default function AacPanel({
             <Kpi label="Trajets" value={String(profile.tripCount || 0)} hint="enregistrés" />
             <Kpi
               label="RVP"
-              value={`${rvp.filter((r) => r.completed).length}/3`}
-              hint="effectués"
+              value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
+              hint="obligatoires"
             />
           </div>
 
@@ -365,7 +396,7 @@ export default function AacPanel({
           <Cond ok={conditions?.yearOk} label="1 année complète de conduite accompagnée (jour pour jour)" />
           <Cond ok={conditions?.kmOk} label="Minimum 3000 km parcourus" />
           <Cond ok={conditions?.ageOk} label={`Âge minimum 17 ans${conditions?.age != null ? ` (actuel : ${conditions.age} ans)` : ''}`} />
-          <Cond ok={conditions?.rvpOk} label="Les 3 rendez-vous pédagogiques effectués" />
+          <Cond ok={conditions?.rvpOk} label="Les 2 rendez-vous pédagogiques obligatoires effectués" />
         </ul>
         {conditions?.allMet && (
           <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
@@ -453,92 +484,29 @@ export default function AacPanel({
       {/* RVP */}
       <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
         <h3 className="text-lg font-black text-slate-950">Rendez-vous pédagogiques (RVP)</h3>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {[1, 2, 3].map((seq) => {
-            const item = rvp.find((r) => r.sequence === seq) || {
-              sequence: seq,
-              completed: false,
-              heldOn: '',
-              companionName: '',
-              observations: '',
-              teacherId: '',
-            }
-            return (
-              <div
-                key={seq}
-                className={`rounded-2xl border p-4 ${
-                  item.completed
-                    ? 'border-emerald-200 bg-emerald-50/70'
-                    : 'border-slate-200 bg-slate-50'
-                }`}
-              >
-                <p className="font-black text-slate-950">
-                  {item.completed ? '✓ ' : ''}RVP {seq}
-                </p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-                  {item.completed ? 'Effectué' : 'À faire'}
-                </p>
-                {isStaff ? (
-                  <div className="mt-3 space-y-2">
-                    <input
-                      className="pd-input w-full text-sm"
-                      type="date"
-                      value={item.heldOn || ''}
-                      onChange={(e) => saveRvp(seq, { heldOn: e.target.value })}
-                    />
-                    <select
-                      className="pd-input w-full text-sm"
-                      value={item.teacherId || ''}
-                      onChange={(e) => saveRvp(seq, { teacherId: e.target.value || null })}
-                    >
-                      <option value="">Enseignant…</option>
-                      {teachers.map((t) => (
-                        <option key={t.profile_id || t.id} value={t.profile_id || t.id}>
-                          {t.first_name} {t.last_name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      className="pd-input w-full text-sm"
-                      placeholder="Accompagnateur"
-                      defaultValue={item.companionName}
-                      onBlur={(e) => {
-                        if (e.target.value !== (item.companionName || '')) {
-                          void saveRvp(seq, { companionName: e.target.value })
-                        }
-                      }}
-                    />
-                    <textarea
-                      className="pd-input w-full text-sm"
-                      placeholder="Observations"
-                      rows={2}
-                      defaultValue={item.observations}
-                      onBlur={(e) => {
-                        if (e.target.value !== (item.observations || '')) {
-                          void saveRvp(seq, { observations: e.target.value })
-                        }
-                      }}
-                    />
-                    <label className="flex items-center gap-2 text-sm font-semibold">
-                      <input
-                        checked={Boolean(item.completed)}
-                        onChange={(e) => saveRvp(seq, { completed: e.target.checked })}
-                        type="checkbox"
-                      />
-                      Effectué
-                    </label>
-                  </div>
-                ) : (
-                  <div className="mt-3 space-y-1 text-sm text-slate-600">
-                    <p>Date : {formatDateFr(item.heldOn)}</p>
-                    <p>Accompagnateur : {item.companionName || '—'}</p>
-                    {item.observations && <p className="text-slate-500">{item.observations}</p>}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+        <p className="mt-1 text-sm text-slate-500">
+          Deux rendez-vous sont obligatoires. Un rendez-vous supplémentaire peut être organisé
+          sur conseil de l’enseignant, à la demande de l’élève ou de l’accompagnateur.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibleRvp.map((item) => (
+            <RvpCard
+              isStaff={isStaff}
+              item={item}
+              key={item.sequence}
+              onSave={(patch) => saveRvp(item.sequence, patch)}
+              teachers={teachers}
+            />
+          ))}
         </div>
+        <button
+          className="mt-4 rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+          disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
+          onClick={handleAddRvp}
+          type="button"
+        >
+          Ajouter un rendez-vous pédagogique
+        </button>
       </section>
 
       {/* FFI */}
@@ -586,6 +554,100 @@ function KpiLight({ label, value }) {
     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
       <p className="text-lg font-extrabold text-slate-950">{value}</p>
       <p className="text-xs font-semibold text-slate-500">{label}</p>
+    </div>
+  )
+}
+
+function emptyRvp(sequence) {
+  return {
+    sequence,
+    completed: false,
+    heldOn: '',
+    companionName: '',
+    observations: '',
+    teacherId: '',
+  }
+}
+
+function isShownExtra(item) {
+  if (Number(item?.sequence) <= AAC_REQUIRED_RVP_COUNT) return false
+  if (item.isAdditional || item.preserveExtraMarker || item.completed || item.heldOn || item.teacherId) return true
+  if (String(item.companionName || '').trim()) return true
+  if (String(item.observations || '').trim()) return true
+  return false
+}
+
+function RvpCard({ item, isStaff, teachers, onSave }) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        item.completed ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-slate-50'
+      }`}
+    >
+      <p className="font-black text-slate-950">
+        {item.completed ? '✓ ' : ''}RVP {item.sequence}
+      </p>
+      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+        {item.completed ? 'Effectué' : 'À faire'}
+      </p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{rvpRequirementLabel(item.sequence)}</p>
+      {isStaff ? (
+        <div className="mt-3 space-y-2">
+          <input
+            className="pd-input w-full text-sm"
+            type="date"
+            value={item.heldOn || ''}
+            onChange={(e) => onSave({ heldOn: e.target.value })}
+          />
+          <select
+            className="pd-input w-full text-sm"
+            value={item.teacherId || ''}
+            onChange={(e) => onSave({ teacherId: e.target.value || null })}
+          >
+            <option value="">Enseignant…</option>
+            {teachers.map((teacher) => (
+              <option key={teacher.profile_id || teacher.id} value={teacher.profile_id || teacher.id}>
+                {teacher.first_name} {teacher.last_name}
+              </option>
+            ))}
+          </select>
+          <input
+            className="pd-input w-full text-sm"
+            placeholder="Accompagnateur"
+            defaultValue={item.companionName}
+            onBlur={(e) => {
+              if (e.target.value !== (item.companionName || '')) {
+                void onSave({ companionName: e.target.value })
+              }
+            }}
+          />
+          <textarea
+            className="pd-input w-full text-sm"
+            placeholder="Observations"
+            rows={2}
+            defaultValue={item.observations}
+            onBlur={(e) => {
+              if (e.target.value !== (item.observations || '')) {
+                void onSave({ observations: e.target.value })
+              }
+            }}
+          />
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input
+              checked={Boolean(item.completed)}
+              onChange={(e) => onSave({ completed: e.target.checked })}
+              type="checkbox"
+            />
+            Effectué
+          </label>
+        </div>
+      ) : (
+        <div className="mt-3 space-y-1 text-sm text-slate-600">
+          <p>Date : {formatDateFr(item.heldOn)}</p>
+          <p>Accompagnateur : {item.companionName || '—'}</p>
+          {item.observations && <p className="text-slate-500">{item.observations}</p>}
+        </div>
+      )}
     </div>
   )
 }
