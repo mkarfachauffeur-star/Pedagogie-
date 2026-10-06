@@ -324,18 +324,37 @@ export async function appendAacTripPoints(tripId, organizationId, points) {
   }
 }
 
+export async function getActiveAacTrip(studentId) {
+  try {
+    const { data, error } = await supabase
+      .from('aac_trips')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('status', 'in_progress')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw error
+    return { trip: mapTrip(data), error: null }
+  } catch (error) {
+    return { trip: null, error: toUserError(error, 'generic') }
+  }
+}
+
 export async function completeAacTrip(tripId, studentId, { points, distanceKm, startedAt }) {
   try {
     const endedAt = new Date()
     const start = startedAt ? new Date(startedAt) : endedAt
-    const durationSeconds = Math.max(0, Math.round((endedAt.getTime() - start.getTime()) / 1000))
+    const elapsedMs = endedAt.getTime() - start.getTime()
+    const durationSeconds = Number.isFinite(elapsedMs) ? Math.max(0, Math.round(elapsedMs / 1000)) : 0
+    const safeKm = Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : 0
     const pathSummary = downsamplePath(points || [])
 
     const { data, error } = await supabase
       .from('aac_trips')
       .update({
         ended_at: endedAt.toISOString(),
-        distance_km: distanceKm,
+        distance_km: safeKm,
         duration_seconds: durationSeconds,
         path_summary: pathSummary,
         status: 'completed',
@@ -345,6 +364,7 @@ export async function completeAacTrip(tripId, studentId, { points, distanceKm, s
       .select('*')
       .maybeSingle()
     if (error) throw error
+    if (!data) throw new Error('Impossible de terminer le trajet.')
 
     await supabase.rpc('refresh_aac_profile_stats', { p_student_id: studentId })
     return { trip: mapTrip(data), error: null }
@@ -363,6 +383,7 @@ export async function cancelAacTrip(tripId) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', tripId)
+      .eq('status', 'in_progress')
     if (error) throw error
     return { error: null }
   } catch (error) {

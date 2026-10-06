@@ -101,19 +101,31 @@ export function watchPosition(onUpdate, onError, options = {}) {
     )
   }
 
-  void start()
+  // L’identifiant natif arrive après un aller-retour. stop() doit l’attendre,
+  // sinon clearWatch ne part pas et le GPS continue sur iPhone.
+  const ready = start()
+
+  const stopWatch = async () => {
+    stopped = true
+    try {
+      await ready
+    } catch {
+      // Le suivi n’a pas démarré : rien à couper.
+    }
+    if (watchId != null && navigator?.geolocation) {
+      navigator.geolocation.clearWatch(watchId)
+      watchId = null
+    }
+    if (capacitorWatchId != null) {
+      const Geo = await getCapacitorGeolocation()
+      await Geo?.clearWatch?.({ id: capacitorWatchId })
+      capacitorWatchId = null
+    }
+  }
 
   return {
     stop: () => {
-      stopped = true
-      if (watchId != null && navigator?.geolocation) {
-        navigator.geolocation.clearWatch(watchId)
-      }
-      if (capacitorWatchId != null) {
-        void getCapacitorGeolocation().then((Geo) => {
-          Geo?.clearWatch?.({ id: capacitorWatchId })
-        })
-      }
+      void stopWatch()
     },
   }
 }

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   addAacPedagogicalAppointment,
+  cancelAacTrip,
   completeAacTrip,
   getAacBundle,
+  getActiveAacTrip,
   markAacCompleted,
   startAacTrip,
   updateAacStartDate,
@@ -60,10 +63,15 @@ export default function AacPanel({
   const [liveKm, setLiveKm] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [tracking, setTracking] = useState(false)
+  const [stopBusy, setStopBusy] = useState(false)
   const [lastTripSummary, setLastTripSummary] = useState(null)
   const watchRef = useRef(null)
   const tickRef = useRef(null)
   const pointBufferRef = useRef([])
+  const pointsRef = useRef([])
+  const activeTripRef = useRef(null)
+  const startTokenRef = useRef(0)
+  const stopLockRef = useRef(false)
   const seqRef = useRef(0)
 
   const reload = useCallback(async () => {
@@ -86,10 +94,23 @@ export default function AacPanel({
     void listTeachers().then(({ teachers: rows }) => setTeachers(rows || []))
   }, [isStaff])
 
+  useEffect(() => {
+    if (bundle?.activeTrip) activeTripRef.current = bundle.activeTrip
+  }, [bundle?.activeTrip])
+
   useEffect(() => () => {
     watchRef.current?.stop?.()
     if (tickRef.current) clearInterval(tickRef.current)
   }, [])
+
+  function stopLocalTracking() {
+    watchRef.current?.stop?.()
+    watchRef.current = null
+    if (tickRef.current) {
+      clearInterval(tickRef.current)
+      tickRef.current = null
+    }
+  }
 
   const profile = bundle?.profile
   const rvp = bundle?.rvp || []
@@ -125,22 +146,32 @@ export default function AacPanel({
   }
 
   async function handleStartTrip() {
+    const token = startTokenRef.current + 1
+    startTokenRef.current = token
     setError('')
     setSaving(true)
     try {
       const allowed = await requestLocationPermission()
+      if (startTokenRef.current !== token) return
       if (!allowed) throw new Error('Autorisez la localisation pour démarrer un trajet.')
       await getCurrentPosition()
+      if (startTokenRef.current !== token) return
       const { trip, error: startError } = await startAacTrip(studentId)
       if (startError) throw startError
+      if (startTokenRef.current !== token) {
+        if (trip?.id) await cancelAacTrip(trip.id)
+        return
+      }
 
+      activeTripRef.current = trip
+      pointsRef.current = []
+      pointBufferRef.current = []
+      seqRef.current = 0
       setTracking(true)
       setLivePoints([])
       setLiveKm(0)
       setElapsed(0)
       setLastTripSummary(null)
-      seqRef.current = 0
-      pointBufferRef.current = []
 
       const startedMs = Date.now()
       tickRef.current = setInterval(() => {
@@ -151,12 +182,10 @@ export default function AacPanel({
         (pos) => {
           const withSeq = { ...pos, sequenceNo: seqRef.current }
           seqRef.current += 1
-          setLivePoints((prev) => {
-            const next = [...prev, withSeq]
-            setLiveKm(accumulateDistance(next))
-            return next
-          })
+          pointsRef.current = [...pointsRef.current, withSeq]
           pointBufferRef.current.push(withSeq)
+          setLivePoints(pointsRef.current)
+          setLiveKm(accumulateDistance(pointsRef.current))
           if (pointBufferRef.current.length >= 8) {
             void flushPoints(trip.id, organizationId || bundle?.student?.organization_id)
           }
@@ -166,43 +195,59 @@ export default function AacPanel({
 
       setBundle((prev) => (prev ? { ...prev, activeTrip: trip } : prev))
     } catch (err) {
-      setError(err.message || 'Impossible de démarrer le trajet.')
+      if (startTokenRef.current === token) {
+        setError(err.message || 'Impossible de démarrer le trajet.')
+      }
     } finally {
-      setSaving(false)
+      if (startTokenRef.current === token) setSaving(false)
     }
   }
 
   async function handleStopTrip() {
-    const trip = bundle?.activeTrip
-    if (!trip) return
-    setSaving(true)
+    if (stopLockRef.current) return
+    stopLockRef.current = true
+    startTokenRef.current += 1
+    setStopBusy(true)
     setError('')
+    stopLocalTracking()
     try {
-      watchRef.current?.stop?.()
-      watchRef.current = null
-      if (tickRef.current) {
-        clearInterval(tickRef.current)
-        tickRef.current = null
+      let trip = activeTripRef.current || bundle?.activeTrip
+      if (!trip?.id && studentId) {
+        const found = await getActiveAacTrip(studentId)
+        if (found.error) throw found.error
+        trip = found.trip
       }
-      setTracking(false)
 
-      const orgId = organizationId || bundle?.student?.organization_id
+      if (!trip?.id) {
+        setTracking(false)
+        activeTripRef.current = null
+        setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
+        return
+      }
+
+      const orgId = organizationId || bundle?.student?.organization_id || trip.organizationId
       await flushPoints(trip.id, orgId)
 
-      const distanceKm = accumulateDistance(livePoints)
+      const points = pointsRef.current
       const { trip: completed, error: stopError } = await completeAacTrip(trip.id, studentId, {
-        points: livePoints,
-        distanceKm,
+        points,
+        distanceKm: accumulateDistance(points),
         startedAt: trip.startedAt,
       })
       if (stopError) throw stopError
 
+      activeTripRef.current = null
+      pointsRef.current = []
+      setTracking(false)
+      setLivePoints([])
       setLastTripSummary(completed)
+      setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
       await reload()
     } catch (err) {
       setError(err.message || 'Impossible de terminer le trajet.')
     } finally {
-      setSaving(false)
+      stopLockRef.current = false
+      setStopBusy(false)
     }
   }
 
@@ -271,13 +316,39 @@ export default function AacPanel({
     setSaving(false)
   }
 
+  const tripActive = tracking || Boolean(bundle?.activeTrip)
+  const stopBar = tripActive && !isStaff && typeof document !== 'undefined'
+    ? createPortal(
+      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-rose-200 bg-white/95 px-4 pt-3 shadow-[0_-8px_30px_rgba(15,23,42,0.12)] backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p className="mb-2 text-center text-xs font-bold text-slate-500">
+          Trajet en cours · {liveKm.toFixed(2)} km · {formatDuration(elapsed)}
+        </p>
+        <button
+          className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
+          disabled={stopBusy}
+          onClick={handleStopTrip}
+          type="button"
+        >
+          {stopBusy ? 'Arrêt du trajet…' : '■ Terminer mon trajet'}
+        </button>
+      </div>,
+      document.body,
+    )
+    : null
+
   if (loading) {
-    return <p className="text-sm font-semibold text-slate-500">Chargement du suivi AAC…</p>
+    return (
+      <>
+        {stopBar}
+        <p className="text-sm font-semibold text-slate-500">Chargement du suivi AAC…</p>
+      </>
+    )
   }
 
   if (!profile) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        {stopBar}
         Aucun profil AAC. {isStaff ? 'Renseignez une date d’entrée pour l’activer.' : 'Contactez le secrétariat.'}
         {isStaff && (
           <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={saveStartDate}>
@@ -300,7 +371,8 @@ export default function AacPanel({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className={`flex flex-col gap-5 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
+      {stopBar}
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
           {error}
@@ -412,22 +484,22 @@ export default function AacPanel({
           <p className="mt-1 text-sm text-slate-500">
             Gardez l’écran allumé pendant le trajet. Le GPS calcule automatiquement les kilomètres.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
-              className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-              disabled={saving || tracking || Boolean(bundle?.activeTrip)}
+              className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50 sm:w-auto"
+              disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
             >
               ▶ Démarrer mon trajet
             </button>
             <button
-              className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-              disabled={saving || (!tracking && !bundle?.activeTrip)}
+              className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50 sm:w-auto"
+              disabled={stopBusy}
               onClick={handleStopTrip}
               type="button"
             >
-              ■ Terminer mon trajet
+              {stopBusy ? 'Arrêt du trajet…' : '■ Terminer mon trajet'}
             </button>
           </div>
           {(tracking || bundle?.activeTrip) && (
