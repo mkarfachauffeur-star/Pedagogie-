@@ -1382,6 +1382,27 @@
   display: none;
 }
 
+/* La page de connexion suit la zone visible. Sans ça, le clavier iOS
+   recouvre le bouton et le cadre fixe (inset: 0) ne peut pas défiler jusqu’à lui. */
+.login-page-shell {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--vv-offset-top, 0px);
+  height: var(--vv-height, 100dvh);
+  max-height: var(--vv-height, 100dvh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+html.keyboard-open .login-page-shell > .relative {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
 /* Hors des layers Tailwind : ces règles doivent gagner sur h-screen / overflow-x-hidden.
    Sur iPhone (WKWebView), 100vh et un overflow-x sur body coupent le bas du document. */
 html.capacitor-ios {

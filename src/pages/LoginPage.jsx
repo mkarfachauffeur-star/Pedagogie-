@@ -165,6 +165,54 @@ export default function LoginPage() {
     }
   }, [isDark])
 
+  useEffect(() => {
+    const root = document.documentElement
+    let frame = 0
+    let timer = 0
+
+    const scrollSubmitIntoView = () => {
+      const active = document.activeElement
+      if (!(active instanceof HTMLElement) || !active.closest('.login-page-shell')) return
+      const form = active.closest('form')
+      const target = form?.querySelector('button[type="submit"]') || active
+      target.scrollIntoView({ block: 'center', inline: 'nearest' })
+    }
+
+    const syncVisibleViewport = () => {
+      const viewport = window.visualViewport
+      if (!viewport) return
+      const keyboardInset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+      const keyboardOpen = keyboardInset > 80
+      root.style.setProperty('--vv-height', `${Math.round(viewport.height)}px`)
+      root.style.setProperty('--vv-offset-top', `${Math.round(viewport.offsetTop)}px`)
+      root.classList.toggle('keyboard-open', keyboardOpen)
+      if (keyboardOpen) scrollSubmitIntoView()
+    }
+
+    const onFocusIn = () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+      frame = window.requestAnimationFrame(syncVisibleViewport)
+      timer = window.setTimeout(syncVisibleViewport, 320)
+    }
+
+    syncVisibleViewport()
+    window.visualViewport?.addEventListener('resize', syncVisibleViewport)
+    window.visualViewport?.addEventListener('scroll', syncVisibleViewport)
+    document.addEventListener('focusin', onFocusIn)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+      window.visualViewport?.removeEventListener('resize', syncVisibleViewport)
+      window.visualViewport?.removeEventListener('scroll', syncVisibleViewport)
+      document.removeEventListener('focusin', onFocusIn)
+      root.style.removeProperty('--vv-height')
+      root.style.removeProperty('--vv-offset-top')
+      root.classList.remove('keyboard-open')
+    }
+  }, [])
+
   const canSubmit = useMemo(() => Boolean(email.trim() && password), [email, password])
 
   const handleForgotPassword = async () => {
@@ -268,7 +316,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
+      className={`login-page-shell fixed z-[200] ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
     >
       <PageSeo {...loginPage} jsonLd={loginJsonLd} />
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
