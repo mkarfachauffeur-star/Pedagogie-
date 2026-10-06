@@ -1,16 +1,17 @@
+import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
 import PageShell from './ui/PageShell'
-import EmptyState from './ui/EmptyState'
 import { useStudentAccount } from '../hooks/useStudentAccount'
 
-function ErrorDetail({ label, value }) {
-  if (!value) return null
-  return (
-    <p className="text-xs text-rose-800">
-      <span className="font-bold">{label} :</span>{' '}
-      {typeof value === 'string' ? value : JSON.stringify(value)}
-    </p>
-  )
+const FRIENDLY_MESSAGES = {
+  no_session: 'Votre session a expiré. Reconnectez-vous pour accéder à votre espace.',
+  profile_query_failed: 'Impossible de charger votre profil. Vérifiez votre connexion puis réessayez.',
+  missing_profile: 'Votre dossier n’est pas encore finalisé. Contactez votre auto-école.',
+  wrong_role: 'Ce compte n’est pas un espace élève. Reconnectez-vous avec le bon accès.',
+  inactive: 'Votre compte élève est désactivé. Contactez votre auto-école.',
+  access_expired: 'Votre accès Pedagogia Drive a expiré. Contactez votre auto-école pour le réactiver.',
+  student_query_failed: 'Impossible de charger votre dossier. Vérifiez votre connexion puis réessayez.',
+  missing_student: 'Votre inscription n’est pas encore enregistrée. Contactez le secrétariat de votre auto-école.',
 }
 
 export default function StudentAccountGate({ children }) {
@@ -23,6 +24,7 @@ export default function StudentAccountGate({ children }) {
     issue,
     profileError,
     studentError,
+    refresh,
   } = useStudentAccount()
 
   if (loading) {
@@ -45,37 +47,14 @@ export default function StudentAccountGate({ children }) {
         <EmptyState
           icon="⚠️"
           title="Espace élève indisponible"
-          message={issue.message}
+          message={FRIENDLY_MESSAGES[issue.code] || issue.message}
           className="border-rose-200 bg-rose-50/80"
+          action={(
+            <button className="pd-btn-primary mt-2" onClick={refresh} type="button">
+              Réessayer
+            </button>
+          )}
         />
-        <div className="rounded-2xl border border-rose-200 bg-white p-4 text-left shadow-sm">
-          <p className="text-sm font-bold text-rose-900">Détails techniques</p>
-          <div className="mt-3 space-y-1 font-mono text-xs text-rose-800">
-            <ErrorDetail label="Code" value={issue.code} />
-            <ErrorDetail label="User ID" value={profileId} />
-            <ErrorDetail label="E-mail" value={userEmail} />
-            <ErrorDetail label="Profil trouvé" value={profile ? 'oui' : 'non'} />
-            <ErrorDetail label="Dossier élève trouvé" value={student ? 'oui' : 'non'} />
-            {issue.detail && typeof issue.detail === 'string' && (
-              <ErrorDetail label="Info" value={issue.detail} />
-            )}
-            {profileError && (
-              <>
-                <ErrorDetail label="Erreur profiles" value={profileError.message} />
-                <ErrorDetail label="Code Supabase (profiles)" value={profileError.code} />
-              </>
-            )}
-            {studentError && (
-              <>
-                <ErrorDetail label="Erreur students" value={studentError.message} />
-                <ErrorDetail label="Code Supabase (students)" value={studentError.code} />
-              </>
-            )}
-          </div>
-          <p className="mt-4 text-xs text-slate-500">
-            Ces informations sont visibles pour faciliter le diagnostic. Transmettez-les au secrétariat ou au support si besoin.
-          </p>
-        </div>
       </PageShell>
     )
   }

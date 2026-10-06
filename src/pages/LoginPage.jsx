@@ -211,7 +211,11 @@ export default function LoginPage() {
       setAuthError('')
       return
     }
-    const destination = roleDestinations[realRole] || '/'
+    const destination = roleDestinations[realRole]
+    if (!destination) {
+      setAuthError('Connexion réussie, mais votre rôle n’a pas pu être chargé. Réessayez dans un instant.')
+      return
+    }
     const { data: sessionData } = await supabase.auth.getUser()
     trackFirstLogin(sessionData.user?.id, realRole)
     trackLogin(realRole)
@@ -242,7 +246,7 @@ export default function LoginPage() {
       return
     }
     setMustChangePassword(false)
-    const destination = roleDestinations[pendingRole] || '/'
+    const destination = roleDestinations[pendingRole] || '/login'
     const { data: sessionData } = await supabase.auth.getUser()
     trackFirstLogin(sessionData.user?.id, pendingRole)
     trackLogin(pendingRole)
@@ -268,14 +272,14 @@ export default function LoginPage() {
 
   return (
     <div
-      className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
+      className={`login-page-shell fixed inset-0 z-[200] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch] ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}
     >
       <PageSeo {...loginPage} jsonLd={loginJsonLd} />
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
       {isDark && <LoginRoadArt />}
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[1280px] flex-col px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-        <header className="mb-8 flex items-center justify-between lg:mb-10">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[1280px] flex-col px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:py-10">
+        <header className="mb-5 flex items-center justify-between sm:mb-8 lg:mb-10">
           <Link aria-label="Retour à l'accueil" to="/">
             <BrandLogo
               animated={!shouldReduceMotion}
@@ -286,9 +290,9 @@ export default function LoginPage() {
           <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
         </header>
 
-        <div className="grid flex-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+        <div className="grid flex-1 items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <motion.div
-            className="flex flex-col justify-center lg:min-h-[calc(100vh-8rem)]"
+            className="hidden flex-col justify-center lg:flex lg:min-h-[calc(100vh-8rem)]"
             {...fadeUp(0)}
           >
             <p className={skin.loginHeroBadge}>
@@ -325,6 +329,8 @@ export default function LoginPage() {
                 {isDark && (
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-blue-500/60 via-violet-400/30 to-red-500/60" />
                 )}
+
+                <p className={`mb-4 text-xl font-black lg:hidden ${skin.heading}`}>Connexion</p>
 
                 {mustChangePassword ? (
                   <form className="grid gap-4" onSubmit={handlePasswordChange}>
@@ -393,12 +399,14 @@ export default function LoginPage() {
                     E-mail
                     <span className={skin.loginInputWrap}>
                       <Mail className={inputIconClass} />
-                      <input
+                        <input
                         type="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
+                        onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' })}
                         placeholder="votre@email.com"
                         className={skin.loginInput}
+                        autoComplete="username"
                       />
                     </span>
                   </label>
@@ -407,14 +415,15 @@ export default function LoginPage() {
                     Mot de passe
                     <span className={skin.loginInputWrap}>
                       <LockKeyhole className={inputIconClass} />
-                      <input
-                        autoComplete="current-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="••••••••"
-                        className={skin.loginInput}
-                      />
+                        <input
+                          autoComplete="current-password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                          placeholder="••••••••"
+                          className={skin.loginInput}
+                        />
                       <button
                         aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                         className={passwordToggleClass}
