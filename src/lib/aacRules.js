@@ -2,6 +2,9 @@
 
 export const AAC_KM_TARGET = 3000
 export const AAC_MIN_AGE = 17
+/** Service-Public : 2 rendez-vous pédagogiques obligatoires, un supplémentaire possible. */
+export const AAC_REQUIRED_RVP_COUNT = 2
+export const AAC_MAX_RVP_COUNT = 20
 export const AAC_STATUS = {
   en_cours: 'en_cours',
   conditions_remplies: 'conditions_remplies',
@@ -98,7 +101,7 @@ export function evaluateAacConditions({
   const kmOk = (Number(kmTotal) || 0) >= AAC_KM_TARGET
   const age = ageOnDate(birthDate, onDate)
   const ageOk = age != null && age >= AAC_MIN_AGE
-  const rvpOk = (Number(rvpCompletedCount) || 0) >= 3
+  const rvpOk = (Number(rvpCompletedCount) || 0) >= AAC_REQUIRED_RVP_COUNT
   const allMet = yearOk && kmOk && ageOk && rvpOk
   return {
     yearOk,
@@ -113,4 +116,25 @@ export function evaluateAacConditions({
 
 export function statusLabel(status) {
   return AAC_STATUS_LABELS[status] || status || '—'
+}
+
+export function isMandatoryRvpSequence(sequence) {
+  const n = Number(sequence)
+  return n >= 1 && n <= AAC_REQUIRED_RVP_COUNT
+}
+
+/** Seuls les rendez-vous 1 et 2 comptent pour la condition légale. */
+export function countMandatoryRvpCompleted(rvp = []) {
+  return (rvp || []).filter((row) => isMandatoryRvpSequence(row?.sequence) && row?.completed).length
+}
+
+export function rvpRequirementLabel(sequence) {
+  const n = Number(sequence)
+  if (n === 1) {
+    return 'Obligatoire — entre 4 et 6 mois après l’attestation de fin de formation initiale'
+  }
+  if (n === 2) {
+    return 'Obligatoire — lorsque 3 000 km ont été parcourus'
+  }
+  return 'Supplémentaire — sur conseil de l’enseignant, à la demande de l’élève ou de l’accompagnateur'
 }

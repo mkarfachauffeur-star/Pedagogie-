@@ -1,13 +1,13 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
-import { addOneYear, evaluateAacConditions, kmProgress, statusLabel } from '../lib/aacRules'
+import { addOneYear, countMandatoryRvpCompleted, evaluateAacConditions, kmProgress, statusLabel } from '../lib/aacRules'
 import { downsamplePath } from '../lib/geolocation'
 
 export const AAC_FFI_DOCUMENT_TYPE = 'Attestation FFI'
 
 function mapProfile(row, { birthDate = null, rvp = [] } = {}) {
   if (!row) return null
-  const rvpCompleted = (rvp || []).filter((r) => r.completed).length
+  const rvpCompleted = countMandatoryRvpCompleted(rvp)
   const conditions = evaluateAacConditions({
     startedAt: row.started_at,
     kmTotal: row.km_total,
@@ -48,8 +48,16 @@ function mapTrip(row) {
   }
 }
 
+// Un créneau au-delà de 2, vide, est un reste automatique. Le marqueur invisible
+// distingue un rendez-vous ajouté tant que la colonne is_additional n’est pas là.
+function stripExtraMarker(value) {
+  return String(value || '').replace(/\u200b/g, '')
+}
+
 function mapRvp(row) {
   if (!row) return null
+  const rawObservations = row.observations || ''
+  const marked = rawObservations.includes('\u200b')
   return {
     id: row.id,
     studentId: row.student_id,
@@ -57,10 +65,17 @@ function mapRvp(row) {
     heldOn: row.held_on,
     teacherId: row.teacher_id,
     companionName: row.companion_name || '',
-    observations: row.observations || '',
+    observations: stripExtraMarker(rawObservations),
     completed: Boolean(row.completed),
+    isAdditional: Boolean(row.is_additional) || marked,
+    preserveExtraMarker: marked && !row.is_additional,
     label: `RVP ${row.sequence}`,
   }
+}
+
+function isMissingRpc(error) {
+  const message = `${error?.message || ''} ${error?.details || ''} ${error?.code || ''}`
+  return /PGRST202|could not find the function|schema cache/i.test(message)
 }
 
 export async function ensureAacProfile(studentId, startedAt = null) {
@@ -178,6 +193,11 @@ export async function upsertAacRvp(studentId, payload) {
       .eq('id', studentId)
       .maybeSingle()
 
+    const cleanObservations = stripExtraMarker(payload.observations).trim()
+    const observations = payload.markAsAdditional || payload.preserveExtraMarker
+      ? `\u200b${cleanObservations}`
+      : cleanObservations || null
+
     const row = {
       organization_id: student.organization_id,
       student_id: studentId,
@@ -185,7 +205,7 @@ export async function upsertAacRvp(studentId, payload) {
       held_on: payload.heldOn || null,
       teacher_id: payload.teacherId || null,
       companion_name: payload.companionName?.trim() || null,
-      observations: payload.observations?.trim() || null,
+      observations,
       completed: Boolean(payload.completed),
       updated_at: new Date().toISOString(),
     }
@@ -199,6 +219,48 @@ export async function upsertAacRvp(studentId, payload) {
 
     await supabase.rpc('refresh_aac_profile_stats', { p_student_id: studentId })
     return { rvp: mapRvp(data), error: null }
+  } catch (error) {
+    return { rvp: null, error: toUserError(error, 'generic') }
+  }
+}
+
+function isBlankExtraSlot(row) {
+  if (!row || Number(row.sequence) <= 2) return false
+  if (row.completed || row.held_on || row.teacher_id) return false
+  if (String(row.companion_name || '').trim()) return false
+  const observations = row.observations || ''
+  if (observations.includes('\u200b')) return false
+  if (stripExtraMarker(observations).trim()) return false
+  return true
+}
+
+export async function addAacPedagogicalAppointment(studentId) {
+  try {
+    const { data, error } = await supabase.rpc('add_aac_pedagogical_appointment', {
+      p_student_id: studentId,
+    })
+    if (!error) return { rvp: mapRvp(data), error: null }
+    if (!isMissingRpc(error)) throw error
+
+    const { data: rows, error: listError } = await supabase
+      .from('aac_rvp')
+      .select('sequence, held_on, teacher_id, companion_name, observations, completed')
+      .eq('student_id', studentId)
+    if (listError) throw listError
+
+    const list = rows || []
+    const blank = list.filter(isBlankExtraSlot).sort((a, b) => a.sequence - b.sequence)[0]
+    const next = blank?.sequence || Math.max(2, ...list.map((row) => Number(row.sequence) || 0)) + 1
+    if (!blank && next > 3) {
+      throw new Error('Impossible d’ajouter un rendez-vous pédagogique supplémentaire pour le moment.')
+    }
+
+    return upsertAacRvp(studentId, {
+      sequence: next,
+      completed: false,
+      observations: '',
+      markAsAdditional: true,
+    })
   } catch (error) {
     return { rvp: null, error: toUserError(error, 'generic') }
   }
@@ -262,18 +324,37 @@ export async function appendAacTripPoints(tripId, organizationId, points) {
   }
 }
 
+export async function getActiveAacTrip(studentId) {
+  try {
+    const { data, error } = await supabase
+      .from('aac_trips')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('status', 'in_progress')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw error
+    return { trip: mapTrip(data), error: null }
+  } catch (error) {
+    return { trip: null, error: toUserError(error, 'generic') }
+  }
+}
+
 export async function completeAacTrip(tripId, studentId, { points, distanceKm, startedAt }) {
   try {
     const endedAt = new Date()
     const start = startedAt ? new Date(startedAt) : endedAt
-    const durationSeconds = Math.max(0, Math.round((endedAt.getTime() - start.getTime()) / 1000))
+    const elapsedMs = endedAt.getTime() - start.getTime()
+    const durationSeconds = Number.isFinite(elapsedMs) ? Math.max(0, Math.round(elapsedMs / 1000)) : 0
+    const safeKm = Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : 0
     const pathSummary = downsamplePath(points || [])
 
     const { data, error } = await supabase
       .from('aac_trips')
       .update({
         ended_at: endedAt.toISOString(),
-        distance_km: distanceKm,
+        distance_km: safeKm,
         duration_seconds: durationSeconds,
         path_summary: pathSummary,
         status: 'completed',
@@ -283,6 +364,7 @@ export async function completeAacTrip(tripId, studentId, { points, distanceKm, s
       .select('*')
       .maybeSingle()
     if (error) throw error
+    if (!data) throw new Error('Impossible de terminer le trajet.')
 
     await supabase.rpc('refresh_aac_profile_stats', { p_student_id: studentId })
     return { trip: mapTrip(data), error: null }
@@ -301,6 +383,7 @@ export async function cancelAacTrip(tripId) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', tripId)
+      .eq('status', 'in_progress')
     if (error) throw error
     return { error: null }
   } catch (error) {
