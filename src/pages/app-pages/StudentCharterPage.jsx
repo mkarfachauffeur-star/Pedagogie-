@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import PageShell from '../../components/ui/PageShell'
 import CharterContentView from '../../components/students/CharterContentView'
@@ -13,19 +13,22 @@ export default function StudentCharterPage() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    const { status: nextStatus } = await fetchStudentCharterStatus()
-    setStatus(nextStatus)
-    setLoading(false)
-  }, [])
-
   useEffect(() => {
-    if (accountLoading || !student?.id) return
-    refresh()
-  }, [accountLoading, refresh, student?.id])
+    if (accountLoading || !student?.id) return undefined
 
-  if (accountLoading || loading) {
+    let cancelled = false
+    fetchStudentCharterStatus().then(({ status: nextStatus }) => {
+      if (cancelled) return
+      setStatus(nextStatus)
+      setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [accountLoading, student?.id])
+
+  if (accountLoading || (student?.id && loading)) {
     return (
       <PageShell>
         <p className="text-sm font-semibold text-slate-500">Chargement de la charte…</p>
@@ -34,7 +37,7 @@ export default function StudentCharterPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell className="pb-[max(3rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))]">
       <PageHero
         eyebrow="Mon profil"
         title={status?.charter?.title || 'Charte d\'engagement de l\'élève'}
@@ -55,7 +58,13 @@ export default function StudentCharterPage() {
       )}
 
       <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5 shadow-[var(--shadow-soft)] sm:p-8">
-        <CharterContentView content={status?.charter?.content} />
+        {status?.charter?.content ? (
+          <CharterContentView content={status.charter.content} />
+        ) : (
+          <p className="text-sm font-semibold text-slate-500">
+            Aucune charte n&apos;est disponible pour le moment.
+          </p>
+        )}
       </section>
     </PageShell>
   )

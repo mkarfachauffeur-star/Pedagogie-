@@ -56,7 +56,7 @@ export default function CharterContentView({ content, className = '' }) {
   const blocks = renderCharterBlocks(content)
 
   return (
-    <div className={`space-y-4 text-sm leading-7 text-slate-700 ${className}`}>
+    <div className={`space-y-4 text-[15px] leading-7 text-slate-700 [overflow-wrap:break-word] sm:text-sm ${className}`}>
       {blocks.map((block, index) => {
         if (block.type === 'h1') {
           return (
@@ -75,8 +75,8 @@ export default function CharterContentView({ content, className = '' }) {
         if (block.type === 'list') {
           return (
             <ul key={`${block.type}-${index}`} className="list-disc space-y-2 pl-5">
-              {block.items.map((item) => (
-                <li key={item}>{item}</li>
+              {block.items.map((item, itemIndex) => (
+                <li key={`${index}-${itemIndex}`}>{item}</li>
               ))}
             </ul>
           )
