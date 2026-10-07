@@ -36,6 +36,12 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     /// Dernière lecture de `locationServicesEnabled()`, faite hors du fil principal.
     /// Nil tant que cette lecture n’est pas revenue : on n’en déduit pas un refus.
     private var servicesEnabledCache: Bool?
+    private let traceLock = NSLock()
+    private var getStatusPending = false
+    private var requestPermissionsPending = false
+    private var currentPositionAwaitingFix = false
+    private var startPending = false
+    private var loggedFirstNativeFix = false
 
     deinit {
         if let activeObserver {
@@ -67,6 +73,58 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     private func logGps(_ message: String) {
         NSLog("[AAC-GPS] %@", message)
+    }
+
+    private func nativeLog(_ message: String) {
+        NSLog("[AAC-GPS][NATIVE] %@", message)
+    }
+
+    private func setGetStatusPending(_ value: Bool) {
+        traceLock.lock()
+        getStatusPending = value
+        traceLock.unlock()
+    }
+
+    private func isGetStatusPending() -> Bool {
+        traceLock.lock()
+        defer { traceLock.unlock() }
+        return getStatusPending
+    }
+
+    private func setRequestPermissionsPending(_ value: Bool) {
+        traceLock.lock()
+        requestPermissionsPending = value
+        traceLock.unlock()
+    }
+
+    private func isRequestPermissionsPending() -> Bool {
+        traceLock.lock()
+        defer { traceLock.unlock() }
+        return requestPermissionsPending
+    }
+
+    private func setCurrentPositionAwaitingFix(_ value: Bool) {
+        traceLock.lock()
+        currentPositionAwaitingFix = value
+        traceLock.unlock()
+    }
+
+    private func isCurrentPositionAwaitingFix() -> Bool {
+        traceLock.lock()
+        defer { traceLock.unlock() }
+        return currentPositionAwaitingFix
+    }
+
+    private func setStartPending(_ value: Bool) {
+        traceLock.lock()
+        startPending = value
+        traceLock.unlock()
+    }
+
+    private func isStartPending() -> Bool {
+        traceLock.lock()
+        defer { traceLock.unlock() }
+        return startPending
     }
 
     private func authLabel(_ status: CLAuthorizationStatus) -> String {
@@ -153,16 +211,29 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     @objc override public func requestPermissions(_ call: CAPPluginCall) {
         logGps("requestPermissions appelé")
+        nativeLog("requestPermissions entrée")
+        setRequestPermissionsPending(true)
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { [weak self] in
+            guard let self, self.isRequestPermissionsPending() else { return }
+            self.nativeLog("TIMEOUT requestPermissions")
+        }
         onMain { [weak self] in
             guard let self else {
                 call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
                 return
             }
+            self.setRequestPermissionsPending(false)
             self.requestPermissionsOnMain(call)
         }
     }
 
     @objc func getCurrentPosition(_ call: CAPPluginCall) {
+        nativeLog("getCurrentPosition entrée")
+        setCurrentPositionAwaitingFix(true)
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { [weak self] in
+            guard let self, self.isCurrentPositionAwaitingFix() else { return }
+            self.nativeLog("TIMEOUT getCurrentPosition")
+        }
         onMain { [weak self] in
             guard let self else {
                 call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
@@ -173,6 +244,12 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     @objc func start(_ call: CAPPluginCall) {
+        nativeLog("start entrée")
+        setStartPending(true)
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 5) { [weak self] in
+            guard let self, self.isStartPending() else { return }
+            self.nativeLog("TIMEOUT start")
+        }
         onMain { [weak self] in
             guard let self else {
                 call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
@@ -202,8 +279,10 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             askedAlwaysForThisRequest = false
             alwaysPromptSawInactive = false
             armPermissionSafetyTimer()
+            nativeLog("avant requestWhenInUseAuthorization")
             logGps("requestWhenInUseAuthorization appelé")
             gps.requestWhenInUseAuthorization()
+            nativeLog("après requestWhenInUseAuthorization")
             logGps("CLLocationAuthorizationStatus après requestWhenInUseAuthorization=\(authLabel(gps.authorizationStatus))")
         case .authorizedWhenInUse:
             permissionCall?.reject("Une autre demande d’autorisation est déjà en cours.", "BUSY")
@@ -219,6 +298,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     private func getCurrentPositionOnMain(_ call: CAPPluginCall) {
+        defer { setCurrentPositionAwaitingFix(false) }
         logGps("getCurrentPosition appelé main=\(Thread.isMainThread) timeoutMs=\(call.getInt("timeout", 20000))")
         if servicesEnabledCache == false && !isAuthorized {
             logGps("getCurrentPosition reject services désactivés")
@@ -236,11 +316,13 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         singleFixCall = call
         let timeoutMs = max(call.getInt("timeout", 20000), 1000)
         armSingleFixTimer(seconds: TimeInterval(timeoutMs) / 1000)
+        nativeLog("avant requestLocation()")
         logGps("requestLocation appelé statut=\(authLabel(gps.authorizationStatus))")
         gps.requestLocation()
     }
 
     private func startOnMain(_ call: CAPPluginCall) {
+        defer { setStartPending(false) }
         logGps("start appelé main=\(Thread.isMainThread) statut=\(authLabel(gps.authorizationStatus))")
         if servicesEnabledCache == false && !isAuthorized {
             call.reject("Location services are not enabled.", "OS-PLUG-GLOC-0007")
@@ -280,6 +362,8 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         gps.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         gps.distanceFilter = 10
         gps.activityType = .automotiveNavigation
+        loggedFirstNativeFix = false
+        nativeLog("startUpdatingLocation appelé")
         logGps("startUpdatingLocation appelé allowsBackgroundLocationUpdates=true")
         gps.startUpdatingLocation()
         call.resolve(permissionPayload())
@@ -306,21 +390,29 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     @objc func getStatus(_ call: CAPPluginCall) {
         logGps("getStatus entrée")
+        nativeLog("getStatus entrée")
+        setGetStatusPending(true)
         let once = AacOnceFlag()
         let settle = { [weak self] in
             guard once.claim() else { return }
             guard let self else {
-                NSLog("[AAC-GPS] %@", "getStatus rejet")
+                NSLog("[AAC-GPS][NATIVE] %@", "getStatus rejet")
                 call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
                 return
             }
+            self.setGetStatusPending(false)
             self.ensureManager()
             let payload = self.permissionPayload()
+            self.nativeLog("getStatus résolution")
             self.logGps("getStatus résolution")
             call.resolve(payload)
         }
         onMain(settle)
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self else { return }
+            if self.isGetStatusPending() {
+                self.nativeLog("TIMEOUT getStatus")
+            }
             DispatchQueue.main.async(execute: settle)
         }
     }
@@ -354,7 +446,13 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         for location in locations {
-            logGps(String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy))
+            let line = String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+            logGps(line)
+            nativeLog(line)
+            if !loggedFirstNativeFix && location.horizontalAccuracy >= 0 {
+                loggedFirstNativeFix = true
+                nativeLog("première position reçue")
+            }
         }
         let valid = locations.filter { $0.horizontalAccuracy >= 0 }
 
@@ -378,7 +476,9 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         let nsError = error as NSError
-        logGps("didFailWithError domain=\(nsError.domain) code=\(nsError.code) message=\(nsError.localizedDescription)")
+        let failLine = "didFailWithError domain=\(nsError.domain) code=\(nsError.code) message=\(nsError.localizedDescription)"
+        logGps(failLine)
+        nativeLog(failLine)
         if let clError = error as? CLError, clError.code == .locationUnknown {
             // Erreur transitoire : iOS continue de chercher. Le délai armé par
             // getCurrentPosition rejette la promesse si aucun point n’arrive.
@@ -409,8 +509,10 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             finishPermissionRequest()
             return
         }
+        nativeLog("avant requestAlwaysAuthorization")
         logGps("requestAlwaysAuthorization appelé statut=\(authLabel(gps.authorizationStatus))")
         gps.requestAlwaysAuthorization()
+        nativeLog("après requestAlwaysAuthorization")
         logGps("CLLocationAuthorizationStatus après requestAlwaysAuthorization=\(authLabel(gps.authorizationStatus))")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self, self.permissionCall != nil, self.askedAlwaysForThisRequest else { return }
@@ -436,6 +538,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         permissionTimer?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.permissionCall != nil else { return }
+            self.nativeLog("TIMEOUT requestPermissions")
             if self.isAuthorized {
                 self.finishPermissionRequest()
             } else {
@@ -472,6 +575,8 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     private func armSingleFixTimer(seconds: TimeInterval) {
         singleFixTimer?.cancel()
         let work = DispatchWorkItem { [weak self] in
+            self?.nativeLog("TIMEOUT getCurrentPosition")
+            self?.setCurrentPositionAwaitingFix(false)
             self?.failSingleFix(
                 message: "Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.",
                 code: "OS-PLUG-GLOC-0010"
@@ -496,6 +601,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         guard let call = singleFixCall else { return }
         singleFixCall = nil
         if !tracking {
+            nativeLog("stopUpdatingLocation")
             gps.stopUpdatingLocation()
         }
         logGps("getCurrentPosition reject code=\(code) message=\(message)")
@@ -504,6 +610,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     private func endUpdates() {
         tracking = false
+        nativeLog("stopUpdatingLocation")
         gps.stopUpdatingLocation()
         gps.allowsBackgroundLocationUpdates = false
         gps.pausesLocationUpdatesAutomatically = true
