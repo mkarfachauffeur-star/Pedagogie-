@@ -31,6 +31,10 @@ const entries = [
   ['NSLocationWhenInUseUsageDescription', 'Pedagogia Drive utilise votre position pendant vos trajets de conduite accompagnée (AAC) pour calculer automatiquement les kilomètres parcourus.'],
 ]
 
+// Localisation « lorsque l’app est active » uniquement.
+// NSLocationAlways* et UIBackgroundModes/location ne sont pas ajoutés :
+// le plugin Capacitor Geolocation iOS ne suit pas la position écran verrouillé.
+
 for (const [key, value] of entries) {
   const stringValue = value.startsWith('<') ? value : `<string>${value}</string>`
   const block = `    <key>${key}</key>\n    ${stringValue}\n`

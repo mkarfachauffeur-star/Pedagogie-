@@ -138,3 +138,24 @@ export function rvpRequirementLabel(sequence) {
   }
   return 'Supplémentaire — sur conseil de l’enseignant, à la demande de l’élève ou de l’accompagnateur'
 }
+
+export function mandatoryRvpTitle(sequence) {
+  return `RVP ${sequence} — ${rvpRequirementLabel(sequence)}`
+}
+
+/** Critères facultatifs saisis sur un trajet. Identifiants stables, libellés affichés. */
+export const AAC_DRIVING_CONDITIONS = [
+  { id: 'nuit', label: 'Conduite de nuit' },
+  { id: 'pluie', label: 'Conduite sous la pluie' },
+  { id: 'autoroute', label: 'Conduite sur autoroute' },
+  { id: 'voie_rapide', label: 'Conduite sur voie rapide' },
+  { id: 'agglomeration', label: 'Conduite en agglomération' },
+  { id: 'hors_agglomeration', label: 'Conduite hors agglomération' },
+  { id: 'circulation_dense', label: 'Circulation dense' },
+  { id: 'mauvais_temps', label: 'Mauvais temps' },
+  { id: 'conditions_difficiles', label: 'Conditions difficiles' },
+]
+
+export function drivingConditionLabel(id) {
+  return AAC_DRIVING_CONDITIONS.find((item) => item.id === id)?.label || id
+}

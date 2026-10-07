@@ -1,35 +1,55 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { App } from '@capacitor/app'
 import {
   addAacPedagogicalAppointment,
+  appendAacTripPoints,
   cancelAacTrip,
   completeAacTrip,
   getAacBundle,
+  getAacTripPoints,
   getActiveAacTrip,
   markAacCompleted,
+  saveAacTripDetails,
   startAacTrip,
   updateAacStartDate,
   uploadAacFfi,
   upsertAacRvp,
-  appendAacTripPoints,
 } from '../../services/aac'
 import { listTeachers } from '../../services/teachers'
 import {
+  AAC_DRIVING_CONDITIONS,
   AAC_MAX_RVP_COUNT,
   AAC_REQUIRED_RVP_COUNT,
   countMandatoryRvpCompleted,
   daysBetween,
+  drivingConditionLabel,
   formatDateFr,
+  mandatoryRvpTitle,
   rvpRequirementLabel,
   statusLabel,
 } from '../../lib/aacRules'
 import {
-  accumulateDistance,
-  getCurrentPosition,
-  requestLocationPermission,
+  acquireAccuratePosition,
+  canOpenLocationSettings,
+  classifyLocationError,
+  formatKm,
+  inspectLocationAccess,
+  LOCATION_STATUS_MESSAGES,
+  measureTrack,
+  openLocationSettings,
+  requestLocationAccess,
   watchPosition,
 } from '../../lib/geolocation'
 import AacTripMap from './AacTripMap'
+
+function formatDurationMinutes(seconds) {
+  const total = Math.max(0, Math.round((Number(seconds) || 0) / 60))
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  if (hours > 0) return `${hours} h ${String(minutes).padStart(2, '0')} min`
+  return `${minutes} min`
+}
 
 function formatDuration(seconds) {
   const s = Math.max(0, Number(seconds) || 0)
@@ -65,25 +85,49 @@ export default function AacPanel({
   const [tracking, setTracking] = useState(false)
   const [stopBusy, setStopBusy] = useState(false)
   const [lastTripSummary, setLastTripSummary] = useState(null)
+  const [gpsStatus, setGpsStatus] = useState('prompt')
+  const [lastAccuracy, setLastAccuracy] = useState(null)
+  const [mandatoryRvp, setMandatoryRvp] = useState([])
+  const [extraRvp, setExtraRvp] = useState([])
+  const [extraDraft, setExtraDraft] = useState('')
+  const [extraOpen, setExtraOpen] = useState(false)
+  const [drivingConditions, setDrivingConditions] = useState([])
   const watchRef = useRef(null)
   const tickRef = useRef(null)
+  const flushLoopRef = useRef(null)
+  const wakeLockRef = useRef(null)
   const pointBufferRef = useRef([])
   const pointsRef = useRef([])
   const activeTripRef = useRef(null)
   const startTokenRef = useRef(0)
   const stopLockRef = useRef(false)
   const seqRef = useRef(0)
+  const sessionTripRef = useRef(null)
+  const resumeTrackingRef = useRef(async () => {})
+  const flushPointsRef = useRef(async () => {})
+  const aliveRef = useRef(true)
+  const hasBundleRef = useRef(false)
+  const organizationIdRef = useRef(organizationId)
+  const detailsRef = useRef({ mandatoryRvp: [], extraRvp: [], drivingConditions: [] })
+  organizationIdRef.current = organizationId
+  detailsRef.current = { mandatoryRvp, extraRvp, drivingConditions }
 
   const reload = useCallback(async () => {
     if (!studentId) return
-    setLoading(true)
+    if (!hasBundleRef.current) setLoading(true)
     setError('')
     const { bundle: next, error: loadError } = await getAacBundle(studentId)
     if (loadError) setError(loadError.message || 'Chargement impossible.')
     setBundle(next)
+    hasBundleRef.current = Boolean(next)
     setStartDateDraft(next?.profile?.startedAt || '')
     setLoading(false)
-  }, [studentId])
+    const active = next?.activeTrip
+    if (!isStaff && active?.id && sessionTripRef.current !== active.id && !watchRef.current) {
+      sessionTripRef.current = active.id
+      await resumeTrackingRef.current(active)
+    }
+  }, [studentId, isStaff])
 
   useEffect(() => {
     void reload()
@@ -98,9 +142,65 @@ export default function AacPanel({
     if (bundle?.activeTrip) activeTripRef.current = bundle.activeTrip
   }, [bundle?.activeTrip])
 
+  useEffect(() => {
+    if (isStaff) return undefined
+    let cancelled = false
+    void inspectLocationAccess().then((access) => {
+      if (cancelled || activeTripRef.current) return
+      setGpsStatus(access.status === 'granted' ? 'ready' : access.status)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isStaff])
+
   useEffect(() => () => {
+    aliveRef.current = false
     watchRef.current?.stop?.()
     if (tickRef.current) clearInterval(tickRef.current)
+    if (flushLoopRef.current) clearInterval(flushLoopRef.current)
+    void wakeLockRef.current?.release?.()
+  }, [])
+
+  useEffect(() => {
+    let removed = false
+    let handle = null
+    void App.addListener('appStateChange', ({ isActive }) => {
+      const trip = activeTripRef.current
+      if (!trip?.id) return
+      if (isActive) {
+        void holdScreenAwake()
+        if (!watchRef.current && activeTripRef.current) {
+          void resumeTrackingRef.current(activeTripRef.current)
+          return
+        }
+        setGpsStatus((current) => (current === 'paused' ? 'tracking' : current))
+        return
+      }
+      void flushPointsRef.current(trip.id, organizationIdRef.current || trip.organizationId)
+      setGpsStatus('paused')
+    }).then((listener) => {
+      if (removed) void listener.remove()
+      else handle = listener
+    }).catch(() => {})
+
+    function onVisibility() {
+      const trip = activeTripRef.current
+      if (!trip?.id) return
+      if (document.visibilityState === 'hidden') {
+        void flushPointsRef.current(trip.id, organizationIdRef.current || trip.organizationId)
+        setGpsStatus('paused')
+        return
+      }
+      void holdScreenAwake()
+      setGpsStatus((current) => (current === 'paused' ? 'tracking' : current))
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      removed = true
+      document.removeEventListener('visibilitychange', onVisibility)
+      void handle?.remove()
+    }
   }, [])
 
   function stopLocalTracking() {
@@ -109,6 +209,14 @@ export default function AacPanel({
     if (tickRef.current) {
       clearInterval(tickRef.current)
       tickRef.current = null
+    }
+  }
+
+  async function holdScreenAwake() {
+    try {
+      wakeLockRef.current = await navigator.wakeLock?.request?.('screen')
+    } catch {
+      wakeLockRef.current = null
     }
   }
 
@@ -140,22 +248,143 @@ export default function AacPanel({
 
   async function flushPoints(tripId, orgId) {
     const batch = pointBufferRef.current
-    if (!batch.length) return
+    const id = tripId || activeTripRef.current?.id
+    const org = orgId || organizationIdRef.current || activeTripRef.current?.organizationId || bundle?.student?.organization_id
+    if (!batch.length || !id || !org) return
     pointBufferRef.current = []
-    await appendAacTripPoints(tripId, orgId, batch)
+    const { error: flushError } = await appendAacTripPoints(id, org, batch)
+    if (flushError) pointBufferRef.current = [...batch, ...pointBufferRef.current]
   }
+  flushPointsRef.current = flushPoints
+
+  function startClock(startedAt) {
+    const startedMs = new Date(startedAt || Date.now()).getTime()
+    if (tickRef.current) clearInterval(tickRef.current)
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startedMs) / 1000)))
+    tick()
+    tickRef.current = setInterval(tick, 1000)
+  }
+
+  function startFlushLoop(tripId, orgId) {
+    if (flushLoopRef.current) clearInterval(flushLoopRef.current)
+    flushLoopRef.current = setInterval(() => {
+      void flushPoints(tripId, orgId)
+    }, 12000)
+  }
+
+  function applyTripDetails(trip) {
+    const local = detailsRef.current
+    const hasLocal = local.mandatoryRvp.length || local.extraRvp.length || local.drivingConditions.length
+    if (hasLocal) return
+    setMandatoryRvp(trip?.mandatoryRvp || [])
+    setExtraRvp(trip?.extraRvp || [])
+    setDrivingConditions(trip?.drivingConditions || [])
+  }
+
+  function armTracking(trip, seededPoints) {
+    if (!aliveRef.current) return
+    const orgId = organizationIdRef.current || bundle?.student?.organization_id || trip.organizationId
+    activeTripRef.current = trip
+    sessionTripRef.current = trip.id
+    pointsRef.current = seededPoints
+    if (!pointBufferRef.current.length) pointBufferRef.current = []
+    seqRef.current = seededPoints.reduce((max, point) => Math.max(max, Number(point.sequenceNo) || 0), -1) + 1
+    setTracking(true)
+    setLivePoints(seededPoints)
+    setLiveKm(measureTrack(seededPoints).distanceKm)
+    setLastAccuracy(seededPoints.at(-1)?.accuracy ?? null)
+    setGpsStatus('tracking')
+    setLastTripSummary(null)
+    startClock(trip.startedAt)
+    startFlushLoop(trip.id, orgId)
+    void holdScreenAwake()
+    watchRef.current?.stop?.()
+    watchRef.current = watchPosition(
+      (pos) => {
+        if (!aliveRef.current) return
+        const withSeq = { ...pos, sequenceNo: seqRef.current }
+        seqRef.current += 1
+        const nextPoints = [...pointsRef.current, withSeq]
+        pointsRef.current = nextPoints
+        pointBufferRef.current.push(withSeq)
+        setLivePoints(nextPoints)
+        setLiveKm(measureTrack(nextPoints).distanceKm)
+        setLastAccuracy(pos.accuracy)
+        setGpsStatus('tracking')
+        if (pointBufferRef.current.length >= 4) void flushPoints(trip.id, orgId)
+      },
+      (err) => {
+        const status = classifyLocationError(err)
+        if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted') {
+          setGpsStatus(status)
+          return
+        }
+        setGpsStatus('paused')
+      },
+      { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 },
+    )
+    setBundle((prev) => (prev ? { ...prev, activeTrip: trip } : prev))
+  }
+
+  async function resumeTracking(trip) {
+    if (!aliveRef.current) return
+    applyTripDetails(trip)
+    activeTripRef.current = trip
+    setTracking(true)
+    startClock(trip.startedAt)
+    const access = await requestLocationAccess()
+    if (!aliveRef.current) return
+    if (!access.granted) {
+      setGpsStatus(access.status)
+      return
+    }
+    const loaded = await getAacTripPoints(trip.id)
+    if (!aliveRef.current) return
+    let seeded = mergeGpsPoints(loaded.points || [], pointsRef.current, pointBufferRef.current)
+    if (!seeded.length) {
+      try {
+        const fix = await acquireAccuratePosition()
+        if (!aliveRef.current) return
+        if (fix.weak) {
+          setGpsStatus('weak')
+          return
+        }
+        seeded = [{ ...fix.position, sequenceNo: 0 }]
+        pointBufferRef.current = seeded
+        await flushPoints(trip.id, organizationIdRef.current || trip.organizationId)
+        if (!aliveRef.current) return
+      } catch (err) {
+        if (!aliveRef.current) return
+        setGpsStatus(err.locationStatus || classifyLocationError(err))
+        return
+      }
+    }
+    armTracking(trip, seeded)
+  }
+
+  resumeTrackingRef.current = resumeTracking
 
   async function handleStartTrip() {
     const token = startTokenRef.current + 1
     startTokenRef.current = token
     setError('')
     setSaving(true)
+    setGpsStatus('acquiring')
     try {
-      const allowed = await requestLocationPermission()
+      const access = await requestLocationAccess()
       if (startTokenRef.current !== token) return
-      if (!allowed) throw new Error('Autorisez la localisation pour démarrer un trajet.')
-      await getCurrentPosition()
+      if (!access.granted) {
+        setGpsStatus(access.status)
+        return
+      }
+
+      const fix = await acquireAccuratePosition()
       if (startTokenRef.current !== token) return
+      if (fix.weak) {
+        setGpsStatus('weak')
+        return
+      }
+
       const { trip, error: startError } = await startAacTrip(studentId)
       if (startError) throw startError
       if (startTokenRef.current !== token) {
@@ -163,40 +392,27 @@ export default function AacPanel({
         return
       }
 
-      activeTripRef.current = trip
-      pointsRef.current = []
-      pointBufferRef.current = []
-      seqRef.current = 0
-      setTracking(true)
-      setLivePoints([])
-      setLiveKm(0)
-      setElapsed(0)
-      setLastTripSummary(null)
-
-      const startedMs = Date.now()
-      tickRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startedMs) / 1000))
-      }, 1000)
-
-      watchRef.current = watchPosition(
-        (pos) => {
-          const withSeq = { ...pos, sequenceNo: seqRef.current }
-          seqRef.current += 1
-          pointsRef.current = [...pointsRef.current, withSeq]
-          pointBufferRef.current.push(withSeq)
-          setLivePoints(pointsRef.current)
-          setLiveKm(accumulateDistance(pointsRef.current))
-          if (pointBufferRef.current.length >= 8) {
-            void flushPoints(trip.id, organizationId || bundle?.student?.organization_id)
-          }
-        },
-        (err) => setError(err.message),
-      )
-
-      setBundle((prev) => (prev ? { ...prev, activeTrip: trip } : prev))
+      const details = detailsRef.current
+      await saveAacTripDetails(trip.id, details)
+      const seeded = [{ ...fix.position, sequenceNo: 0 }]
+      pointBufferRef.current = seeded
+      const orgId = organizationId || bundle?.student?.organization_id || trip.organizationId
+      await flushPoints(trip.id, orgId)
+      if (startTokenRef.current !== token) {
+        await cancelAacTrip(trip.id)
+        return
+      }
+      armTracking({ ...trip, ...details }, seeded)
     } catch (err) {
       if (startTokenRef.current === token) {
-        setError(err.message || 'Impossible de démarrer le trajet.')
+        if (err.locationStatus && LOCATION_STATUS_MESSAGES[err.locationStatus]) {
+          setGpsStatus(err.locationStatus)
+        } else if (/position|localisation|location|gps/i.test(err.message || '')) {
+          setGpsStatus(classifyLocationError(err))
+        } else {
+          setGpsStatus('ready')
+          setError(err.message || 'Impossible de démarrer le trajet.')
+        }
       }
     } finally {
       if (startTokenRef.current === token) setSaving(false)
@@ -210,6 +426,12 @@ export default function AacPanel({
     setStopBusy(true)
     setError('')
     stopLocalTracking()
+    if (flushLoopRef.current) {
+      clearInterval(flushLoopRef.current)
+      flushLoopRef.current = null
+    }
+    void wakeLockRef.current?.release?.()
+    wakeLockRef.current = null
     try {
       let trip = activeTripRef.current || bundle?.activeTrip
       if (!trip?.id && studentId) {
@@ -221,6 +443,8 @@ export default function AacPanel({
       if (!trip?.id) {
         setTracking(false)
         activeTripRef.current = null
+        sessionTripRef.current = null
+        setGpsStatus('ready')
         setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
         return
       }
@@ -228,19 +452,36 @@ export default function AacPanel({
       const orgId = organizationId || bundle?.student?.organization_id || trip.organizationId
       await flushPoints(trip.id, orgId)
 
-      const points = pointsRef.current
+      const measured = measureTrack(pointsRef.current)
+      const details = detailsRef.current
       const { trip: completed, error: stopError } = await completeAacTrip(trip.id, studentId, {
-        points,
-        distanceKm: accumulateDistance(points),
+        points: measured.points,
+        distanceKm: measured.distanceKm,
         startedAt: trip.startedAt,
+        mandatoryRvp: details.mandatoryRvp,
+        extraRvp: details.extraRvp,
+        drivingConditions: details.drivingConditions,
       })
       if (stopError) throw stopError
 
       activeTripRef.current = null
+      sessionTripRef.current = null
       pointsRef.current = []
       setTracking(false)
       setLivePoints([])
-      setLastTripSummary(completed)
+      setLastAccuracy(null)
+      setGpsStatus('ready')
+      setLastTripSummary({
+        ...completed,
+        mandatoryRvp: details.mandatoryRvp,
+        extraRvp: details.extraRvp,
+        drivingConditions: details.drivingConditions,
+      })
+      setMandatoryRvp([])
+      setExtraRvp([])
+      setDrivingConditions([])
+      setExtraDraft('')
+      setExtraOpen(false)
       setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
       await reload()
     } catch (err) {
@@ -249,6 +490,48 @@ export default function AacPanel({
       stopLockRef.current = false
       setStopBusy(false)
     }
+  }
+
+  function toggleMandatory(sequence) {
+    setMandatoryRvp((current) => {
+      const next = current.includes(sequence)
+        ? current.filter((item) => item !== sequence)
+        : [...current, sequence].sort()
+      const details = { ...detailsRef.current, mandatoryRvp: next }
+      detailsRef.current = details
+      if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
+      return next
+    })
+  }
+
+  function toggleCondition(id) {
+    setDrivingConditions((current) => {
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+      const details = { ...detailsRef.current, drivingConditions: next }
+      detailsRef.current = details
+      if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
+      return next
+    })
+  }
+
+  function addExtraRvp(event) {
+    event.preventDefault()
+    const label = extraDraft.trim()
+    if (!label) return
+    const next = [...extraRvp, { id: globalThis.crypto?.randomUUID?.() || `rvp-${Date.now()}`, label: label.slice(0, 120) }]
+    setExtraRvp(next)
+    setExtraDraft('')
+    const details = { ...detailsRef.current, extraRvp: next }
+    detailsRef.current = details
+    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
+  }
+
+  function removeExtraRvp(id) {
+    const next = extraRvp.filter((item) => item.id !== id)
+    setExtraRvp(next)
+    const details = { ...detailsRef.current, extraRvp: next }
+    detailsRef.current = details
+    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
   }
 
   async function saveStartDate(e) {
@@ -321,7 +604,7 @@ export default function AacPanel({
     ? createPortal(
       <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-rose-200 bg-white/95 px-4 pt-3 shadow-[0_-8px_30px_rgba(15,23,42,0.12)] backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <p className="mb-2 text-center text-xs font-bold text-slate-500">
-          Trajet en cours · {liveKm.toFixed(2)} km · {formatDuration(elapsed)}
+          Trajet en cours · {formatKm(liveKm)} km · {formatDuration(elapsed)}
         </p>
         <button
           className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
@@ -329,7 +612,7 @@ export default function AacPanel({
           onClick={handleStopTrip}
           type="button"
         >
-          {stopBusy ? 'Arrêt du trajet…' : '■ Terminer mon trajet'}
+          {stopBusy ? 'Arrêt du trajet…' : '⏹️ ARRÊTER LE TRAJET'}
         </button>
       </div>,
       document.body,
@@ -480,47 +763,144 @@ export default function AacPanel({
       {/* Trajet GPS — élève */}
       {!isStaff && (
         <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
-          <h3 className="text-lg font-black text-slate-950">Mon trajet</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Gardez l’écran allumé pendant le trajet. Le GPS calcule automatiquement les kilomètres.
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-lg font-black text-slate-950">Mon trajet</h3>
+            {tripActive && (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-800">
+                Trajet en cours
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {LOCATION_STATUS_MESSAGES.prompt}
+            {' '}Gardez Pedagogia Drive ouvert et l’écran allumé : le GPS de l’iPhone ne continue pas lorsque l’écran est verrouillé.
           </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${gpsStatusClass(gpsStatus)}`}>
+            <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
+            {lastAccuracy != null && tripActive && (
+              <p className="mt-1 text-xs font-bold opacity-80">
+                Précision GPS : ± {Math.round(lastAccuracy)} m · {livePoints.length} position{livePoints.length > 1 ? 's' : ''} reçue{livePoints.length > 1 ? 's' : ''}
+              </p>
+            )}
+            {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
+              <button
+                className="mt-3 rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white"
+                onClick={openLocationSettings}
+                type="button"
+              >
+                Ouvrir les réglages
+              </button>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">RVP obligatoires</h4>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Cela n’efface pas le suivi officiel du dossier.
+            </p>
+            <div className="mt-3 space-y-2">
+              {[1, 2].map((sequence) => (
+                <label
+                  key={sequence}
+                  className="flex min-h-11 items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800"
+                >
+                  <input
+                    checked={mandatoryRvp.includes(sequence)}
+                    className="mt-0.5 h-5 w-5 shrink-0"
+                    onChange={() => toggleMandatory(sequence)}
+                    type="checkbox"
+                  />
+                  <span>{mandatoryRvpTitle(sequence)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">RVP facultatifs</h4>
+            <ul className="mt-2 space-y-2">
+              {extraRvp.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <span className="font-semibold text-slate-800">{item.label}</span>
+                  <button className="text-xs font-bold text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
+                    Retirer
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {extraOpen ? (
+              <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={addExtraRvp}>
+                <input
+                  className="pd-input min-w-0 flex-1"
+                  maxLength={120}
+                  onChange={(event) => setExtraDraft(event.target.value)}
+                  placeholder="Intitulé du rendez-vous"
+                  value={extraDraft}
+                />
+                <button className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white" type="submit">
+                  Ajouter
+                </button>
+              </form>
+            ) : (
+              <button
+                className="mt-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-extrabold text-slate-900"
+                onClick={() => setExtraOpen(true)}
+                type="button"
+              >
+                + AJOUTER UN RVP
+              </button>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">Conditions de conduite</h4>
+            <p className="mt-1 text-xs text-slate-500">Facultatif. Plusieurs cases peuvent être cochées.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {AAC_DRIVING_CONDITIONS.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800"
+                >
+                  <input
+                    checked={drivingConditions.includes(item.id)}
+                    className="h-5 w-5 shrink-0"
+                    onChange={() => toggleCondition(item.id)}
+                    type="checkbox"
+                  />
+                  <span>{item.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3">
             <button
-              className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50 sm:w-auto"
+              className="w-full touch-manipulation rounded-xl bg-emerald-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
               disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
             >
-              ▶ Démarrer mon trajet
+              {saving ? 'Acquisition GPS…' : '▶️ DÉMARRER LE TRAJET'}
             </button>
             <button
-              className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50 sm:w-auto"
-              disabled={stopBusy}
+              className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
+              disabled={stopBusy || !tripActive}
               onClick={handleStopTrip}
               type="button"
             >
-              {stopBusy ? 'Arrêt du trajet…' : '■ Terminer mon trajet'}
+              {stopBusy ? 'Arrêt du trajet…' : '⏹️ ARRÊTER LE TRAJET'}
             </button>
           </div>
-          {(tracking || bundle?.activeTrip) && (
+          {tripActive && (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <KpiLight label="Distance" value={`${liveKm.toFixed(2)} km`} />
+              <KpiLight label="Distance" value={`${formatKm(liveKm)} km`} />
               <KpiLight label="Durée" value={formatDuration(elapsed)} />
-              <KpiLight label="Points GPS" value={String(livePoints.length)} />
+              <KpiLight label="Positions GPS" value={String(livePoints.length)} />
             </div>
           )}
           {lastTripSummary && (
-            <div className="mt-4 space-y-3 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4">
-              <p className="text-sm font-bold text-cyan-900">
-                Trajet enregistré — {lastTripSummary.distanceKm.toFixed(2)} km · {formatDuration(lastTripSummary.durationSeconds)}
-              </p>
-              <p className="text-xs text-slate-600">
-                Départ {new Date(lastTripSummary.startedAt).toLocaleString('fr-FR')}
-                {lastTripSummary.endedAt
-                  ? ` → Arrivée ${new Date(lastTripSummary.endedAt).toLocaleString('fr-FR')}`
-                  : ''}
-              </p>
-              <AacTripMap path={lastTripSummary.pathSummary} />
+            <div className="mt-4">
+              <TripRecap trip={lastTripSummary} />
             </div>
           )}
         </section>
@@ -537,16 +917,8 @@ export default function AacPanel({
               .filter((t) => t.status === 'completed')
               .slice(0, isStaff ? 20 : 10)
               .map((trip) => (
-                <li key={trip.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="font-bold text-slate-900">
-                      {trip.distanceKm.toFixed(2)} km · {formatDuration(trip.durationSeconds)}
-                    </span>
-                    <span className="text-slate-500">
-                      {new Date(trip.startedAt).toLocaleString('fr-FR')}
-                    </span>
-                  </div>
-                  <AacTripMap className="mt-2" path={trip.pathSummary} />
+                <li key={trip.id}>
+                  <TripRecap trip={trip} />
                 </li>
               ))}
           </ul>
@@ -721,6 +1093,96 @@ function RvpCard({ item, isStaff, teachers, onSave }) {
         </div>
       )}
     </div>
+  )
+}
+
+function mergeGpsPoints(...groups) {
+  const seen = new Set()
+  const merged = []
+  for (const group of groups) {
+    for (const point of group || []) {
+      const key = point?.sequenceNo != null
+        ? `s:${point.sequenceNo}`
+        : `${point?.lat},${point?.lng},${point?.timestamp}`
+      if (!point || seen.has(key)) continue
+      seen.add(key)
+      merged.push(point)
+    }
+  }
+  return merged.sort((a, b) => (Number(a.sequenceNo) || 0) - (Number(b.sequenceNo) || 0))
+}
+
+function gpsStatusClass(status) {
+  if (status === 'tracking' || status === 'ready' || status === 'granted') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-900'
+  }
+  if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {
+    return 'border-amber-200 bg-amber-50 text-amber-950'
+  }
+  if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable') {
+    return 'border-rose-200 bg-rose-50 text-rose-900'
+  }
+  return 'border-slate-200 bg-slate-50 text-slate-700'
+}
+
+function formatClock(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatTripDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('fr-FR')
+}
+
+function TripRecap({ trip }) {
+  const done = new Set((trip.mandatoryRvp || []).map(Number))
+  const extras = trip.extraRvp || []
+  const conditions = trip.drivingConditions || []
+  return (
+    <article className="rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
+      <h4 className="text-base font-black tracking-wide text-slate-950">TRAJET AAC</h4>
+      <dl className="mt-3 grid gap-1 text-sm text-slate-700">
+        <div className="flex justify-between gap-3"><dt>Date</dt><dd className="font-bold">{formatTripDate(trip.startedAt)}</dd></div>
+        <div className="flex justify-between gap-3"><dt>Heure de début</dt><dd className="font-bold">{formatClock(trip.startedAt)}</dd></div>
+        <div className="flex justify-between gap-3"><dt>Heure de fin</dt><dd className="font-bold">{formatClock(trip.endedAt)}</dd></div>
+        <div className="flex justify-between gap-3"><dt>Durée</dt><dd className="font-bold">{formatDurationMinutes(trip.durationSeconds)}</dd></div>
+        <div className="flex justify-between gap-3"><dt>Distance</dt><dd className="font-bold">{formatKm(trip.distanceKm)} km</dd></div>
+      </dl>
+      <div className="mt-4">
+        <p className="text-xs font-black uppercase tracking-wide text-slate-500">RVP obligatoires</p>
+        <ul className="mt-1 space-y-1 text-sm text-slate-800">
+          {[1, 2].map((sequence) => (
+            <li key={sequence}>{done.has(sequence) ? '✓' : '☐'} {mandatoryRvpTitle(sequence)}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="mt-3">
+        <p className="text-xs font-black uppercase tracking-wide text-slate-500">RVP supplémentaires</p>
+        {extras.length ? (
+          <ul className="mt-1 space-y-1 text-sm text-slate-800">
+            {extras.map((item) => <li key={item.id}>- {item.label}</li>)}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-slate-500">Aucun</p>
+        )}
+      </div>
+      <div className="mt-3">
+        <p className="text-xs font-black uppercase tracking-wide text-slate-500">Conditions de conduite</p>
+        {conditions.length ? (
+          <ul className="mt-1 space-y-1 text-sm text-slate-800">
+            {conditions.map((id) => <li key={id}>✓ {drivingConditionLabel(id)}</li>)}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-slate-500">Aucune</p>
+        )}
+      </div>
+      <AacTripMap className="mt-3" path={trip.pathSummary} />
+    </article>
   )
 }
 

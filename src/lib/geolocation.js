@@ -1,14 +1,32 @@
 import { Capacitor } from '@capacitor/core'
+import { GPS_LIMITS } from './gpsDistance'
 
 /**
- * Géolocalisation unifiée (Capacitor natif + fallback navigateur).
- * Suivi au premier plan uniquement (V1).
+ * Géolocalisation Capacitor (iPhone) avec repli navigateur.
+ * Autorisation « lorsque l’app est utilisée » uniquement.
+ * Le plugin iOS officiel ne poursuit pas le GPS écran verrouillé :
+ * il ne faut donc pas demander la localisation « toujours ».
  */
 
 const DEFAULT_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 15000,
-  maximumAge: 2000,
+  timeout: 20000,
+  maximumAge: 0,
+}
+
+export const LOCATION_STATUS_MESSAGES = {
+  prompt: 'Pedagogia Drive a besoin de la position du téléphone pour mesurer les kilomètres réellement parcourus pendant le trajet.',
+  ready: 'Localisation autorisée. Appuyez sur Démarrer le trajet : la première position GPS valide lance le calcul.',
+  granted: 'Localisation autorisée.',
+  acquiring: 'Recherche d’une position GPS précise…',
+  tracking: 'Trajet en cours. Les kilomètres viennent des positions GPS reçues par le téléphone.',
+  paused: 'Signal GPS interrompu. Le suivi s’arrête si l’écran est verrouillé ou si l’application passe en arrière-plan, puis reprend au retour. Les kilomètres déjà calculés sont conservés.',
+  denied: 'La localisation est refusée. Sur iPhone : Réglages > Pedagogia Drive > Localisation > Lorsque l’app est active.',
+  restricted: 'La localisation est restreinte sur cet iPhone (contrôle parental ou profil d’entreprise).',
+  servicesDisabled: 'Le service de localisation est désactivé. Sur iPhone : Réglages > Confidentialité et sécurité > Service de localisation.',
+  unavailable: 'La position GPS n’est pas disponible sur cet appareil.',
+  timeout: 'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
+  weak: 'Signal GPS trop imprécis pour démarrer. Sortez du bâtiment et attendez une précision inférieure à 80 m.',
 }
 
 function toPosition(coords, timestamp) {
@@ -20,6 +38,25 @@ function toPosition(coords, timestamp) {
   }
 }
 
+function toLocationError(err, fallback) {
+  const error = new Error(err?.message || fallback)
+  if (err?.code != null) error.code = err.code
+  return error
+}
+
+export function classifyLocationError(error) {
+  const code = error?.code
+  if (code === 1) return 'denied'
+  if (code === 3) return 'timeout'
+  const message = `${error?.message || ''} ${error?.code || ''}`
+  if (/not enabled|services are not enabled|OS-PLUG-GLOC-0007/i.test(message)) return 'servicesDisabled'
+  if (/restricted|OS-PLUG-GLOC-0008/i.test(message)) return 'restricted'
+  if (/denied|OS-PLUG-GLOC-0003/i.test(message)) return 'denied'
+  if (/timeout|timed out|OS-PLUG-GLOC-0010/i.test(message)) return 'timeout'
+  if (/unavailable|OS-PLUG-GLOC-0002/i.test(message) || code === 2) return 'unavailable'
+  return 'unavailable'
+}
+
 async function getCapacitorGeolocation() {
   try {
     const mod = await import('@capacitor/geolocation')
@@ -29,14 +66,70 @@ async function getCapacitorGeolocation() {
   }
 }
 
-export async function requestLocationPermission() {
-  if (Capacitor.isNativePlatform()) {
-    const Geo = await getCapacitorGeolocation()
-    if (Geo?.requestPermissions) {
-      const result = await Geo.requestPermissions()
-      return result?.location === 'granted' || result?.coarseLocation === 'granted'
+function statusFromPermission(result) {
+  const loc = result?.location
+  const coarse = result?.coarseLocation
+  if (loc === 'granted' || coarse === 'granted') return 'granted'
+  if (loc === 'denied' || coarse === 'denied') return 'denied'
+  return 'prompt'
+}
+
+export async function inspectLocationAccess() {
+  if (!Capacitor.isNativePlatform()) {
+    if (!navigator?.geolocation) return { granted: false, status: 'unavailable' }
+    try {
+      const result = await navigator.permissions?.query?.({ name: 'geolocation' })
+      if (result?.state === 'granted') return { granted: true, status: 'granted' }
+      if (result?.state === 'denied') return { granted: false, status: 'denied' }
+    } catch {
+      // Safari n’expose pas toujours l’API Permissions : le dialogue arrive au premier relevé.
     }
+    return { granted: false, status: 'prompt' }
   }
+
+  const Geo = await getCapacitorGeolocation()
+  if (!Geo?.checkPermissions) return { granted: false, status: 'unavailable' }
+  try {
+    const result = await Geo.checkPermissions()
+    const status = statusFromPermission(result)
+    return { granted: status === 'granted', status }
+  } catch (error) {
+    const status = classifyLocationError(error)
+    return { granted: false, status }
+  }
+}
+
+export async function requestLocationAccess() {
+  if (!Capacitor.isNativePlatform()) {
+    if (!navigator?.geolocation) return { granted: false, status: 'unavailable' }
+    return { granted: true, status: 'prompt' }
+  }
+
+  const Geo = await getCapacitorGeolocation()
+  if (!Geo?.requestPermissions) return { granted: false, status: 'unavailable' }
+  try {
+    const result = await Geo.requestPermissions({ permissions: ['location'] })
+    const status = statusFromPermission(result)
+    return { granted: status === 'granted', status }
+  } catch (error) {
+    const status = classifyLocationError(error)
+    return { granted: false, status }
+  }
+}
+
+/** Compatibilité : vrai uniquement si l’accès est accordé. */
+export async function requestLocationPermission() {
+  const access = await requestLocationAccess()
+  return access.granted
+}
+
+export function canOpenLocationSettings() {
+  return Capacitor.isNativePlatform()
+}
+
+export function openLocationSettings() {
+  if (!canOpenLocationSettings()) return false
+  window.location.href = 'app-settings:'
   return true
 }
 
@@ -45,28 +138,65 @@ export async function getCurrentPosition(options = {}) {
   if (Capacitor.isNativePlatform()) {
     const Geo = await getCapacitorGeolocation()
     if (Geo) {
-      const pos = await Geo.getCurrentPosition(opts)
-      return toPosition(pos.coords, pos.timestamp)
+      try {
+        const pos = await Geo.getCurrentPosition(opts)
+        return toPosition(pos.coords, pos.timestamp)
+      } catch (error) {
+        throw toLocationError(error, 'Impossible d’obtenir la position GPS.')
+      }
     }
   }
   return new Promise((resolve, reject) => {
     if (!navigator?.geolocation) {
-      reject(new Error('La géolocalisation n’est pas disponible sur cet appareil.'))
+      reject(toLocationError({ message: 'La géolocalisation n’est pas disponible sur cet appareil.' }, 'La géolocalisation n’est pas disponible sur cet appareil.'))
       return
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve(toPosition(pos.coords, pos.timestamp)),
-      (err) => reject(new Error(err?.message || 'Impossible d’obtenir la position GPS.')),
+      (err) => reject(toLocationError(err, 'Impossible d’obtenir la position GPS.')),
       opts,
     )
   })
 }
 
 /**
+ * Attend une position exploitable. `weak` signifie qu’un relevé est arrivé,
+ * mais avec une précision insuffisante pour démarrer un trajet.
+ */
+export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS_LIMITS.maxAccuracyM } = {}) {
+  let last = null
+  let lastError = null
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const position = await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      })
+      last = position
+      if (position.accuracy == null || position.accuracy <= maxAccuracyM) {
+        return { position, weak: false }
+      }
+    } catch (error) {
+      lastError = error
+      const status = classifyLocationError(error)
+      if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted') {
+        error.locationStatus = status
+        throw error
+      }
+    }
+  }
+  if (last) return { position: last, weak: true }
+  const error = lastError || new Error('Impossible d’obtenir la position GPS.')
+  error.locationStatus = error.locationStatus || classifyLocationError(error)
+  throw error
+}
+
+/**
  * @returns {{ stop: () => void }}
  */
 export function watchPosition(onUpdate, onError, options = {}) {
-  const opts = { ...DEFAULT_OPTIONS, ...options }
+  const opts = { ...DEFAULT_OPTIONS, timeout: 25000, ...options }
   let watchId = null
   let stopped = false
   let capacitorWatchId = null
@@ -78,7 +208,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
         capacitorWatchId = await Geo.watchPosition(opts, (pos, err) => {
           if (stopped) return
           if (err) {
-            onError?.(new Error(err.message || 'Erreur GPS'))
+            onError?.(toLocationError(err, 'Erreur GPS'))
             return
           }
           if (pos?.coords) onUpdate(toPosition(pos.coords, pos.timestamp))
@@ -95,7 +225,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
         if (!stopped) onUpdate(toPosition(pos.coords, pos.timestamp))
       },
       (err) => {
-        if (!stopped) onError?.(new Error(err?.message || 'Erreur GPS'))
+        if (!stopped) onError?.(toLocationError(err, 'Erreur GPS'))
       },
       opts,
     )
@@ -130,30 +260,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
   }
 }
 
-/** Distance haversine en kilomètres. */
-export function haversineKm(a, b) {
-  if (!a || !b) return 0
-  const R = 6371
-  const toRad = (deg) => (deg * Math.PI) / 180
-  const dLat = toRad(b.lat - a.lat)
-  const dLng = toRad(b.lng - a.lng)
-  const lat1 = toRad(a.lat)
-  const lat2 = toRad(b.lat)
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
-}
-
-/** Filtre les sauts GPS aberrants (> maxJumpKm entre deux points). */
-export function accumulateDistance(points, maxJumpKm = 0.5) {
-  let total = 0
-  for (let i = 1; i < points.length; i += 1) {
-    const d = haversineKm(points[i - 1], points[i])
-    if (d > 0 && d <= maxJumpKm) total += d
-  }
-  return Math.round(total * 1000) / 1000
-}
+export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance'
 
 export function downsamplePath(points, maxPoints = 200) {
   if (!points?.length) return []
