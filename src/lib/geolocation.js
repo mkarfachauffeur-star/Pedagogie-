@@ -95,19 +95,33 @@ export function flushNativeTripPoints() {
 
 async function getTripPlugin() {
   if (Capacitor.getPlatform() !== 'ios' || tripPluginMissing) return null
+  let module
   try {
-    const module = await import('pedagogia-aac-trip-location')
-    await module.AacTripLocation.getStatus()
-    gpsLog('plugin AacTripLocation chargé')
-    return module.AacTripLocation
+    module = await import('pedagogia-aac-trip-location')
   } catch (error) {
     gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
-    if (/not implemented|UNIMPLEMENTED|plugin is not implemented/i.test(`${error?.message || ''} ${error?.code || ''}`)) {
-      tripPluginMissing = true
-      return null
-    }
     return null
   }
+  gpsLog('getStatus entrée')
+  try {
+    const status = await withTimeout(
+      module.AacTripLocation.getStatus(),
+      4000,
+      'La lecture de l’état de localisation n’a pas abouti.',
+    )
+    gpsLog('getStatus résolution', status)
+  } catch (error) {
+    gpsLog('getStatus rejet', `${error?.code || ''} ${error?.message || error}`)
+    if (/not implemented|UNIMPLEMENTED|plugin is not implemented/i.test(`${error?.message || ''} ${error?.code || ''}`)) {
+      tripPluginMissing = true
+      gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
+      return null
+    }
+    // Le plugin est chargé. Un getStatus qui n’a pas répondu ne doit pas
+    // empêcher la vraie demande d’autorisation iOS.
+  }
+  gpsLog('plugin AacTripLocation chargé')
+  return module.AacTripLocation
 }
 
 function accessFromNative(result) {

@@ -33,6 +33,9 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     private var activeObserver: NSObjectProtocol?
     private var inactiveObserver: NSObjectProtocol?
     private let maxPoints = 20000
+    /// Dernière lecture de `locationServicesEnabled()`, faite hors du fil principal.
+    /// Nil tant que cette lecture n’est pas revenue : on n’en déduit pas un refus.
+    private var servicesEnabledCache: Bool?
 
     deinit {
         if let activeObserver {
@@ -50,6 +53,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
         ensureManager()
         observeAppActivity()
+        refreshServicesEnabledCache()
         logGps("AacTripLocationPlugin chargé main=\(Thread.isMainThread)")
     }
 
@@ -85,6 +89,20 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
 
+    /// `locationServicesEnabled()` bloque le fil principal après le premier appel.
+    /// Core Location attend alors une réponse livrée sur ce même fil : le `getStatus()`
+    /// du clic ne revient jamais, `requestPermissions()` n’est pas atteint, et le
+    /// bouton reste sur « Acquisition GPS… ». La lecture part donc hors du fil
+    /// principal. L’instance `CLLocationManager` du plugin, elle, reste unique.
+    private func refreshServicesEnabledCache() {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let enabled = CLLocationManager.locationServicesEnabled()
+            DispatchQueue.main.async {
+                self?.servicesEnabledCache = enabled
+            }
+        }
+    }
+
     private func ensureManager() {
         if manager != nil { return }
         let created = CLLocationManager()
@@ -106,6 +124,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
+                self?.refreshServicesEnabledCache()
                 self?.alwaysPromptDidReturnToForeground()
             }
         }
@@ -123,35 +142,50 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     @objc override public func checkPermissions(_ call: CAPPluginCall) {
         onMain { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
+            self.ensureManager()
             call.resolve(self.permissionPayload())
         }
     }
 
     @objc override public func requestPermissions(_ call: CAPPluginCall) {
+        logGps("requestPermissions appelé")
         onMain { [weak self] in
-            self?.requestPermissionsOnMain(call)
+            guard let self else {
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
+            self.requestPermissionsOnMain(call)
         }
     }
 
     @objc func getCurrentPosition(_ call: CAPPluginCall) {
         onMain { [weak self] in
-            self?.getCurrentPositionOnMain(call)
+            guard let self else {
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
+            self.getCurrentPositionOnMain(call)
         }
     }
 
     @objc func start(_ call: CAPPluginCall) {
         onMain { [weak self] in
-            self?.startOnMain(call)
+            guard let self else {
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
+            self.startOnMain(call)
         }
     }
 
     private func requestPermissionsOnMain(_ call: CAPPluginCall) {
-        logGps("requestPermissions appelé main=\(Thread.isMainThread)")
-        logGps("CLLocationAuthorizationStatus avant locationServicesEnabled")
-        let servicesEnabled = CLLocationManager.locationServicesEnabled()
-        logGps("locationServicesEnabled=\(servicesEnabled)")
-        guard servicesEnabled else {
+        let statusBefore = gps.authorizationStatus
+        if servicesEnabledCache == false, statusBefore != .notDetermined {
+            logGps("locationServicesEnabled=false")
             call.resolve(permissionPayload())
             return
         }
@@ -160,7 +194,6 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             return
         }
 
-        let statusBefore = gps.authorizationStatus
         logGps("CLLocationAuthorizationStatus avant demande=\(authLabel(statusBefore))")
         switch statusBefore {
         case .notDetermined:
@@ -187,7 +220,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     private func getCurrentPositionOnMain(_ call: CAPPluginCall) {
         logGps("getCurrentPosition appelé main=\(Thread.isMainThread) timeoutMs=\(call.getInt("timeout", 20000))")
-        guard CLLocationManager.locationServicesEnabled() else {
+        if servicesEnabledCache == false && !isAuthorized {
             logGps("getCurrentPosition reject services désactivés")
             call.reject("Le service de localisation est désactivé.", "OS-PLUG-GLOC-0007")
             return
@@ -209,7 +242,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     private func startOnMain(_ call: CAPPluginCall) {
         logGps("start appelé main=\(Thread.isMainThread) statut=\(authLabel(gps.authorizationStatus))")
-        guard CLLocationManager.locationServicesEnabled() else {
+        if servicesEnabledCache == false && !isAuthorized {
             call.reject("Location services are not enabled.", "OS-PLUG-GLOC-0007")
             return
         }
@@ -254,7 +287,10 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     @objc func stop(_ call: CAPPluginCall) {
         onMain { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
             self.logGps("stop appelé")
             self.endUpdates()
             call.resolve(self.permissionPayload())
@@ -269,9 +305,23 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     @objc func getStatus(_ call: CAPPluginCall) {
-        onMain { [weak self] in
-            guard let self else { return }
-            call.resolve(self.permissionPayload())
+        logGps("getStatus entrée")
+        let once = AacOnceFlag()
+        let settle = { [weak self] in
+            guard once.claim() else { return }
+            guard let self else {
+                NSLog("[AAC-GPS] %@", "getStatus rejet")
+                call.reject("Le plugin de localisation n’est plus disponible.", "UNAVAILABLE")
+                return
+            }
+            self.ensureManager()
+            let payload = self.permissionPayload()
+            self.logGps("getStatus résolution")
+            call.resolve(payload)
+        }
+        onMain(settle)
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) {
+            DispatchQueue.main.async(execute: settle)
         }
     }
 
@@ -487,12 +537,13 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     private func permissionPayload() -> [String: Any] {
-        if !CLLocationManager.locationServicesEnabled() {
+        let status = gps.authorizationStatus
+        if servicesEnabledCache == false && status != .authorizedAlways && status != .authorizedWhenInUse && status != .notDetermined {
             return ["location": "denied", "scope": "disabled", "background": false, "tracking": tracking]
         }
         let scope: String
         let granted: Bool
-        switch gps.authorizationStatus {
+        switch status {
         case .authorizedAlways:
             scope = "always"
             granted = true
@@ -553,7 +604,22 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         let url = bufferURL
         persistQueue.async {
             guard let data = try? JSONSerialization.data(withJSONObject: snapshot) else { return }
-            try? data.write(to: url, options: .atomic)
-        }
+        try? data.write(to: url, options: .atomic)
     }
+}
+
+/// Ferme une promesse Capacitor une seule fois, même si le délai de sécurité
+/// et la lecture sur le fil principal se terminent tous les deux.
+private final class AacOnceFlag {
+    private let lock = NSLock()
+    private var done = false
+
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if done { return false }
+        done = true
+        return true
+    }
+}
 }
