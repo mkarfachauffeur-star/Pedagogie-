@@ -666,7 +666,7 @@ export default function AacPanel({
 
   if (!profile) {
     return (
-      <div className="aac-glass px-5 py-4 text-sm leading-6 text-amber-950">
+      <div className="lesson-glass px-5 py-4 text-sm leading-6 text-amber-950">
         {stopBar}
         <p>
           Aucun profil de conduite accompagnée.
@@ -684,7 +684,7 @@ export default function AacPanel({
                 onChange={(e) => setStartDateDraft(e.target.value)}
               />
             </label>
-            <button className="aac-btn px-4 py-2.5 text-sm font-semibold" type="submit">
+            <button className="lesson-btn px-4 py-2.5 text-sm font-semibold" type="submit">
               Créer le profil
             </button>
           </form>
@@ -696,63 +696,58 @@ export default function AacPanel({
   const completedTrips = trips.filter((trip) => trip.status === 'completed')
 
   return (
-    <div className={`flex flex-col gap-4 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
+    <div className={`flex flex-col gap-5 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
       {stopBar}
       {error && (
-        <div className="aac-chip px-4 py-3 text-sm text-rose-800">
+        <div className="lesson-chip px-4 py-3 text-sm text-rose-800">
           {error}
         </div>
       )}
 
-      <section className="aac-glass">
-        <div className="px-5 py-5 sm:px-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="aac-pill">Suivi AAC</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Progression</h2>
-            </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
-              {statusLabel(profile.status)}
-            </span>
+      <section className="lesson-glass p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-slate-500">Progression globale</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{progress?.percent || 0}%</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {Math.round(progress?.km || 0)} km sur {progress?.target || 3000} km
+            </p>
           </div>
+          <span className={`w-fit rounded-full border border-white/80 px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
+            {statusLabel(profile.status)}
+          </span>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/70">
+          <div
+            className="h-full rounded-full bg-sky-300/90 transition-all duration-500"
+            style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
+          />
+        </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
-            <Stat
-              detail={`sur ${progress?.target || 3000} km`}
-              label="Parcourus"
-              value={`${Math.round(progress?.km || 0)} km`}
-            />
-            <Stat
-              detail="avant l’objectif"
-              label="Restants"
-              value={`${Math.round(progress?.remaining || 0)} km`}
-            />
-            <Stat
-              detail="terminés"
-              label="Trajets"
-              value={String(profile.tripCount || 0)}
-            />
-            <Stat
-              detail="obligatoires"
-              label="Rendez-vous"
-              value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
-            />
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat
+            detail={`sur ${progress?.target || 3000} km`}
+            label="Parcourus"
+            value={`${Math.round(progress?.km || 0)} km`}
+          />
+          <Stat
+            detail="avant l’objectif"
+            label="Restants"
+            value={`${Math.round(progress?.remaining || 0)} km`}
+          />
+          <Stat
+            detail="terminés"
+            label="Trajets"
+            value={String(profile.tripCount || 0)}
+          />
+          <Stat
+            detail="obligatoires"
+            label="Rendez-vous"
+            value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
+          />
+        </div>
 
-          <div className="mt-6">
-            <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
-              <span>Progression kilométrique</span>
-              <span className="tabular-nums">{progress?.percent || 0} %</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/55 shadow-[inset_0_1px_2px_rgba(14,116,144,0.12)]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.55)]"
-                style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
-              />
-            </div>
-          </div>
-
-          <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/70 pt-4 text-sm lg:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/70 pt-4 text-sm lg:grid-cols-4">
             <div>
               <dt className="text-xs text-slate-400">Début</dt>
               <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.startedAt)}</dd>
@@ -772,10 +767,9 @@ export default function AacPanel({
               <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.examEligibleAt)}</dd>
             </div>
           </dl>
-        </div>
 
         {isStaff && (
-          <form className="flex flex-wrap items-end gap-3 border-t border-white/60 px-5 py-4 sm:px-6" onSubmit={saveStartDate}>
+          <form className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/60 pt-4" onSubmit={saveStartDate}>
             <label className="text-sm font-medium text-slate-700">
               Date d’entrée
               <input
@@ -786,7 +780,7 @@ export default function AacPanel({
               />
             </label>
             <button
-              className="aac-btn px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+              className="lesson-btn px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
               disabled={saving}
               type="submit"
             >
@@ -794,7 +788,7 @@ export default function AacPanel({
             </button>
             {profile.status === 'conditions_remplies' && (
               <button
-                className="aac-btn-glass px-4 py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-40"
+                className="lesson-btn-soft px-4 py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-40"
                 disabled={saving}
                 onClick={handleMarkComplete}
                 type="button"
@@ -806,7 +800,7 @@ export default function AacPanel({
         )}
       </section>
 
-      <section className="aac-glass p-5 sm:p-6">
+      <section className="lesson-glass p-4 sm:p-5">
             <h3 className="text-base font-semibold text-slate-900">Conditions pour l’examen</h3>
         <ul className="mt-4 space-y-3">
           <Cond ok={conditions?.yearOk} label="Une année complète de conduite accompagnée, jour pour jour" />
@@ -815,18 +809,18 @@ export default function AacPanel({
           <Cond ok={conditions?.rvpOk} label="Les deux rendez-vous pédagogiques obligatoires effectués" />
         </ul>
         {conditions?.allMet && (
-          <p className="aac-chip mt-4 px-4 py-3 text-sm text-emerald-900">
+          <p className="lesson-chip mt-4 px-4 py-3 text-sm text-emerald-900">
             Les conditions sont remplies. L’élève peut être présenté à l’examen du permis de conduire.
           </p>
         )}
       </section>
 
       {!isStaff && (
-        <section className="aac-glass p-5 sm:p-6">
+        <section className="lesson-glass overflow-visible p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-base font-semibold text-slate-900">Enregistrer un trajet</h3>
             {tripActive && (
-              <span className="aac-pill normal-case tracking-normal text-emerald-700">
+              <span className="rounded-full border border-white/80 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-800">
                 En cours
               </span>
             )}
@@ -835,7 +829,7 @@ export default function AacPanel({
             Le relevé continue si le téléphone est verrouillé. Il s’arrête quand vous terminez le trajet.
           </p>
 
-          <div className={`aac-chip mt-4 px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
+          <div className={`lesson-chip mt-4 px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
             <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
             {tripActive && locationScope === 'whenInUse' && (
               <p className="mt-2 text-xs">
@@ -849,7 +843,7 @@ export default function AacPanel({
             )}
             {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
               <button
-                className="aac-btn mt-3 px-3 py-2 text-sm font-semibold"
+                className="lesson-btn mt-3 px-3 py-2 text-sm font-semibold"
                 onClick={openLocationSettings}
                 type="button"
               >
@@ -867,7 +861,7 @@ export default function AacPanel({
               {[1, 2].map((sequence) => (
                 <label
                   key={sequence}
-                  className="aac-chip flex min-h-11 items-start gap-3 px-3 py-3 text-sm text-slate-800"
+                  className="lesson-chip flex min-h-11 items-start gap-3 px-3 py-3 text-sm text-slate-800"
                 >
                   <input
                     checked={mandatoryRvp.includes(sequence)}
@@ -885,7 +879,7 @@ export default function AacPanel({
             <legend className="text-sm font-semibold text-slate-900">Rendez-vous supplémentaires</legend>
             <ul className="mt-3 space-y-2">
               {extraRvp.map((item) => (
-                <li key={item.id} className="aac-chip flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
+                <li key={item.id} className="lesson-chip flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
                   <span className="text-slate-800">{item.label}</span>
                   <button className="text-xs font-medium text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
                     Retirer
@@ -902,7 +896,7 @@ export default function AacPanel({
                   placeholder="Intitulé du rendez-vous"
                   value={extraDraft}
                 />
-                <button className="aac-btn px-4 py-2.5 text-sm font-semibold" type="submit">
+                <button className="lesson-btn px-4 py-2.5 text-sm font-semibold" type="submit">
                   Ajouter
                 </button>
               </form>
@@ -918,7 +912,7 @@ export default function AacPanel({
           </fieldset>
 
           <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-900">Critères de conduite</legend>
+            <legend className="text-base font-semibold text-slate-900">Critères de conduite</legend>
             <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs critères peuvent être choisis.</p>
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
               {AAC_DRIVING_CONDITIONS.map((item) => (
@@ -935,7 +929,7 @@ export default function AacPanel({
 
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
             <button
-              className="aac-btn touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              className="lesson-btn touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
@@ -962,14 +956,14 @@ export default function AacPanel({
 
           {lastTripSummary && (
             <div className="mt-6 border-t border-white/70 pt-4">
-              <p className="aac-pill mb-3">Dernier trajet</p>
+              <p className="mb-3 text-sm text-slate-500">Dernier trajet</p>
               <TripRecap trip={lastTripSummary} />
             </div>
           )}
         </section>
       )}
 
-      <section className="aac-glass p-5 sm:p-6">
+      <section className="lesson-glass p-4 sm:p-5">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">Trajets enregistrés</h3>
           <p className="text-xs tabular-nums text-slate-400">{completedTrips.length}</p>
@@ -981,7 +975,7 @@ export default function AacPanel({
             {completedTrips
               .slice(0, isStaff ? 20 : 10)
               .map((trip) => (
-                <li key={trip.id} className="aac-chip px-3 py-3">
+                <li key={trip.id} className="lesson-chip px-3 py-3">
                   <TripRecap trip={trip} />
                 </li>
               ))}
@@ -989,7 +983,7 @@ export default function AacPanel({
         )}
       </section>
 
-      <section className="aac-glass p-5 sm:p-6">
+      <section className="lesson-glass p-4 sm:p-5">
         <h3 className="text-base font-semibold text-slate-900">Rendez-vous pédagogiques</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">
           Deux rendez-vous sont obligatoires. Un rendez-vous supplémentaire peut être organisé
@@ -1007,7 +1001,7 @@ export default function AacPanel({
           ))}
         </div>
         <button
-          className="aac-btn-glass mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+          className="lesson-btn-soft mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
           disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
           onClick={handleAddRvp}
           type="button"
@@ -1016,7 +1010,7 @@ export default function AacPanel({
         </button>
       </section>
 
-      <section className="aac-glass p-5 sm:p-6">
+      <section className="lesson-glass p-4 sm:p-5">
         <h3 className="text-base font-semibold text-slate-900">Attestation FFI</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">
           Attestation de fin de formation initiale, demandée par l’assurance avant le début de la conduite accompagnée.
@@ -1024,7 +1018,7 @@ export default function AacPanel({
         {bundle?.ffi?.url ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <a
-              className="aac-btn px-4 py-2.5 text-sm font-semibold"
+              className="lesson-btn px-4 py-2.5 text-sm font-semibold"
               href={bundle.ffi.url}
               rel="noreferrer"
               target="_blank"
@@ -1036,7 +1030,7 @@ export default function AacPanel({
         ) : (
           <p className="mt-4 text-sm text-amber-800">Aucun document déposé.</p>
         )}
-        <label className="aac-btn-glass mt-4 inline-flex cursor-pointer px-4 py-2.5 text-sm font-semibold">
+        <label className="lesson-btn-soft mt-4 inline-flex cursor-pointer px-4 py-2.5 text-sm font-semibold">
           {bundle?.ffi ? 'Remplacer le PDF' : 'Déposer le PDF'}
           <input accept="application/pdf,.pdf" className="hidden" onChange={handleFfiUpload} type="file" />
         </label>
@@ -1047,9 +1041,9 @@ export default function AacPanel({
 
 function Stat({ label, value, detail }) {
   return (
-    <div className="aac-chip min-w-0 px-3 py-3">
+    <div className="lesson-chip min-w-0 px-3 py-3">
       <p className="text-xs font-medium text-sky-800/70">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
       {detail ? <p className="mt-0.5 text-xs text-slate-500">{detail}</p> : null}
     </div>
   )
@@ -1057,7 +1051,7 @@ function Stat({ label, value, detail }) {
 
 function KpiLight({ label, value }) {
   return (
-    <div className="aac-chip px-3 py-3">
+    <div className="lesson-chip px-3 py-3">
       <p className="text-lg font-semibold tabular-nums text-slate-900">{value}</p>
       <p className="text-xs text-sky-800/70">{label}</p>
     </div>
@@ -1065,8 +1059,8 @@ function KpiLight({ label, value }) {
 }
 
 function statusTone(status) {
-  if (status === 'conditions_remplies' || status === 'terminee') return 'aac-pill normal-case tracking-normal text-emerald-700'
-  return 'aac-pill normal-case tracking-normal text-sky-800'
+  if (status === 'conditions_remplies' || status === 'terminee') return 'bg-emerald-50/80 text-emerald-800'
+  return 'bg-sky-50/70 text-sky-800'
 }
 
 function emptyRvp(sequence) {
@@ -1091,11 +1085,11 @@ function isShownExtra(item) {
 function RvpCard({ item, isStaff, teachers, onSave }) {
   return (
     <article
-      className={`aac-chip p-4 ${item.completed ? 'ring-1 ring-emerald-200/80' : ''}`}
+      className={`lesson-chip p-4 ${item.completed ? 'ring-1 ring-emerald-200/80' : ''}`}
     >
       <div className="flex items-start justify-between gap-3">
         <h4 className="text-sm font-semibold text-slate-900">Rendez-vous {item.sequence}</h4>
-        <span className={`text-xs font-medium ${item.completed ? 'text-emerald-700' : 'text-slate-500'}`}>
+        <span className={`w-fit shrink-0 rounded-full border border-white/80 px-3 py-1 text-xs font-medium ${item.completed ? 'bg-emerald-50/80 text-emerald-800' : 'bg-sky-50/70 text-sky-800'}`}>
           {item.completed ? 'Effectué' : 'À faire'}
         </span>
       </div>

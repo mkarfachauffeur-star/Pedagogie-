@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Car } from 'lucide-react'
 import AacPanel from '../../components/aac/AacPanel'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
@@ -34,7 +35,7 @@ export default function StudentAccompaniedDrivingPage() {
 
   if (accountLoading) {
     return (
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full max-w-3xl">
         <p className="text-sm text-slate-500">Chargement du suivi…</p>
       </div>
     )
@@ -54,9 +55,9 @@ export default function StudentAccompaniedDrivingPage() {
   if (!isAac) {
     return (
       <div className="mx-auto w-full max-w-3xl">
-        <section className="aac-glass p-6 sm:p-8">
-          <p className="aac-pill">Espace élève</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
+        <section className="lesson-glass p-5 sm:p-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700/80">Permis B</p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
             Cet espace est réservé aux élèves en conduite accompagnée. Contactez le secrétariat
             si vous souhaitez basculer sur cette formule.
@@ -70,11 +71,16 @@ export default function StudentAccompaniedDrivingPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <header>
-        <p className="aac-pill">Espace élève</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
-        <p className="mt-1 text-sm text-sky-900/70">{formatPersonName(student)}</p>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+      <header className="flex items-center gap-3 px-1">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl border border-white/80 bg-white/55 text-sky-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md">
+          <Car aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
+        </span>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700/80">Permis B</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
+          <p className="text-sm text-slate-500">{formatPersonName(student)}</p>
+        </div>
       </header>
 
       <AacPanel
