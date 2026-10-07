@@ -60,6 +60,21 @@ function NavItem({ item, className, onNavigate, isHome }) {
   )
 }
 
+function HomeLogoLink({ isHome, className, children }) {
+  return (
+    <Link
+      aria-label="PEDAGOGIA DRIVE - Accueil"
+      className={className}
+      onClick={() => {
+        if (isHome) window.scrollTo({ top: 0, behavior: 'smooth' })
+      }}
+      to="/"
+    >
+      {children}
+    </Link>
+  )
+}
+
 export default function LandingHeader() {
   const { pathname } = useLocation()
   const isHome = isLandingHome(pathname)
@@ -86,7 +101,7 @@ export default function LandingHeader() {
   const demoClass =
     'inline-flex h-10 items-center justify-center rounded-[12px] bg-[#EF3340] px-5 text-sm font-semibold text-white transition hover:bg-[#d92b38]'
 
-  const logo = <BrandLogo animated={false} idPrefix="landing-nav" variant={isDark ? 'marketing' : 'light'} />
+  const logoVariant = isDark ? 'marketing' : 'light'
 
   return (
     <header
@@ -94,16 +109,10 @@ export default function LandingHeader() {
         scrolled ? 'border-[var(--lp-border)] bg-[var(--lp-bg)]/80' : 'border-transparent bg-[var(--lp-bg)]/55'
       }`}
     >
-      <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 lg:gap-10 lg:px-8">
-        {isHome ? (
-          <a aria-label="PEDAGOGIA DRIVE - Accueil" className="inline-flex shrink-0 items-center" href="#accueil">
-            {logo}
-          </a>
-        ) : (
-          <Link aria-label="PEDAGOGIA DRIVE - Accueil" className="inline-flex shrink-0 items-center" to="/">
-            {logo}
-          </Link>
-        )}
+      <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-1 items-center gap-4 px-4 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-10 lg:px-8">
+        <HomeLogoLink className="hidden shrink-0 items-center lg:inline-flex" isHome={isHome}>
+          <BrandLogo animated={false} idPrefix="landing-nav" variant={logoVariant} />
+        </HomeLogoLink>
         <nav
           aria-label="Navigation principale"
           className="hidden min-w-0 items-center justify-center gap-5 lg:flex xl:gap-7"
@@ -112,7 +121,10 @@ export default function LandingHeader() {
             <NavItem className={navClass} isHome={isHome} item={item} key={item.href} />
           ))}
         </nav>
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex min-w-0 items-center justify-end gap-3">
+          <HomeLogoLink className="mr-auto inline-flex min-w-0 items-center lg:hidden" isHome={isHome}>
+            <BrandLogo animated={false} idPrefix="landing-nav-bar" variant={logoVariant} />
+          </HomeLogoLink>
           <div className="hidden items-center gap-3 lg:flex">
             <Link className={loginClass} to="/login">
               Se connecter
