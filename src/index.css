@@ -1430,7 +1430,9 @@ html.capacitor-ios .pd-main-content {
 }
 
 /* Le document continue de grandir pour le scroll des pages.
-   Le menu, lui, reste calé sur la fenêtre : pas sur la hauteur du document. */
+   translate-x sur le drawer fixe le détache du viewport dans WKWebView :
+   il suit alors la hauteur du document, et l’écran ne montre que le vide
+   du nav en flex-1. Sans transform, il reste calé sur la fenêtre. */
 @media (max-width: 1023px) {
   html.capacitor-ios .app-sidebar-overlay {
     position: fixed;
@@ -1439,9 +1441,11 @@ html.capacitor-ios .pd-main-content {
     right: auto;
     bottom: auto;
     left: 0;
+    z-index: 70;
     width: 100vw;
     height: 100dvh;
     max-height: 100dvh;
+    transform: none;
   }
 
   html.capacitor-ios .app-sidebar {
@@ -1450,8 +1454,30 @@ html.capacitor-ios .pd-main-content {
     right: auto;
     bottom: auto;
     left: 0;
+    z-index: 80;
     height: 100dvh;
     max-height: 100dvh;
     width: min(280px, 100vw);
+    transform: none;
+    overflow: hidden;
+    transition: left 280ms ease, visibility 280ms ease;
+  }
+
+  html.capacitor-ios .app-sidebar:not(.is-open) {
+    left: -100vw;
+  }
+
+  html.capacitor-ios .app-sidebar.is-open {
+    left: 0;
+  }
+
+  html.capacitor-ios .app-sidebar > div {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
