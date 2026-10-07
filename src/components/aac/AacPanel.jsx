@@ -43,15 +43,6 @@ import {
   traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
-import AacTripMap from './AacTripMap'
-
-function formatDurationMinutes(seconds) {
-  const total = Math.max(0, Math.round((Number(seconds) || 0) / 60))
-  const hours = Math.floor(total / 60)
-  const minutes = total % 60
-  if (hours > 0) return `${hours} h ${String(minutes).padStart(2, '0')} min`
-  return `${minutes} min`
-}
 
 function formatDuration(seconds) {
   const s = Math.max(0, Number(seconds) || 0)
@@ -632,17 +623,21 @@ export default function AacPanel({
   const tripActive = tracking || Boolean(bundle?.activeTrip)
   const stopBar = tripActive && !isStaff && typeof document !== 'undefined'
     ? createPortal(
-      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-rose-200 bg-white/95 px-4 pt-3 shadow-[0_-8px_30px_rgba(15,23,42,0.12)] backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <p className="mb-2 text-center text-xs font-bold text-slate-500">
-          Trajet en cours · {formatKm(liveKm)} km · {formatDuration(elapsed)}
+      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-slate-200 bg-white px-4 pt-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p className="mb-2 text-center text-sm text-slate-600">
+          Trajet en cours
+          <span className="text-slate-300"> · </span>
+          <span className="font-semibold tabular-nums text-slate-950">{formatKm(liveKm)} km</span>
+          <span className="text-slate-300"> · </span>
+          <span className="tabular-nums">{formatDuration(elapsed)}</span>
         </p>
         <button
-          className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
+          className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
           disabled={stopBusy}
           onClick={handleStopTrip}
           type="button"
         >
-          {stopBusy ? 'Arrêt du trajet…' : '⏹️ ARRÊTER LE TRAJET'}
+          {stopBusy ? 'Arrêt du trajet…' : 'Arrêter le trajet'}
         </button>
       </div>,
       document.body,
@@ -653,28 +648,32 @@ export default function AacPanel({
     return (
       <>
         {stopBar}
-        <p className="text-sm font-semibold text-slate-500">Chargement du suivi AAC…</p>
+        <p className="text-sm text-slate-500">Chargement du suivi…</p>
       </>
     )
   }
 
   if (!profile) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950">
         {stopBar}
-        Aucun profil AAC. {isStaff ? 'Renseignez une date d’entrée pour l’activer.' : 'Contactez le secrétariat.'}
+        <p>
+          Aucun profil de conduite accompagnée.
+          {' '}
+          {isStaff ? 'Indiquez la date d’entrée pour l’activer.' : 'Contactez le secrétariat.'}
+        </p>
         {isStaff && (
-          <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={saveStartDate}>
-            <label className="text-sm font-bold">
-              Date d’entrée en AAC
+          <form className="mt-4 flex flex-wrap items-end gap-2" onSubmit={saveStartDate}>
+            <label className="text-sm font-medium text-slate-800">
+              Date d’entrée
               <input
-                className="pd-input mt-1 block"
+                className="pd-input mt-1 block bg-white"
                 type="date"
                 value={startDateDraft}
                 onChange={(e) => setStartDateDraft(e.target.value)}
               />
             </label>
-            <button className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-bold text-white" type="submit">
+            <button className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white" type="submit">
               Créer le profil
             </button>
           </form>
@@ -683,69 +682,91 @@ export default function AacPanel({
     )
   }
 
+  const completedTrips = trips.filter((trip) => trip.status === 'completed')
+
   return (
-    <div className={`flex flex-col gap-5 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
+    <div className={`flex flex-col gap-4 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
       {stopBar}
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           {error}
         </div>
       )}
 
-      {/* Dashboard */}
-      <section className="overflow-hidden rounded-[1.75rem] border-2 border-slate-200 bg-white shadow-sm">
-        <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="px-5 py-5 sm:px-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-cyan-200">Conduite accompagnée</p>
-              <h2 className="mt-1 text-2xl font-black">Tableau de bord AAC</h2>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Suivi AAC</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Progression</h2>
             </div>
-            <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-bold">
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
               {statusLabel(profile.status)}
             </span>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi label="Kilomètres" value={`${Math.round(progress?.km || 0)}`} hint={`/ ${progress?.target || 3000} km`} />
-            <Kpi label="Restants" value={`${Math.round(progress?.remaining || 0)}`} hint="km avant 3000" />
-            <Kpi label="Trajets" value={String(profile.tripCount || 0)} hint="enregistrés" />
-            <Kpi
-              label="RVP"
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
+            <Stat
+              detail={`sur ${progress?.target || 3000} km`}
+              label="Parcourus"
+              value={`${Math.round(progress?.km || 0)} km`}
+            />
+            <Stat
+              detail="avant l’objectif"
+              label="Restants"
+              value={`${Math.round(progress?.remaining || 0)} km`}
+            />
+            <Stat
+              detail="terminés"
+              label="Trajets"
+              value={String(profile.tripCount || 0)}
+            />
+            <Stat
+              detail="obligatoires"
+              label="Rendez-vous"
               value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
-              hint="obligatoires"
             />
           </div>
 
-          <div className="mt-5">
-            <div className="mb-2 flex justify-between text-sm font-semibold text-cyan-100">
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
               <span>Progression kilométrique</span>
-              <span>{progress?.percent || 0} %</span>
+              <span className="tabular-nums">{progress?.percent || 0} %</span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-white/15">
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all"
-                style={{ width: `${progress?.percent || 0}%` }}
+                className="h-full rounded-full bg-cyan-700"
+                style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
               />
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2 text-sm text-cyan-50/90 sm:grid-cols-3">
-            <p>Début : <strong>{formatDateFr(profile.startedAt)}</strong></p>
-            <p>Jours écoulés : <strong>{daysElapsed ?? '—'}</strong></p>
-            <p>
-              Jours restants (1 an) :{' '}
-              <strong>{daysToEligible == null ? '—' : Math.max(0, daysToEligible)}</strong>
-            </p>
-          </div>
-          <p className="mt-2 text-sm text-cyan-100/80">
-            Examen possible à partir du <strong>{formatDateFr(profile.examEligibleAt)}</strong> (1 an révolu).
-          </p>
+          <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm lg:grid-cols-4">
+            <div>
+              <dt className="text-xs text-slate-400">Début</dt>
+              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.startedAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">Jours écoulés</dt>
+              <dd className="mt-0.5 tabular-nums text-slate-800">{daysElapsed ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">Jours avant un an</dt>
+              <dd className="mt-0.5 tabular-nums text-slate-800">
+                {daysToEligible == null ? '—' : Math.max(0, daysToEligible)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">Examen possible le</dt>
+              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.examEligibleAt)}</dd>
+            </div>
+          </dl>
         </div>
 
         {isStaff && (
-          <form className="flex flex-wrap items-end gap-3 border-t border-slate-100 p-4" onSubmit={saveStartDate}>
-            <label className="text-sm font-bold text-slate-700">
-              Date d’entrée en AAC
+          <form className="flex flex-wrap items-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6" onSubmit={saveStartDate}>
+            <label className="text-sm font-medium text-slate-700">
+              Date d’entrée
               <input
                 className="pd-input mt-1 block"
                 type="date"
@@ -754,7 +775,7 @@ export default function AacPanel({
               />
             </label>
             <button
-              className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
               disabled={saving}
               type="submit"
             >
@@ -762,7 +783,7 @@ export default function AacPanel({
             </button>
             {profile.status === 'conditions_remplies' && (
               <button
-                className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800"
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-40"
                 disabled={saving}
                 onClick={handleMarkComplete}
                 type="button"
@@ -774,52 +795,50 @@ export default function AacPanel({
         )}
       </section>
 
-      {/* Conditions */}
-      <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
-        <h3 className="text-lg font-black text-slate-950">Conditions de fin AAC</h3>
-        <ul className="mt-3 space-y-2 text-sm">
-          <Cond ok={conditions?.yearOk} label="1 année complète de conduite accompagnée (jour pour jour)" />
-          <Cond ok={conditions?.kmOk} label="Minimum 3000 km parcourus" />
-          <Cond ok={conditions?.ageOk} label={`Âge minimum 17 ans${conditions?.age != null ? ` (actuel : ${conditions.age} ans)` : ''}`} />
-          <Cond ok={conditions?.rvpOk} label="Les 2 rendez-vous pédagogiques obligatoires effectués" />
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h3 className="text-base font-semibold text-slate-950">Conditions pour l’examen</h3>
+        <ul className="mt-4 space-y-3">
+          <Cond ok={conditions?.yearOk} label="Une année complète de conduite accompagnée, jour pour jour" />
+          <Cond ok={conditions?.kmOk} label="3 000 km parcourus au minimum" />
+          <Cond ok={conditions?.ageOk} label={`17 ans minimum${conditions?.age != null ? ` · ${conditions.age} ans aujourd’hui` : ''}`} />
+          <Cond ok={conditions?.rvpOk} label="Les deux rendez-vous pédagogiques obligatoires effectués" />
         </ul>
         {conditions?.allMet && (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-            Conditions remplies — L’élève peut être présenté à l’examen du permis de conduire.
-          </div>
+          <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            Les conditions sont remplies. L’élève peut être présenté à l’examen du permis de conduire.
+          </p>
         )}
       </section>
 
-      {/* Trajet GPS — élève */}
       {!isStaff && (
-        <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg font-black text-slate-950">Mon trajet</h3>
+            <h3 className="text-base font-semibold text-slate-950">Enregistrer un trajet</h3>
             {tripActive && (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-800">
-                Trajet en cours
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
+                En cours
               </span>
             )}
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {LOCATION_STATUS_MESSAGES.prompt}
-            {' '}Pendant le trajet, la position continue d’être reçue si l’iPhone est verrouillé ou si vous ouvrez une autre application. Le suivi s’arrête uniquement quand vous appuyez sur Arrêter le trajet. Un indicateur de localisation iOS reste visible tant que le trajet est en cours.
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Le relevé continue si le téléphone est verrouillé. Il s’arrête quand vous terminez le trajet.
           </p>
-          <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${gpsStatusClass(gpsStatus)}`}>
+
+          <div className={`mt-4 rounded-xl border px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
             <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
             {tripActive && locationScope === 'whenInUse' && (
-              <p className="mt-2 text-xs font-bold">
+              <p className="mt-2 text-xs">
                 Pour que les kilomètres continuent à coup sûr écran verrouillé, choisissez Toujours dans Réglages &gt; Pedagogia Drive &gt; Localisation.
               </p>
             )}
             {lastAccuracy != null && tripActive && (
-              <p className="mt-1 text-xs font-bold opacity-80">
-                Précision GPS : ± {Math.round(lastAccuracy)} m · {livePoints.length} position{livePoints.length > 1 ? 's' : ''} reçue{livePoints.length > 1 ? 's' : ''}
+              <p className="mt-1 text-xs opacity-80">
+                Précision ± {Math.round(lastAccuracy)} m · {livePoints.length} position{livePoints.length > 1 ? 's' : ''}
               </p>
             )}
             {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
               <button
-                className="mt-3 rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white"
+                className="mt-3 rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
                 onClick={openLocationSettings}
                 type="button"
               >
@@ -828,20 +847,20 @@ export default function AacPanel({
             )}
           </div>
 
-          <div className="mt-5">
-            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">RVP obligatoires</h4>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Cela n’efface pas le suivi officiel du dossier.
+          <fieldset className="mt-6">
+            <legend className="text-sm font-semibold text-slate-950">Rendez-vous pendant ce trajet</legend>
+            <p className="mt-1 text-sm text-slate-500">
+              Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Le dossier officiel n’est pas modifié.
             </p>
             <div className="mt-3 space-y-2">
               {[1, 2].map((sequence) => (
                 <label
                   key={sequence}
-                  className="flex min-h-11 items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800"
+                  className="flex min-h-11 items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800"
                 >
                   <input
                     checked={mandatoryRvp.includes(sequence)}
-                    className="mt-0.5 h-5 w-5 shrink-0"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-slate-950"
                     onChange={() => toggleMandatory(sequence)}
                     type="checkbox"
                   />
@@ -849,15 +868,15 @@ export default function AacPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div className="mt-5">
-            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">RVP facultatifs</h4>
-            <ul className="mt-2 space-y-2">
+          <fieldset className="mt-6">
+            <legend className="text-sm font-semibold text-slate-950">Rendez-vous supplémentaires</legend>
+            <ul className="mt-3 space-y-2">
               {extraRvp.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                  <span className="font-semibold text-slate-800">{item.label}</span>
-                  <button className="text-xs font-bold text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
+                <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                  <span className="text-slate-800">{item.label}</span>
+                  <button className="text-xs font-medium text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
                     Retirer
                   </button>
                 </li>
@@ -872,33 +891,33 @@ export default function AacPanel({
                   placeholder="Intitulé du rendez-vous"
                   value={extraDraft}
                 />
-                <button className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-extrabold text-white" type="submit">
+                <button className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white" type="submit">
                   Ajouter
                 </button>
               </form>
             ) : (
               <button
-                className="mt-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-extrabold text-slate-900"
+                className="mt-3 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4"
                 onClick={() => setExtraOpen(true)}
                 type="button"
               >
-                + AJOUTER UN RVP
+                Ajouter un rendez-vous
               </button>
             )}
-          </div>
+          </fieldset>
 
-          <div className="mt-5">
-            <h4 className="text-sm font-black uppercase tracking-wide text-slate-950">Conditions de conduite</h4>
-            <p className="mt-1 text-xs text-slate-500">Facultatif. Plusieurs cases peuvent être cochées.</p>
+          <fieldset className="mt-6">
+            <legend className="text-sm font-semibold text-slate-950">Conditions de conduite</legend>
+            <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs cases peuvent être cochées.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {AAC_DRIVING_CONDITIONS.map((item) => (
                 <label
                   key={item.id}
-                  className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800"
+                  className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
                 >
                   <input
                     checked={drivingConditions.includes(item.id)}
-                    className="h-5 w-5 shrink-0"
+                    className="h-4 w-4 shrink-0 accent-slate-950"
                     onChange={() => toggleCondition(item.id)}
                     type="checkbox"
                   />
@@ -906,53 +925,57 @@ export default function AacPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div className="mt-5 flex flex-col gap-3">
+          <div className="mt-6 grid gap-2 sm:grid-cols-2">
             <button
-              className="w-full touch-manipulation rounded-xl bg-emerald-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
+              className="touch-manipulation rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
             >
-              {saving ? 'Acquisition GPS…' : '▶️ DÉMARRER LE TRAJET'}
+              {saving ? 'Acquisition GPS…' : 'Démarrer le trajet'}
             </button>
             <button
-              className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-4 text-base font-extrabold text-white disabled:opacity-50"
+              className="touch-manipulation rounded-xl border border-rose-200 bg-white px-5 py-3.5 text-sm font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={stopBusy || !tripActive}
               onClick={handleStopTrip}
               type="button"
             >
-              {stopBusy ? 'Arrêt du trajet…' : '⏹️ ARRÊTER LE TRAJET'}
+              {stopBusy ? 'Arrêt du trajet…' : 'Arrêter le trajet'}
             </button>
           </div>
+
           {tripActive && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <KpiLight label="Distance" value={`${formatKm(liveKm)} km`} />
               <KpiLight label="Durée" value={formatDuration(elapsed)} />
-              <KpiLight label="Positions GPS" value={String(livePoints.length)} />
+              <KpiLight label="Positions" value={String(livePoints.length)} />
             </div>
           )}
+
           {lastTripSummary && (
-            <div className="mt-4">
+            <div className="mt-6 border-t border-slate-100 pt-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Dernier trajet</p>
               <TripRecap trip={lastTripSummary} />
             </div>
           )}
         </section>
       )}
 
-      {/* Historique trajets */}
-      <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
-        <h3 className="text-lg font-black text-slate-950">Trajets enregistrés</h3>
-        {!trips.filter((t) => t.status === 'completed').length ? (
-          <p className="mt-2 text-sm text-slate-500">Aucun trajet pour le moment.</p>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-base font-semibold text-slate-950">Trajets enregistrés</h3>
+          <p className="text-xs tabular-nums text-slate-400">{completedTrips.length}</p>
+        </div>
+        {!completedTrips.length ? (
+          <p className="mt-3 text-sm text-slate-500">Aucun trajet enregistré pour le moment.</p>
         ) : (
-          <ul className="mt-3 space-y-3">
-            {trips
-              .filter((t) => t.status === 'completed')
+          <ul className="mt-2 divide-y divide-slate-100">
+            {completedTrips
               .slice(0, isStaff ? 20 : 10)
               .map((trip) => (
-                <li key={trip.id}>
+                <li key={trip.id} className="py-3">
                   <TripRecap trip={trip} />
                 </li>
               ))}
@@ -960,10 +983,9 @@ export default function AacPanel({
         )}
       </section>
 
-      {/* RVP */}
-      <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
-        <h3 className="text-lg font-black text-slate-950">Rendez-vous pédagogiques (RVP)</h3>
-        <p className="mt-1 text-sm text-slate-500">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h3 className="text-base font-semibold text-slate-950">Rendez-vous pédagogiques</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-500">
           Deux rendez-vous sont obligatoires. Un rendez-vous supplémentaire peut être organisé
           sur conseil de l’enseignant, à la demande de l’élève ou de l’accompagnateur.
         </p>
@@ -979,7 +1001,7 @@ export default function AacPanel({
           ))}
         </div>
         <button
-          className="mt-4 rounded-xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+          className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-40"
           disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
           onClick={handleAddRvp}
           type="button"
@@ -988,28 +1010,27 @@ export default function AacPanel({
         </button>
       </section>
 
-      {/* FFI */}
-      <section className="rounded-[1.75rem] border-2 border-slate-200 bg-white p-5">
-        <h3 className="text-lg font-black text-slate-950">Attestation FFI</h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Attestation de Fin de Formation Initiale — nécessaire pour l’assurance avant de démarrer la conduite accompagnée.
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h3 className="text-base font-semibold text-slate-950">Attestation FFI</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-500">
+          Attestation de fin de formation initiale, demandée par l’assurance avant le début de la conduite accompagnée.
         </p>
         {bundle?.ffi?.url ? (
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <a
-              className="rounded-xl bg-navy-950 px-4 py-2 text-sm font-bold text-white"
+              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
               href={bundle.ffi.url}
               rel="noreferrer"
               target="_blank"
             >
-              Aperçu / télécharger
+              Télécharger
             </a>
-            <span className="self-center text-sm text-slate-500">{bundle.ffi.file_name}</span>
+            <span className="text-sm text-slate-500">{bundle.ffi.file_name}</span>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-amber-700">Aucun document FFI déposé.</p>
+          <p className="mt-4 text-sm text-amber-800">Aucun document déposé.</p>
         )}
-        <label className="mt-4 inline-flex cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-800 hover:bg-cyan-50">
+        <label className="mt-4 inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
           {bundle?.ffi ? 'Remplacer le PDF' : 'Déposer le PDF'}
           <input accept="application/pdf,.pdf" className="hidden" onChange={handleFfiUpload} type="file" />
         </label>
@@ -1018,23 +1039,28 @@ export default function AacPanel({
   )
 }
 
-function Kpi({ label, value, hint }) {
+function Stat({ label, value, detail }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
-      <p className="text-2xl font-extrabold">{value}</p>
-      <p className="text-xs text-cyan-50/80">{label}</p>
-      {hint && <p className="text-[11px] text-cyan-100/60">{hint}</p>}
+    <div className="min-w-0">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-slate-950">{value}</p>
+      {detail ? <p className="mt-0.5 text-xs text-slate-400">{detail}</p> : null}
     </div>
   )
 }
 
 function KpiLight({ label, value }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-      <p className="text-lg font-extrabold text-slate-950">{value}</p>
-      <p className="text-xs font-semibold text-slate-500">{label}</p>
+    <div className="rounded-xl bg-slate-50 px-3 py-3">
+      <p className="text-lg font-semibold tabular-nums text-slate-950">{value}</p>
+      <p className="text-xs text-slate-500">{label}</p>
     </div>
   )
+}
+
+function statusTone(status) {
+  if (status === 'conditions_remplies' || status === 'terminee') return 'bg-emerald-50 text-emerald-800'
+  return 'bg-slate-100 text-slate-700'
 }
 
 function emptyRvp(sequence) {
@@ -1058,18 +1084,18 @@ function isShownExtra(item) {
 
 function RvpCard({ item, isStaff, teachers, onSave }) {
   return (
-    <div
-      className={`rounded-2xl border p-4 ${
-        item.completed ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-slate-50'
+    <article
+      className={`rounded-xl border p-4 ${
+        item.completed ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/60'
       }`}
     >
-      <p className="font-black text-slate-950">
-        {item.completed ? '✓ ' : ''}RVP {item.sequence}
-      </p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-        {item.completed ? 'Effectué' : 'À faire'}
-      </p>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{rvpRequirementLabel(item.sequence)}</p>
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="text-sm font-semibold text-slate-950">Rendez-vous {item.sequence}</h4>
+        <span className={`text-xs font-medium ${item.completed ? 'text-emerald-700' : 'text-slate-500'}`}>
+          {item.completed ? 'Effectué' : 'À faire'}
+        </span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{rvpRequirementLabel(item.sequence)}</p>
       {isStaff ? (
         <div className="mt-3 space-y-2">
           <input
@@ -1111,9 +1137,10 @@ function RvpCard({ item, isStaff, teachers, onSave }) {
               }
             }}
           />
-          <label className="flex items-center gap-2 text-sm font-semibold">
+          <label className="flex items-center gap-2 text-sm text-slate-800">
             <input
               checked={Boolean(item.completed)}
+              className="h-4 w-4 accent-slate-950"
               onChange={(e) => onSave({ completed: e.target.checked })}
               type="checkbox"
             />
@@ -1121,13 +1148,19 @@ function RvpCard({ item, isStaff, teachers, onSave }) {
           </label>
         </div>
       ) : (
-        <div className="mt-3 space-y-1 text-sm text-slate-600">
-          <p>Date : {formatDateFr(item.heldOn)}</p>
-          <p>Accompagnateur : {item.companionName || '—'}</p>
-          {item.observations && <p className="text-slate-500">{item.observations}</p>}
-        </div>
+        <dl className="mt-3 space-y-1 text-sm text-slate-600">
+          <div className="flex justify-between gap-3">
+            <dt>Date</dt>
+            <dd className="text-slate-900">{formatDateFr(item.heldOn)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt>Accompagnateur</dt>
+            <dd className="text-right text-slate-900">{item.companionName || '—'}</dd>
+          </div>
+          {item.observations && <p className="pt-1 text-slate-500">{item.observations}</p>}
+        </dl>
       )}
-    </div>
+    </article>
   )
 }
 
@@ -1149,7 +1182,7 @@ function mergeGpsPoints(...groups) {
 
 function gpsStatusClass(status) {
   if (status === 'tracking' || status === 'background' || status === 'ready' || status === 'granted') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-900'
+    return 'border-emerald-200 bg-emerald-50 text-emerald-950'
   }
   if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {
     return 'border-amber-200 bg-amber-50 text-amber-950'
@@ -1171,61 +1204,58 @@ function formatTripDate(value) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('fr-FR')
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function TripRecap({ trip }) {
   const done = new Set((trip.mandatoryRvp || []).map(Number))
   const extras = trip.extraRvp || []
   const conditions = trip.drivingConditions || []
+  const tags = [
+    ...[1, 2].filter((sequence) => done.has(sequence)).map((sequence) => `RVP ${sequence}`),
+    ...extras.map((item) => item.label).filter(Boolean),
+    ...conditions.map((id) => drivingConditionLabel(id)),
+  ]
+
   return (
-    <article className="rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
-      <h4 className="text-base font-black tracking-wide text-slate-950">TRAJET AAC</h4>
-      <dl className="mt-3 grid gap-1 text-sm text-slate-700">
-        <div className="flex justify-between gap-3"><dt>Date</dt><dd className="font-bold">{formatTripDate(trip.startedAt)}</dd></div>
-        <div className="flex justify-between gap-3"><dt>Heure de début</dt><dd className="font-bold">{formatClock(trip.startedAt)}</dd></div>
-        <div className="flex justify-between gap-3"><dt>Heure de fin</dt><dd className="font-bold">{formatClock(trip.endedAt)}</dd></div>
-        <div className="flex justify-between gap-3"><dt>Durée</dt><dd className="font-bold">{formatDurationMinutes(trip.durationSeconds)}</dd></div>
-        <div className="flex justify-between gap-3"><dt>Distance</dt><dd className="font-bold">{formatKm(trip.distanceKm)} km</dd></div>
-      </dl>
-      <div className="mt-4">
-        <p className="text-xs font-black uppercase tracking-wide text-slate-500">RVP obligatoires</p>
-        <ul className="mt-1 space-y-1 text-sm text-slate-800">
-          {[1, 2].map((sequence) => (
-            <li key={sequence}>{done.has(sequence) ? '✓' : '☐'} {mandatoryRvpTitle(sequence)}</li>
-          ))}
-        </ul>
-      </div>
-      <div className="mt-3">
-        <p className="text-xs font-black uppercase tracking-wide text-slate-500">RVP supplémentaires</p>
-        {extras.length ? (
-          <ul className="mt-1 space-y-1 text-sm text-slate-800">
-            {extras.map((item) => <li key={item.id}>- {item.label}</li>)}
+    <article className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-950">
+          <span className="tabular-nums">{formatKm(trip.distanceKm)} km</span>
+          <span className="font-normal text-slate-300"> · </span>
+          <span className="font-medium text-slate-700">{formatDuration(trip.durationSeconds)}</span>
+        </p>
+        {tags.length > 0 && (
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {tags.map((tag, index) => (
+              <li key={`${tag}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
+                {tag}
+              </li>
+            ))}
           </ul>
-        ) : (
-          <p className="mt-1 text-sm text-slate-500">Aucun</p>
         )}
       </div>
-      <div className="mt-3">
-        <p className="text-xs font-black uppercase tracking-wide text-slate-500">Conditions de conduite</p>
-        {conditions.length ? (
-          <ul className="mt-1 space-y-1 text-sm text-slate-800">
-            {conditions.map((id) => <li key={id}>✓ {drivingConditionLabel(id)}</li>)}
-          </ul>
-        ) : (
-          <p className="mt-1 text-sm text-slate-500">Aucune</p>
-        )}
-      </div>
-      <AacTripMap className="mt-3" path={trip.pathSummary} />
+      <p className="shrink-0 text-xs tabular-nums leading-5 text-slate-500 sm:text-right">
+        {formatTripDate(trip.startedAt)}
+        <span className="mx-1.5 text-slate-300">·</span>
+        {formatClock(trip.startedAt)} – {formatClock(trip.endedAt)}
+      </p>
     </article>
   )
 }
 
 function Cond({ ok, label }) {
   return (
-    <li className={`flex items-start gap-2 ${ok ? 'text-emerald-800' : 'text-slate-600'}`}>
-      <span className="mt-0.5 font-black">{ok ? '✓' : '○'}</span>
-      <span>{label}</span>
+    <li className="flex items-start gap-3 text-sm">
+      <span
+        aria-hidden="true"
+        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+          ok ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+        }`}
+      >
+        {ok ? '✓' : '–'}
+      </span>
+      <span className={ok ? 'text-slate-900' : 'text-slate-600'}>{label}</span>
     </li>
   )
 }

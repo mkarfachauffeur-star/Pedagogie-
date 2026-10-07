@@ -34,19 +34,18 @@ export default function StudentAccompaniedDrivingPage() {
 
   if (accountLoading) {
     return (
-      <div className="mx-auto w-full max-w-7xl">
-        <p className="text-sm font-semibold text-slate-500">Chargement du suivi AAC…</p>
+      <div className="mx-auto w-full max-w-5xl">
+        <p className="text-sm text-slate-500">Chargement du suivi…</p>
       </div>
     )
   }
 
   if (!student) {
     return (
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-full max-w-3xl">
         <EmptyState
           title="Aucune donnée disponible"
           message="Le suivi s’activera dès l’ajout de votre dossier de conduite accompagnée."
-          icon="🚗"
         />
       </div>
     )
@@ -54,36 +53,28 @@ export default function StudentAccompaniedDrivingPage() {
 
   if (!isAac) {
     return (
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
-          <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-6 text-white md:p-8">
-            <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100">
-              Suivi accompagné
-            </span>
-            <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Conduite accompagnée
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-cyan-50/85">
-              Cet espace est réservé aux élèves en conduite accompagnée (AAC). Contactez le secrétariat
-              si vous souhaitez basculer sur cette formule.
-            </p>
-            <p className="mt-6 text-sm font-semibold text-cyan-100">
-              Formule actuelle : {student.formationType}
-            </p>
-          </div>
+      <div className="mx-auto w-full max-w-3xl">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Espace élève</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Conduite accompagnée</h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+            Cet espace est réservé aux élèves en conduite accompagnée. Contactez le secrétariat
+            si vous souhaitez basculer sur cette formule.
+          </p>
+          <p className="mt-5 text-sm text-slate-500">
+            Formule actuelle : <span className="font-medium text-slate-800">{student.formationType}</span>
+          </p>
         </section>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <header className="rounded-[2rem] border-2 border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Espace élève</p>
-        <h1 className="mt-1 text-3xl font-black text-slate-950">Conduite accompagnée</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          {formatPersonName(student)} — trajets GPS, RVP, attestation FFI et suivi réglementaire.
-        </p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <header>
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Espace élève</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Conduite accompagnée</h1>
+        <p className="mt-1 text-sm text-slate-500">{formatPersonName(student)}</p>
       </header>
 
       <AacPanel
