@@ -34,6 +34,7 @@ import {
   canOpenLocationSettings,
   classifyLocationError,
   formatKm,
+  flushNativeTripPoints,
   inspectLocationAccess,
   LOCATION_STATUS_MESSAGES,
   measureTrack,
@@ -86,6 +87,7 @@ export default function AacPanel({
   const [stopBusy, setStopBusy] = useState(false)
   const [lastTripSummary, setLastTripSummary] = useState(null)
   const [gpsStatus, setGpsStatus] = useState('prompt')
+  const [locationScope, setLocationScope] = useState('')
   const [lastAccuracy, setLastAccuracy] = useState(null)
   const [mandatoryRvp, setMandatoryRvp] = useState([])
   const [extraRvp, setExtraRvp] = useState([])
@@ -156,7 +158,9 @@ export default function AacPanel({
 
   useEffect(() => () => {
     aliveRef.current = false
-    watchRef.current?.stop?.()
+    const watch = watchRef.current
+    if (watch?.detach) watch.detach()
+    else watch?.stop?.()
     if (tickRef.current) clearInterval(tickRef.current)
     if (flushLoopRef.current) clearInterval(flushLoopRef.current)
     void wakeLockRef.current?.release?.()
@@ -174,11 +178,12 @@ export default function AacPanel({
           void resumeTrackingRef.current(activeTripRef.current)
           return
         }
-        setGpsStatus((current) => (current === 'paused' ? 'tracking' : current))
+        void flushNativeTripPoints()
+        setGpsStatus('tracking')
         return
       }
       void flushPointsRef.current(trip.id, organizationIdRef.current || trip.organizationId)
-      setGpsStatus('paused')
+      setGpsStatus('background')
     }).then((listener) => {
       if (removed) void listener.remove()
       else handle = listener
@@ -189,11 +194,12 @@ export default function AacPanel({
       if (!trip?.id) return
       if (document.visibilityState === 'hidden') {
         void flushPointsRef.current(trip.id, organizationIdRef.current || trip.organizationId)
-        setGpsStatus('paused')
+        setGpsStatus('background')
         return
       }
       void holdScreenAwake()
-      setGpsStatus((current) => (current === 'paused' ? 'tracking' : current))
+      void flushNativeTripPoints()
+      setGpsStatus('tracking')
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
@@ -298,30 +304,38 @@ export default function AacPanel({
     startClock(trip.startedAt)
     startFlushLoop(trip.id, orgId)
     void holdScreenAwake()
-    watchRef.current?.stop?.()
+    watchRef.current?.detach?.()
     watchRef.current = watchPosition(
       (pos) => {
         if (!aliveRef.current) return
-        const withSeq = { ...pos, sequenceNo: seqRef.current }
-        seqRef.current += 1
+        const nativeSequence = Number(pos.sequenceNo)
+        const sequenceNo = Number.isFinite(nativeSequence) ? nativeSequence : seqRef.current
+        if (pointsRef.current.some((point) => point.sequenceNo === sequenceNo)) return
+        if (Number.isFinite(nativeSequence)) seqRef.current = Math.max(seqRef.current, nativeSequence + 1)
+        else seqRef.current += 1
+        const withSeq = { ...pos, sequenceNo }
         const nextPoints = [...pointsRef.current, withSeq]
         pointsRef.current = nextPoints
         pointBufferRef.current.push(withSeq)
         setLivePoints(nextPoints)
         setLiveKm(measureTrack(nextPoints).distanceKm)
         setLastAccuracy(pos.accuracy)
-        setGpsStatus('tracking')
+        if (document.visibilityState === 'visible') setGpsStatus('tracking')
         if (pointBufferRef.current.length >= 4) void flushPoints(trip.id, orgId)
       },
       (err) => {
         const status = classifyLocationError(err)
+        if (/arrière-plan|ios:prepare|Info\.plist/i.test(err?.message || '')) {
+          setError(err.message)
+          return
+        }
         if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted') {
           setGpsStatus(status)
           return
         }
         setGpsStatus('paused')
       },
-      { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 25000, maximumAge: 0, background: true, reset: Boolean(trip.resetNative) },
     )
     setBundle((prev) => (prev ? { ...prev, activeTrip: trip } : prev))
   }
@@ -334,6 +348,7 @@ export default function AacPanel({
     startClock(trip.startedAt)
     const access = await requestLocationAccess()
     if (!aliveRef.current) return
+    setLocationScope(access.scope || '')
     if (!access.granted) {
       setGpsStatus(access.status)
       return
@@ -373,6 +388,7 @@ export default function AacPanel({
     try {
       const access = await requestLocationAccess()
       if (startTokenRef.current !== token) return
+      setLocationScope(access.scope || '')
       if (!access.granted) {
         setGpsStatus(access.status)
         return
@@ -402,7 +418,7 @@ export default function AacPanel({
         await cancelAacTrip(trip.id)
         return
       }
-      armTracking({ ...trip, ...details }, seeded)
+      armTracking({ ...trip, ...details, resetNative: true }, seeded)
     } catch (err) {
       if (startTokenRef.current === token) {
         if (err.locationStatus && LOCATION_STATUS_MESSAGES[err.locationStatus]) {
@@ -773,10 +789,15 @@ export default function AacPanel({
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {LOCATION_STATUS_MESSAGES.prompt}
-            {' '}Gardez Pedagogia Drive ouvert et l’écran allumé : le GPS de l’iPhone ne continue pas lorsque l’écran est verrouillé.
+            {' '}Pendant le trajet, la position continue d’être reçue si l’iPhone est verrouillé ou si vous ouvrez une autre application. Le suivi s’arrête uniquement quand vous appuyez sur Arrêter le trajet. Un indicateur de localisation iOS reste visible tant que le trajet est en cours.
           </p>
           <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${gpsStatusClass(gpsStatus)}`}>
             <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
+            {tripActive && locationScope === 'whenInUse' && (
+              <p className="mt-2 text-xs font-bold">
+                Pour que les kilomètres continuent à coup sûr écran verrouillé, choisissez Toujours dans Réglages &gt; Pedagogia Drive &gt; Localisation.
+              </p>
+            )}
             {lastAccuracy != null && tripActive && (
               <p className="mt-1 text-xs font-bold opacity-80">
                 Précision GPS : ± {Math.round(lastAccuracy)} m · {livePoints.length} position{livePoints.length > 1 ? 's' : ''} reçue{livePoints.length > 1 ? 's' : ''}
@@ -1113,7 +1134,7 @@ function mergeGpsPoints(...groups) {
 }
 
 function gpsStatusClass(status) {
-  if (status === 'tracking' || status === 'ready' || status === 'granted') {
+  if (status === 'tracking' || status === 'background' || status === 'ready' || status === 'granted') {
     return 'border-emerald-200 bg-emerald-50 text-emerald-900'
   }
   if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {

@@ -1,0 +1,13 @@
+{
+  "name": "pedagogia-aac-trip-location",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Suivi GPS iOS d’un trajet AAC, y compris écran verrouillé, arrêté dès la fin du trajet.",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  }
+}
