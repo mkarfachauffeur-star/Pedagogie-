@@ -54,9 +54,9 @@ export default function StudentAccompaniedDrivingPage() {
   if (!isAac) {
     return (
       <div className="mx-auto w-full max-w-3xl">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Espace élève</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Conduite accompagnée</h1>
+        <section className="aac-glass p-6 sm:p-8">
+          <p className="aac-pill">Espace élève</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
             Cet espace est réservé aux élèves en conduite accompagnée. Contactez le secrétariat
             si vous souhaitez basculer sur cette formule.
@@ -72,9 +72,9 @@ export default function StudentAccompaniedDrivingPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Espace élève</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Conduite accompagnée</h1>
-        <p className="mt-1 text-sm text-slate-500">{formatPersonName(student)}</p>
+        <p className="aac-pill">Espace élève</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Conduite accompagnée</h1>
+        <p className="mt-1 text-sm text-sky-900/70">{formatPersonName(student)}</p>
       </header>
 
       <AacPanel
