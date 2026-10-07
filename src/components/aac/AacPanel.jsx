@@ -384,11 +384,14 @@ export default function AacPanel({
   async function handleStartTrip() {
     const token = startTokenRef.current + 1
     startTokenRef.current = token
+    console.log('[AAC-GPS] handleStartTrip entrée')
     setError('')
     setSaving(true)
+    console.log('[AAC-GPS] saving =', true)
     setGpsStatus('acquiring')
     try {
       const access = await requestLocationAccess()
+      console.log('[AAC-GPS] requestLocationAccess résultat', access)
       if (startTokenRef.current !== token) return
       setLocationScope(access.scope || '')
       if (!access.granted) {
@@ -422,6 +425,7 @@ export default function AacPanel({
         await cancelAacTrip(trip.id)
         return
       }
+      console.log('[AAC-GPS] armTracking appelé', { tripId: trip.id })
       armTracking({ ...trip, ...details, resetNative: true }, seeded)
     } catch (err) {
       if (startTokenRef.current === token) {
@@ -435,7 +439,10 @@ export default function AacPanel({
         }
       }
     } finally {
-      if (startTokenRef.current === token) setSaving(false)
+      if (startTokenRef.current === token) {
+        setSaving(false)
+        console.log('[AAC-GPS] saving =', false)
+      }
     }
   }
 

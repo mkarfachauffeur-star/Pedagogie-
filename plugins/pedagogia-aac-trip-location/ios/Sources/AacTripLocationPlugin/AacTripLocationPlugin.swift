@@ -50,6 +50,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
         ensureManager()
         observeAppActivity()
+        logGps("AacTripLocationPlugin chargé main=\(Thread.isMainThread)")
     }
 
     private var gps: CLLocationManager {
@@ -58,6 +59,21 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
         ensureManager()
         return manager!
+    }
+
+    private func logGps(_ message: String) {
+        NSLog("[AAC-GPS] %@", message)
+    }
+
+    private func authLabel(_ status: CLAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: return "notDetermined"
+        case .restricted: return "restricted"
+        case .denied: return "denied"
+        case .authorizedAlways: return "authorizedAlways"
+        case .authorizedWhenInUse: return "authorizedWhenInUse"
+        @unknown default: return "unknown(\(status.rawValue))"
+        }
     }
 
     /// CLLocationManager n’est utilisé que sur le fil principal, celui qui l’a créé.
@@ -131,7 +147,11 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     private func requestPermissionsOnMain(_ call: CAPPluginCall) {
-        guard CLLocationManager.locationServicesEnabled() else {
+        logGps("requestPermissions appelé main=\(Thread.isMainThread)")
+        logGps("CLLocationAuthorizationStatus avant locationServicesEnabled")
+        let servicesEnabled = CLLocationManager.locationServicesEnabled()
+        logGps("locationServicesEnabled=\(servicesEnabled)")
+        guard servicesEnabled else {
             call.resolve(permissionPayload())
             return
         }
@@ -140,20 +160,25 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             return
         }
 
-        switch gps.authorizationStatus {
+        let statusBefore = gps.authorizationStatus
+        logGps("CLLocationAuthorizationStatus avant demande=\(authLabel(statusBefore))")
+        switch statusBefore {
         case .notDetermined:
             permissionCall?.reject("Une autre demande d’autorisation est déjà en cours.", "BUSY")
             permissionCall = call
             askedAlwaysForThisRequest = false
             alwaysPromptSawInactive = false
             armPermissionSafetyTimer()
+            logGps("requestWhenInUseAuthorization appelé")
             gps.requestWhenInUseAuthorization()
+            logGps("CLLocationAuthorizationStatus après requestWhenInUseAuthorization=\(authLabel(gps.authorizationStatus))")
         case .authorizedWhenInUse:
             permissionCall?.reject("Une autre demande d’autorisation est déjà en cours.", "BUSY")
             permissionCall = call
             armPermissionSafetyTimer()
             beginAlwaysUpgrade()
         case .authorizedAlways, .denied, .restricted:
+            logGps("requestPermissions résolu immédiatement statut=\(authLabel(statusBefore))")
             call.resolve(permissionPayload())
         @unknown default:
             call.resolve(permissionPayload())
@@ -161,11 +186,14 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     private func getCurrentPositionOnMain(_ call: CAPPluginCall) {
+        logGps("getCurrentPosition appelé main=\(Thread.isMainThread) timeoutMs=\(call.getInt("timeout", 20000))")
         guard CLLocationManager.locationServicesEnabled() else {
+            logGps("getCurrentPosition reject services désactivés")
             call.reject("Le service de localisation est désactivé.", "OS-PLUG-GLOC-0007")
             return
         }
         guard isAuthorized else {
+            logGps("getCurrentPosition reject non autorisé statut=\(authLabel(gps.authorizationStatus))")
             call.reject("L’autorisation de localisation est refusée.", "OS-PLUG-GLOC-0003")
             return
         }
@@ -175,10 +203,12 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         singleFixCall = call
         let timeoutMs = max(call.getInt("timeout", 20000), 1000)
         armSingleFixTimer(seconds: TimeInterval(timeoutMs) / 1000)
+        logGps("requestLocation appelé statut=\(authLabel(gps.authorizationStatus))")
         gps.requestLocation()
     }
 
     private func startOnMain(_ call: CAPPluginCall) {
+        logGps("start appelé main=\(Thread.isMainThread) statut=\(authLabel(gps.authorizationStatus))")
         guard CLLocationManager.locationServicesEnabled() else {
             call.reject("Location services are not enabled.", "OS-PLUG-GLOC-0007")
             return
@@ -217,6 +247,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         gps.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         gps.distanceFilter = 10
         gps.activityType = .automotiveNavigation
+        logGps("startUpdatingLocation appelé allowsBackgroundLocationUpdates=true")
         gps.startUpdatingLocation()
         call.resolve(permissionPayload())
     }
@@ -224,6 +255,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     @objc func stop(_ call: CAPPluginCall) {
         onMain { [weak self] in
             guard let self else { return }
+            self.logGps("stop appelé")
             self.endUpdates()
             call.resolve(self.permissionPayload())
         }
@@ -245,6 +277,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
+        logGps("locationManagerDidChangeAuthorization statut=\(authLabel(status)) permissionEnCours=\(permissionCall != nil) alwaysDemandé=\(askedAlwaysForThisRequest)")
         if permissionCall != nil {
             switch status {
             case .authorizedWhenInUse:
@@ -270,6 +303,9 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        for location in locations {
+            logGps(String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy))
+        }
         let valid = locations.filter { $0.horizontalAccuracy >= 0 }
 
         guard tracking else {
@@ -291,6 +327,8 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        let nsError = error as NSError
+        logGps("didFailWithError domain=\(nsError.domain) code=\(nsError.code) message=\(nsError.localizedDescription)")
         if let clError = error as? CLError, clError.code == .locationUnknown {
             // Erreur transitoire : iOS continue de chercher. Le délai armé par
             // getCurrentPosition rejette la promesse si aucun point n’arrive.
@@ -321,7 +359,9 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             finishPermissionRequest()
             return
         }
+        logGps("requestAlwaysAuthorization appelé statut=\(authLabel(gps.authorizationStatus))")
         gps.requestAlwaysAuthorization()
+        logGps("CLLocationAuthorizationStatus après requestAlwaysAuthorization=\(authLabel(gps.authorizationStatus))")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self, self.permissionCall != nil, self.askedAlwaysForThisRequest else { return }
             if self.alwaysPromptSawInactive || UIApplication.shared.applicationState != .active {
@@ -396,6 +436,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         singleFixTimer = nil
         guard let call = singleFixCall else { return }
         singleFixCall = nil
+        logGps("getCurrentPosition resolve")
         call.resolve(payload)
     }
 
@@ -407,6 +448,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         if !tracking {
             gps.stopUpdatingLocation()
         }
+        logGps("getCurrentPosition reject code=\(code) message=\(message)")
         call.reject(message, code)
     }
 

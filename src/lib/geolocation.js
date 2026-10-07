@@ -84,6 +84,11 @@ export function classifyLocationError(error) {
 let tripPluginMissing = false
 let pullNativeTripPoints = async () => {}
 
+function gpsLog(step, detail) {
+  if (detail === undefined) console.log(`[AAC-GPS] ${step}`)
+  else console.log(`[AAC-GPS] ${step}`, detail)
+}
+
 export function flushNativeTripPoints() {
   return pullNativeTripPoints()
 }
@@ -93,8 +98,10 @@ async function getTripPlugin() {
   try {
     const module = await import('pedagogia-aac-trip-location')
     await module.AacTripLocation.getStatus()
+    gpsLog('plugin AacTripLocation chargé')
     return module.AacTripLocation
   } catch (error) {
+    gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
     if (/not implemented|UNIMPLEMENTED|plugin is not implemented/i.test(`${error?.message || ''} ${error?.code || ''}`)) {
       tripPluginMissing = true
       return null
@@ -181,11 +188,13 @@ export async function requestLocationAccess() {
   const tripPlugin = await getTripPlugin()
   if (tripPlugin) {
     try {
+      gpsLog('requestPermissions appel')
       const result = await withTimeout(
         tripPlugin.requestPermissions(),
         100000,
         'La demande d’autorisation de localisation n’a pas abouti. Réessayez.',
       )
+      gpsLog('requestPermissions retour', result)
       return accessFromNative(result)
     } catch (error) {
       const status = error?.locationStatus || classifyLocationError(error)
@@ -231,14 +240,18 @@ export async function getCurrentPosition(options = {}) {
   const tripPlugin = await getTripPlugin()
   if (tripPlugin) {
     const timeoutMs = Number(opts.timeout) > 0 ? Number(opts.timeout) : 20000
+    gpsLog('AacTripLocation.getCurrentPosition appel', { timeoutMs })
     try {
       const point = await withTimeout(
         tripPlugin.getCurrentPosition({ timeout: timeoutMs }),
         timeoutMs + 3000,
         'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
       )
-      return normalizeNativePoint(point)
+      const normalized = normalizeNativePoint(point)
+      gpsLog('getCurrentPosition succès', normalized)
+      return normalized
     } catch (error) {
+      gpsLog('getCurrentPosition erreur', `${error?.code || ''} ${error?.message || error}`)
       throw toLocationError(error, 'Impossible d’obtenir la position GPS.')
     }
   }
@@ -271,6 +284,7 @@ export async function getCurrentPosition(options = {}) {
  * mais avec une précision insuffisante pour démarrer un trajet.
  */
 export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS_LIMITS.maxAccuracyM } = {}) {
+  gpsLog('acquireAccuratePosition entrée')
   let last = null
   let lastError = null
   for (let i = 0; i < attempts; i += 1) {
@@ -282,6 +296,7 @@ export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS
       })
       last = position
       if (position.accuracy == null || position.accuracy <= maxAccuracyM) {
+        gpsLog('acquireAccuratePosition sortie', { weak: false, accuracy: position.accuracy })
         return { position, weak: false }
       }
     } catch (error) {
@@ -293,9 +308,13 @@ export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS
       }
     }
   }
-  if (last) return { position: last, weak: true }
+  if (last) {
+    gpsLog('acquireAccuratePosition sortie', { weak: true, accuracy: last.accuracy })
+    return { position: last, weak: true }
+  }
   const error = lastError || new Error('Impossible d’obtenir la position GPS.')
   error.locationStatus = error.locationStatus || classifyLocationError(error)
+  gpsLog('acquireAccuratePosition erreur', `${error.locationStatus} ${error.message}`)
   throw error
 }
 
@@ -309,9 +328,15 @@ function watchIosTrip(onUpdate, onError, options) {
   let plugin = null
   let removeListeners = async () => {}
 
+  let loggedFirstFix = false
   const emit = (point) => {
     if (stopped || !point) return
-    onUpdate(normalizeNativePoint(point))
+    const normalized = normalizeNativePoint(point)
+    if (!loggedFirstFix) {
+      loggedFirstFix = true
+      gpsLog('première position reçue', normalized)
+    }
+    onUpdate(normalized)
   }
 
   const pull = async () => {
@@ -330,7 +355,9 @@ function watchIosTrip(onUpdate, onError, options) {
       onError?.(new Error('Cette version de l’application ne suit pas encore le GPS écran verrouillé. Installez la nouvelle version avec npm run ios:prepare.'))
       return
     }
+    gpsLog('AacTripLocation.start appel', { reset: Boolean(options.reset) })
     await plugin.start({ reset: Boolean(options.reset) })
+    gpsLog('AacTripLocation.start retour')
     const first = await plugin.drain()
     for (const point of first?.points || []) emit(point)
     const locationHandle = await plugin.addListener('location', (point) => emit(point))
