@@ -1000,14 +1000,16 @@ export default function AacPanel({
             />
           ))}
         </div>
-        <button
-          className="aac-btn-glass mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-          disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
-          onClick={handleAddRvp}
-          type="button"
-        >
-          Ajouter un rendez-vous pédagogique
-        </button>
+        {isStaff && (
+          <button
+            className="aac-btn-glass mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
+            onClick={handleAddRvp}
+            type="button"
+          >
+            Ajouter un rendez-vous pédagogique
+          </button>
+        )}
       </section>
 
       <section className="aac-glass p-5 sm:p-6">
