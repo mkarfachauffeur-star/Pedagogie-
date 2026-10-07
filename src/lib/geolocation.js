@@ -43,7 +43,29 @@ function toPosition(coords, timestamp) {
 function toLocationError(err, fallback) {
   const error = new Error(err?.message || fallback)
   if (err?.code != null) error.code = err.code
+  if (err?.locationStatus) error.locationStatus = err.locationStatus
   return error
+}
+
+function withTimeout(promise, ms, message) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const error = new Error(message)
+      error.code = 'OS-PLUG-GLOC-0010'
+      error.locationStatus = 'timeout'
+      reject(error)
+    }, ms)
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
 }
 
 export function classifyLocationError(error) {
@@ -159,9 +181,14 @@ export async function requestLocationAccess() {
   const tripPlugin = await getTripPlugin()
   if (tripPlugin) {
     try {
-      return accessFromNative(await tripPlugin.requestPermissions())
+      const result = await withTimeout(
+        tripPlugin.requestPermissions(),
+        100000,
+        'La demande d’autorisation de localisation n’a pas abouti. Réessayez.',
+      )
+      return accessFromNative(result)
     } catch (error) {
-      const status = classifyLocationError(error)
+      const status = error?.locationStatus || classifyLocationError(error)
       return { granted: false, status, scope: 'none', background: false }
     }
   }
@@ -203,8 +230,14 @@ export async function getCurrentPosition(options = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options }
   const tripPlugin = await getTripPlugin()
   if (tripPlugin) {
+    const timeoutMs = Number(opts.timeout) > 0 ? Number(opts.timeout) : 20000
     try {
-      return normalizeNativePoint(await tripPlugin.getCurrentPosition())
+      const point = await withTimeout(
+        tripPlugin.getCurrentPosition({ timeout: timeoutMs }),
+        timeoutMs + 3000,
+        'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
+      )
+      return normalizeNativePoint(point)
     } catch (error) {
       throw toLocationError(error, 'Impossible d’obtenir la position GPS.')
     }
@@ -253,9 +286,9 @@ export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS
       }
     } catch (error) {
       lastError = error
-      const status = classifyLocationError(error)
-      if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted') {
-        error.locationStatus = status
+      const status = error.locationStatus || classifyLocationError(error)
+      error.locationStatus = status
+      if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted' || status === 'timeout') {
         throw error
       }
     }

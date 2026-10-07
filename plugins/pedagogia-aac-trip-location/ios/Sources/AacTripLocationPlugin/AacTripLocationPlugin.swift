@@ -1,5 +1,6 @@
 import Capacitor
 import CoreLocation
+import UIKit
 
 /// Suivi GPS d’un trajet AAC uniquement.
 /// CLLocationManager n’est démarré que par `start` et est arrêté par `stop`.
@@ -26,9 +27,50 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     private var permissionCall: CAPPluginCall?
     private var singleFixCall: CAPPluginCall?
     private var askedAlwaysForThisRequest = false
+    private var alwaysPromptSawInactive = false
+    private var singleFixTimer: DispatchWorkItem?
+    private var permissionTimer: DispatchWorkItem?
+    private var activeObserver: NSObjectProtocol?
+    private var inactiveObserver: NSObjectProtocol?
     private let maxPoints = 20000
 
+    deinit {
+        if let activeObserver {
+            NotificationCenter.default.removeObserver(activeObserver)
+        }
+        if let inactiveObserver {
+            NotificationCenter.default.removeObserver(inactiveObserver)
+        }
+    }
+
     override public func load() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.load() }
+            return
+        }
+        ensureManager()
+        observeAppActivity()
+    }
+
+    private var gps: CLLocationManager {
+        if let manager {
+            return manager
+        }
+        ensureManager()
+        return manager!
+    }
+
+    /// CLLocationManager n’est utilisé que sur le fil principal, celui qui l’a créé.
+    private func onMain(_ work: @escaping () -> Void) {
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
+    }
+
+    private func ensureManager() {
+        if manager != nil { return }
         let created = CLLocationManager()
         created.delegate = self
         created.desiredAccuracy = kCLLocationAccuracyBestForNavigation
@@ -41,19 +83,54 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         loadBuffer()
     }
 
-    private var gps: CLLocationManager {
-        if let manager {
-            return manager
+    private func observeAppActivity() {
+        if activeObserver == nil {
+            activeObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.alwaysPromptDidReturnToForeground()
+            }
         }
-        load()
-        return manager!
+        if inactiveObserver == nil {
+            inactiveObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.willResignActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self, self.permissionCall != nil, self.askedAlwaysForThisRequest else { return }
+                self.alwaysPromptSawInactive = true
+            }
+        }
     }
 
     @objc override public func checkPermissions(_ call: CAPPluginCall) {
-        call.resolve(permissionPayload())
+        onMain { [weak self] in
+            guard let self else { return }
+            call.resolve(self.permissionPayload())
+        }
     }
 
     @objc override public func requestPermissions(_ call: CAPPluginCall) {
+        onMain { [weak self] in
+            self?.requestPermissionsOnMain(call)
+        }
+    }
+
+    @objc func getCurrentPosition(_ call: CAPPluginCall) {
+        onMain { [weak self] in
+            self?.getCurrentPositionOnMain(call)
+        }
+    }
+
+    @objc func start(_ call: CAPPluginCall) {
+        onMain { [weak self] in
+            self?.startOnMain(call)
+        }
+    }
+
+    private func requestPermissionsOnMain(_ call: CAPPluginCall) {
         guard CLLocationManager.locationServicesEnabled() else {
             call.resolve(permissionPayload())
             return
@@ -65,14 +142,17 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
         switch gps.authorizationStatus {
         case .notDetermined:
+            permissionCall?.reject("Une autre demande d’autorisation est déjà en cours.", "BUSY")
             permissionCall = call
             askedAlwaysForThisRequest = false
+            alwaysPromptSawInactive = false
+            armPermissionSafetyTimer()
             gps.requestWhenInUseAuthorization()
         case .authorizedWhenInUse:
+            permissionCall?.reject("Une autre demande d’autorisation est déjà en cours.", "BUSY")
             permissionCall = call
-            askedAlwaysForThisRequest = true
-            requestAlwaysUpgrade()
-            finishPermissionRequest()
+            armPermissionSafetyTimer()
+            beginAlwaysUpgrade()
         case .authorizedAlways, .denied, .restricted:
             call.resolve(permissionPayload())
         @unknown default:
@@ -80,21 +160,25 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
 
-    @objc func getCurrentPosition(_ call: CAPPluginCall) {
+    private func getCurrentPositionOnMain(_ call: CAPPluginCall) {
         guard CLLocationManager.locationServicesEnabled() else {
-            call.reject("Location services are not enabled.", "OS-PLUG-GLOC-0007")
+            call.reject("Le service de localisation est désactivé.", "OS-PLUG-GLOC-0007")
             return
         }
         guard isAuthorized else {
-            call.reject("Location permission request was denied.", "OS-PLUG-GLOC-0003")
+            call.reject("L’autorisation de localisation est refusée.", "OS-PLUG-GLOC-0003")
             return
         }
-        singleFixCall?.reject("Une autre demande de position est déjà en cours.", "BUSY")
+        if singleFixCall != nil {
+            failSingleFix(message: "Une autre demande de position est déjà en cours.", code: "BUSY")
+        }
         singleFixCall = call
+        let timeoutMs = max(call.getInt("timeout", 20000), 1000)
+        armSingleFixTimer(seconds: TimeInterval(timeoutMs) / 1000)
         gps.requestLocation()
     }
 
-    @objc func start(_ call: CAPPluginCall) {
+    private func startOnMain(_ call: CAPPluginCall) {
         guard CLLocationManager.locationServicesEnabled() else {
             call.reject("Location services are not enabled.", "OS-PLUG-GLOC-0007")
             return
@@ -138,8 +222,11 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     @objc func stop(_ call: CAPPluginCall) {
-        endUpdates()
-        call.resolve(permissionPayload())
+        onMain { [weak self] in
+            guard let self else { return }
+            self.endUpdates()
+            call.resolve(self.permissionPayload())
+        }
     }
 
     @objc func drain(_ call: CAPPluginCall) {
@@ -150,21 +237,33 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
     }
 
     @objc func getStatus(_ call: CAPPluginCall) {
-        call.resolve(permissionPayload())
+        onMain { [weak self] in
+            guard let self else { return }
+            call.resolve(self.permissionPayload())
+        }
     }
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        let status = gps.authorizationStatus
-        if status == .authorizedWhenInUse, permissionCall != nil, !askedAlwaysForThisRequest {
-            askedAlwaysForThisRequest = true
-            requestAlwaysUpgrade()
-            finishPermissionRequest()
+        let status = manager.authorizationStatus
+        if permissionCall != nil {
+            switch status {
+            case .authorizedWhenInUse:
+                if !askedAlwaysForThisRequest {
+                    beginAlwaysUpgrade()
+                }
+                // « Toujours » est demandé. On ne conclut pas tant que la feuille
+                // système est ouverte : un statut inchangé n’est pas une réponse.
+                return
+            case .authorizedAlways, .denied, .restricted:
+                finishPermissionRequest()
+            case .notDetermined:
+                return
+            @unknown default:
+                finishPermissionRequest()
+            }
             return
         }
-        if permissionCall != nil {
-            finishPermissionRequest()
-        }
-        if tracking, !isAuthorized {
+        if tracking && status != .authorizedAlways && status != .authorizedWhenInUse {
             endUpdates()
             notifyListeners("error", data: ["message": "Location permission request was denied.", "code": "OS-PLUG-GLOC-0003"])
         }
@@ -172,12 +271,10 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let valid = locations.filter { $0.horizontalAccuracy >= 0 }
-        let sample = valid.last ?? locations.last
 
         guard tracking else {
-            if let call = singleFixCall, let sample {
-                singleFixCall = nil
-                call.resolve(pointPayload(sample))
+            if let fix = valid.last {
+                succeedSingleFix(pointPayload(fix))
             }
             return
         }
@@ -188,24 +285,23 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             append(point)
             lastStored = point
         }
-        if let call = singleFixCall {
-            singleFixCall = nil
-            if let lastStored {
-                call.resolve(lastStored)
-            } else if let sample {
-                call.resolve(pointPayload(sample))
-            }
+        if let lastStored {
+            succeedSingleFix(lastStored)
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         if let clError = error as? CLError, clError.code == .locationUnknown {
+            // Erreur transitoire : iOS continue de chercher. Le délai armé par
+            // getCurrentPosition rejette la promesse si aucun point n’arrive.
             return
         }
-        singleFixCall?.reject(error.localizedDescription, "OS-PLUG-GLOC-0002")
-        singleFixCall = nil
+        let message = error.localizedDescription
+        if singleFixCall != nil {
+            failSingleFix(message: message, code: "OS-PLUG-GLOC-0002")
+        }
         if tracking {
-            notifyListeners("error", data: ["message": error.localizedDescription])
+            notifyListeners("error", data: ["message": message])
         }
     }
 
@@ -218,15 +314,100 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
 
-    private func requestAlwaysUpgrade() {
-        guard usageDescription("NSLocationAlwaysAndWhenInUseUsageDescription") != nil else { return }
+    private func beginAlwaysUpgrade() {
+        askedAlwaysForThisRequest = true
+        alwaysPromptSawInactive = false
+        guard usageDescription("NSLocationAlwaysAndWhenInUseUsageDescription") != nil else {
+            finishPermissionRequest()
+            return
+        }
         gps.requestAlwaysAuthorization()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self, self.permissionCall != nil, self.askedAlwaysForThisRequest else { return }
+            if self.alwaysPromptSawInactive || UIApplication.shared.applicationState != .active {
+                return
+            }
+            // Aucune feuille système n’est apparue : l’élève a déjà répondu avant.
+            self.finishPermissionRequest()
+        }
+    }
+
+    private func alwaysPromptDidReturnToForeground() {
+        guard permissionCall != nil, askedAlwaysForThisRequest else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let self, self.permissionCall != nil, self.askedAlwaysForThisRequest else { return }
+            if UIApplication.shared.applicationState == .active {
+                self.finishPermissionRequest()
+            }
+        }
+    }
+
+    private func armPermissionSafetyTimer() {
+        permissionTimer?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.permissionCall != nil else { return }
+            if self.isAuthorized {
+                self.finishPermissionRequest()
+            } else {
+                self.failPermission(
+                    message: "La demande d’autorisation de localisation n’a pas abouti. Réessayez.",
+                    code: "OS-PLUG-GLOC-0003"
+                )
+            }
+        }
+        permissionTimer = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 90, execute: work)
     }
 
     private func finishPermissionRequest() {
+        permissionTimer?.cancel()
+        permissionTimer = nil
+        askedAlwaysForThisRequest = false
+        alwaysPromptSawInactive = false
         guard let call = permissionCall else { return }
         permissionCall = nil
         call.resolve(permissionPayload())
+    }
+
+    private func failPermission(message: String, code: String) {
+        permissionTimer?.cancel()
+        permissionTimer = nil
+        askedAlwaysForThisRequest = false
+        alwaysPromptSawInactive = false
+        guard let call = permissionCall else { return }
+        permissionCall = nil
+        call.reject(message, code)
+    }
+
+    private func armSingleFixTimer(seconds: TimeInterval) {
+        singleFixTimer?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.failSingleFix(
+                message: "Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.",
+                code: "OS-PLUG-GLOC-0010"
+            )
+        }
+        singleFixTimer = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
+    }
+
+    private func succeedSingleFix(_ payload: [String: Any]) {
+        singleFixTimer?.cancel()
+        singleFixTimer = nil
+        guard let call = singleFixCall else { return }
+        singleFixCall = nil
+        call.resolve(payload)
+    }
+
+    private func failSingleFix(message: String, code: String) {
+        singleFixTimer?.cancel()
+        singleFixTimer = nil
+        guard let call = singleFixCall else { return }
+        singleFixCall = nil
+        if !tracking {
+            gps.stopUpdatingLocation()
+        }
+        call.reject(message, code)
     }
 
     private func endUpdates() {

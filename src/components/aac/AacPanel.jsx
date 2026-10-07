@@ -370,7 +370,9 @@ export default function AacPanel({
         if (!aliveRef.current) return
       } catch (err) {
         if (!aliveRef.current) return
-        setGpsStatus(err.locationStatus || classifyLocationError(err))
+        const status = err.locationStatus || classifyLocationError(err)
+        setGpsStatus(status)
+        setError(err.message || LOCATION_STATUS_MESSAGES[status] || LOCATION_STATUS_MESSAGES.timeout)
         return
       }
     }
@@ -391,6 +393,7 @@ export default function AacPanel({
       setLocationScope(access.scope || '')
       if (!access.granted) {
         setGpsStatus(access.status)
+        setError(LOCATION_STATUS_MESSAGES[access.status] || LOCATION_STATUS_MESSAGES.prompt)
         return
       }
 
@@ -398,6 +401,7 @@ export default function AacPanel({
       if (startTokenRef.current !== token) return
       if (fix.weak) {
         setGpsStatus('weak')
+        setError(LOCATION_STATUS_MESSAGES.weak)
         return
       }
 
@@ -421,10 +425,10 @@ export default function AacPanel({
       armTracking({ ...trip, ...details, resetNative: true }, seeded)
     } catch (err) {
       if (startTokenRef.current === token) {
-        if (err.locationStatus && LOCATION_STATUS_MESSAGES[err.locationStatus]) {
-          setGpsStatus(err.locationStatus)
-        } else if (/position|localisation|location|gps/i.test(err.message || '')) {
-          setGpsStatus(classifyLocationError(err))
+        const status = err.locationStatus || classifyLocationError(err)
+        if (LOCATION_STATUS_MESSAGES[status]) {
+          setGpsStatus(status)
+          setError(err.message || LOCATION_STATUS_MESSAGES[status])
         } else {
           setGpsStatus('ready')
           setError(err.message || 'Impossible de démarrer le trajet.')
