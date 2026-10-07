@@ -120,37 +120,57 @@ export function flushNativeTripPoints() {
   return pullNativeTripPoints()
 }
 
-async function getTripPlugin({ traceStatus = false } = {}) {
-  if (Capacitor.getPlatform() !== 'ios' || tripPluginMissing) return null
-  let module
-  try {
-    module = await (traceStatus
-      ? traceGpsAwait(import('pedagogia-aac-trip-location'), 'import plugin', 5000)
-      : import('pedagogia-aac-trip-location'))
-  } catch (error) {
-    gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
+let cachedTripPlugin = null
+
+/**
+ * Le proxy Capacitor répond à toute propriété, y compris `then`, par une
+ * fonction. `return plugin` dans une fonction async fait donc adopter ce
+ * proxy comme promesse : son `then` n’appelle jamais resolve/reject, et
+ * l’appelant reste pending après le log « plugin chargé ».
+ * On renvoie un objet simple `{ plugin }`, qui n’est pas un thenable.
+ */
+async function getTripPlugin() {
+  trace('GP 1 entrée getTripPlugin')
+  if (Capacitor.getPlatform() !== 'ios' || tripPluginMissing) {
+    trace('GP 8 sortie getTripPlugin')
     return null
   }
-  if (traceStatus) trace('5 avant getStatus')
-  gpsLog('getStatus entrée')
-  try {
-    const status = await (traceStatus
-      ? traceGpsAwait(module.AacTripLocation.getStatus(), 'getStatus', 5000)
-      : withTimeout(module.AacTripLocation.getStatus(), 4000, 'La lecture de l’état de localisation n’a pas abouti.'))
-    if (traceStatus) trace('6 getStatus terminé')
-    gpsLog('getStatus résolution', status)
-  } catch (error) {
-    gpsLog('getStatus rejet', `${error?.code || ''} ${error?.message || error}`)
-    if (/not implemented|UNIMPLEMENTED|plugin is not implemented/i.test(`${error?.message || ''} ${error?.code || ''}`)) {
-      tripPluginMissing = true
+  if (!cachedTripPlugin) {
+    let module
+    try {
+      module = await import('pedagogia-aac-trip-location')
+    } catch (error) {
       gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
+      trace('GP 8 sortie getTripPlugin')
       return null
     }
-    // Le plugin est chargé. Un getStatus qui n’a pas répondu ne doit pas
-    // empêcher la vraie demande d’autorisation iOS.
+    trace('GP 2 import terminé')
+    const found = module?.AacTripLocation
+    if (!found || typeof found.requestPermissions !== 'function') {
+      gpsLog('plugin AacTripLocation indisponible', 'export AacTripLocation manquant')
+      trace('GP 8 sortie getTripPlugin')
+      return null
+    }
+    trace('GP 3 module.AacTripLocation trouvé')
+    cachedTripPlugin = found
+    gpsLog('plugin AacTripLocation chargé')
+  } else {
+    trace('GP 2 import terminé')
+    trace('GP 3 module.AacTripLocation trouvé')
   }
-  gpsLog('plugin AacTripLocation chargé')
-  return module.AacTripLocation
+  // Le statut n’est pas nécessaire pour rendre le plugin. L’appel getStatus
+  // reste dans requestPermissions / checkPermissions, pas ici.
+  trace('GP 4 avant getStatus')
+  trace('GP 5 getStatus terminé')
+  trace('GP 6 avant return plugin')
+  const result = { plugin: cachedTripPlugin }
+  trace('GP 7 après construction résultat')
+  trace('GP 8 sortie getTripPlugin')
+  return result
+}
+
+function tripPluginFrom(loaded) {
+  return loaded?.plugin || null
 }
 
 function accessFromNative(result) {
@@ -194,7 +214,7 @@ function statusFromPermission(result) {
 }
 
 export async function inspectLocationAccess() {
-  const tripPlugin = await getTripPlugin()
+  const tripPlugin = tripPluginFrom(await getTripPlugin())
   if (tripPlugin) {
     try {
       return accessFromNative(await tripPlugin.checkPermissions())
@@ -229,7 +249,7 @@ export async function inspectLocationAccess() {
 
 export async function requestLocationAccess() {
   trace('3 avant getTripPlugin')
-  const tripPlugin = await traceGpsAwait(getTripPlugin({ traceStatus: true }), 'getTripPlugin', 8000)
+  const tripPlugin = tripPluginFrom(await traceGpsAwait(getTripPlugin(), 'getTripPlugin', 8000))
   trace('4 getTripPlugin terminé')
   if (tripPlugin) {
     try {
@@ -286,7 +306,7 @@ export function openLocationSettings() {
 
 export async function getCurrentPosition(options = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options }
-  const tripPlugin = await getTripPlugin()
+  const tripPlugin = tripPluginFrom(await getTripPlugin())
   if (tripPlugin) {
     const timeoutMs = Number(opts.timeout) > 0 ? Number(opts.timeout) : 20000
     trace('10 avant getCurrentPosition')
@@ -397,7 +417,7 @@ function watchIosTrip(onUpdate, onError, options) {
   }
 
   const ready = (async () => {
-    plugin = await getTripPlugin()
+    plugin = tripPluginFrom(await getTripPlugin())
     if (!plugin) {
       const fallback = watchPosition(onUpdate, onError, { ...options, background: false })
       removeListeners = async () => {
