@@ -89,26 +89,55 @@ function gpsLog(step, detail) {
   else console.log(`[AAC-GPS] ${step}`, detail)
 }
 
+function trace(message) {
+  console.log(`[AAC-GPS][TRACE] ${message}`)
+}
+
+/** Délai temporaire de diagnostic. N’enlève pas le blocage : il le nomme. */
+export function traceGpsAwait(promise, step, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      trace(`TIMEOUT ${step}`)
+      const error = new Error(`TIMEOUT ${step}`)
+      error.code = 'OS-PLUG-GLOC-0010'
+      error.locationStatus = 'timeout'
+      reject(error)
+    }, ms)
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
 export function flushNativeTripPoints() {
   return pullNativeTripPoints()
 }
 
-async function getTripPlugin() {
+async function getTripPlugin({ traceStatus = false } = {}) {
   if (Capacitor.getPlatform() !== 'ios' || tripPluginMissing) return null
   let module
   try {
-    module = await import('pedagogia-aac-trip-location')
+    module = await (traceStatus
+      ? traceGpsAwait(import('pedagogia-aac-trip-location'), 'import plugin', 5000)
+      : import('pedagogia-aac-trip-location'))
   } catch (error) {
     gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
     return null
   }
+  if (traceStatus) trace('5 avant getStatus')
   gpsLog('getStatus entrée')
   try {
-    const status = await withTimeout(
-      module.AacTripLocation.getStatus(),
-      4000,
-      'La lecture de l’état de localisation n’a pas abouti.',
-    )
+    const status = await (traceStatus
+      ? traceGpsAwait(module.AacTripLocation.getStatus(), 'getStatus', 5000)
+      : withTimeout(module.AacTripLocation.getStatus(), 4000, 'La lecture de l’état de localisation n’a pas abouti.'))
+    if (traceStatus) trace('6 getStatus terminé')
     gpsLog('getStatus résolution', status)
   } catch (error) {
     gpsLog('getStatus rejet', `${error?.code || ''} ${error?.message || error}`)
@@ -199,15 +228,21 @@ export async function inspectLocationAccess() {
 }
 
 export async function requestLocationAccess() {
-  const tripPlugin = await getTripPlugin()
+  trace('3 avant getTripPlugin')
+  const tripPlugin = await traceGpsAwait(getTripPlugin({ traceStatus: true }), 'getTripPlugin', 8000)
+  trace('4 getTripPlugin terminé')
   if (tripPlugin) {
     try {
+      trace('7 avant requestPermissions')
       gpsLog('requestPermissions appel')
-      const result = await withTimeout(
-        tripPlugin.requestPermissions(),
-        100000,
-        'La demande d’autorisation de localisation n’a pas abouti. Réessayez.',
+      const pending = tripPlugin.requestPermissions()
+      trace('8 requestPermissions appelé')
+      const result = await traceGpsAwait(
+        pending,
+        'requestPermissions',
+        90000,
       )
+      trace('9 requestPermissions terminé')
       gpsLog('requestPermissions retour', result)
       return accessFromNative(result)
     } catch (error) {
@@ -254,13 +289,15 @@ export async function getCurrentPosition(options = {}) {
   const tripPlugin = await getTripPlugin()
   if (tripPlugin) {
     const timeoutMs = Number(opts.timeout) > 0 ? Number(opts.timeout) : 20000
+    trace('10 avant getCurrentPosition')
     gpsLog('AacTripLocation.getCurrentPosition appel', { timeoutMs })
     try {
-      const point = await withTimeout(
+      const point = await traceGpsAwait(
         tripPlugin.getCurrentPosition({ timeout: timeoutMs }),
+        'getCurrentPosition',
         timeoutMs + 3000,
-        'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
       )
+      trace('11 getCurrentPosition terminé')
       const normalized = normalizeNativePoint(point)
       gpsLog('getCurrentPosition succès', normalized)
       return normalized
@@ -369,8 +406,15 @@ function watchIosTrip(onUpdate, onError, options) {
       onError?.(new Error('Cette version de l’application ne suit pas encore le GPS écran verrouillé. Installez la nouvelle version avec npm run ios:prepare.'))
       return
     }
+    trace('12 avant start')
     gpsLog('AacTripLocation.start appel', { reset: Boolean(options.reset) })
-    await plugin.start({ reset: Boolean(options.reset) })
+    try {
+      await traceGpsAwait(plugin.start({ reset: Boolean(options.reset) }), 'start', 8000)
+    } catch (error) {
+      onError?.(error)
+      return
+    }
+    trace('13 start terminé')
     gpsLog('AacTripLocation.start retour')
     const first = await plugin.drain()
     for (const point of first?.points || []) emit(point)

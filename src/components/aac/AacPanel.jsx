@@ -40,6 +40,7 @@ import {
   measureTrack,
   openLocationSettings,
   requestLocationAccess,
+  traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
 import AacTripMap from './AacTripMap'
@@ -384,13 +385,15 @@ export default function AacPanel({
   async function handleStartTrip() {
     const token = startTokenRef.current + 1
     startTokenRef.current = token
+    console.log('[AAC-GPS][TRACE] 1 handleStartTrip entrée')
     console.log('[AAC-GPS] handleStartTrip entrée')
     setError('')
     setSaving(true)
     console.log('[AAC-GPS] saving =', true)
     setGpsStatus('acquiring')
     try {
-      const access = await requestLocationAccess()
+      console.log('[AAC-GPS][TRACE] 2 avant requestLocationAccess')
+      const access = await traceGpsAwait(requestLocationAccess(), 'requestLocationAccess', 100000)
       console.log('[AAC-GPS] requestLocationAccess résultat', access)
       if (startTokenRef.current !== token) return
       setLocationScope(access.scope || '')
@@ -408,7 +411,7 @@ export default function AacPanel({
         return
       }
 
-      const { trip, error: startError } = await startAacTrip(studentId)
+      const { trip, error: startError } = await traceGpsAwait(startAacTrip(studentId), 'startAacTrip', 20000)
       if (startError) throw startError
       if (startTokenRef.current !== token) {
         if (trip?.id) await cancelAacTrip(trip.id)
@@ -416,11 +419,11 @@ export default function AacPanel({
       }
 
       const details = detailsRef.current
-      await saveAacTripDetails(trip.id, details)
+      await traceGpsAwait(saveAacTripDetails(trip.id, details), 'saveAacTripDetails', 20000)
       const seeded = [{ ...fix.position, sequenceNo: 0 }]
       pointBufferRef.current = seeded
       const orgId = organizationId || bundle?.student?.organization_id || trip.organizationId
-      await flushPoints(trip.id, orgId)
+      await traceGpsAwait(flushPoints(trip.id, orgId), 'flushPoints', 20000)
       if (startTokenRef.current !== token) {
         await cancelAacTrip(trip.id)
         return
