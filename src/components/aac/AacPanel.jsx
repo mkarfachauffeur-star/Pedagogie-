@@ -623,16 +623,16 @@ export default function AacPanel({
   const tripActive = tracking || Boolean(bundle?.activeTrip)
   const stopBar = tripActive && !isStaff && typeof document !== 'undefined'
     ? createPortal(
-      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-slate-200 bg-white px-4 pt-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <p className="mb-2 text-center text-sm text-slate-600">
+      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/70 bg-white/65 px-4 pt-3 shadow-[0_-16px_40px_rgba(56,132,244,0.12)] backdrop-blur-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p className="mb-2 text-center text-sm text-sky-900/70">
           Trajet en cours
-          <span className="text-slate-300"> · </span>
-          <span className="font-semibold tabular-nums text-slate-950">{formatKm(liveKm)} km</span>
-          <span className="text-slate-300"> · </span>
+          <span className="text-sky-300"> · </span>
+          <span className="font-semibold tabular-nums text-slate-900">{formatKm(liveKm)} km</span>
+          <span className="text-sky-300"> · </span>
           <span className="tabular-nums">{formatDuration(elapsed)}</span>
         </p>
         <button
-          className="w-full touch-manipulation rounded-xl bg-rose-600 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="aac-btn-stop w-full touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:opacity-50"
           disabled={stopBusy}
           onClick={handleStopTrip}
           type="button"
@@ -655,7 +655,7 @@ export default function AacPanel({
 
   if (!profile) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950">
+      <div className="aac-glass px-5 py-4 text-sm leading-6 text-amber-950">
         {stopBar}
         <p>
           Aucun profil de conduite accompagnée.
@@ -673,7 +673,7 @@ export default function AacPanel({
                 onChange={(e) => setStartDateDraft(e.target.value)}
               />
             </label>
-            <button className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white" type="submit">
+            <button className="aac-btn px-4 py-2.5 text-sm font-semibold" type="submit">
               Créer le profil
             </button>
           </form>
@@ -688,17 +688,17 @@ export default function AacPanel({
     <div className={`flex flex-col gap-4 ${tripActive && !isStaff ? 'pb-28' : ''}`}>
       {stopBar}
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <div className="aac-chip px-4 py-3 text-sm text-rose-800">
           {error}
         </div>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="aac-glass">
         <div className="px-5 py-5 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Suivi AAC</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Progression</h2>
+              <p className="aac-pill">Suivi AAC</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Progression</h2>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
               {statusLabel(profile.status)}
@@ -733,15 +733,15 @@ export default function AacPanel({
               <span>Progression kilométrique</span>
               <span className="tabular-nums">{progress?.percent || 0} %</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-2 overflow-hidden rounded-full bg-white/55 shadow-[inset_0_1px_2px_rgba(14,116,144,0.12)]">
               <div
-                className="h-full rounded-full bg-cyan-700"
+                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.55)]"
                 style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
               />
             </div>
           </div>
 
-          <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm lg:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/70 pt-4 text-sm lg:grid-cols-4">
             <div>
               <dt className="text-xs text-slate-400">Début</dt>
               <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.startedAt)}</dd>
@@ -764,7 +764,7 @@ export default function AacPanel({
         </div>
 
         {isStaff && (
-          <form className="flex flex-wrap items-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6" onSubmit={saveStartDate}>
+          <form className="flex flex-wrap items-end gap-3 border-t border-white/60 px-5 py-4 sm:px-6" onSubmit={saveStartDate}>
             <label className="text-sm font-medium text-slate-700">
               Date d’entrée
               <input
@@ -775,7 +775,7 @@ export default function AacPanel({
               />
             </label>
             <button
-              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              className="aac-btn px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
               disabled={saving}
               type="submit"
             >
@@ -783,7 +783,7 @@ export default function AacPanel({
             </button>
             {profile.status === 'conditions_remplies' && (
               <button
-                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-40"
+                className="aac-btn-glass px-4 py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-40"
                 disabled={saving}
                 onClick={handleMarkComplete}
                 type="button"
@@ -795,8 +795,8 @@ export default function AacPanel({
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-base font-semibold text-slate-950">Conditions pour l’examen</h3>
+      <section className="aac-glass p-5 sm:p-6">
+            <h3 className="text-base font-semibold text-slate-900">Conditions pour l’examen</h3>
         <ul className="mt-4 space-y-3">
           <Cond ok={conditions?.yearOk} label="Une année complète de conduite accompagnée, jour pour jour" />
           <Cond ok={conditions?.kmOk} label="3 000 km parcourus au minimum" />
@@ -804,18 +804,18 @@ export default function AacPanel({
           <Cond ok={conditions?.rvpOk} label="Les deux rendez-vous pédagogiques obligatoires effectués" />
         </ul>
         {conditions?.allMet && (
-          <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="aac-chip mt-4 px-4 py-3 text-sm text-emerald-900">
             Les conditions sont remplies. L’élève peut être présenté à l’examen du permis de conduire.
           </p>
         )}
       </section>
 
       {!isStaff && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="aac-glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-semibold text-slate-950">Enregistrer un trajet</h3>
+            <h3 className="text-base font-semibold text-slate-900">Enregistrer un trajet</h3>
             {tripActive && (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
+              <span className="aac-pill normal-case tracking-normal text-emerald-700">
                 En cours
               </span>
             )}
@@ -824,7 +824,7 @@ export default function AacPanel({
             Le relevé continue si le téléphone est verrouillé. Il s’arrête quand vous terminez le trajet.
           </p>
 
-          <div className={`mt-4 rounded-xl border px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
+          <div className={`aac-chip mt-4 px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
             <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
             {tripActive && locationScope === 'whenInUse' && (
               <p className="mt-2 text-xs">
@@ -838,7 +838,7 @@ export default function AacPanel({
             )}
             {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
               <button
-                className="mt-3 rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
+                className="aac-btn mt-3 px-3 py-2 text-sm font-semibold"
                 onClick={openLocationSettings}
                 type="button"
               >
@@ -848,7 +848,7 @@ export default function AacPanel({
           </div>
 
           <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-950">Rendez-vous pendant ce trajet</legend>
+            <legend className="text-sm font-semibold text-slate-900">Rendez-vous pendant ce trajet</legend>
             <p className="mt-1 text-sm text-slate-500">
               Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Le dossier officiel n’est pas modifié.
             </p>
@@ -856,11 +856,11 @@ export default function AacPanel({
               {[1, 2].map((sequence) => (
                 <label
                   key={sequence}
-                  className="flex min-h-11 items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800"
+                  className="aac-chip flex min-h-11 items-start gap-3 px-3 py-3 text-sm text-slate-800"
                 >
                   <input
                     checked={mandatoryRvp.includes(sequence)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-slate-950"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-sky-500"
                     onChange={() => toggleMandatory(sequence)}
                     type="checkbox"
                   />
@@ -871,10 +871,10 @@ export default function AacPanel({
           </fieldset>
 
           <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-950">Rendez-vous supplémentaires</legend>
+            <legend className="text-sm font-semibold text-slate-900">Rendez-vous supplémentaires</legend>
             <ul className="mt-3 space-y-2">
               {extraRvp.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                <li key={item.id} className="aac-chip flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
                   <span className="text-slate-800">{item.label}</span>
                   <button className="text-xs font-medium text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
                     Retirer
@@ -891,13 +891,13 @@ export default function AacPanel({
                   placeholder="Intitulé du rendez-vous"
                   value={extraDraft}
                 />
-                <button className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white" type="submit">
+                <button className="aac-btn px-4 py-2.5 text-sm font-semibold" type="submit">
                   Ajouter
                 </button>
               </form>
             ) : (
               <button
-                className="mt-3 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4"
+                className="mt-3 text-sm font-medium text-sky-700"
                 onClick={() => setExtraOpen(true)}
                 type="button"
               >
@@ -907,17 +907,17 @@ export default function AacPanel({
           </fieldset>
 
           <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-950">Conditions de conduite</legend>
+            <legend className="text-sm font-semibold text-slate-900">Conditions de conduite</legend>
             <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs cases peuvent être cochées.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {AAC_DRIVING_CONDITIONS.map((item) => (
                 <label
                   key={item.id}
-                  className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+                  className="aac-chip flex min-h-11 items-center gap-3 px-3 py-2 text-sm text-slate-800"
                 >
                   <input
                     checked={drivingConditions.includes(item.id)}
-                    className="h-4 w-4 shrink-0 accent-slate-950"
+                    className="h-4 w-4 shrink-0 accent-sky-500"
                     onChange={() => toggleCondition(item.id)}
                     type="checkbox"
                   />
@@ -929,7 +929,7 @@ export default function AacPanel({
 
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
             <button
-              className="touch-manipulation rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="aac-btn touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
@@ -937,7 +937,7 @@ export default function AacPanel({
               {saving ? 'Acquisition GPS…' : 'Démarrer le trajet'}
             </button>
             <button
-              className="touch-manipulation rounded-xl border border-rose-200 bg-white px-5 py-3.5 text-sm font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="aac-btn-stop touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               disabled={stopBusy || !tripActive}
               onClick={handleStopTrip}
               type="button"
@@ -955,27 +955,27 @@ export default function AacPanel({
           )}
 
           {lastTripSummary && (
-            <div className="mt-6 border-t border-slate-100 pt-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Dernier trajet</p>
+            <div className="mt-6 border-t border-white/70 pt-4">
+              <p className="aac-pill mb-3">Dernier trajet</p>
               <TripRecap trip={lastTripSummary} />
             </div>
           )}
         </section>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="aac-glass p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-base font-semibold text-slate-950">Trajets enregistrés</h3>
+          <h3 className="text-base font-semibold text-slate-900">Trajets enregistrés</h3>
           <p className="text-xs tabular-nums text-slate-400">{completedTrips.length}</p>
         </div>
         {!completedTrips.length ? (
           <p className="mt-3 text-sm text-slate-500">Aucun trajet enregistré pour le moment.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-slate-100">
+          <ul className="mt-4 space-y-2">
             {completedTrips
               .slice(0, isStaff ? 20 : 10)
               .map((trip) => (
-                <li key={trip.id} className="py-3">
+                <li key={trip.id} className="aac-chip px-3 py-3">
                   <TripRecap trip={trip} />
                 </li>
               ))}
@@ -983,8 +983,8 @@ export default function AacPanel({
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-base font-semibold text-slate-950">Rendez-vous pédagogiques</h3>
+      <section className="aac-glass p-5 sm:p-6">
+        <h3 className="text-base font-semibold text-slate-900">Rendez-vous pédagogiques</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">
           Deux rendez-vous sont obligatoires. Un rendez-vous supplémentaire peut être organisé
           sur conseil de l’enseignant, à la demande de l’élève ou de l’accompagnateur.
@@ -1001,7 +1001,7 @@ export default function AacPanel({
           ))}
         </div>
         <button
-          className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-40"
+          className="aac-btn-glass mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
           disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
           onClick={handleAddRvp}
           type="button"
@@ -1010,15 +1010,15 @@ export default function AacPanel({
         </button>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-base font-semibold text-slate-950">Attestation FFI</h3>
+      <section className="aac-glass p-5 sm:p-6">
+        <h3 className="text-base font-semibold text-slate-900">Attestation FFI</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">
           Attestation de fin de formation initiale, demandée par l’assurance avant le début de la conduite accompagnée.
         </p>
         {bundle?.ffi?.url ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <a
-              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
+              className="aac-btn px-4 py-2.5 text-sm font-semibold"
               href={bundle.ffi.url}
               rel="noreferrer"
               target="_blank"
@@ -1030,7 +1030,7 @@ export default function AacPanel({
         ) : (
           <p className="mt-4 text-sm text-amber-800">Aucun document déposé.</p>
         )}
-        <label className="mt-4 inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+        <label className="aac-btn-glass mt-4 inline-flex cursor-pointer px-4 py-2.5 text-sm font-semibold">
           {bundle?.ffi ? 'Remplacer le PDF' : 'Déposer le PDF'}
           <input accept="application/pdf,.pdf" className="hidden" onChange={handleFfiUpload} type="file" />
         </label>
@@ -1041,26 +1041,26 @@ export default function AacPanel({
 
 function Stat({ label, value, detail }) {
   return (
-    <div className="min-w-0">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-slate-950">{value}</p>
-      {detail ? <p className="mt-0.5 text-xs text-slate-400">{detail}</p> : null}
+    <div className="aac-chip min-w-0 px-3 py-3">
+      <p className="text-xs font-medium text-sky-800/70">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
+      {detail ? <p className="mt-0.5 text-xs text-slate-500">{detail}</p> : null}
     </div>
   )
 }
 
 function KpiLight({ label, value }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-3">
-      <p className="text-lg font-semibold tabular-nums text-slate-950">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="aac-chip px-3 py-3">
+      <p className="text-lg font-semibold tabular-nums text-slate-900">{value}</p>
+      <p className="text-xs text-sky-800/70">{label}</p>
     </div>
   )
 }
 
 function statusTone(status) {
-  if (status === 'conditions_remplies' || status === 'terminee') return 'bg-emerald-50 text-emerald-800'
-  return 'bg-slate-100 text-slate-700'
+  if (status === 'conditions_remplies' || status === 'terminee') return 'aac-pill normal-case tracking-normal text-emerald-700'
+  return 'aac-pill normal-case tracking-normal text-sky-800'
 }
 
 function emptyRvp(sequence) {
@@ -1085,12 +1085,10 @@ function isShownExtra(item) {
 function RvpCard({ item, isStaff, teachers, onSave }) {
   return (
     <article
-      className={`rounded-xl border p-4 ${
-        item.completed ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/60'
-      }`}
+      className={`aac-chip p-4 ${item.completed ? 'ring-1 ring-emerald-200/80' : ''}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <h4 className="text-sm font-semibold text-slate-950">Rendez-vous {item.sequence}</h4>
+        <h4 className="text-sm font-semibold text-slate-900">Rendez-vous {item.sequence}</h4>
         <span className={`text-xs font-medium ${item.completed ? 'text-emerald-700' : 'text-slate-500'}`}>
           {item.completed ? 'Effectué' : 'À faire'}
         </span>
@@ -1140,7 +1138,7 @@ function RvpCard({ item, isStaff, teachers, onSave }) {
           <label className="flex items-center gap-2 text-sm text-slate-800">
             <input
               checked={Boolean(item.completed)}
-              className="h-4 w-4 accent-slate-950"
+              className="h-4 w-4 accent-sky-500"
               onChange={(e) => onSave({ completed: e.target.checked })}
               type="checkbox"
             />
@@ -1182,15 +1180,15 @@ function mergeGpsPoints(...groups) {
 
 function gpsStatusClass(status) {
   if (status === 'tracking' || status === 'background' || status === 'ready' || status === 'granted') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-950'
+    return 'border-emerald-200/70 bg-emerald-50/70 text-emerald-950'
   }
   if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {
-    return 'border-amber-200 bg-amber-50 text-amber-950'
+    return 'border-amber-200/80 bg-amber-50/70 text-amber-950'
   }
   if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable') {
-    return 'border-rose-200 bg-rose-50 text-rose-900'
+    return 'border-rose-200/80 bg-rose-50/70 text-rose-900'
   }
-  return 'border-slate-200 bg-slate-50 text-slate-700'
+  return 'text-slate-700'
 }
 
 function formatClock(value) {
@@ -1220,7 +1218,7 @@ function TripRecap({ trip }) {
   return (
     <article className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-950">
+        <p className="text-sm font-semibold text-slate-900">
           <span className="tabular-nums">{formatKm(trip.distanceKm)} km</span>
           <span className="font-normal text-slate-300"> · </span>
           <span className="font-medium text-slate-700">{formatDuration(trip.durationSeconds)}</span>
@@ -1228,7 +1226,7 @@ function TripRecap({ trip }) {
         {tags.length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {tags.map((tag, index) => (
-              <li key={`${tag}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
+              <li key={`${tag}-${index}`} className="rounded-full border border-white/80 bg-white/60 px-2.5 py-0.5 text-xs text-sky-900/80">
                 {tag}
               </li>
             ))}
@@ -1249,8 +1247,8 @@ function Cond({ ok, label }) {
     <li className="flex items-start gap-3 text-sm">
       <span
         aria-hidden="true"
-        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
-          ok ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] ${
+          ok ? 'bg-emerald-100/80 text-emerald-700' : 'bg-white/70 text-sky-300'
         }`}
       >
         {ok ? '✓' : '–'}
