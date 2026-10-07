@@ -2,6 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { App } from '@capacitor/app'
 import {
+  Building2,
+  CloudLightning,
+  CloudRain,
+  Gauge,
+  Moon,
+  Mountain,
+  Route,
+  TrafficCone,
+  Trees,
+} from 'lucide-react'
+import {
   addAacPedagogicalAppointment,
   appendAacTripPoints,
   cancelAacTrip,
@@ -907,22 +918,17 @@ export default function AacPanel({
           </fieldset>
 
           <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-900">Conditions de conduite</legend>
-            <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs cases peuvent être cochées.</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <legend className="text-sm font-semibold text-slate-900">Critères de conduite</legend>
+            <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs critères peuvent être choisis.</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
               {AAC_DRIVING_CONDITIONS.map((item) => (
-                <label
+                <DrivingCriterionCard
+                  id={item.id}
                   key={item.id}
-                  className="aac-chip flex min-h-11 items-center gap-3 px-3 py-2 text-sm text-slate-800"
-                >
-                  <input
-                    checked={drivingConditions.includes(item.id)}
-                    className="h-4 w-4 shrink-0 accent-sky-500"
-                    onChange={() => toggleCondition(item.id)}
-                    type="checkbox"
-                  />
-                  <span>{item.label}</span>
-                </label>
+                  label={item.label}
+                  onToggle={() => toggleCondition(item.id)}
+                  selected={drivingConditions.includes(item.id)}
+                />
               ))}
             </div>
           </fieldset>
@@ -1239,6 +1245,43 @@ function TripRecap({ trip }) {
         {formatClock(trip.startedAt)} – {formatClock(trip.endedAt)}
       </p>
     </article>
+  )
+}
+
+const DRIVING_CRITERIA_LOOK = {
+  nuit: { icon: Moon, tone: 'nuit', deco: 'stars' },
+  pluie: { icon: CloudRain, tone: 'pluie', deco: 'drops' },
+  autoroute: { icon: Route, tone: 'autoroute' },
+  voie_rapide: { icon: Gauge, tone: 'voie' },
+  agglomeration: { icon: Building2, tone: 'ville' },
+  hors_agglomeration: { icon: Trees, tone: 'campagne' },
+  circulation_dense: { icon: TrafficCone, tone: 'dense' },
+  mauvais_temps: { icon: CloudLightning, tone: 'orage' },
+  conditions_difficiles: { icon: Mountain, tone: 'relief' },
+}
+
+function DrivingCriterionCard({ id, label, selected, onToggle }) {
+  const look = DRIVING_CRITERIA_LOOK[id] || { icon: CloudRain, tone: 'pluie' }
+  const Icon = look.icon
+  return (
+    <button
+      aria-pressed={selected}
+      className={`aac-criterion aac-criterion--${look.tone}${selected ? ' is-selected' : ''}`}
+      onClick={onToggle}
+      type="button"
+    >
+      <span className="aac-criterion__mark" aria-hidden="true">{selected ? '✓' : ''}</span>
+      {look.deco === 'drops' && (
+        <span className="aac-criterion__drops" aria-hidden="true"><i /><i /><i /></span>
+      )}
+      {look.deco === 'stars' && (
+        <span className="aac-criterion__stars" aria-hidden="true"><i /><i /><i /></span>
+      )}
+      <span className="aac-criterion__icon" aria-hidden="true">
+        <Icon className="h-4 w-4" strokeWidth={1.75} />
+      </span>
+      <span className="aac-criterion__label">{label}</span>
+    </button>
   )
 }
 
