@@ -1052,6 +1052,74 @@
     @apply inline-flex items-center rounded-full border-2 border-blue-300 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700;
   }
 
+  /* Verre léger de la page Compétences — pastel, sans aplat sombre. */
+  .lesson-glass {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(248, 251, 255, 0.48) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 10px 28px rgba(59, 130, 246, 0.06);
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  }
+
+  .lesson-chip {
+    border-radius: 1.15rem;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.42);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .lesson-chip:hover {
+    background: rgba(255, 255, 255, 0.62);
+  }
+
+  .lesson-btn {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: rgba(191, 219, 254, 0.72);
+    color: #1e3a5f;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 8px 18px rgba(59, 130, 246, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 180ms ease, transform 180ms ease;
+  }
+
+  .lesson-btn:hover {
+    background: rgba(186, 214, 247, 0.92);
+  }
+
+  .lesson-btn:active {
+    transform: scale(0.98);
+  }
+
+  .lesson-btn-soft {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.48);
+    color: #334155;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background 180ms ease, transform 180ms ease;
+  }
+
+  .lesson-btn-soft:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .lesson-btn-soft:active {
+    transform: scale(0.98);
+  }
+
   /* Verre léger AAC — même lumière bleue que le shell, surface iPhone. */
   .aac-glass {
     position: relative;

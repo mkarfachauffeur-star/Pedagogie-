@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { Car, CheckCircle2, Lock, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useRemcUnlock } from '../../hooks/useRemcUnlock'
@@ -14,7 +14,6 @@ import {
   QCU_PASS_PERCENTAGE,
   recordQcuResult,
 } from '../../services/lessonModuleProgress'
-import { competencyStatusIcon } from '../../services/remcProgress'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import LessonImage from '../../components/ui/LessonImage'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
@@ -1744,74 +1743,21 @@ const lessonModules = {
   },
 }
 
-const subcompetencyAccents = ['cyan', 'emerald', 'amber', 'violet', 'rose', 'teal', 'indigo', 'orange', 'sky', 'fuchsia']
-
-const accentStyles = {
-  cyan: {
-    card: 'border-cyan-100 bg-cyan-50/60',
-    badge: 'bg-cyan-100 text-cyan-700 ring-cyan-200',
-    icon: 'bg-cyan-500',
-  },
-  emerald: {
-    card: 'border-emerald-100 bg-emerald-50/60',
-    badge: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-    icon: 'bg-emerald-500',
-  },
-  amber: {
-    card: 'border-amber-100 bg-amber-50/60',
-    badge: 'bg-amber-100 text-amber-700 ring-amber-200',
-    icon: 'bg-amber-500',
-  },
-  violet: {
-    card: 'border-violet-100 bg-violet-50/60',
-    badge: 'bg-violet-100 text-violet-700 ring-violet-200',
-    icon: 'bg-violet-500',
-  },
-  rose: {
-    card: 'border-rose-100 bg-rose-50/60',
-    badge: 'bg-rose-100 text-rose-700 ring-rose-200',
-    icon: 'bg-rose-500',
-  },
-  teal: {
-    card: 'border-teal-100 bg-teal-50/60',
-    badge: 'bg-teal-100 text-teal-700 ring-teal-200',
-    icon: 'bg-teal-500',
-  },
-  indigo: {
-    card: 'border-indigo-100 bg-indigo-50/60',
-    badge: 'bg-indigo-100 text-indigo-700 ring-indigo-200',
-    icon: 'bg-indigo-500',
-  },
-  orange: {
-    card: 'border-orange-100 bg-orange-50/60',
-    badge: 'bg-orange-100 text-orange-700 ring-orange-200',
-    icon: 'bg-orange-500',
-  },
-  sky: {
-    card: 'border-sky-100 bg-sky-50/60',
-    badge: 'bg-sky-100 text-sky-700 ring-sky-200',
-    icon: 'bg-sky-500',
-  },
-  fuchsia: {
-    card: 'border-fuchsia-100 bg-fuchsia-50/60',
-    badge: 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200',
-    icon: 'bg-fuchsia-500',
-  },
-}
-
 function StatusPill({ label, value, complete }) {
+  const circle = complete
+    ? 'bg-emerald-100/80 text-emerald-700'
+    : label === 'QCU'
+      ? 'bg-sky-100/80 text-sky-700'
+      : 'bg-violet-100/75 text-violet-700'
+
   return (
-    <div className="card-inner flex items-center gap-3">
-      <span
-        className={`grid h-8 w-8 place-items-center rounded-xl text-sm font-bold ${
-          complete ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-500'
-        }`}
-      >
-        {complete ? '✓' : '▶'}
+    <div className="lesson-chip flex items-center gap-3 px-3 py-2.5 active:scale-[0.99]">
+      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold ${circle}`}>
+        {complete ? '✓' : '○'}
       </span>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="text-sm font-bold text-slate-800">{value}</p>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+        <p className="truncate text-sm font-medium text-slate-800">{value}</p>
       </div>
     </div>
   )
@@ -1870,13 +1816,11 @@ function ChoiceButton({ checked, children, disabled, onClick, status }) {
         ? 'border-rose-300 bg-rose-50 text-rose-900 ring-2 ring-rose-100'
         : checked
           ? 'border-cyan-300 bg-cyan-50 text-cyan-950 ring-2 ring-cyan-100'
-          : 'border-slate-300 bg-white text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/50'
+          : 'border-white/80 bg-white/50 text-slate-700 hover:bg-white/75'
 
   return (
     <button
-      className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition duration-200 active:scale-[0.97] ${statusClass} ${
-        !disabled && !status ? 'hover:shadow-md' : ''
-      }`}
+      className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-left text-sm font-medium backdrop-blur-md transition duration-200 active:scale-[0.98] ${statusClass}`}
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -2234,60 +2178,73 @@ export default function StudentLessonsPage() {
     }))
   }
 
+  const progressValue = unlockState ? globalProgress : activeCompetency.progress
+
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-      <section className="overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-card)]">
-        <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white md:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                Formation REMC
-              </span>
-              <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Compétence {activeCompetency.number} : {activeCompetency.title}
-              </h1>
-            </div>
-            <div className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center backdrop-blur">
-              <p className="text-3xl font-black">{unlockState ? globalProgress : activeCompetency.progress}%</p>
-              <p className="text-xs text-cyan-50/75">Progression globale</p>
-            </div>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+      <header className="flex items-center gap-3 px-1">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl border border-white/80 bg-white/55 text-sky-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md">
+          <Car aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
+        </span>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700/80">Permis B</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">Compétences</h1>
+        </div>
+      </header>
+
+      <section className="lesson-glass p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-slate-500">Progression globale</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{progressValue}%</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Compétence {activeCompetency.number} · {activeCompetency.title}
+            </p>
           </div>
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-sky-100/70 text-sky-700">
+            <Car aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />
+          </span>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/70">
+          <div
+            className="h-full rounded-full bg-sky-300/90 transition-all duration-500"
+            style={{ width: `${Math.min(100, Number(progressValue) || 0)}%` }}
+          />
         </div>
       </section>
 
-      <section className="card-panel">
+      <section className="lesson-glass p-4 sm:p-5">
           <div className="flex flex-wrap gap-2">
             {competencies.map((competency) => {
               const isActive = competency.id === activeCompetency.id
               const unlocked = isCompetencyUnlocked(competency.id)
-              const entry = unlockState?.[competency.id]
-              const statusIcon = competencyStatusIcon(entry, competency.id)
               return (
                 <button
-                  className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition duration-200 ${
                     !unlocked
-                      ? 'cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-400 opacity-60'
+                      ? 'cursor-not-allowed border border-white/70 bg-white/35 text-slate-400'
                       : isActive
-                        ? 'bg-navy-950 text-white shadow-md'
-                        : 'border-2 border-slate-300 bg-white text-slate-600 hover:border-cyan-200'
+                        ? 'border border-sky-200/80 bg-sky-100/70 text-sky-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
+                        : 'lesson-btn-soft'
                   }`}
                   disabled={!unlocked}
                   key={competency.id}
                   onClick={() => selectCompetency(competency.id)}
                   type="button"
                 >
-                  {competency.id}{statusIcon ? ` ${statusIcon}` : ''}
+                  {!unlocked && <Lock aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                  {competency.id}
                 </button>
               )
             })}
           </div>
 
-          <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900">Modules {activeCompetency.id}</h2>
-              <p className="mt-1 text-sm text-slate-500">{activeCompetency.description}</p>
+              <h2 className="text-base font-semibold text-slate-900">Modules {activeCompetency.id}</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500">{activeCompetency.description}</p>
             </div>
-            <span className="w-fit rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-xs font-bold text-cyan-700">
+            <span className="w-fit rounded-full border border-white/80 bg-sky-50/70 px-3 py-1 text-xs font-medium text-sky-800">
               {competencyHasContent ? `${moduleTotalItems} module(s)` : 'En développement'}
             </span>
           </div>
@@ -2299,22 +2256,17 @@ export default function StudentLessonsPage() {
           ) : !competencyHasContent ? (
             <div
               key={activeCompetency.id}
-              className="mt-4 animate-slide-up overflow-hidden rounded-[1.75rem] border border-cyan-100 bg-white shadow-[var(--shadow-card)]"
+              className="lesson-chip mt-4 px-6 py-10 text-center"
             >
-              <div className="flex flex-col items-center gap-4 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 px-6 py-10 text-center text-white">
-                <h3 className="text-2xl font-black">Bientôt disponible</h3>
-                <p className="max-w-lg text-sm leading-6 text-cyan-50/85">
-                  Cours, schémas, vidéos et QCU en cours de préparation pour cette compétence.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Bientôt disponible</h3>
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
+                Cours, schémas, vidéos et QCU en cours de préparation pour cette compétence.
+              </p>
             </div>
           ) : (
             <>
               <div className="mt-4 grid gap-3">
                 {modulePageItems.map((item) => {
-                  const index = activeSubcompetencies.findIndex((row) => row.id === item.id)
-                  const accentKey = subcompetencyAccents[index % subcompetencyAccents.length]
-                  const styles = accentStyles[accentKey]
                   const lessonModule = lessonModules[item.id]
                   const lessonPool = getLessonQuestionPool(lessonModule)
                   const qcmAvailable = lessonPool.length > 0
@@ -2334,10 +2286,15 @@ export default function StudentLessonsPage() {
                   const lessonComplete = lessonModule ? courseReadComplete : false
                   const qcmComplete = lessonModule && qcmAvailable ? itemProgress.qcuPassed : false
                   const qcuLocked = Boolean(lessonModule && qcmAvailable && !courseReadComplete)
+                  const moduleState = itemDone
+                    ? 'validé'
+                    : (courseReadComplete || itemProgress.percentage != null)
+                      ? 'encours'
+                      : 'afaire'
 
                   return (
                     <article
-                      className={`rounded-2xl border p-4 ${styles.card}`}
+                      className="lesson-chip p-4"
                       key={item.id}
                     >
                       <button
@@ -2345,25 +2302,37 @@ export default function StudentLessonsPage() {
                         onClick={() => toggleModuleExpanded(item.id)}
                         type="button"
                       >
-                        <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${styles.icon}`} />
+                        <span className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full bg-sky-100/80 px-2 text-[11px] font-semibold text-sky-800">
+                          {item.id.replace(/^[A-Z]+/, '')}
+                        </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ring-1 ${styles.badge}`}>
+                            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
                               {item.id}
                             </span>
-                            {itemDone && (
-                              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                            {moduleState === 'validé' && (
+                              <span className="rounded-full bg-emerald-100/80 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
                                 Validé
                               </span>
                             )}
-                            <span className="ml-auto text-xs font-bold text-slate-400">
-                              {isExpanded ? 'Masquer ▲' : 'Détails ▼'}
+                            {moduleState === 'encours' && (
+                              <span className="rounded-full bg-sky-100/80 px-2.5 py-0.5 text-[11px] font-medium text-sky-700">
+                                En cours
+                              </span>
+                            )}
+                            {moduleState === 'afaire' && (
+                              <span className="rounded-full bg-orange-100/80 px-2.5 py-0.5 text-[11px] font-medium text-orange-700">
+                                À faire
+                              </span>
+                            )}
+                            <span className="ml-auto text-[11px] font-medium text-slate-400">
+                              {isExpanded ? 'Masquer' : 'Détails'}
                             </span>
                           </div>
-                          <h3 className="mt-2 font-extrabold text-slate-900">{item.title}</h3>
-                          {isExpanded && (
-                            <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                          )}
+                          <h3 className="mt-1.5 text-sm font-semibold text-slate-900">{item.title}</h3>
+                          <p className={`mt-1 text-sm leading-6 text-slate-500 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                            {item.description}
+                          </p>
                         </div>
                       </button>
 
@@ -2398,15 +2367,15 @@ export default function StudentLessonsPage() {
 
 
       {openedModule && activeCompetencyUnlocked && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-navy-950/65 p-3 backdrop-blur-md sm:p-5 lg:p-8">
-          <div className="flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-[2rem] border-2 border-slate-300 bg-white/95 shadow-2xl backdrop-blur-2xl">
-            <div className="shrink-0 border-b border-white/60 bg-white/90 p-4 backdrop-blur-xl sm:p-5">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-slate-900/20 p-3 backdrop-blur-md sm:p-5 lg:p-8">
+          <div className="lesson-glass flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden">
+            <div className="shrink-0 border-b border-white/70 bg-white/40 p-4 backdrop-blur-xl sm:p-5">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700/80">
                     Module {openedModule.id} · {activeCompetency.title}
                   </p>
-                  <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
                     {openedModule.title}
                   </h2>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
@@ -2415,14 +2384,14 @@ export default function StudentLessonsPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition ${moduleMode === 'lesson' ? 'bg-navy-950 text-white' : 'border border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                    className={`px-4 py-2 text-sm font-medium transition ${moduleMode === 'lesson' ? 'lesson-btn' : 'lesson-btn-soft'}`}
                     onClick={() => setModuleMode('lesson')}
                     type="button"
                   >
                     Leçon
                   </button>
                   <button
-                    className={`rounded-2xl px-4 py-2 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${moduleMode === 'quiz' ? 'bg-navy-950 text-white' : 'border border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                    className={`px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${moduleMode === 'quiz' ? 'lesson-btn' : 'lesson-btn-soft'}`}
                     disabled={!openedCourseReadComplete}
                     onClick={() => openQuiz(openedModule.id)}
                     title={openedCourseReadComplete ? 'Accéder au QCU' : 'Lisez la leçon en entier pour débloquer le QCU'}
@@ -2431,7 +2400,7 @@ export default function StudentLessonsPage() {
                     QCU
                   </button>
                   <button
-                    className="rounded-2xl border-2 border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                    className="lesson-btn-soft px-4 py-2 text-sm font-medium"
                     onClick={closeModule}
                     type="button"
                   >
@@ -2460,12 +2429,12 @@ export default function StudentLessonsPage() {
                       Leçon lue en entier — le QCU est débloqué.
                     </p>
                   )}
-                  <section className="overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-gradient-to-br from-navy-950 via-navy-900 to-cyan-900 p-5 text-white shadow-xl">
-                    <p className="text-sm font-semibold text-cyan-100">Contenu de leçon</p>
-                    <h3 className="mt-2 text-2xl font-black">
+                  <section className="lesson-glass p-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700/70">Contenu de leçon</p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
                       {openedLesson?.title || openedModule.title}
                     </h3>
-                    <p className="mt-3 text-sm leading-6 text-cyan-50/85">
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
                       {openedLesson?.intro || 'Ce module ouvre une fiche pédagogique complète avec objectifs, supports visuels et validation progressive.'}
                     </p>
                   </section>
@@ -2578,7 +2547,7 @@ export default function StudentLessonsPage() {
                       </div>
                       <div className="border-t-2 border-slate-200 bg-cyan-50/50 p-4">
                         <button
-                          className="w-full rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300"
+                          className="w-full lesson-btn w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                           disabled={!openedCourseReadComplete}
                           onClick={() => openQuiz(openedModule.id)}
                           type="button"
@@ -2678,7 +2647,7 @@ export default function StudentLessonsPage() {
                   </div>
                   <div className="mt-4 grid gap-2">
                     <button
-                      className="rounded-2xl bg-navy-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="lesson-btn px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!lessonQuestionPool.length || !openedCourseReadComplete}
                       onClick={() => openQuiz(openedModule.id)}
                       type="button"
@@ -2689,7 +2658,7 @@ export default function StudentLessonsPage() {
                           ? 'Ouvrir le QCU'
                           : 'Lisez la leçon d\'abord'}
                     </button>
-                    <button className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" disabled={!hasNextModule} onClick={openNextModule} type="button">
+                    <button className="lesson-btn-soft px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40" disabled={!hasNextModule} onClick={openNextModule} type="button">
                       Module suivant
                     </button>
                   </div>
@@ -2810,7 +2779,7 @@ export default function StudentLessonsPage() {
                               </p>
                               <p className="mt-1 text-slate-700">{currentQuizQuestion.explanation}</p>
                               <button
-                                className="mt-4 rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700"
+                                className="lesson-btn mt-4 px-5 py-3 text-sm font-medium"
                                 onClick={goToNextQuizQuestion}
                                 type="button"
                               >
@@ -2828,7 +2797,7 @@ export default function StudentLessonsPage() {
                     <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
                       Cette interface est prête pour les questions du module « {openedModule.title} ». Le module d’installation contient déjà le QCU complet et validable.
                     </p>
-                    <button className="mt-5 rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700" onClick={() => setModuleMode('lesson')} type="button">
+                    <button className="lesson-btn mt-5 px-5 py-3 text-sm font-medium" onClick={() => setModuleMode('lesson')} type="button">
                       Retour à la leçon
                     </button>
                   </div>
@@ -2850,14 +2819,14 @@ export default function StudentLessonsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
-                        className="rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-extrabold text-cyan-700 transition hover:bg-cyan-100"
+                        className="lesson-btn-soft px-5 py-3 text-sm font-medium"
                         onClick={resetModule}
                         type="button"
                       >
                         Refaire le QCU
                       </button>
                       <button
-                        className="rounded-2xl bg-navy-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        className="lesson-btn px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                         disabled={!hasNextModule}
                         onClick={openNextModule}
                         type="button"
@@ -2871,7 +2840,7 @@ export default function StudentLessonsPage() {
                     <p className="text-sm font-bold text-slate-500">
                       Répondez question par question. La question suivante apparaît uniquement après correction.
                     </p>
-                    <span className="rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-extrabold text-cyan-700">
+                    <span className="lesson-chip px-4 py-2 text-sm font-medium text-sky-800">
                       Validation automatique en fin de QCU
                     </span>
                   </div>
@@ -2880,7 +2849,7 @@ export default function StudentLessonsPage() {
             )}
           </div>
           {openedGalleryImage && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-navy-950/80 p-4 backdrop-blur-md">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/25 p-4 backdrop-blur-md">
               <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl">
                 <div className="flex items-center justify-between gap-3 border-b-2 border-slate-300 p-4">
                   <div>
