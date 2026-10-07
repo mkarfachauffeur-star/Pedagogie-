@@ -71,23 +71,12 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
   useEffect(() => {
     if (!sidebarOpen) return undefined
 
-    const previousOverflow = document.body.style.overflow
-    const previousPosition = document.body.style.position
-    const previousTop = document.body.style.top
-    const previousWidth = document.body.style.width
-    const scrollY = window.scrollY
-
-    document.body.style.overflow = 'hidden'
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.width = '100%'
+    const html = document.documentElement
+    const previousOverflow = html.style.overflow
+    html.style.overflow = 'hidden'
 
     return () => {
-      document.body.style.overflow = previousOverflow
-      document.body.style.position = previousPosition
-      document.body.style.top = previousTop
-      document.body.style.width = previousWidth
-      window.scrollTo(0, scrollY)
+      html.style.overflow = previousOverflow
     }
   }, [sidebarOpen])
 
@@ -156,7 +145,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
         <button
           type="button"
           aria-label="Fermer le menu"
-          className="fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-sm transition-opacity lg:hidden"
+          className="app-sidebar-overlay fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-sm transition-opacity lg:hidden"
           onClick={closeSidebar}
         />
       )}
@@ -177,7 +166,7 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
           <ChevronLeft className={`h-4 w-4 transition ${sidebarCollapsed ? 'rotate-180' : ''}`} />
         </button>
 
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-full max-h-[100dvh] min-h-0 flex-col">
           <div
             className={`border-b border-blue-50 px-5 py-5 transition-all duration-300 ${sidebarCollapsed ? 'lg:flex lg:justify-center lg:px-3' : ''}`}
           >

@@ -1428,3 +1428,30 @@ html.capacitor-ios .pd-main-content {
   overflow-y: visible;
   max-height: none;
 }
+
+/* Le document continue de grandir pour le scroll des pages.
+   Le menu, lui, reste calé sur la fenêtre : pas sur la hauteur du document. */
+@media (max-width: 1023px) {
+  html.capacitor-ios .app-sidebar-overlay {
+    position: fixed;
+    inset: auto;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  html.capacitor-ios .app-sidebar {
+    position: fixed;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: min(280px, 100vw);
+  }
+}

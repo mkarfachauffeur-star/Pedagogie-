@@ -39,13 +39,40 @@ function mapTrip(row) {
   return {
     id: row.id,
     studentId: row.student_id,
+    organizationId: row.organization_id,
     startedAt: row.started_at,
     endedAt: row.ended_at,
     distanceKm: Number(row.distance_km) || 0,
     durationSeconds: Number(row.duration_seconds) || 0,
     pathSummary: Array.isArray(row.path_summary) ? row.path_summary : [],
     status: row.status,
+    mandatoryRvp: normalizeMandatoryRvp(row.mandatory_rvp),
+    extraRvp: normalizeExtraRvp(row.extra_rvp),
+    drivingConditions: Array.isArray(row.driving_conditions) ? row.driving_conditions.map(String) : [],
   }
+}
+
+function normalizeMandatoryRvp(value) {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.map(Number).filter((n) => n === 1 || n === 2))]
+}
+
+function normalizeExtraRvp(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => ({
+      id: String(item?.id || ''),
+      label: String(item?.label || '').trim(),
+    }))
+    .filter((item) => item.id && item.label)
+}
+
+function tripMetaPayload(meta = {}) {
+  const payload = {}
+  if (Array.isArray(meta.mandatoryRvp)) payload.mandatory_rvp = normalizeMandatoryRvp(meta.mandatoryRvp)
+  if (Array.isArray(meta.extraRvp)) payload.extra_rvp = normalizeExtraRvp(meta.extraRvp)
+  if (Array.isArray(meta.drivingConditions)) payload.driving_conditions = meta.drivingConditions.map(String)
+  return payload
 }
 
 // Un créneau au-delà de 2, vide, est un reste automatique. Le marqueur invisible
@@ -76,6 +103,11 @@ function mapRvp(row) {
 function isMissingRpc(error) {
   const message = `${error?.message || ''} ${error?.details || ''} ${error?.code || ''}`
   return /PGRST202|could not find the function|schema cache/i.test(message)
+}
+
+function isMissingColumn(error) {
+  const message = `${error?.message || ''} ${error?.details || ''} ${error?.code || ''}`
+  return /PGRST204|42703|column .* does not exist|schema cache/i.test(message)
 }
 
 export async function ensureAacProfile(studentId, startedAt = null) {
@@ -341,7 +373,39 @@ export async function getActiveAacTrip(studentId) {
   }
 }
 
-export async function completeAacTrip(tripId, studentId, { points, distanceKm, startedAt }) {
+async function updateAacTripRow(tripId, payload, { inProgressOnly = false } = {}) {
+  let query = supabase.from('aac_trips').update(payload).eq('id', tripId)
+  if (inProgressOnly) query = query.eq('status', 'in_progress')
+  return query.select('*').maybeSingle()
+}
+
+export async function saveAacTripDetails(tripId, meta) {
+  if (!tripId) return { trip: null, error: null, persisted: false }
+  const payload = {
+    ...tripMetaPayload(meta),
+    updated_at: new Date().toISOString(),
+  }
+  if (Object.keys(payload).length <= 1) return { trip: null, error: null, persisted: false }
+  try {
+    let { data, error } = await updateAacTripRow(tripId, payload, { inProgressOnly: true })
+    if (error && isMissingColumn(error)) {
+      return { trip: null, error: null, persisted: false }
+    }
+    if (error) throw error
+    return { trip: mapTrip(data), error: null, persisted: true }
+  } catch (error) {
+    return { trip: null, error: toUserError(error, 'generic'), persisted: false }
+  }
+}
+
+export async function completeAacTrip(tripId, studentId, {
+  points,
+  distanceKm,
+  startedAt,
+  mandatoryRvp,
+  extraRvp,
+  drivingConditions,
+}) {
   try {
     const endedAt = new Date()
     const start = startedAt ? new Date(startedAt) : endedAt
@@ -349,25 +413,34 @@ export async function completeAacTrip(tripId, studentId, { points, distanceKm, s
     const durationSeconds = Number.isFinite(elapsedMs) ? Math.max(0, Math.round(elapsedMs / 1000)) : 0
     const safeKm = Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : 0
     const pathSummary = downsamplePath(points || [])
+    const base = {
+      ended_at: endedAt.toISOString(),
+      distance_km: safeKm,
+      duration_seconds: durationSeconds,
+      path_summary: pathSummary,
+      status: 'completed',
+      updated_at: endedAt.toISOString(),
+    }
+    const meta = tripMetaPayload({ mandatoryRvp, extraRvp, drivingConditions })
 
-    const { data, error } = await supabase
-      .from('aac_trips')
-      .update({
-        ended_at: endedAt.toISOString(),
-        distance_km: safeKm,
-        duration_seconds: durationSeconds,
-        path_summary: pathSummary,
-        status: 'completed',
-        updated_at: endedAt.toISOString(),
-      })
-      .eq('id', tripId)
-      .select('*')
-      .maybeSingle()
+    let { data, error } = await updateAacTripRow(tripId, { ...base, ...meta })
+    if (error && isMissingColumn(error) && Object.keys(meta).length) {
+      ;({ data, error } = await updateAacTripRow(tripId, base))
+    }
     if (error) throw error
     if (!data) throw new Error('Impossible de terminer le trajet.')
 
     await supabase.rpc('refresh_aac_profile_stats', { p_student_id: studentId })
-    return { trip: mapTrip(data), error: null }
+    const trip = mapTrip(data)
+    return {
+      trip: {
+        ...trip,
+        mandatoryRvp: trip.mandatoryRvp?.length ? trip.mandatoryRvp : meta.mandatory_rvp || [],
+        extraRvp: trip.extraRvp?.length ? trip.extraRvp : meta.extra_rvp || [],
+        drivingConditions: trip.drivingConditions?.length ? trip.drivingConditions : meta.driving_conditions || [],
+      },
+      error: null,
+    }
   } catch (error) {
     return { trip: null, error: toUserError(error, 'generic') }
   }
@@ -455,12 +528,18 @@ export async function getAacTripPoints(tripId) {
   try {
     const { data, error } = await supabase
       .from('aac_trip_points')
-      .select('lat, lng, recorded_at, sequence_no')
+      .select('lat, lng, accuracy_m, recorded_at, sequence_no')
       .eq('trip_id', tripId)
       .order('sequence_no')
     if (error) throw error
     return {
-      points: (data || []).map((p) => ({ lat: Number(p.lat), lng: Number(p.lng), timestamp: p.recorded_at })),
+      points: (data || []).map((p) => ({
+        lat: Number(p.lat),
+        lng: Number(p.lng),
+        accuracy: p.accuracy_m == null ? null : Number(p.accuracy_m),
+        timestamp: p.recorded_at,
+        sequenceNo: p.sequence_no,
+      })),
       error: null,
     }
   } catch (error) {

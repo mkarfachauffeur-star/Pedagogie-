@@ -1,14 +1,34 @@
 import { Capacitor } from '@capacitor/core'
+import { GPS_LIMITS } from './gpsDistance'
 
 /**
- * Géolocalisation unifiée (Capacitor natif + fallback navigateur).
- * Suivi au premier plan uniquement (V1).
+ * Géolocalisation des trajets AAC.
+ * Sur iPhone, un plugin CLLocationManager dédié suit la position tant que le
+ * trajet est en cours, y compris écran verrouillé, puis s’arrête à la fin.
+ * Le plugin Capacitor Geolocation reste le repli si cette version native
+ * n’est pas encore dans l’application installée.
  */
 
 const DEFAULT_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 15000,
-  maximumAge: 2000,
+  timeout: 20000,
+  maximumAge: 0,
+}
+
+export const LOCATION_STATUS_MESSAGES = {
+  prompt: 'Pedagogia Drive a besoin de la position du téléphone pour mesurer les kilomètres réellement parcourus pendant le trajet.',
+  ready: 'Localisation autorisée. Appuyez sur Démarrer le trajet : la première position GPS valide lance le calcul.',
+  granted: 'Localisation autorisée.',
+  acquiring: 'Recherche d’une position GPS précise…',
+  tracking: 'Trajet en cours. Les kilomètres viennent des positions GPS reçues par le téléphone, y compris si l’iPhone est verrouillé.',
+  background: 'Trajet en cours. Le GPS continue pendant que l’écran est verrouillé ou que l’application est en arrière-plan. Le suivi s’arrête quand vous terminez le trajet.',
+  paused: 'Signal GPS momentanément perdu. Le trajet reste ouvert : les kilomètres reprendront dès qu’une position valide reviendra.',
+  denied: 'La localisation est refusée. Sur iPhone : Réglages > Pedagogia Drive > Localisation > Toujours.',
+  restricted: 'La localisation est restreinte sur cet iPhone (contrôle parental ou profil d’entreprise).',
+  servicesDisabled: 'Le service de localisation est désactivé. Sur iPhone : Réglages > Confidentialité et sécurité > Service de localisation.',
+  unavailable: 'La position GPS n’est pas disponible sur cet appareil.',
+  timeout: 'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
+  weak: 'Signal GPS trop imprécis pour démarrer. Sortez du bâtiment et attendez une précision inférieure à 80 m.',
 }
 
 function toPosition(coords, timestamp) {
@@ -17,6 +37,113 @@ function toPosition(coords, timestamp) {
     lng: coords.longitude,
     accuracy: coords.accuracy ?? null,
     timestamp: timestamp || Date.now(),
+  }
+}
+
+function toLocationError(err, fallback) {
+  const error = new Error(err?.message || fallback)
+  if (err?.code != null) error.code = err.code
+  if (err?.locationStatus) error.locationStatus = err.locationStatus
+  return error
+}
+
+function withTimeout(promise, ms, message) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const error = new Error(message)
+      error.code = 'OS-PLUG-GLOC-0010'
+      error.locationStatus = 'timeout'
+      reject(error)
+    }, ms)
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
+export function classifyLocationError(error) {
+  const code = error?.code
+  if (code === 1) return 'denied'
+  if (code === 3) return 'timeout'
+  const message = `${error?.message || ''} ${error?.code || ''}`
+  if (/not enabled|services are not enabled|OS-PLUG-GLOC-0007/i.test(message)) return 'servicesDisabled'
+  if (/restricted|OS-PLUG-GLOC-0008/i.test(message)) return 'restricted'
+  if (/denied|OS-PLUG-GLOC-0003/i.test(message)) return 'denied'
+  if (/timeout|timed out|OS-PLUG-GLOC-0010/i.test(message)) return 'timeout'
+  if (/unavailable|OS-PLUG-GLOC-0002/i.test(message) || code === 2) return 'unavailable'
+  return 'unavailable'
+}
+
+let tripPluginMissing = false
+let pullNativeTripPoints = async () => {}
+
+function gpsLog(step, detail) {
+  if (detail === undefined) console.log(`[AAC-GPS] ${step}`)
+  else console.log(`[AAC-GPS] ${step}`, detail)
+}
+
+export function flushNativeTripPoints() {
+  return pullNativeTripPoints()
+}
+
+async function getTripPlugin() {
+  if (Capacitor.getPlatform() !== 'ios' || tripPluginMissing) return null
+  let module
+  try {
+    module = await import('pedagogia-aac-trip-location')
+  } catch (error) {
+    gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
+    return null
+  }
+  gpsLog('getStatus entrée')
+  try {
+    const status = await withTimeout(
+      module.AacTripLocation.getStatus(),
+      4000,
+      'La lecture de l’état de localisation n’a pas abouti.',
+    )
+    gpsLog('getStatus résolution', status)
+  } catch (error) {
+    gpsLog('getStatus rejet', `${error?.code || ''} ${error?.message || error}`)
+    if (/not implemented|UNIMPLEMENTED|plugin is not implemented/i.test(`${error?.message || ''} ${error?.code || ''}`)) {
+      tripPluginMissing = true
+      gpsLog('plugin AacTripLocation indisponible', `${error?.code || ''} ${error?.message || error}`)
+      return null
+    }
+    // Le plugin est chargé. Un getStatus qui n’a pas répondu ne doit pas
+    // empêcher la vraie demande d’autorisation iOS.
+  }
+  gpsLog('plugin AacTripLocation chargé')
+  return module.AacTripLocation
+}
+
+function accessFromNative(result) {
+  const scope = result?.scope || 'prompt'
+  if (scope === 'disabled') return { granted: false, status: 'servicesDisabled', scope, background: false }
+  if (scope === 'restricted') return { granted: false, status: 'restricted', scope, background: false }
+  if (scope === 'denied' || result?.location === 'denied') {
+    return { granted: false, status: 'denied', scope: 'denied', background: false }
+  }
+  if (result?.location === 'granted') {
+    return { granted: true, status: 'granted', scope, background: Boolean(result.background) || scope === 'always' || scope === 'whenInUse' }
+  }
+  return { granted: false, status: 'prompt', scope, background: false }
+}
+
+function normalizeNativePoint(point) {
+  return {
+    lat: Number(point.lat),
+    lng: Number(point.lng),
+    accuracy: point.accuracy == null ? null : Number(point.accuracy),
+    timestamp: Number(point.timestamp) || Date.now(),
+    sequenceNo: point.sequenceNo == null ? undefined : Number(point.sequenceNo),
   }
 }
 
@@ -29,44 +156,277 @@ async function getCapacitorGeolocation() {
   }
 }
 
-export async function requestLocationPermission() {
-  if (Capacitor.isNativePlatform()) {
-    const Geo = await getCapacitorGeolocation()
-    if (Geo?.requestPermissions) {
-      const result = await Geo.requestPermissions()
-      return result?.location === 'granted' || result?.coarseLocation === 'granted'
+function statusFromPermission(result) {
+  const loc = result?.location
+  const coarse = result?.coarseLocation
+  if (loc === 'granted' || coarse === 'granted') return 'granted'
+  if (loc === 'denied' || coarse === 'denied') return 'denied'
+  return 'prompt'
+}
+
+export async function inspectLocationAccess() {
+  const tripPlugin = await getTripPlugin()
+  if (tripPlugin) {
+    try {
+      return accessFromNative(await tripPlugin.checkPermissions())
+    } catch (error) {
+      return { granted: false, status: classifyLocationError(error), scope: 'none', background: false }
     }
   }
+
+  if (!Capacitor.isNativePlatform()) {
+    if (!navigator?.geolocation) return { granted: false, status: 'unavailable' }
+    try {
+      const result = await navigator.permissions?.query?.({ name: 'geolocation' })
+      if (result?.state === 'granted') return { granted: true, status: 'granted' }
+      if (result?.state === 'denied') return { granted: false, status: 'denied' }
+    } catch {
+      // Safari n’expose pas toujours l’API Permissions : le dialogue arrive au premier relevé.
+    }
+    return { granted: false, status: 'prompt' }
+  }
+
+  const Geo = await getCapacitorGeolocation()
+  if (!Geo?.checkPermissions) return { granted: false, status: 'unavailable' }
+  try {
+    const result = await Geo.checkPermissions()
+    const status = statusFromPermission(result)
+    return { granted: status === 'granted', status }
+  } catch (error) {
+    const status = classifyLocationError(error)
+    return { granted: false, status }
+  }
+}
+
+export async function requestLocationAccess() {
+  const tripPlugin = await getTripPlugin()
+  if (tripPlugin) {
+    try {
+      gpsLog('requestPermissions appel')
+      const result = await withTimeout(
+        tripPlugin.requestPermissions(),
+        100000,
+        'La demande d’autorisation de localisation n’a pas abouti. Réessayez.',
+      )
+      gpsLog('requestPermissions retour', result)
+      return accessFromNative(result)
+    } catch (error) {
+      const status = error?.locationStatus || classifyLocationError(error)
+      return { granted: false, status, scope: 'none', background: false }
+    }
+  }
+
+  if (!Capacitor.isNativePlatform()) {
+    if (!navigator?.geolocation) return { granted: false, status: 'unavailable' }
+    return { granted: true, status: 'prompt' }
+  }
+
+  const Geo = await getCapacitorGeolocation()
+  if (!Geo?.requestPermissions) return { granted: false, status: 'unavailable' }
+  try {
+    const result = await Geo.requestPermissions({ permissions: ['location'] })
+    const status = statusFromPermission(result)
+    return { granted: status === 'granted', status }
+  } catch (error) {
+    const status = classifyLocationError(error)
+    return { granted: false, status }
+  }
+}
+
+/** Compatibilité : vrai uniquement si l’accès est accordé. */
+export async function requestLocationPermission() {
+  const access = await requestLocationAccess()
+  return access.granted
+}
+
+export function canOpenLocationSettings() {
+  return Capacitor.isNativePlatform()
+}
+
+export function openLocationSettings() {
+  if (!canOpenLocationSettings()) return false
+  window.location.href = 'app-settings:'
   return true
 }
 
 export async function getCurrentPosition(options = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options }
+  const tripPlugin = await getTripPlugin()
+  if (tripPlugin) {
+    const timeoutMs = Number(opts.timeout) > 0 ? Number(opts.timeout) : 20000
+    gpsLog('AacTripLocation.getCurrentPosition appel', { timeoutMs })
+    try {
+      const point = await withTimeout(
+        tripPlugin.getCurrentPosition({ timeout: timeoutMs }),
+        timeoutMs + 3000,
+        'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
+      )
+      const normalized = normalizeNativePoint(point)
+      gpsLog('getCurrentPosition succès', normalized)
+      return normalized
+    } catch (error) {
+      gpsLog('getCurrentPosition erreur', `${error?.code || ''} ${error?.message || error}`)
+      throw toLocationError(error, 'Impossible d’obtenir la position GPS.')
+    }
+  }
   if (Capacitor.isNativePlatform()) {
     const Geo = await getCapacitorGeolocation()
     if (Geo) {
-      const pos = await Geo.getCurrentPosition(opts)
-      return toPosition(pos.coords, pos.timestamp)
+      try {
+        const pos = await Geo.getCurrentPosition(opts)
+        return toPosition(pos.coords, pos.timestamp)
+      } catch (error) {
+        throw toLocationError(error, 'Impossible d’obtenir la position GPS.')
+      }
     }
   }
   return new Promise((resolve, reject) => {
     if (!navigator?.geolocation) {
-      reject(new Error('La géolocalisation n’est pas disponible sur cet appareil.'))
+      reject(toLocationError({ message: 'La géolocalisation n’est pas disponible sur cet appareil.' }, 'La géolocalisation n’est pas disponible sur cet appareil.'))
       return
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve(toPosition(pos.coords, pos.timestamp)),
-      (err) => reject(new Error(err?.message || 'Impossible d’obtenir la position GPS.')),
+      (err) => reject(toLocationError(err, 'Impossible d’obtenir la position GPS.')),
       opts,
     )
   })
 }
 
 /**
+ * Attend une position exploitable. `weak` signifie qu’un relevé est arrivé,
+ * mais avec une précision insuffisante pour démarrer un trajet.
+ */
+export async function acquireAccuratePosition({ attempts = 3, maxAccuracyM = GPS_LIMITS.maxAccuracyM } = {}) {
+  gpsLog('acquireAccuratePosition entrée')
+  let last = null
+  let lastError = null
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const position = await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      })
+      last = position
+      if (position.accuracy == null || position.accuracy <= maxAccuracyM) {
+        gpsLog('acquireAccuratePosition sortie', { weak: false, accuracy: position.accuracy })
+        return { position, weak: false }
+      }
+    } catch (error) {
+      lastError = error
+      const status = error.locationStatus || classifyLocationError(error)
+      error.locationStatus = status
+      if (status === 'denied' || status === 'servicesDisabled' || status === 'restricted' || status === 'timeout') {
+        throw error
+      }
+    }
+  }
+  if (last) {
+    gpsLog('acquireAccuratePosition sortie', { weak: true, accuracy: last.accuracy })
+    return { position: last, weak: true }
+  }
+  const error = lastError || new Error('Impossible d’obtenir la position GPS.')
+  error.locationStatus = error.locationStatus || classifyLocationError(error)
+  gpsLog('acquireAccuratePosition erreur', `${error.locationStatus} ${error.message}`)
+  throw error
+}
+
+/**
  * @returns {{ stop: () => void }}
  */
+function watchIosTrip(onUpdate, onError, options) {
+  let drainTimer = null
+  let stopped = false
+  let finishing = false
+  let plugin = null
+  let removeListeners = async () => {}
+
+  let loggedFirstFix = false
+  const emit = (point) => {
+    if (stopped || !point) return
+    const normalized = normalizeNativePoint(point)
+    if (!loggedFirstFix) {
+      loggedFirstFix = true
+      gpsLog('première position reçue', normalized)
+    }
+    onUpdate(normalized)
+  }
+
+  const pull = async () => {
+    if (!plugin || stopped) return
+    const drained = await plugin.drain()
+    for (const point of drained?.points || []) emit(point)
+  }
+
+  const ready = (async () => {
+    plugin = await getTripPlugin()
+    if (!plugin) {
+      const fallback = watchPosition(onUpdate, onError, { ...options, background: false })
+      removeListeners = async () => {
+        fallback.stop()
+      }
+      onError?.(new Error('Cette version de l’application ne suit pas encore le GPS écran verrouillé. Installez la nouvelle version avec npm run ios:prepare.'))
+      return
+    }
+    gpsLog('AacTripLocation.start appel', { reset: Boolean(options.reset) })
+    await plugin.start({ reset: Boolean(options.reset) })
+    gpsLog('AacTripLocation.start retour')
+    const first = await plugin.drain()
+    for (const point of first?.points || []) emit(point)
+    const locationHandle = await plugin.addListener('location', (point) => emit(point))
+    const errorHandle = await plugin.addListener('error', (payload) => {
+      if (!stopped) onError?.(toLocationError(payload, 'Erreur GPS'))
+    })
+    removeListeners = async () => {
+      await locationHandle?.remove?.()
+      await errorHandle?.remove?.()
+    }
+    pullNativeTripPoints = pull
+    drainTimer = setInterval(() => {
+      void pull()
+    }, 4000)
+  })()
+
+  const finish = async (endNative) => {
+    if (finishing) return
+    finishing = true
+    clearInterval(drainTimer)
+    drainTimer = null
+    try {
+      await ready
+    } catch (error) {
+      onError?.(error)
+    }
+    if (endNative && plugin) {
+      const drained = await plugin.drain()
+      for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
+      await plugin.stop()
+    }
+    stopped = true
+    pullNativeTripPoints = async () => {}
+    try {
+      await removeListeners()
+    } catch {
+      // Le suivi n’a pas démarré.
+    }
+  }
+
+  return {
+    stop: () => {
+      void finish(true)
+    },
+    detach: () => {
+      void finish(false)
+    },
+  }
+}
+
 export function watchPosition(onUpdate, onError, options = {}) {
-  const opts = { ...DEFAULT_OPTIONS, ...options }
+  if (options.background && Capacitor.getPlatform() === 'ios') {
+    return watchIosTrip(onUpdate, onError, options)
+  }
+  const opts = { ...DEFAULT_OPTIONS, timeout: 25000, ...options }
   let watchId = null
   let stopped = false
   let capacitorWatchId = null
@@ -78,7 +438,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
         capacitorWatchId = await Geo.watchPosition(opts, (pos, err) => {
           if (stopped) return
           if (err) {
-            onError?.(new Error(err.message || 'Erreur GPS'))
+            onError?.(toLocationError(err, 'Erreur GPS'))
             return
           }
           if (pos?.coords) onUpdate(toPosition(pos.coords, pos.timestamp))
@@ -95,7 +455,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
         if (!stopped) onUpdate(toPosition(pos.coords, pos.timestamp))
       },
       (err) => {
-        if (!stopped) onError?.(new Error(err?.message || 'Erreur GPS'))
+        if (!stopped) onError?.(toLocationError(err, 'Erreur GPS'))
       },
       opts,
     )
@@ -130,30 +490,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
   }
 }
 
-/** Distance haversine en kilomètres. */
-export function haversineKm(a, b) {
-  if (!a || !b) return 0
-  const R = 6371
-  const toRad = (deg) => (deg * Math.PI) / 180
-  const dLat = toRad(b.lat - a.lat)
-  const dLng = toRad(b.lng - a.lng)
-  const lat1 = toRad(a.lat)
-  const lat2 = toRad(b.lat)
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
-}
-
-/** Filtre les sauts GPS aberrants (> maxJumpKm entre deux points). */
-export function accumulateDistance(points, maxJumpKm = 0.5) {
-  let total = 0
-  for (let i = 1; i < points.length; i += 1) {
-    const d = haversineKm(points[i - 1], points[i])
-    if (d > 0 && d <= maxJumpKm) total += d
-  }
-  return Math.round(total * 1000) / 1000
-}
+export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance'
 
 export function downsamplePath(points, maxPoints = 200) {
   if (!points?.length) return []

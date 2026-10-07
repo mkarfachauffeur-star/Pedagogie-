@@ -28,7 +28,8 @@ const entries = [
   ['NSPhotoLibraryUsageDescription', 'Pedagogia Drive accède à vos photos pour importer des documents (pièces d’identité, justificatifs, autorisations).'],
   ['NSPhotoLibraryAddUsageDescription', 'Pedagogia Drive peut enregistrer des documents exportés dans votre photothèque si vous le demandez.'],
   ['NSMicrophoneUsageDescription', 'Pedagogia Drive n’utilise pas le micro. Cette autorisation n’est requise que si vous enregistrez une note vocale depuis l’appareil.'],
-  ['NSLocationWhenInUseUsageDescription', 'Pedagogia Drive utilise votre position pendant vos trajets de conduite accompagnée (AAC) pour calculer automatiquement les kilomètres parcourus.'],
+  ['NSLocationWhenInUseUsageDescription', 'Pedagogia Drive utilise votre position pendant un trajet de conduite accompagnée pour calculer les kilomètres réellement parcourus. Le suivi s’arrête lorsque vous terminez le trajet.'],
+  ['NSLocationAlwaysAndWhenInUseUsageDescription', 'Pendant un trajet de conduite accompagnée, Pedagogia Drive continue d’utiliser votre position lorsque l’iPhone est verrouillé ou lorsque l’application est en arrière-plan, afin de calculer les kilomètres réellement parcourus. Le suivi s’arrête dès que vous appuyez sur Arrêter le trajet. Pedagogia Drive ne suit pas votre position en dehors d’un trajet.'],
 ]
 
 for (const [key, value] of entries) {
@@ -54,5 +55,23 @@ xml = xml.replace(
 \t</array>`,
 )
 
+xml = ensureBackgroundLocationMode(xml)
+
 writeFileSync(plistPath, xml)
-console.log('[ios-plist] Info.plist mis à jour (permissions + App Store).')
+console.log('[ios-plist] Info.plist mis à jour (permissions + suivi de trajet en arrière-plan).')
+
+function ensureBackgroundLocationMode(source) {
+  if (/<key>UIBackgroundModes<\/key>\s*<array>[\s\S]*?<string>location<\/string>/.test(source)) {
+    return source
+  }
+  if (source.includes('<key>UIBackgroundModes</key>')) {
+    return source.replace(
+      /(<key>UIBackgroundModes<\/key>\s*<array>)/,
+      '$1\n        <string>location</string>',
+    )
+  }
+  return source.replace(
+    /<\/dict>\s*<\/plist>\s*$/,
+    '    <key>UIBackgroundModes</key>\n    <array>\n        <string>location</string>\n    </array>\n</dict>\n</plist>\n',
+  )
+}
