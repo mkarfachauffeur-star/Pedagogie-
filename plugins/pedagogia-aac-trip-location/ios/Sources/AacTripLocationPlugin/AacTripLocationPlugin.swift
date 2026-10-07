@@ -49,11 +49,11 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         return manager!
     }
 
-    @objc func checkPermissions(_ call: CAPPluginCall) {
+    @objc override public func checkPermissions(_ call: CAPPluginCall) {
         call.resolve(permissionPayload())
     }
 
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc override public func requestPermissions(_ call: CAPPluginCall) {
         guard CLLocationManager.locationServicesEnabled() else {
             call.resolve(permissionPayload())
             return
