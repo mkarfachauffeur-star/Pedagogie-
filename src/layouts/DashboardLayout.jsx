@@ -29,13 +29,26 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
     || String(user?.user_metadata?.full_name || '').trim()
     || String(profile?.email || user?.email || '').split('@')[0]?.trim()
     || ''
-  const sidebarUser = config?.user
+  const { navItems, track, loading: trackLoading, student: trackedStudent } = useStudentTrack(role === 'student' ? profileId : null)
+  const studentFullName = [trackedStudent?.first_name, trackedStudent?.last_name].filter(Boolean).join(' ').trim()
+    || displayName
+  const formationLabel = trackedStudent?.package_name || trackedStudent?.formation_type || ''
+  const studentIdentity = [...new Set([
+    getTrackLabel(track),
+    formationLabel,
+    trackedStudent?.status,
+  ].filter(Boolean))].join(' · ')
+  const sidebarUser = role === 'student'
     ? {
-        name: displayName || 'Mon compte',
-        role: roleLabelFor(role, profile?.gender),
+        name: studentFullName || 'Élève',
+        role: studentIdentity || roleLabelFor(role, profile?.gender),
       }
-    : null
-  const { navItems, track, loading: trackLoading } = useStudentTrack(role === 'student' ? profileId : null)
+    : config?.user
+      ? {
+          name: displayName || 'Mon compte',
+          role: roleLabelFor(role, profile?.gender),
+        }
+      : null
   const items = role === 'student' ? navItems : config.items
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -289,11 +302,16 @@ export default function DashboardLayout({ role, children, fullWidth = false }) {
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                 {activeItem?.label || 'Tableau de bord'}
               </p>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="truncate text-sm font-semibold text-slate-900">
                 {role === 'student' && !trackLoading
-                  ? getTrackLabel(track)
+                  ? (studentFullName || getTrackLabel(track))
                   : (sidebarUser?.name || 'PEDAGOGIA DRIVE')}
               </p>
+              {role === 'student' && !trackLoading && studentIdentity && (
+                <p className="max-w-[14rem] truncate text-[11px] font-medium text-slate-500 sm:max-w-xs">
+                  {studentIdentity}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

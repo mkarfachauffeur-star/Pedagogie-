@@ -55,9 +55,32 @@ async function squareIcon(size, scale) {
 const iconDir = path.join(iosDir, 'App/App/Assets.xcassets/AppIcon.appiconset')
 const iconPath = path.join(iconDir, 'AppIcon.png')
 const legacyIcon = path.join(iconDir, 'AppIcon-512@2x.png')
-// 0.78 laisse le logo entier dans le masque arrondi iOS (le 0.88 coupait le mot).
-await sharp(await squareIcon(1024, 0.78)).toFile(iconPath)
+// 0.64 : le mot PEDAGOGIA DRIVE reste dans la zone sûre du masque arrondi iOS.
+const iconBuffer = await squareIcon(1024, 0.64)
+await sharp(iconBuffer).toFile(iconPath)
 if (legacyIcon !== iconPath && existsSync(legacyIcon)) rmSync(legacyIcon)
+
+const { data, info } = await sharp(iconPath).raw().toBuffer({ resolveWithObject: true })
+let minX = info.width
+let minY = info.height
+let maxX = 0
+let maxY = 0
+for (let y = 0; y < info.height; y += 2) {
+  for (let x = 0; x < info.width; x += 2) {
+    const index = (y * info.width + x) * info.channels
+    if (data[index] + data[index + 1] + data[index + 2] <= 30) continue
+    if (x < minX) minX = x
+    if (y < minY) minY = y
+    if (x > maxX) maxX = x
+    if (y > maxY) maxY = y
+  }
+}
+const margin = Math.min(minX, minY, info.width - 1 - maxX, info.height - 1 - maxY)
+if (info.width !== 1024 || info.height !== 1024 || info.channels !== 3 || margin < 140) {
+  console.error('[ios-icons] AppIcon hors zone sûre', { width: info.width, height: info.height, channels: info.channels, margin })
+  process.exit(1)
+}
+console.log('[ios-icons] Fichier utilisé par Xcode :', iconPath, `(marge ${margin}px)`)
 
 const splash = await squareIcon(2732, 0.56)
 const splashDir = path.join(iosDir, 'App/App/Assets.xcassets/Splash.imageset')
