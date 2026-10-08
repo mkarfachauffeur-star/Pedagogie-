@@ -12,38 +12,22 @@ function LogoMark({ compact }) {
 }
 
 function LogoText({ variant = 'marketing' }) {
-  if (variant === 'login') {
-    return (
-      <div className="min-w-0 leading-none">
-        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-white sm:text-xs">
-          PEDAGOGIA
-        </p>
-        <p className="mt-1 text-[1.65rem] font-black uppercase tracking-[0.06em] text-[#ef4444] sm:text-[1.85rem]">
-          DRIVE
-        </p>
-      </div>
-    )
-  }
-
-  if (variant === 'light') {
-    return (
-      <div className="min-w-0 leading-none">
-        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-700 sm:text-[11px]">
-          PEDAGOGIA
-        </p>
-        <p className="mt-0.5 text-[1.35rem] font-black uppercase tracking-[0.04em] text-[#ef4444] sm:text-[1.55rem]">
-          DRIVE
-        </p>
-      </div>
-    )
-  }
-
+  const large = variant === 'login'
+  const onLight = variant === 'light'
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-white sm:text-[11px]">
+      <p
+        className={`font-black uppercase tracking-[0.26em] ${onLight ? 'text-[#07111f]' : 'text-white'} ${
+          large ? 'text-[11px] tracking-[0.28em] sm:text-xs' : 'text-[10px] sm:text-[11px]'
+        }`}
+      >
         PEDAGOGIA
       </p>
-      <p className="text-[1.35rem] font-black uppercase leading-none tracking-[0.04em] sm:text-[1.55rem]">
+      <p
+        className={`font-black uppercase leading-none tracking-[0.04em] ${
+          large ? 'mt-1 text-[1.65rem] tracking-[0.06em] sm:text-[1.85rem]' : 'mt-0.5 text-[1.35rem] sm:text-[1.55rem]'
+        }`}
+      >
         <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
           DRI
         </span>
