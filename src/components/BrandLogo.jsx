@@ -14,10 +14,10 @@ function LogoMark({ compact }) {
 function LogoText({ variant = 'marketing' }) {
   const large = variant === 'login'
   const onLight = variant === 'light'
-  const wordmark = (
-    <div className={`min-w-0 ${onLight ? 'logo-glass px-2 py-1' : ''}`}>
+  return (
+    <div className="min-w-0">
       <p
-        className={`font-black uppercase tracking-[0.26em] text-white ${
+        className={`font-black uppercase tracking-[0.26em] ${onLight ? 'text-[#07111f]' : 'text-white'} ${
           large ? 'text-[11px] tracking-[0.28em] sm:text-xs' : 'text-[10px] sm:text-[11px]'
         }`}
       >
@@ -36,15 +36,6 @@ function LogoText({ variant = 'marketing' }) {
         </span>
       </p>
       <div className="mt-1.5 h-[2px] w-full bg-gradient-to-r from-blue-500 via-violet-500 to-red-500" />
-    </div>
-  )
-
-  if (!onLight) return wordmark
-
-  return (
-    <div className="logo-glass-wrap">
-      <span aria-hidden className="logo-glass-halo" />
-      {wordmark}
     </div>
   )
 }
