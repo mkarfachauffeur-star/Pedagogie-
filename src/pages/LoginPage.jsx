@@ -360,10 +360,13 @@ export default function LoginPage() {
               className={`mt-6 max-w-lg text-3xl font-black leading-tight tracking-[-0.04em] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1] ${skin.heading}`}
             >
               Bienvenue sur{' '}
-              <span className="block sm:inline">
-                PEDAGOGIA{' '}
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-red-400 bg-clip-text text-transparent">
-                  DRIVE
+              <span className={`mt-1 inline-block leading-none ${isDark ? '' : 'rounded-2xl bg-[#030712] px-3 py-2'}`}>
+                <span className="text-white">PEDAGOGIA </span>
+                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                  DRI
+                </span>
+                <span className="bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">
+                  VE
                 </span>
               </span>
             </h1>
