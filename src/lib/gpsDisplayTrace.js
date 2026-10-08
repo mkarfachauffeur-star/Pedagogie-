@@ -7,14 +7,14 @@ import { haversineKm } from './gpsDistance.js'
 const DISPLAY_LIMITS = {
   maxAccuracyM: 50,
   fallbackAccuracyM: 80,
-  minGapM: 7,
-  spikeReturnM: 70,
-  spikeLegM: 90,
+  minGapM: 8,
+  spikeReturnM: 40,
+  spikeLegM: 55,
   tripGapM: 1200,
   tripGapMs: 15 * 60 * 1000,
   maxSpeedKmh: 180,
-  simplifyM: 12,
-  maxPoints: 240,
+  simplifyM: 8,
+  maxPoints: 300,
 }
 
 function timestampMs(value) {
@@ -98,7 +98,7 @@ function isSpike(start, point, end, limits) {
   const shortcut = meters(start, end)
   if (shortcut <= limits.spikeReturnM && Math.max(legIn, legOut) >= limits.spikeLegM) return true
   const offset = crossTrackM(start, end, point)
-  return offset > 80 && legIn > 40 && legOut > 40 && shortcut < 0.45 * (legIn + legOut)
+  return offset >= 55 && legIn > 35 && legOut > 35 && shortcut + 30 < legIn + legOut
 }
 
 function removeSpikes(points, limits) {
@@ -186,6 +186,21 @@ function keepCurrentTrip(points, limits) {
   return best
 }
 
+function trimEndJump(points) {
+  if (points.length < 4) return points
+  const steps = []
+  for (let index = 1; index < points.length - 1; index += 1) {
+    steps.push(meters(points[index - 1], points[index]))
+  }
+  steps.sort((a, b) => a - b)
+  const median = steps[Math.floor(steps.length / 2)] || 0
+  const lastStep = meters(points.at(-2), points.at(-1))
+  if (lastStep > 400 && lastStep > median * 12) return points.slice(0, -1)
+  const firstStep = meters(points[0], points[1])
+  if (firstStep > 400 && firstStep > median * 12) return points.slice(1)
+  return points
+}
+
 function dedupe(points, minGapM) {
   if (points.length < 2) return points
   const out = [points[0]]
@@ -244,6 +259,7 @@ export function buildDisplayTrace(points, limits = {}) {
   usable = removeSpikes(usable, cfg)
   usable = dropImpossible(usable, cfg)
   usable = keepCurrentTrip(usable, cfg)
+  usable = trimEndJump(usable)
   usable = dedupe(usable, cfg.minGapM)
   usable = simplify(usable, cfg.simplifyM)
   if (usable.length > cfg.maxPoints) usable = simplify(usable, cfg.simplifyM * 2)

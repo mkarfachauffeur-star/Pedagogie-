@@ -26,7 +26,7 @@ export function useStudentTrack(profileId) {
 
     supabase
       .from('students')
-      .select('id, license_category, package_name, formation_type, first_name, last_name')
+      .select('id, license_category, package_name, formation_type, first_name, last_name, status')
       .eq('profile_id', profileId)
       .maybeSingle()
       .then(({ data, error: queryError }) => {

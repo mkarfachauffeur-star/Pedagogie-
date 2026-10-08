@@ -17,7 +17,6 @@ import {
   estimateSuccessProbability,
 } from '../../services/practiceExamScoring'
 import { supabase } from '../../lib/supabase'
-import { splitFullName } from '../../lib/staffAccounts'
 
 function formatDateFr(value) {
   if (!value) return '—'
@@ -96,15 +95,14 @@ export default function StudentDashboardPage() {
   }, [user, profileId, profile, student, track, studentId, trackLoading, remcLoading])
 
   const displayName = useMemo(() => {
-    if (student?.first_name) return student.first_name
-    if (profile?.full_name) {
-      const { firstName } = splitFullName(profile.full_name)
-      if (firstName) return firstName
-    }
+    const fromStudent = [student?.first_name, student?.last_name].filter(Boolean).join(' ').trim()
+    if (fromStudent) return fromStudent
+    if (profile?.full_name?.trim()) return profile.full_name.trim()
     return 'Élève'
   }, [student, profile])
 
-  const formationLabel = student?.package_name || student?.formation_type || getTrackLabel(track)
+  const formationName = student?.package_name || student?.formation_type || ''
+  const identityLine = [...new Set([getTrackLabel(track), formationName, student?.status].filter(Boolean))].join(' · ')
   const navLinks = getStudentNavItems(track, student).filter((item) => item.href !== '/student/dashboard')
   const assessment = hoursSummary?.assessment
   const assessmentDone = assessment?.status === 'completed'
@@ -131,7 +129,7 @@ export default function StudentDashboardPage() {
               Bonjour {displayName}
             </h1>
             <p className="mt-3 max-w-xl text-base leading-7 text-cyan-50/85">
-              {formationLabel} · Moniteur {teacherName}
+              {identityLine} · Moniteur {teacherName}
             </p>
           </div>
           {isPermisB ? (

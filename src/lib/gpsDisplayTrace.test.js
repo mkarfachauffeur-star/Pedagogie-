@@ -87,6 +87,43 @@ test('des points reçus dans le désordre sont dessinés dans l’ordre du temps
   assert.ok(trace[0][1] < trace.at(-1)[1])
 })
 
+test('un écart latéral qui revient sur la route n’est pas dessiné', () => {
+  const start = { lat: 43.7, lng: 7.26, timestamp: 1_700_000_000_000, accuracy: 6 }
+  const road = along(start, 8, 25, 2500)
+  const side = {
+    ...road[4],
+    lat: road[4].lat + 80 / 110_540,
+    timestamp: road[4].timestamp + 800,
+  }
+  const after = road.slice(5).map((point) => ({ ...point, timestamp: point.timestamp + 800 }))
+  const trace = buildDisplayTrace([...road.slice(0, 5), side, ...after])
+  const sideLat = Math.round(side.lat * 1e6) / 1e6
+  assert.ok(trace.every((pair) => pair[0] !== sideLat))
+  assert.ok(trace.at(-1)[1] > trace[0][1])
+})
+
+test('un virage réel reste dans le tracé', () => {
+  const start = { lat: 43.7, lng: 7.26, timestamp: 1_700_000_000_000, accuracy: 8 }
+  const eastbound = along(start, 4, 40, 4000)
+  const corner = eastbound.at(-1)
+  let cursor = corner
+  const northbound = []
+  for (let index = 0; index < 4; index += 1) {
+    cursor = {
+      lat: cursor.lat + 40 / 110_540,
+      lng: cursor.lng,
+      timestamp: cursor.timestamp + 4000,
+      accuracy: 8,
+    }
+    northbound.push(cursor)
+  }
+  const trace = buildDisplayTrace([...eastbound, ...northbound])
+  const cornerLat = Math.round(corner.lat * 1e6) / 1e6
+  const cornerLng = Math.round(corner.lng * 1e6) / 1e6
+  assert.ok(trace.some((pair) => pair[0] === cornerLat && pair[1] === cornerLng))
+  assert.ok(trace.at(-1)[0] > trace[0][0])
+})
+
 test('le filtrage du tracé ne change pas les kilomètres mesurés', () => {
   const start = { lat: 43.7, lng: 7.26, timestamp: 1_700_000_000_000, accuracy: 8 }
   const road = along(start, 8, 50, 5000)
