@@ -1764,6 +1764,14 @@
   scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* Le cadre grandit avec le formulaire. min-h-[100dvh] + flex-1
+   comprimait la carte (overflow hidden) et masquait le retour accueil. */
+.login-page-frame {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+}
+
 html.keyboard-open .login-page-shell > .relative {
   padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
 }

@@ -98,13 +98,13 @@ export default function BrandLogo({
   )
 
   if (!animated) {
-    return <div className="flex items-center gap-3.5">{content}</div>
+    return <div className="pointer-events-none flex items-center gap-3.5">{content}</div>
   }
 
   return (
     <motion.div
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-center gap-3.5"
+      className="pointer-events-none flex items-center gap-3.5"
       initial={{ opacity: 0, x: -6 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
