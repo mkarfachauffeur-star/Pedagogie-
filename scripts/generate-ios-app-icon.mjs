@@ -2,7 +2,7 @@
  * Icône et écran de lancement iOS à partir du visuel Pedagogia Drive.
  * Remplace la génération Capacitor Assets, qui posait un logo générique.
  */
-import { existsSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -17,8 +17,8 @@ if (!existsSync(iosDir)) {
 }
 
 if (!existsSync(source)) {
-  console.warn('[ios-icons] Visuel introuvable :', source)
-  process.exit(0)
+  console.error('[ios-icons] Visuel introuvable :', source)
+  process.exit(1)
 }
 
 const trimmed = await sharp(source).trim({ threshold: 18 }).png().toBuffer()
@@ -52,8 +52,12 @@ async function squareIcon(size, scale) {
     .toBuffer()
 }
 
-const iconPath = path.join(iosDir, 'App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
-await sharp(await squareIcon(1024, 0.88)).toFile(iconPath)
+const iconDir = path.join(iosDir, 'App/App/Assets.xcassets/AppIcon.appiconset')
+const iconPath = path.join(iconDir, 'AppIcon.png')
+const legacyIcon = path.join(iconDir, 'AppIcon-512@2x.png')
+// 0.78 laisse le logo entier dans le masque arrondi iOS (le 0.88 coupait le mot).
+await sharp(await squareIcon(1024, 0.78)).toFile(iconPath)
+if (legacyIcon !== iconPath && existsSync(legacyIcon)) rmSync(legacyIcon)
 
 const splash = await squareIcon(2732, 0.56)
 const splashDir = path.join(iosDir, 'App/App/Assets.xcassets/Splash.imageset')

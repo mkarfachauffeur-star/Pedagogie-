@@ -180,7 +180,7 @@ export function MessageComposer({
         </p>
       )}
       <PendingFiles files={files} onRemove={onRemoveFile} />
-      <div className="flex items-center gap-2">
+      <div className="flex w-full min-w-0 items-center gap-2">
         <AttachButton onAdd={onAddFiles} disabled={busy} />
         <input
           className="pd-input-dark min-w-0"

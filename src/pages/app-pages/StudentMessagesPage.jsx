@@ -113,7 +113,7 @@ export default function StudentMessagesPage() {
   }
 
   return (
-    <div className="pd-page">
+    <div className="pd-page pd-msg-page">
       <section className="pd-card overflow-hidden p-0">
         <div className="pd-hero-banner">
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]" />
@@ -130,7 +130,7 @@ export default function StudentMessagesPage() {
       {!profileId ? (
         <EmptyState title="Connexion requise" message="Connectez-vous avec votre compte pour accéder à la messagerie." icon="💬" />
       ) : (
-        <section className="pd-msg-panel grid min-h-[680px] lg:grid-cols-[320px_1fr]">
+        <section className="pd-msg-panel grid min-w-0 lg:min-h-[680px] lg:grid-cols-[320px_1fr]">
           <aside className="pd-msg-sidebar">
             <h2 className="pd-msg-sidebar-title">Secrétariat</h2>
             <p className="pd-msg-sidebar-muted mt-1">Votre interlocuteur administratif</p>
