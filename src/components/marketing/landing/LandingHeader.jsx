@@ -80,7 +80,7 @@ export default function LandingHeader() {
 
   const navClass = 'text-sm font-medium text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]'
   const toggleClass =
-    'inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--lp-border)] text-[var(--lp-ink)] transition hover:bg-[var(--lp-bg-alt)]'
+    'inline-flex h-11 w-11 items-center justify-center rounded-[12px] border border-[var(--lp-border)] text-[var(--lp-ink)] transition hover:bg-[var(--lp-bg-alt)] lg:h-10 lg:w-10'
   const loginClass =
     'inline-flex h-10 items-center justify-center rounded-[12px] border-2 border-[var(--lp-ink)] bg-[var(--lp-card)] px-4 text-sm font-semibold text-[var(--lp-ink)] shadow-sm transition hover:bg-[var(--lp-bg-alt)]'
   const demoClass =
@@ -90,11 +90,11 @@ export default function LandingHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b backdrop-blur-xl transition ${
+      className={`sticky top-0 z-50 border-b pt-[max(2.75rem,env(safe-area-inset-top,0px))] backdrop-blur-xl transition lg:pt-0 ${
         scrolled ? 'border-[var(--lp-border)] bg-[var(--lp-bg)]/80' : 'border-transparent bg-[var(--lp-bg)]/55'
       }`}
     >
-      <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 lg:gap-10 lg:px-8">
+      <div className="mx-auto grid h-14 max-w-[1280px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 lg:h-16 lg:gap-10 lg:px-8">
         {isHome ? (
           <a aria-label="PEDAGOGIA DRIVE - Accueil" className="inline-flex shrink-0 items-center" href="#accueil">
             {logo}
@@ -131,7 +131,7 @@ export default function LandingHeader() {
           <button
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--lp-border)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] border border-[var(--lp-border)] lg:hidden"
             onClick={() => setMobileOpen((value) => !value)}
             type="button"
           >
