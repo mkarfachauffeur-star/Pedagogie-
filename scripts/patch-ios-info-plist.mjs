@@ -21,6 +21,7 @@ let xml = readFileSync(plistPath, 'utf8')
 const entries = [
   ['CFBundleDisplayName', 'Pedagogia Drive'],
   ['CFBundleName', 'Pedagogia Drive'],
+  ['CFBundleIconName', 'AppIcon'],
   ['ITSAppUsesNonExemptEncryption', '<false/>'],
   ['UIViewControllerBasedStatusBarAppearance', '<true/>'],
   ['UIRequiresFullScreen', '<false/>'],

@@ -993,7 +993,7 @@
   }
 
   .pd-msg-sidebar {
-    @apply border-b-2 border-slate-300 bg-blue-50/70 p-4 md:p-5 lg:border-b-0 lg:border-r;
+    @apply min-w-0 max-w-full border-b-2 border-slate-300 bg-blue-50/70 p-4 md:p-5 lg:border-b-0 lg:border-r;
   }
 
   .pd-msg-sidebar-title {
@@ -1009,11 +1009,11 @@
   }
 
   .pd-msg-chat-header {
-    @apply border-b-2 border-slate-300 bg-white p-5;
+    @apply min-w-0 max-w-full border-b-2 border-slate-300 bg-white p-4 sm:p-5;
   }
 
   .pd-msg-chat-body {
-    @apply flex min-h-0 flex-1 flex-col bg-slate-50/80;
+    @apply flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col bg-slate-50/80;
   }
 
   .pd-msg-chat-footer {
@@ -1522,18 +1522,19 @@
 
   .pd-msg-bubble {
     @apply w-fit min-w-0 max-w-[min(100%,28rem)] break-words text-left;
+    overflow-wrap: anywhere;
   }
 
   .pd-msg-composer {
-    @apply mt-auto border-t-2 border-slate-300 bg-white pt-4;
+    @apply mt-auto w-full min-w-0 max-w-full border-t-2 border-slate-300 bg-white pt-4;
   }
 
   .pd-msg-send-btn {
-    @apply shrink-0 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply shrink-0 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5;
   }
 
   .pd-msg-thread-list {
-    @apply mt-5 mb-4 flex max-h-[420px] flex-1 flex-col gap-4 overflow-y-auto py-2 pr-1;
+    @apply mt-5 mb-4 flex max-h-[420px] w-full min-w-0 max-w-full flex-1 flex-col gap-4 overflow-y-auto py-2 pr-1;
   }
 
   .pd-input-dark {
@@ -1541,11 +1542,11 @@
   }
 
   .pd-msg-chip {
-    @apply inline-flex items-center rounded-full border-2 border-slate-300 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600;
+    @apply inline-flex max-w-full items-center whitespace-normal rounded-full border-2 border-slate-300 bg-slate-50 px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600;
   }
 
   .pd-msg-panel {
-    @apply overflow-hidden rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
+    @apply w-full min-w-0 max-w-full overflow-x-clip rounded-[1.75rem] border-2 border-slate-300 bg-white shadow-[var(--shadow-soft)] backdrop-blur-sm;
   }
 
   .pd-msg-thread-active {
@@ -1589,7 +1590,60 @@
   }
 
   .pd-msg-empty {
-    @apply flex h-full min-h-[420px] items-center justify-center rounded-2xl border-2 border-slate-300 bg-slate-50 px-6 text-center text-sm font-medium text-slate-500;
+    @apply flex h-full min-h-[12rem] items-center justify-center rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 text-center text-sm font-medium text-slate-500 sm:min-h-[420px] sm:px-6;
+  }
+
+  .pd-msg-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .pd-msg-page h1,
+  .pd-msg-page h2,
+  .pd-msg-page p,
+  .pd-msg-contact-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pd-msg-panel .flex,
+  .pd-msg-panel > section,
+  .pd-msg-picker,
+  .pd-msg-thread,
+  .pd-msg-thread-active,
+  .pd-msg-contact-active {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1023px) {
+  .pd-msg-page {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pd-msg-thread-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .pd-msg-chat-header .flex,
+  .pd-msg-chat-divider,
+  .pd-msg-panel button > .flex {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .pd-msg-panel > section {
+    min-height: 0;
+    padding: 1rem;
+  }
+}
+
+@media (hover: none) {
+  .pd-msg-panel button {
+    transform: none;
   }
 }
 

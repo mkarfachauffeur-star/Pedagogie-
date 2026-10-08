@@ -144,7 +144,7 @@ export default function SecretaryMessagesPage() {
   }
 
   return (
-    <div className="pd-page">
+    <div className="pd-page pd-msg-page">
       <section className="pd-card overflow-hidden p-0">
         <div className="pd-hero-banner">
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(107,143,178,0.22),transparent_42%)]" />

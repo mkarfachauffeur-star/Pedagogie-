@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
 import { addOneYear, countMandatoryRvpCompleted, evaluateAacConditions, kmProgress, statusLabel } from '../lib/aacRules'
-import { downsamplePath } from '../lib/geolocation'
+import { buildDisplayTrace } from '../lib/gpsDisplayTrace.js'
 
 export const AAC_FFI_DOCUMENT_TYPE = 'Attestation FFI'
 
@@ -412,7 +412,7 @@ export async function completeAacTrip(tripId, studentId, {
     const elapsedMs = endedAt.getTime() - start.getTime()
     const durationSeconds = Number.isFinite(elapsedMs) ? Math.max(0, Math.round(elapsedMs / 1000)) : 0
     const safeKm = Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : 0
-    const pathSummary = downsamplePath(points || [])
+    const pathSummary = buildDisplayTrace(points || [])
     const base = {
       ended_at: endedAt.toISOString(),
       distance_km: safeKm,

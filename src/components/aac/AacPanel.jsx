@@ -54,6 +54,7 @@ import {
   traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
+import AacTripMap from './AacTripMap'
 
 function formatDuration(seconds) {
   const s = Math.max(0, Number(seconds) || 0)
@@ -487,7 +488,7 @@ export default function AacPanel({
       const measured = measureTrack(pointsRef.current)
       const details = detailsRef.current
       const { trip: completed, error: stopError } = await completeAacTrip(trip.id, studentId, {
-        points: measured.points,
+        points: pointsRef.current,
         distanceKm: measured.distanceKm,
         startedAt: trip.startedAt,
         mandatoryRvp: details.mandatoryRvp,
@@ -954,6 +955,8 @@ export default function AacPanel({
             </div>
           )}
 
+          {tripActive && <AacTripMap className="mt-4" path={livePoints} />}
+
           {lastTripSummary && (
             <div className="mt-6 border-t border-white/70 pt-4">
               <p className="mb-3 text-sm text-slate-500">Dernier trajet</p>
@@ -1216,7 +1219,8 @@ function TripRecap({ trip }) {
   ]
 
   return (
-    <article className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <article className="flex min-w-0 flex-col gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-900">
           <span className="tabular-nums">{formatKm(trip.distanceKm)} km</span>
@@ -1238,6 +1242,8 @@ function TripRecap({ trip }) {
         <span className="mx-1.5 text-slate-300">·</span>
         {formatClock(trip.startedAt)} – {formatClock(trip.endedAt)}
       </p>
+      </div>
+      <AacTripMap path={trip.pathSummary} />
     </article>
   )
 }
