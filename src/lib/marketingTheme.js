@@ -12,7 +12,7 @@ export function marketingSkin(theme) {
       : 'min-h-screen overflow-x-clip bg-white text-slate-900',
     ambient: isDark
       ? 'pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(37,99,235,0.18),transparent_30%),radial-gradient(circle_at_78%_16%,rgba(220,38,38,0.12),transparent_32%),linear-gradient(135deg,#020617_0%,#071426_56%,#0c1020_100%)]'
-      : 'pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(37,99,235,0.08),transparent_32%),radial-gradient(circle_at_78%_16%,rgba(220,38,38,0.06),transparent_34%),linear-gradient(135deg,#f8fafc_0%,#ffffff_50%,#eff6ff_100%)]',
+      : 'pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,rgba(37,99,235,0.22),transparent_34%),radial-gradient(circle_at_88%_18%,rgba(239,68,68,0.16),transparent_32%),radial-gradient(circle_at_50%_0%,rgba(139,92,246,0.12),transparent_36%),linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef4ff_100%)]',
     header: isDark
       ? 'sticky top-0 z-50 border-b border-white/10 bg-[#030712]/80 backdrop-blur-2xl'
       : `sticky top-0 z-50 border-b-2 ${lightDivider} bg-white/90 backdrop-blur-2xl shadow-sm`,

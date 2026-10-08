@@ -315,7 +315,7 @@ export default function LoginPage() {
     : 'h-4 w-4 rounded border-2 border-slate-400 bg-white text-blue-600'
   const headerClass = isDark
     ? 'sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#030712]/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-10 lg:border-transparent lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none'
-    : 'sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-10 lg:border-transparent lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none'
+    : 'sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-white/60 bg-white/60 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-xl sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-10 lg:border-transparent lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none'
   const homeLinkClass = isDark
     ? 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/15 bg-white/5 px-3 text-sm font-bold text-white transition hover:bg-white/10'
     : 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border-2 border-slate-300 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50'
@@ -360,15 +360,22 @@ export default function LoginPage() {
               className={`mt-6 max-w-lg text-3xl font-black leading-tight tracking-[-0.04em] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1] ${skin.heading}`}
             >
               Bienvenue sur{' '}
-              <span className={`mt-1 inline-block leading-none ${isDark ? '' : 'rounded-2xl bg-[#030712] px-3 py-2'}`}>
-                <span className="text-white">PEDAGOGIA </span>
-                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                  DRI
+              {isDark ? (
+                <span className="mt-1 inline-block leading-none">
+                  <span className="text-white">PEDAGOGIA </span>
+                  <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">DRI</span>
+                  <span className="bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">VE</span>
                 </span>
-                <span className="bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">
-                  VE
+              ) : (
+                <span className="logo-glass-wrap mt-1 leading-none">
+                  <span aria-hidden className="logo-glass-halo" />
+                  <span className="logo-glass inline-block px-3 py-1.5">
+                    <span className="text-white">PEDAGOGIA </span>
+                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">DRI</span>
+                    <span className="bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">VE</span>
+                  </span>
                 </span>
-              </span>
+              )}
             </h1>
             <p className={`mt-5 max-w-md text-base leading-7 sm:text-lg ${skin.bodyMuted}`}>
               La plateforme premium pensée pour les auto-écoles modernes.
