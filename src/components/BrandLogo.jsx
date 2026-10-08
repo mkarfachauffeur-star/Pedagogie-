@@ -1,41 +1,13 @@
 import { motion } from 'framer-motion'
 
-function LogoMark({ compact, idPrefix = 'pd' }) {
-  const blueId = `${idPrefix}-logo-blue`
-  const redId = `${idPrefix}-logo-red`
-  const clipId = `${idPrefix}-logo-road`
-
+function LogoMark({ compact }) {
   return (
-    <svg
-      aria-hidden="true"
-      className={`shrink-0 ${compact ? 'h-10 w-10' : 'h-12 w-12 sm:h-[3.25rem] sm:w-[3.25rem]'}`}
-      fill="none"
-      viewBox="0 0 56 56"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <linearGradient id={blueId} x1="8" x2="28" y1="52" y2="4" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#1e3a8a" />
-          <stop offset="1" stopColor="#2563eb" />
-        </linearGradient>
-        <linearGradient id={redId} x1="48" x2="28" y1="52" y2="4" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#b91c1c" />
-          <stop offset="1" stopColor="#ef4444" />
-        </linearGradient>
-        <clipPath id={clipId}>
-          <polygon points="28,6 38,52 18,52" />
-        </clipPath>
-      </defs>
-      <polygon fill={`url(#${blueId})`} points="28,6 6,52 28,52" />
-      <polygon fill={`url(#${redId})`} points="28,6 50,52 28,52" />
-      <polygon fill="#111827" points="28,6 38,52 18,52" />
-      <g clipPath={`url(#${clipId})`}>
-        <rect fill="rgba(255,255,255,0.92)" height="3.5" rx="1" width="2.2" x="26.9" y="16" />
-        <rect fill="rgba(255,255,255,0.92)" height="4.2" rx="1" width="2.6" x="26.7" y="24" />
-        <rect fill="rgba(255,255,255,0.92)" height="5" rx="1" width="3" x="26.5" y="33" />
-        <rect fill="rgba(255,255,255,0.92)" height="5.8" rx="1" width="3.4" x="26.3" y="42" />
-      </g>
-    </svg>
+    <img
+      alt=""
+      className={`shrink-0 object-contain ${compact ? 'h-10 w-10' : 'h-12 w-12 sm:h-[3.25rem] sm:w-[3.25rem]'}`}
+      draggable="false"
+      src="/brand/pedagogia-drive-p-mark.png"
+    />
   )
 }
 
