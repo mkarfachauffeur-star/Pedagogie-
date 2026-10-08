@@ -313,6 +313,12 @@ export default function LoginPage() {
   const checkboxClass = isDark
     ? 'h-4 w-4 rounded border-white/20 bg-[#070d18] text-blue-500'
     : 'h-4 w-4 rounded border-2 border-slate-400 bg-white text-blue-600'
+  const headerClass = isDark
+    ? 'sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#030712]/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-10 lg:border-transparent lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none'
+    : 'sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-10 lg:border-transparent lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none'
+  const homeLinkClass = isDark
+    ? 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/15 bg-white/5 px-3 text-sm font-bold text-white transition hover:bg-white/10'
+    : 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border-2 border-slate-300 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50'
 
   return (
     <div
@@ -322,19 +328,25 @@ export default function LoginPage() {
       <div aria-hidden className={skin.ambient.replace(' -z-10', '')} />
       {isDark && <LoginRoadArt />}
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[1280px] flex-col px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-        <header className="mb-8 flex items-center justify-between lg:mb-10">
-          <Link aria-label="Retour à l'accueil" to="/">
+      <div className="login-page-frame relative z-10 mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-6 lg:px-10 lg:py-10">
+        <header className={headerClass}>
+          <Link aria-label="Retour à l'accueil" className="inline-flex" to="/">
             <BrandLogo
               animated={!shouldReduceMotion}
               idPrefix="login"
               variant={isDark ? 'marketing' : 'light'}
             />
           </Link>
-          <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <Link className={homeLinkClass} to="/">
+              <ArrowLeft className="h-4 w-4" />
+              Accueil
+            </Link>
+            <MarketingThemeToggle className={skin.themeToggle} isDark={isDark} onToggle={toggleTheme} />
+          </div>
         </header>
 
-        <div className="grid flex-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+        <div className="grid shrink-0 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <motion.div
             className="flex flex-col justify-center lg:min-h-[calc(100vh-8rem)]"
             {...fadeUp(0)}
@@ -540,12 +552,12 @@ export default function LoginPage() {
                   </p>
                 </form>
                 )}
-
-                <Link className={`mt-6 flex items-center justify-center gap-2 ${skin.loginBackLink}`} to="/">
-                  <ArrowLeft className="h-4 w-4" />
-                  Retour à la page d&apos;accueil
-                </Link>
               </div>
+
+              <Link className={`mt-6 flex items-center justify-center gap-2 ${skin.loginBackLink}`} to="/">
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la page d&apos;accueil
+              </Link>
             </div>
           </motion.div>
         </div>
