@@ -138,6 +138,15 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
 
+    /// Diagnostic seulement. N’influence pas la position demandée ni les kilomètres.
+    private func accuracyAuthLabel(_ manager: CLLocationManager) -> String {
+        switch manager.accuracyAuthorization {
+        case .fullAccuracy: return "fullAccuracy"
+        case .reducedAccuracy: return "reducedAccuracy"
+        @unknown default: return "unknown(\(manager.accuracyAuthorization.rawValue))"
+        }
+    }
+
     /// CLLocationManager n’est utilisé que sur le fil principal, celui qui l’a créé.
     private func onMain(_ work: @escaping () -> Void) {
         if Thread.isMainThread {
@@ -419,7 +428,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
-        logGps("locationManagerDidChangeAuthorization statut=\(authLabel(status)) permissionEnCours=\(permissionCall != nil) alwaysDemandé=\(askedAlwaysForThisRequest)")
+        logGps("locationManagerDidChangeAuthorization statut=\(authLabel(status)) accuracyAuthorization=\(accuracyAuthLabel(manager)) permissionEnCours=\(permissionCall != nil) alwaysDemandé=\(askedAlwaysForThisRequest)")
         if permissionCall != nil {
             switch status {
             case .authorizedWhenInUse:
@@ -446,7 +455,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         for location in locations {
-            let line = String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+            let line = String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f accuracyAuthorization=%@", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy, accuracyAuthLabel(manager))
             logGps(line)
             nativeLog(line)
             if !loggedFirstNativeFix && location.horizontalAccuracy >= 0 {
