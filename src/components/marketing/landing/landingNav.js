@@ -8,8 +8,6 @@ export const LANDING_NAV_LINKS = [
   { label: 'FAQ', href: '#faq' },
 ]
 
-export const LANDING_MENU_LINKS = LANDING_NAV_LINKS.filter((item) => item.href !== '/')
-
 export function isLandingHome(pathname) {
   return pathname === '/'
 }
