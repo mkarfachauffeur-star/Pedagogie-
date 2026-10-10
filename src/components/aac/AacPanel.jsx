@@ -35,7 +35,6 @@ import {
   countMandatoryRvpCompleted,
   drivingConditionLabel,
   formatDateFr,
-  mandatoryRvpTitle,
   rvpRequirementLabel,
   statusLabel,
 } from '../../lib/aacRules'
@@ -95,8 +94,6 @@ export default function AacPanel({
   const [lastAccuracy, setLastAccuracy] = useState(null)
   const [mandatoryRvp, setMandatoryRvp] = useState([])
   const [extraRvp, setExtraRvp] = useState([])
-  const [extraDraft, setExtraDraft] = useState('')
-  const [extraOpen, setExtraOpen] = useState(false)
   const [drivingConditions, setDrivingConditions] = useState([])
   const watchRef = useRef(null)
   const tickRef = useRef(null)
@@ -527,8 +524,6 @@ export default function AacPanel({
       setMandatoryRvp([])
       setExtraRvp([])
       setDrivingConditions([])
-      setExtraDraft('')
-      setExtraOpen(false)
       setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
       await reload()
     } catch (err) {
@@ -539,18 +534,6 @@ export default function AacPanel({
     }
   }
 
-  function toggleMandatory(sequence) {
-    setMandatoryRvp((current) => {
-      const next = current.includes(sequence)
-        ? current.filter((item) => item !== sequence)
-        : [...current, sequence].sort()
-      const details = { ...detailsRef.current, mandatoryRvp: next }
-      detailsRef.current = details
-      if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
-      return next
-    })
-  }
-
   function toggleCondition(id) {
     setDrivingConditions((current) => {
       const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
@@ -559,26 +542,6 @@ export default function AacPanel({
       if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
       return next
     })
-  }
-
-  function addExtraRvp(event) {
-    event.preventDefault()
-    const label = extraDraft.trim()
-    if (!label) return
-    const next = [...extraRvp, { id: globalThis.crypto?.randomUUID?.() || `rvp-${Date.now()}`, label: label.slice(0, 120) }]
-    setExtraRvp(next)
-    setExtraDraft('')
-    const details = { ...detailsRef.current, extraRvp: next }
-    detailsRef.current = details
-    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
-  }
-
-  function removeExtraRvp(id) {
-    const next = extraRvp.filter((item) => item.id !== id)
-    setExtraRvp(next)
-    const details = { ...detailsRef.current, extraRvp: next }
-    detailsRef.current = details
-    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
   }
 
   async function saveStartDate(e) {
@@ -818,65 +781,6 @@ export default function AacPanel({
           </div>
 
           <fieldset className="mt-5">
-            <legend className="text-sm font-semibold text-white">Rendez-vous pendant ce trajet</legend>
-            <p className="mt-1 text-sm text-sky-100/70">
-              Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Le dossier officiel n’est pas modifié.
-            </p>
-            <div className="mt-3 space-y-2">
-              {[1, 2].map((sequence) => (
-                <label
-                  key={sequence}
-                  className="lesson-chip flex min-h-11 items-start gap-3 px-3 py-3 text-sm text-sky-50"
-                >
-                  <input
-                    checked={mandatoryRvp.includes(sequence)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-sky-400"
-                    onChange={() => toggleMandatory(sequence)}
-                    type="checkbox"
-                  />
-                  <span>{mandatoryRvpTitle(sequence)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="mt-5">
-            <legend className="text-sm font-semibold text-white">Rendez-vous supplémentaires</legend>
-            <ul className="mt-3 space-y-2">
-              {extraRvp.map((item) => (
-                <li key={item.id} className="lesson-chip flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
-                  <span className="text-sky-50">{item.label}</span>
-                  <button className="text-xs font-medium text-rose-300 transition hover:text-rose-200" onClick={() => removeExtraRvp(item.id)} type="button">
-                    Retirer
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {extraOpen ? (
-              <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={addExtraRvp}>
-                <input
-                  className="pd-input min-w-0 flex-1"
-                  maxLength={120}
-                  onChange={(event) => setExtraDraft(event.target.value)}
-                  placeholder="Intitulé du rendez-vous"
-                  value={extraDraft}
-                />
-                <button className="touch-manipulation rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(56,132,244,0.35)] transition hover:brightness-110" type="submit">
-                  Ajouter
-                </button>
-              </form>
-            ) : (
-              <button
-                className="mt-3 text-sm font-medium text-sky-300 transition hover:text-sky-200"
-                onClick={() => setExtraOpen(true)}
-                type="button"
-              >
-                Ajouter un rendez-vous
-              </button>
-            )}
-          </fieldset>
-
-          <fieldset className="mt-5">
             <legend className="text-base font-semibold text-white">Critères de conduite</legend>
             <p className="mt-1 text-sm text-sky-100/70">Facultatif. Plusieurs critères peuvent être choisis.</p>
             <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -965,14 +869,16 @@ export default function AacPanel({
             />
           ))}
         </div>
-        <button
-          className="lesson-btn-soft mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-          disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
-          onClick={handleAddRvp}
-          type="button"
-        >
-          Ajouter un rendez-vous pédagogique
-        </button>
+        {isStaff && (
+          <button
+            className="lesson-btn-soft mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
+            onClick={handleAddRvp}
+            type="button"
+          >
+            Ajouter un rendez-vous pédagogique
+          </button>
+        )}
       </section>
 
       <section className="lesson-glass p-4 sm:p-5">
