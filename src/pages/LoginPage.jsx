@@ -23,6 +23,7 @@ import { getUserFacingError } from '../lib/userFacingError'
 import { marketingSkin } from '../lib/marketingTheme'
 import { breadcrumbsForPage, buildPageJsonLd, SEO_PAGES } from '../lib/seo'
 import { roleDestinations } from '../utils/authSession'
+import { applyRememberMePreference, readRememberedEmail } from '../utils/rememberSession'
 import { isPasswordPolicyMet, PASSWORD_POLICY_HINT, validatePassword } from '../lib/passwordPolicy'
 
 function LoginRoadArt() {
@@ -101,7 +102,7 @@ function LoginRoadArt() {
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signInWithPassword, completePasswordChange, mustChangePassword: sessionMustChange, role: sessionRole } = useAuth()
+  const { signInWithPassword, completePasswordChange, isAuthenticated, loading, mustChangePassword: sessionMustChange, role: sessionRole } = useAuth()
   const { isDark, toggleTheme } = useMarketingTheme()
   const skin = marketingSkin(isDark ? 'dark' : 'light')
   const shouldReduceMotion = useReducedMotion()
@@ -132,9 +133,17 @@ export default function LoginPage() {
   )
 
   useEffect(() => {
-    const savedEmail = window.localStorage.getItem('pedagogia-drive-login-email')
+    const savedEmail = readRememberedEmail()
     if (savedEmail) setEmail(savedEmail)
   }, [])
+
+  // Session valide restaurée au démarrage : ne pas réafficher le formulaire,
+  // aller directement vers l'espace du rôle.
+  useEffect(() => {
+    if (loading || !isAuthenticated || sessionMustChange) return
+    const destination = sessionRole && roleDestinations[sessionRole]
+    if (destination) navigate(destination, { replace: true })
+  }, [loading, isAuthenticated, sessionMustChange, sessionRole, navigate])
 
   useEffect(() => {
     if (sessionMustChange) {
@@ -241,9 +250,6 @@ export default function LoginPage() {
       setAuthError('Saisissez votre e-mail et votre mot de passe.')
       return
     }
-    if (rememberMe && email) {
-      window.localStorage.setItem('pedagogia-drive-login-email', email)
-    }
     setSubmitting(true)
     const { error, role: realRole, mustChangePassword: forceChange } = await signInWithPassword(email, password)
     setSubmitting(false)
@@ -251,6 +257,8 @@ export default function LoginPage() {
       setAuthError(error.message || getUserFacingError(error, 'login'))
       return
     }
+    // Connexion réussie : la préférence pilote la persistance à la réouverture.
+    applyRememberMePreference(rememberMe, email.trim())
     if (forceChange) {
       setMustChangePassword(true)
       setPendingRole(realRole)
@@ -319,6 +327,16 @@ export default function LoginPage() {
   const homeLinkClass = isDark
     ? 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/15 bg-white/5 px-3 text-sm font-bold text-white transition hover:bg-white/10'
     : 'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border-2 border-slate-300 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50'
+
+  // Restauration de session en cours : éviter d'afficher le formulaire à
+  // tort avant la redirection vers l'espace du rôle.
+  if (loading && !sessionMustChange) {
+    return (
+      <div className={`login-page-shell fixed z-[200] flex items-center justify-center ${isDark ? 'bg-[#030712] text-white' : 'bg-white text-slate-900'}`}>
+        <p className="text-sm font-medium opacity-80">Ouverture de votre espace…</p>
+      </div>
+    )
+  }
 
   return (
     <div

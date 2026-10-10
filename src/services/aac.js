@@ -1,7 +1,23 @@
 import { supabase } from '../lib/supabase'
 import { toUserError } from '../lib/userFacingError'
-import { addOneYear, countMandatoryRvpCompleted, evaluateAacConditions, kmProgress, statusLabel } from '../lib/aacRules'
+import { addOneYear, canManageAacRvp, countMandatoryRvpCompleted, evaluateAacConditions, kmProgress, statusLabel } from '../lib/aacRules'
 import { buildDisplayTrace } from '../lib/gpsDisplayTrace.js'
+
+const RVP_STAFF_ERROR = 'Seul le personnel peut gérer les rendez-vous pédagogiques.'
+
+// Défense en profondeur : la RLS et le RPC bloquent déjà côté base, mais le
+// service refuse tout de suite avec un message clair si le rôle est élève.
+async function requireRvpStaffRole() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: new Error('Connexion requise.') }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (!canManageAacRvp(profile?.role)) return { error: new Error(RVP_STAFF_ERROR) }
+  return { error: null }
+}
 
 export const AAC_FFI_DOCUMENT_TYPE = 'Attestation FFI'
 
@@ -217,6 +233,8 @@ export async function markAacCompleted(studentId) {
 }
 
 export async function upsertAacRvp(studentId, payload) {
+  const guard = await requireRvpStaffRole()
+  if (guard.error) return { rvp: null, error: guard.error }
   try {
     await ensureAacProfile(studentId)
     const { data: student } = await supabase
@@ -267,6 +285,8 @@ function isBlankExtraSlot(row) {
 }
 
 export async function addAacPedagogicalAppointment(studentId) {
+  const guard = await requireRvpStaffRole()
+  if (guard.error) return { rvp: null, error: guard.error }
   try {
     const { data, error } = await supabase.rpc('add_aac_pedagogical_appointment', {
       p_student_id: studentId,

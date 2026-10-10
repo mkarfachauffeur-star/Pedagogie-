@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core'
-import { GPS_LIMITS } from './gpsDistance'
+import { GPS_LIMITS } from './gpsDistance.js'
 
 /**
  * Géolocalisation des trajets AAC.
@@ -29,6 +29,7 @@ export const LOCATION_STATUS_MESSAGES = {
   unavailable: 'La position GPS n’est pas disponible sur cet appareil.',
   timeout: 'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
   weak: 'Signal GPS trop imprécis pour démarrer. Sortez du bâtiment et attendez une précision inférieure à 80 m.',
+  inaccurate: 'Signal GPS imprécis pour le moment. Le trajet reste ouvert : aucun kilomètre n’est ajouté tant que la précision ne redevient pas suffisante, et les kilomètres du trajet reprennent ensuite sans rien inventer.',
 }
 
 function toPosition(coords, timestamp) {
@@ -173,7 +174,7 @@ function tripPluginFrom(loaded) {
   return loaded?.plugin || null
 }
 
-function accessFromNative(result) {
+export function accessFromNative(result) {
   const scope = result?.scope || 'prompt'
   if (scope === 'disabled') return { granted: false, status: 'servicesDisabled', scope, background: false }
   if (scope === 'restricted') return { granted: false, status: 'restricted', scope, background: false }
@@ -407,13 +408,24 @@ function watchIosTrip(onUpdate, onError, options) {
       loggedFirstFix = true
       gpsLog('première position reçue', normalized)
     }
+    gpsLog('point reçu JS', { sequenceNo: normalized.sequenceNo, accuracy: normalized.accuracy })
     onUpdate(normalized)
   }
 
+  // Un drain en vol ne doit jamais se doubler : sans ce garde-fou, les appels
+  // toutes les 4 s s'empilent si le natif tarde à répondre.
+  let pullInFlight = false
   const pull = async () => {
-    if (!plugin || stopped) return
-    const drained = await plugin.drain()
-    for (const point of drained?.points || []) emit(point)
+    if (!plugin || stopped || pullInFlight) return
+    pullInFlight = true
+    try {
+      const drained = await traceGpsAwait(plugin.drain(), 'drain', 8000)
+      for (const point of drained?.points || []) emit(point)
+    } catch {
+      // Le drain suivant réessaiera : les points restent dans le tampon natif.
+    } finally {
+      pullInFlight = false
+    }
   }
 
   const ready = (async () => {
@@ -436,8 +448,7 @@ function watchIosTrip(onUpdate, onError, options) {
     }
     trace('13 start terminé')
     gpsLog('AacTripLocation.start retour')
-    const first = await plugin.drain()
-    for (const point of first?.points || []) emit(point)
+    await pull()
     const locationHandle = await plugin.addListener('location', (point) => emit(point))
     const errorHandle = await plugin.addListener('error', (payload) => {
       if (!stopped) onError?.(toLocationError(payload, 'Erreur GPS'))
@@ -462,10 +473,18 @@ function watchIosTrip(onUpdate, onError, options) {
     } catch (error) {
       onError?.(error)
     }
+    // ready peut avoir créé le drain périodique pendant l'attente : on le coupe ici.
+    clearInterval(drainTimer)
+    drainTimer = null
     if (endNative && plugin) {
-      const drained = await plugin.drain()
-      for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
-      await plugin.stop()
+      try {
+        const drained = await plugin.drain()
+        for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
+        await plugin.stop()
+      } catch {
+        // Un drain final en échec ne doit pas bloquer la clôture du trajet :
+        // les points déjà remontés restent dans le tampon JS.
+      }
     }
     stopped = true
     pullNativeTripPoints = async () => {}
@@ -476,13 +495,11 @@ function watchIosTrip(onUpdate, onError, options) {
     }
   }
 
+  // stop()/detach() renvoient la promesse : l'appelant peut attendre le drain
+  // final avant de mesurer la distance, sinon les derniers points sont perdus.
   return {
-    stop: () => {
-      void finish(true)
-    },
-    detach: () => {
-      void finish(false)
-    },
+    stop: () => finish(true),
+    detach: () => finish(false),
   }
 }
 
@@ -548,13 +565,11 @@ export function watchPosition(onUpdate, onError, options = {}) {
   }
 
   return {
-    stop: () => {
-      void stopWatch()
-    },
+    stop: () => stopWatch(),
   }
 }
 
-export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance'
+export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance.js'
 
 export function downsamplePath(points, maxPoints = 200) {
   if (!points?.length) return []
