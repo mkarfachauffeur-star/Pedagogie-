@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { computeCanWrite } from '../lib/orgAccess'
 import { supabase } from '../lib/supabase'
+import { consumeEphemeralSessionFlag } from '../utils/rememberSession'
 import { fetchOrganization, fetchStudentCount, fetchSubscription, logLoginAudit } from '../services/organization'
 import { checkIsSuperAdmin } from '../services/platform'
 import { getUserFacingError } from '../lib/userFacingError'
@@ -76,18 +77,27 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true
-    supabase.auth
-      .getSession()
-      .then(async ({ data }) => {
+    void (async () => {
+      // Connexion précédente sans « Se souvenir de moi » : révoquer la session
+      // persistée avant toute restauration.
+      if (consumeEphemeralSessionFlag()) {
+        try {
+          await supabase.auth.signOut()
+        } catch {
+          // La session locale sera de toute façon absente ou ignorée ci-dessous.
+        }
+      }
+      try {
+        const { data } = await supabase.auth.getSession()
         if (!active) return
         const nextSession = data.session ?? null
         setSession(nextSession)
         setSupabaseRole(resolveRoleFromUser(nextSession?.user))
         await loadProfile(nextSession?.user?.id)
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false)
-      })
+      }
+    })()
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return
