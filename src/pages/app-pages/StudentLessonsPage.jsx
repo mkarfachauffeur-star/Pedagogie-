@@ -16,6 +16,8 @@ import {
 } from '../../services/lessonModuleProgress'
 import DashboardWarningIcon, { dashboardWarningLights } from '../../components/DashboardWarningIcon'
 import LessonImage from '../../components/ui/LessonImage'
+import ImageLightbox from '../../components/ui/ImageLightbox'
+import CollapsibleSection from '../../components/lessons/CollapsibleSection'
 import installationPosteConduiteImage from '../../assets/lessons/installation-poste-conduite.png'
 import vehicleOrgansDiagramImage from '../../assets/lessons/elements-essentiels-vehicule.png'
 import dashboardWarningLightsImage from '../../assets/lessons/voyants-tableau-de-bord.png'
@@ -2367,31 +2369,31 @@ export default function StudentLessonsPage() {
 
 
       {openedModule && activeCompetencyUnlocked && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-slate-900/20 p-3 backdrop-blur-md sm:p-5 lg:p-8">
-          <div className="lesson-glass flex h-[90vh] max-h-[90vh] min-h-0 w-full max-w-[1200px] flex-col overflow-hidden">
-            <div className="shrink-0 border-b border-white/70 bg-white/40 p-4 backdrop-blur-xl sm:p-5">
-              <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
-                <div>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-slate-900/20 backdrop-blur-md sm:p-5 lg:p-8">
+          <div className="lesson-glass flex h-full min-h-0 w-full max-w-[1200px] flex-col overflow-hidden rounded-none sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[1.6rem]">
+            <div className="shrink-0 border-b border-white/70 bg-white/40 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] backdrop-blur-xl sm:p-5">
+              <div className="flex flex-col justify-between gap-2.5 lg:flex-row lg:items-start">
+                <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700/80">
                     Module {openedModule.id} · {activeCompetency.title}
                   </p>
-                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+                  <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-2xl">
                     {openedModule.title}
                   </h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">
                     {openedModule.description}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
                   <button
-                    className={`px-4 py-2 text-sm font-medium transition ${moduleMode === 'lesson' ? 'lesson-btn' : 'lesson-btn-soft'}`}
+                    className={`px-3 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${moduleMode === 'lesson' ? 'lesson-btn' : 'lesson-btn-soft'}`}
                     onClick={() => setModuleMode('lesson')}
                     type="button"
                   >
                     Leçon
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${moduleMode === 'quiz' ? 'lesson-btn' : 'lesson-btn-soft'}`}
+                    className={`px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm ${moduleMode === 'quiz' ? 'lesson-btn' : 'lesson-btn-soft'}`}
                     disabled={!openedCourseReadComplete}
                     onClick={() => openQuiz(openedModule.id)}
                     title={openedCourseReadComplete ? 'Accéder au QCU' : 'Lisez la leçon en entier pour débloquer le QCU'}
@@ -2400,7 +2402,7 @@ export default function StudentLessonsPage() {
                     QCU
                   </button>
                   <button
-                    className="lesson-btn-soft px-4 py-2 text-sm font-medium"
+                    className="lesson-btn-soft px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm"
                     onClick={closeModule}
                     type="button"
                   >
@@ -2417,8 +2419,8 @@ export default function StudentLessonsPage() {
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
             {moduleMode === 'lesson' ? (
-              <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
-                <div className="space-y-5">
+              <div className="grid gap-4 p-4 sm:gap-6 sm:p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
+                <div className="order-last space-y-4 sm:space-y-5 lg:order-none">
                   {!openedCourseReadComplete && (
                     <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
                       Faites défiler la leçon jusqu&apos;en bas pour débloquer le QCU (minimum {QCU_PASS_PERCENTAGE} % soit 8/10 pour valider).
@@ -2429,28 +2431,17 @@ export default function StudentLessonsPage() {
                       Leçon lue en entier — le QCU est débloqué.
                     </p>
                   )}
-                  <section className="lesson-glass p-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700/70">Contenu de leçon</p>
-                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-                      {openedLesson?.title || openedModule.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <CollapsibleSection kicker="Objectif" title={openedLesson?.title || openedModule.title}>
+                    <p className="px-4 py-4 text-sm leading-6 text-slate-600 sm:px-5">
                       {openedLesson?.intro || 'Ce module ouvre une fiche pédagogique complète avec objectifs, supports visuels et validation progressive.'}
                     </p>
-                  </section>
+                  </CollapsibleSection>
 
                   {openedLesson?.images?.length > 0 && (
-                    <section className="overflow-hidden rounded-[1.75rem] border border-cyan-100 bg-white shadow-xl">
-                      <div className="border-b-2 border-slate-200 bg-cyan-50/70 p-5">
-                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
-                          {openedLesson.schemaSection?.kicker || 'Schémas pédagogiques'}
-                        </p>
-                        {openedLesson.schemaSection?.title && (
-                          <h3 className="mt-2 text-2xl font-black text-slate-950">
-                            {openedLesson.schemaSection.title}
-                          </h3>
-                        )}
-                      </div>
+                    <CollapsibleSection
+                      kicker={openedLesson.schemaSection?.kicker || 'Illustrations'}
+                      title={openedLesson.schemaSection?.title || 'Schémas pédagogiques'}
+                    >
                       <div className="grid gap-4 p-4">
                         {openedLesson.images.map((image) => (
                           <figure
@@ -2478,19 +2469,17 @@ export default function StudentLessonsPage() {
                           </figure>
                         ))}
                       </div>
-                    </section>
+                    </CollapsibleSection>
                   )}
 
                   {openedLesson?.dashboardSection && (
-                    <section className="rounded-[1.75rem] border border-amber-100 bg-white shadow-xl">
-                      <div className="border-b-2 border-slate-200 bg-gradient-to-r from-amber-50 to-cyan-50/80 p-5">
-                        <p className="text-sm font-black uppercase tracking-wide text-cyan-700">
-                          {openedLesson.dashboardSection.kicker}
-                        </p>
-                        <h3 className="mt-2 text-2xl font-black text-slate-950">
-                          {openedLesson.dashboardSection.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <CollapsibleSection
+                      className="border-amber-100"
+                      kicker={openedLesson.dashboardSection.kicker}
+                      title={openedLesson.dashboardSection.title}
+                    >
+                      <div className="border-b border-cyan-100/80 bg-gradient-to-r from-amber-50 to-cyan-50/80 px-4 py-4 sm:px-5">
+                        <p className="text-sm leading-6 text-slate-600">
                           {openedLesson.dashboardSection.intro}
                         </p>
                       </div>
@@ -2545,9 +2534,9 @@ export default function StudentLessonsPage() {
                           </article>
                         ))}
                       </div>
-                      <div className="border-t-2 border-slate-200 bg-cyan-50/50 p-4">
+                      <div className="border-t border-cyan-100/80 bg-cyan-50/50 p-4">
                         <button
-                          className="w-full lesson-btn w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+                          className="w-full lesson-btn px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
                           disabled={!openedCourseReadComplete}
                           onClick={() => openQuiz(openedModule.id)}
                           type="button"
@@ -2555,40 +2544,16 @@ export default function StudentLessonsPage() {
                           {openedCourseReadComplete ? 'Lancer le QCU voyants du tableau de bord' : 'Lisez la leçon pour débloquer le QCU'}
                         </button>
                       </div>
-                    </section>
+                    </CollapsibleSection>
                   )}
 
-                  <section className="grid gap-3">
-                    <div className="overflow-hidden rounded-[1.5rem] border border-cyan-100 bg-white p-5 shadow-sm">
-                      <p className="text-xs font-black uppercase tracking-wide text-cyan-700">Support vidéo</p>
-                      <div className="mt-3 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-cyan-200 bg-gradient-to-br from-cyan-50/80 via-white to-white px-5 py-9 text-center">
-                        <span className="grid h-16 w-16 animate-pulse place-items-center rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30">
-                          <svg aria-hidden="true" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M10 9l5 3-5 3V9z" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                        <div>
-                          <p className="text-lg font-black text-slate-900">Bientôt disponible</p>
-                          <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
-                            Les vidéos pédagogiques de cette sous-compétence seront ajoutées prochainement.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="rounded-[1.75rem] border-2 border-slate-300 bg-white p-5">
-                    <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Résumé de leçon</p>
-                    <h3 className="mt-2 text-2xl font-black text-slate-950">
-                      {openedLesson ? 'Résumé pédagogique complet' : openedModule.title}
-                    </h3>
+                  <CollapsibleSection kicker="Résumé" title="Résumé de leçon">
                     {openedLesson?.summaryIntro && (
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="border-b border-cyan-100/80 px-4 py-3 text-sm leading-6 text-slate-600 sm:px-5">
                         {openedLesson.summaryIntro}
                       </p>
                     )}
-                    <div className="mt-4 grid gap-3">
+                    <div className="grid gap-3 p-4">
                       {(openedLesson?.summary || [{ title: openedModule.title, description: openedModule.description }]).map((item, index) => (
                         <article className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4" key={item.title}>
                           <div className="flex gap-3">
@@ -2603,23 +2568,22 @@ export default function StudentLessonsPage() {
                         </article>
                       ))}
                     </div>
-                  </section>
+                  </CollapsibleSection>
 
                   {openedLesson && (
-                    <section className="rounded-[1.75rem] border border-cyan-100 bg-cyan-50/70 p-5">
-                      <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Conseils de sécurité</p>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <CollapsibleSection className="bg-cyan-50/70" kicker="Points essentiels" title="Conseils de sécurité">
+                      <div className="grid gap-3 p-4 sm:grid-cols-2">
                         {openedLesson.safetyAdvice.map((advice) => (
                           <div className="rounded-2xl border border-white bg-white/80 p-4 shadow-sm" key={advice}>
                             <p className="text-sm font-bold leading-6 text-slate-700">{advice}</p>
                           </div>
                         ))}
                       </div>
-                    </section>
+                    </CollapsibleSection>
                   )}
                 </div>
 
-                <aside className="h-fit rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-5">
+                <aside className="order-first h-fit rounded-[1.75rem] border-2 border-slate-300 bg-slate-50 p-4 sm:p-5 lg:order-none">
                   <p className="text-sm font-black uppercase tracking-wide text-cyan-700">Progression</p>
                   <div className="mt-4 rounded-2xl bg-white p-4">
                     <p className="text-3xl font-black text-slate-950">
@@ -2806,7 +2770,7 @@ export default function StudentLessonsPage() {
             )}
             </div>
             {moduleMode === 'quiz' && openedLesson && (
-              <div className="shrink-0 border-t border-white/60 bg-white/95 p-4 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5">
+              <div className="shrink-0 border-t border-white/60 bg-white/95 px-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:p-5">
                 {currentValidated ? (
                   <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
                     <div>
@@ -2849,33 +2813,10 @@ export default function StudentLessonsPage() {
             )}
           </div>
           {openedGalleryImage && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/25 p-4 backdrop-blur-md">
-              <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl">
-                <div className="flex items-center justify-between gap-3 border-b-2 border-slate-300 p-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wide text-cyan-700">
-                      Galerie photo
-                    </p>
-                    <h3 className="text-lg font-black text-slate-950">{openedGalleryImage.title}</h3>
-                  </div>
-                  <button
-                    className="rounded-2xl border-2 border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
-                    onClick={() => setOpenedGalleryImage(null)}
-                    type="button"
-                  >
-                    Fermer
-                  </button>
-                </div>
-                <div className="min-h-0 overflow-auto bg-slate-950 p-3">
-                  <LessonImage
-                    alt={openedGalleryImage.alt}
-                    className="mx-auto max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
-                    objectFit="contain"
-                    src={openedGalleryImage.src}
-                  />
-                </div>
-              </div>
-            </div>
+            <ImageLightbox
+              image={openedGalleryImage}
+              onClose={() => setOpenedGalleryImage(null)}
+            />
           )}
         </div>
       )}
