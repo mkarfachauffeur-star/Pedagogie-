@@ -29,6 +29,7 @@ export const LOCATION_STATUS_MESSAGES = {
   unavailable: 'La position GPS n’est pas disponible sur cet appareil.',
   timeout: 'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
   weak: 'Signal GPS trop imprécis pour démarrer. Sortez du bâtiment et attendez une précision inférieure à 80 m.',
+  inaccurate: 'Signal GPS imprécis pour le moment. Le trajet reste ouvert : aucun kilomètre n’est ajouté tant que la précision ne redevient pas suffisante, et les kilomètres du trajet reprennent ensuite sans rien inventer.',
 }
 
 function toPosition(coords, timestamp) {
@@ -407,6 +408,7 @@ function watchIosTrip(onUpdate, onError, options) {
       loggedFirstFix = true
       gpsLog('première position reçue', normalized)
     }
+    gpsLog('point reçu JS', { sequenceNo: normalized.sequenceNo, accuracy: normalized.accuracy })
     onUpdate(normalized)
   }
 
@@ -471,10 +473,18 @@ function watchIosTrip(onUpdate, onError, options) {
     } catch (error) {
       onError?.(error)
     }
+    // ready peut avoir créé le drain périodique pendant l'attente : on le coupe ici.
+    clearInterval(drainTimer)
+    drainTimer = null
     if (endNative && plugin) {
-      const drained = await plugin.drain()
-      for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
-      await plugin.stop()
+      try {
+        const drained = await plugin.drain()
+        for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
+        await plugin.stop()
+      } catch {
+        // Un drain final en échec ne doit pas bloquer la clôture du trajet :
+        // les points déjà remontés restent dans le tampon JS.
+      }
     }
     stopped = true
     pullNativeTripPoints = async () => {}
@@ -485,13 +495,11 @@ function watchIosTrip(onUpdate, onError, options) {
     }
   }
 
+  // stop()/detach() renvoient la promesse : l'appelant peut attendre le drain
+  // final avant de mesurer la distance, sinon les derniers points sont perdus.
   return {
-    stop: () => {
-      void finish(true)
-    },
-    detach: () => {
-      void finish(false)
-    },
+    stop: () => finish(true),
+    detach: () => finish(false),
   }
 }
 
@@ -557,9 +565,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
   }
 
   return {
-    stop: () => {
-      void stopWatch()
-    },
+    stop: () => stopWatch(),
   }
 }
 

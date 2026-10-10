@@ -53,6 +53,7 @@ import {
   traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
+import { createDistanceTracker } from '../../lib/gpsDistance'
 import AacJourneyCard from './AacJourneyCard'
 
 function formatDuration(seconds) {
@@ -107,6 +108,7 @@ export default function AacPanel({
   const startTokenRef = useRef(0)
   const stopLockRef = useRef(false)
   const seqRef = useRef(0)
+  const trackerRef = useRef(null)
   const sessionTripRef = useRef(null)
   const resumeTrackingRef = useRef(async () => {})
   const flushPointsRef = useRef(async () => {})
@@ -212,13 +214,16 @@ export default function AacPanel({
     }
   }, [])
 
-  function stopLocalTracking() {
-    watchRef.current?.stop?.()
+  async function stopLocalTracking() {
+    const watch = watchRef.current
     watchRef.current = null
     if (tickRef.current) {
       clearInterval(tickRef.current)
       tickRef.current = null
     }
+    // Attendre le drain natif final : sinon les derniers points arrivent après
+    // la mesure et les kilomètres de fin de trajet sont perdus.
+    if (watch?.stop) await watch.stop()
   }
 
   async function holdScreenAwake() {
@@ -253,7 +258,12 @@ export default function AacPanel({
     if (!batch.length || !id || !org) return
     pointBufferRef.current = []
     const { error: flushError } = await appendAacTripPoints(id, org, batch)
-    if (flushError) pointBufferRef.current = [...batch, ...pointBufferRef.current]
+    if (flushError) {
+      pointBufferRef.current = [...batch, ...pointBufferRef.current]
+      console.log('[AAC-GPS] flush échec', batch.length, 'points conservés pour réessai :', flushError.message)
+    } else {
+      console.log('[AAC-GPS] flush', batch.length, 'points sauvegardés')
+    }
   }
   flushPointsRef.current = flushPoints
 
@@ -289,9 +299,12 @@ export default function AacPanel({
     pointsRef.current = seededPoints
     if (!pointBufferRef.current.length) pointBufferRef.current = []
     seqRef.current = seededPoints.reduce((max, point) => Math.max(max, Number(point.sequenceNo) || 0), -1) + 1
+    const tracker = createDistanceTracker()
+    for (const point of seededPoints) tracker.add(point)
+    trackerRef.current = tracker
     setTracking(true)
     setLivePoints(seededPoints)
-    setLiveKm(measureTrack(seededPoints).distanceKm)
+    setLiveKm(tracker.distanceKm)
     setLastAccuracy(seededPoints.at(-1)?.accuracy ?? null)
     setGpsStatus('tracking')
     setLastTripSummary(null)
@@ -311,10 +324,20 @@ export default function AacPanel({
         const nextPoints = [...pointsRef.current, withSeq]
         pointsRef.current = nextPoints
         pointBufferRef.current.push(withSeq)
+        const verdict = trackerRef.current
+          ? trackerRef.current.add(withSeq)
+          : { accepted: false, reason: 'no-tracker', distanceKm: 0 }
         setLivePoints(nextPoints)
-        setLiveKm(measureTrack(nextPoints).distanceKm)
+        setLiveKm(verdict.distanceKm)
         setLastAccuracy(pos.accuracy)
-        if (document.visibilityState === 'visible') setGpsStatus('tracking')
+        console.log(
+          '[AAC-GPS] point', sequenceNo,
+          verdict.accepted ? `accepté (${verdict.reason})` : `rejeté (${verdict.reason})`,
+          `distance=${(verdict.distanceKm || 0).toFixed(3)} km`,
+        )
+        if (document.visibilityState === 'visible') {
+          setGpsStatus(!verdict.accepted && verdict.reason === 'accuracy' ? 'inaccurate' : 'tracking')
+        }
         if (pointBufferRef.current.length >= 4) void flushPoints(trip.id, orgId)
       },
       (err) => {
@@ -449,7 +472,7 @@ export default function AacPanel({
     startTokenRef.current += 1
     setStopBusy(true)
     setError('')
-    stopLocalTracking()
+    await stopLocalTracking()
     if (flushLoopRef.current) {
       clearInterval(flushLoopRef.current)
       flushLoopRef.current = null
@@ -1109,7 +1132,7 @@ function gpsStatusClass(status) {
   if (status === 'tracking' || status === 'background' || status === 'ready' || status === 'granted') {
     return 'border-emerald-300/40 bg-emerald-400/15 text-emerald-100'
   }
-  if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {
+  if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout' || status === 'inaccurate') {
     return 'border-amber-300/40 bg-amber-400/15 text-amber-100'
   }
   if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable') {
