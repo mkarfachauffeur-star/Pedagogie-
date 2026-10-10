@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { App } from '@capacitor/app'
 import {
@@ -33,10 +33,8 @@ import {
   AAC_MAX_RVP_COUNT,
   AAC_REQUIRED_RVP_COUNT,
   countMandatoryRvpCompleted,
-  daysBetween,
   drivingConditionLabel,
   formatDateFr,
-  mandatoryRvpTitle,
   rvpRequirementLabel,
   statusLabel,
 } from '../../lib/aacRules'
@@ -54,7 +52,8 @@ import {
   traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
-import AacTripMap from './AacTripMap'
+import { createDistanceTracker } from '../../lib/gpsDistance'
+import AacJourneyCard from './AacJourneyCard'
 
 function formatDuration(seconds) {
   const s = Math.max(0, Number(seconds) || 0)
@@ -95,8 +94,6 @@ export default function AacPanel({
   const [lastAccuracy, setLastAccuracy] = useState(null)
   const [mandatoryRvp, setMandatoryRvp] = useState([])
   const [extraRvp, setExtraRvp] = useState([])
-  const [extraDraft, setExtraDraft] = useState('')
-  const [extraOpen, setExtraOpen] = useState(false)
   const [drivingConditions, setDrivingConditions] = useState([])
   const watchRef = useRef(null)
   const tickRef = useRef(null)
@@ -108,6 +105,7 @@ export default function AacPanel({
   const startTokenRef = useRef(0)
   const stopLockRef = useRef(false)
   const seqRef = useRef(0)
+  const trackerRef = useRef(null)
   const sessionTripRef = useRef(null)
   const resumeTrackingRef = useRef(async () => {})
   const flushPointsRef = useRef(async () => {})
@@ -213,13 +211,16 @@ export default function AacPanel({
     }
   }, [])
 
-  function stopLocalTracking() {
-    watchRef.current?.stop?.()
+  async function stopLocalTracking() {
+    const watch = watchRef.current
     watchRef.current = null
     if (tickRef.current) {
       clearInterval(tickRef.current)
       tickRef.current = null
     }
+    // Attendre le drain natif final : sinon les derniers points arrivent après
+    // la mesure et les kilomètres de fin de trajet sont perdus.
+    if (watch?.stop) await watch.stop()
   }
 
   async function holdScreenAwake() {
@@ -247,15 +248,6 @@ export default function AacPanel({
   const conditions = profile?.conditions
   const progress = profile?.progress
 
-  const daysElapsed = useMemo(
-    () => (profile?.startedAt ? daysBetween(profile.startedAt) : null),
-    [profile?.startedAt],
-  )
-  const daysToEligible = useMemo(() => {
-    if (!profile?.examEligibleAt) return null
-    return daysBetween(new Date(), profile.examEligibleAt)
-  }, [profile?.examEligibleAt])
-
   async function flushPoints(tripId, orgId) {
     const batch = pointBufferRef.current
     const id = tripId || activeTripRef.current?.id
@@ -263,7 +255,12 @@ export default function AacPanel({
     if (!batch.length || !id || !org) return
     pointBufferRef.current = []
     const { error: flushError } = await appendAacTripPoints(id, org, batch)
-    if (flushError) pointBufferRef.current = [...batch, ...pointBufferRef.current]
+    if (flushError) {
+      pointBufferRef.current = [...batch, ...pointBufferRef.current]
+      console.log('[AAC-GPS] flush échec', batch.length, 'points conservés pour réessai :', flushError.message)
+    } else {
+      console.log('[AAC-GPS] flush', batch.length, 'points sauvegardés')
+    }
   }
   flushPointsRef.current = flushPoints
 
@@ -299,9 +296,12 @@ export default function AacPanel({
     pointsRef.current = seededPoints
     if (!pointBufferRef.current.length) pointBufferRef.current = []
     seqRef.current = seededPoints.reduce((max, point) => Math.max(max, Number(point.sequenceNo) || 0), -1) + 1
+    const tracker = createDistanceTracker()
+    for (const point of seededPoints) tracker.add(point)
+    trackerRef.current = tracker
     setTracking(true)
     setLivePoints(seededPoints)
-    setLiveKm(measureTrack(seededPoints).distanceKm)
+    setLiveKm(tracker.distanceKm)
     setLastAccuracy(seededPoints.at(-1)?.accuracy ?? null)
     setGpsStatus('tracking')
     setLastTripSummary(null)
@@ -321,10 +321,20 @@ export default function AacPanel({
         const nextPoints = [...pointsRef.current, withSeq]
         pointsRef.current = nextPoints
         pointBufferRef.current.push(withSeq)
+        const verdict = trackerRef.current
+          ? trackerRef.current.add(withSeq)
+          : { accepted: false, reason: 'no-tracker', distanceKm: 0 }
         setLivePoints(nextPoints)
-        setLiveKm(measureTrack(nextPoints).distanceKm)
+        setLiveKm(verdict.distanceKm)
         setLastAccuracy(pos.accuracy)
-        if (document.visibilityState === 'visible') setGpsStatus('tracking')
+        console.log(
+          '[AAC-GPS] point', sequenceNo,
+          verdict.accepted ? `accepté (${verdict.reason})` : `rejeté (${verdict.reason})`,
+          `distance=${(verdict.distanceKm || 0).toFixed(3)} km`,
+        )
+        if (document.visibilityState === 'visible') {
+          setGpsStatus(!verdict.accepted && verdict.reason === 'accuracy' ? 'inaccurate' : 'tracking')
+        }
         if (pointBufferRef.current.length >= 4) void flushPoints(trip.id, orgId)
       },
       (err) => {
@@ -406,7 +416,7 @@ export default function AacPanel({
         return
       }
 
-      const fix = await acquireAccuratePosition()
+      const fix = await traceGpsAwait(acquireAccuratePosition(), 'acquireAccuratePosition', 80000)
       if (startTokenRef.current !== token) return
       if (fix.weak) {
         setGpsStatus('weak')
@@ -445,10 +455,11 @@ export default function AacPanel({
         }
       }
     } finally {
-      if (startTokenRef.current === token) {
-        setSaving(false)
-        console.log('[AAC-GPS] saving =', false)
-      }
+      // « Acquisition GPS… » dépend de saving : il doit toujours se terminer,
+      // même si une action plus récente (arrêt, nouveau départ) a pris la main
+      // sur l'état du trajet entre-temps.
+      setSaving(false)
+      console.log('[AAC-GPS] saving =', false)
     }
   }
 
@@ -458,7 +469,7 @@ export default function AacPanel({
     startTokenRef.current += 1
     setStopBusy(true)
     setError('')
-    stopLocalTracking()
+    await stopLocalTracking()
     if (flushLoopRef.current) {
       clearInterval(flushLoopRef.current)
       flushLoopRef.current = null
@@ -513,8 +524,6 @@ export default function AacPanel({
       setMandatoryRvp([])
       setExtraRvp([])
       setDrivingConditions([])
-      setExtraDraft('')
-      setExtraOpen(false)
       setBundle((prev) => (prev ? { ...prev, activeTrip: null } : prev))
       await reload()
     } catch (err) {
@@ -525,18 +534,6 @@ export default function AacPanel({
     }
   }
 
-  function toggleMandatory(sequence) {
-    setMandatoryRvp((current) => {
-      const next = current.includes(sequence)
-        ? current.filter((item) => item !== sequence)
-        : [...current, sequence].sort()
-      const details = { ...detailsRef.current, mandatoryRvp: next }
-      detailsRef.current = details
-      if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
-      return next
-    })
-  }
-
   function toggleCondition(id) {
     setDrivingConditions((current) => {
       const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
@@ -545,26 +542,6 @@ export default function AacPanel({
       if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
       return next
     })
-  }
-
-  function addExtraRvp(event) {
-    event.preventDefault()
-    const label = extraDraft.trim()
-    if (!label) return
-    const next = [...extraRvp, { id: globalThis.crypto?.randomUUID?.() || `rvp-${Date.now()}`, label: label.slice(0, 120) }]
-    setExtraRvp(next)
-    setExtraDraft('')
-    const details = { ...detailsRef.current, extraRvp: next }
-    detailsRef.current = details
-    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
-  }
-
-  function removeExtraRvp(id) {
-    const next = extraRvp.filter((item) => item.id !== id)
-    setExtraRvp(next)
-    const details = { ...detailsRef.current, extraRvp: next }
-    detailsRef.current = details
-    if (activeTripRef.current?.id) void saveAacTripDetails(activeTripRef.current.id, details)
   }
 
   async function saveStartDate(e) {
@@ -635,13 +612,13 @@ export default function AacPanel({
   const tripActive = tracking || Boolean(bundle?.activeTrip)
   const stopBar = tripActive && !isStaff && typeof document !== 'undefined'
     ? createPortal(
-      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/70 bg-white/65 px-4 pt-3 shadow-[0_-16px_40px_rgba(56,132,244,0.12)] backdrop-blur-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <p className="mb-2 text-center text-sm text-sky-900/70">
+      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-sky-300/25 bg-[#081a33]/85 px-4 pt-3 shadow-[0_-16px_40px_rgba(2,6,23,0.5)] backdrop-blur-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p className="mb-2 text-center text-sm text-sky-100/70">
           Trajet en cours
-          <span className="text-sky-300"> · </span>
-          <span className="font-semibold tabular-nums text-slate-900">{formatKm(liveKm)} km</span>
-          <span className="text-sky-300"> · </span>
-          <span className="tabular-nums">{formatDuration(elapsed)}</span>
+          <span className="text-sky-400/50"> · </span>
+          <span className="font-semibold tabular-nums text-white">{formatKm(liveKm)} km</span>
+          <span className="text-sky-400/50"> · </span>
+          <span className="tabular-nums text-sky-100">{formatDuration(elapsed)}</span>
         </p>
         <button
           className="aac-btn-stop w-full touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:opacity-50"
@@ -705,72 +682,22 @@ export default function AacPanel({
         </div>
       )}
 
-      <section className="lesson-glass p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-slate-500">Progression globale</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{progress?.percent || 0}%</p>
-            <p className="mt-1 text-sm text-slate-500">
-              {Math.round(progress?.km || 0)} km sur {progress?.target || 3000} km
-            </p>
-          </div>
-          <span className={`w-fit rounded-full border border-white/80 px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
-            {statusLabel(profile.status)}
-          </span>
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/70">
-          <div
-            className="h-full rounded-full bg-sky-300/90 transition-all duration-500"
-            style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
-          />
-        </div>
+      <AacJourneyCard
+        examEligibleAt={profile.examEligibleAt}
+        ffiAt={bundle?.ffi?.sentAt || bundle?.ffi?.createdAt || null}
+        progress={progress}
+        rvp={rvp}
+        rvpCompleted={countMandatoryRvpCompleted(rvp)}
+        rvpRequired={AAC_REQUIRED_RVP_COUNT}
+        startedAt={profile.startedAt}
+        statusText={statusLabel(profile.status)}
+        tripActive={tripActive && !isStaff}
+        tripCount={profile.tripCount || 0}
+      />
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat
-            detail={`sur ${progress?.target || 3000} km`}
-            label="Parcourus"
-            value={`${Math.round(progress?.km || 0)} km`}
-          />
-          <Stat
-            detail="avant l’objectif"
-            label="Restants"
-            value={`${Math.round(progress?.remaining || 0)} km`}
-          />
-          <Stat
-            detail="terminés"
-            label="Trajets"
-            value={String(profile.tripCount || 0)}
-          />
-          <Stat
-            detail="obligatoires"
-            label="Rendez-vous"
-            value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
-          />
-        </div>
-
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/70 pt-4 text-sm lg:grid-cols-4">
-            <div>
-              <dt className="text-xs text-slate-400">Début</dt>
-              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.startedAt)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Jours écoulés</dt>
-              <dd className="mt-0.5 tabular-nums text-slate-800">{daysElapsed ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Jours avant un an</dt>
-              <dd className="mt-0.5 tabular-nums text-slate-800">
-                {daysToEligible == null ? '—' : Math.max(0, daysToEligible)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Examen possible le</dt>
-              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.examEligibleAt)}</dd>
-            </div>
-          </dl>
-
-        {isStaff && (
-          <form className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/60 pt-4" onSubmit={saveStartDate}>
+      {isStaff && (
+        <section className="lesson-glass p-5">
+          <form className="flex flex-wrap items-end gap-3" onSubmit={saveStartDate}>
             <label className="text-sm font-medium text-slate-700">
               Date d’entrée
               <input
@@ -798,8 +725,8 @@ export default function AacPanel({
               </button>
             )}
           </form>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="lesson-glass p-4 sm:p-5">
             <h3 className="text-base font-semibold text-slate-900">Conditions pour l’examen</h3>
@@ -817,20 +744,20 @@ export default function AacPanel({
       </section>
 
       {!isStaff && (
-        <section className="lesson-glass overflow-visible p-4 sm:p-5">
+        <section className="aac-rec relative overflow-hidden rounded-3xl border border-sky-400/25 bg-gradient-to-br from-[#081a33] via-[#0b2a52] to-[#103a75] p-4 text-white shadow-[0_24px_60px_rgba(6,20,50,0.45)] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-semibold text-slate-900">Enregistrer un trajet</h3>
+            <h3 className="text-base font-semibold text-white">Enregistrer un trajet</h3>
             {tripActive && (
-              <span className="rounded-full border border-white/80 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-800">
+              <span className="rounded-full border border-emerald-300/40 bg-emerald-400/15 px-3 py-1 text-xs font-medium text-emerald-200">
                 En cours
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-sky-100/70">
             Le relevé continue si le téléphone est verrouillé. Il s’arrête quand vous terminez le trajet.
           </p>
 
-          <div className={`lesson-chip mt-4 px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
+          <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm leading-6 ${gpsStatusClass(gpsStatus)}`} role="status">
             <p>{LOCATION_STATUS_MESSAGES[gpsStatus] || LOCATION_STATUS_MESSAGES.prompt}</p>
             {tripActive && locationScope === 'whenInUse' && (
               <p className="mt-2 text-xs">
@@ -844,7 +771,7 @@ export default function AacPanel({
             )}
             {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
               <button
-                className="lesson-btn mt-3 px-3 py-2 text-sm font-semibold"
+                className="mt-3 rounded-xl border border-sky-300/40 bg-sky-400/15 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-400/25"
                 onClick={openLocationSettings}
                 type="button"
               >
@@ -853,69 +780,10 @@ export default function AacPanel({
             )}
           </div>
 
-          <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-900">Rendez-vous pendant ce trajet</legend>
-            <p className="mt-1 text-sm text-slate-500">
-              Cochez un rendez-vous seulement s’il a eu lieu pendant ce trajet. Le dossier officiel n’est pas modifié.
-            </p>
-            <div className="mt-3 space-y-2">
-              {[1, 2].map((sequence) => (
-                <label
-                  key={sequence}
-                  className="lesson-chip flex min-h-11 items-start gap-3 px-3 py-3 text-sm text-slate-800"
-                >
-                  <input
-                    checked={mandatoryRvp.includes(sequence)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-sky-500"
-                    onChange={() => toggleMandatory(sequence)}
-                    type="checkbox"
-                  />
-                  <span>{mandatoryRvpTitle(sequence)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="mt-6">
-            <legend className="text-sm font-semibold text-slate-900">Rendez-vous supplémentaires</legend>
-            <ul className="mt-3 space-y-2">
-              {extraRvp.map((item) => (
-                <li key={item.id} className="lesson-chip flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
-                  <span className="text-slate-800">{item.label}</span>
-                  <button className="text-xs font-medium text-rose-700" onClick={() => removeExtraRvp(item.id)} type="button">
-                    Retirer
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {extraOpen ? (
-              <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={addExtraRvp}>
-                <input
-                  className="pd-input min-w-0 flex-1"
-                  maxLength={120}
-                  onChange={(event) => setExtraDraft(event.target.value)}
-                  placeholder="Intitulé du rendez-vous"
-                  value={extraDraft}
-                />
-                <button className="lesson-btn px-4 py-2.5 text-sm font-semibold" type="submit">
-                  Ajouter
-                </button>
-              </form>
-            ) : (
-              <button
-                className="mt-3 text-sm font-medium text-sky-700"
-                onClick={() => setExtraOpen(true)}
-                type="button"
-              >
-                Ajouter un rendez-vous
-              </button>
-            )}
-          </fieldset>
-
-          <fieldset className="mt-6">
-            <legend className="text-base font-semibold text-slate-900">Critères de conduite</legend>
-            <p className="mt-1 text-sm text-slate-500">Facultatif. Plusieurs critères peuvent être choisis.</p>
-            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+          <fieldset className="mt-5">
+            <legend className="text-base font-semibold text-white">Critères de conduite</legend>
+            <p className="mt-1 text-sm text-sky-100/70">Facultatif. Plusieurs critères peuvent être choisis.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3">
               {AAC_DRIVING_CONDITIONS.map((item) => (
                 <DrivingCriterionCard
                   id={item.id}
@@ -928,9 +796,9 @@ export default function AacPanel({
             </div>
           </fieldset>
 
-          <div className="mt-6 grid gap-2 sm:grid-cols-2">
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
             <button
-              className="lesson-btn touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              className="touch-manipulation rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(56,132,244,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={saving || tripActive}
               onClick={handleStartTrip}
               type="button"
@@ -938,7 +806,7 @@ export default function AacPanel({
               {saving ? 'Acquisition GPS…' : 'Démarrer le trajet'}
             </button>
             <button
-              className="aac-btn-stop touch-manipulation px-5 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              className="aac-btn-stop touch-manipulation px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               disabled={stopBusy || !tripActive}
               onClick={handleStopTrip}
               type="button"
@@ -955,12 +823,10 @@ export default function AacPanel({
             </div>
           )}
 
-          {tripActive && <AacTripMap className="mt-4" path={livePoints} />}
-
           {lastTripSummary && (
-            <div className="mt-6 border-t border-white/70 pt-4">
-              <p className="mb-3 text-sm text-slate-500">Dernier trajet</p>
-              <TripRecap trip={lastTripSummary} />
+            <div className="mt-5 border-t border-white/10 pt-4">
+              <p className="mb-3 text-sm text-sky-100/70">Dernier trajet</p>
+              <TripRecap dark trip={lastTripSummary} />
             </div>
           )}
         </section>
@@ -1003,14 +869,16 @@ export default function AacPanel({
             />
           ))}
         </div>
-        <button
-          className="lesson-btn-soft mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-          disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
-          onClick={handleAddRvp}
-          type="button"
-        >
-          Ajouter un rendez-vous pédagogique
-        </button>
+        {isStaff && (
+          <button
+            className="lesson-btn-soft mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            disabled={saving || highestRvpSequence >= AAC_MAX_RVP_COUNT}
+            onClick={handleAddRvp}
+            type="button"
+          >
+            Ajouter un rendez-vous pédagogique
+          </button>
+        )}
       </section>
 
       <section className="lesson-glass p-4 sm:p-5">
@@ -1042,28 +910,13 @@ export default function AacPanel({
   )
 }
 
-function Stat({ label, value, detail }) {
-  return (
-    <div className="lesson-chip min-w-0 px-3 py-3">
-      <p className="text-xs font-medium text-sky-800/70">{label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
-      {detail ? <p className="mt-0.5 text-xs text-slate-500">{detail}</p> : null}
-    </div>
-  )
-}
-
 function KpiLight({ label, value }) {
   return (
-    <div className="lesson-chip px-3 py-3">
-      <p className="text-lg font-semibold tabular-nums text-slate-900">{value}</p>
-      <p className="text-xs text-sky-800/70">{label}</p>
+    <div className="lesson-chip px-3 py-2.5">
+      <p className="text-lg font-semibold tabular-nums text-white">{value}</p>
+      <p className="text-xs text-sky-200/70">{label}</p>
     </div>
   )
-}
-
-function statusTone(status) {
-  if (status === 'conditions_remplies' || status === 'terminee') return 'bg-emerald-50/80 text-emerald-800'
-  return 'bg-sky-50/70 text-sky-800'
 }
 
 function emptyRvp(sequence) {
@@ -1183,15 +1036,15 @@ function mergeGpsPoints(...groups) {
 
 function gpsStatusClass(status) {
   if (status === 'tracking' || status === 'background' || status === 'ready' || status === 'granted') {
-    return 'border-emerald-200/70 bg-emerald-50/70 text-emerald-950'
+    return 'border-emerald-300/40 bg-emerald-400/15 text-emerald-100'
   }
-  if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout') {
-    return 'border-amber-200/80 bg-amber-50/70 text-amber-950'
+  if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout' || status === 'inaccurate') {
+    return 'border-amber-300/40 bg-amber-400/15 text-amber-100'
   }
   if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable') {
-    return 'border-rose-200/80 bg-rose-50/70 text-rose-900'
+    return 'border-rose-300/40 bg-rose-400/15 text-rose-100'
   }
-  return 'text-slate-700'
+  return 'border-white/15 bg-white/5 text-sky-50'
 }
 
 function formatClock(value) {
@@ -1208,7 +1061,7 @@ function formatTripDate(value) {
   return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function TripRecap({ trip }) {
+function TripRecap({ trip, dark = false }) {
   const done = new Set((trip.mandatoryRvp || []).map(Number))
   const extras = trip.extraRvp || []
   const conditions = trip.drivingConditions || []
@@ -1222,28 +1075,30 @@ function TripRecap({ trip }) {
     <article className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-900">
+        <p className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
           <span className="tabular-nums">{formatKm(trip.distanceKm)} km</span>
-          <span className="font-normal text-slate-300"> · </span>
-          <span className="font-medium text-slate-700">{formatDuration(trip.durationSeconds)}</span>
+          <span className={`font-normal ${dark ? 'text-sky-400/50' : 'text-slate-300'}`}> · </span>
+          <span className={`font-medium ${dark ? 'text-sky-100/80' : 'text-slate-700'}`}>{formatDuration(trip.durationSeconds)}</span>
         </p>
         {tags.length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {tags.map((tag, index) => (
-              <li key={`${tag}-${index}`} className="rounded-full border border-white/80 bg-white/60 px-2.5 py-0.5 text-xs text-sky-900/80">
+              <li
+                className={`rounded-full border px-2.5 py-0.5 text-xs ${dark ? 'border-white/15 bg-white/10 text-sky-100' : 'border-white/80 bg-white/60 text-sky-900/80'}`}
+                key={`${tag}-${index}`}
+              >
                 {tag}
               </li>
             ))}
           </ul>
         )}
       </div>
-      <p className="shrink-0 text-xs tabular-nums leading-5 text-slate-500 sm:text-right">
+      <p className={`shrink-0 text-xs tabular-nums leading-5 sm:text-right ${dark ? 'text-sky-100/60' : 'text-slate-500'}`}>
         {formatTripDate(trip.startedAt)}
-        <span className="mx-1.5 text-slate-300">·</span>
+        <span className={`mx-1.5 ${dark ? 'text-sky-400/50' : 'text-slate-300'}`}>·</span>
         {formatClock(trip.startedAt)} – {formatClock(trip.endedAt)}
       </p>
       </div>
-      <AacTripMap path={trip.pathSummary} />
     </article>
   )
 }

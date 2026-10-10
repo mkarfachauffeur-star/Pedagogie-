@@ -1194,13 +1194,44 @@
   }
 
   .aac-btn-stop {
-    border-radius: 1rem;
-    border: 1px solid rgba(251, 113, 133, 0.35);
-    background: rgba(255, 241, 242, 0.62);
-    color: #be123c;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border-radius: 0.85rem;
+    border: 1px solid rgba(251, 113, 133, 0.45);
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.92), rgba(190, 18, 60, 0.96));
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(190, 18, 60, 0.32);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Section « Enregistrer un trajet » (thème nuit) : puces, champs et critères
+     harmonisés sans toucher aux versions claires utilisées ailleurs. */
+  .aac-rec .lesson-chip {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+    color: inherit;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .aac-rec .pd-input {
+    border-color: rgba(125, 211, 252, 0.35);
+    background: rgba(8, 26, 51, 0.65);
+    color: #fff;
+  }
+
+  .aac-rec .pd-input::placeholder {
+    color: rgba(186, 230, 253, 0.45);
+  }
+
+  .aac-rec .pd-input:focus {
+    border-color: rgba(125, 211, 252, 0.7);
+  }
+
+  .aac-rec .aac-criterion {
+    min-height: 5.75rem;
+    gap: 0.5rem;
+    padding: 0.75rem;
   }
 
   /* Critères de conduite : petits panneaux de verre teintés. */
@@ -1905,5 +1936,59 @@ html.capacitor-ios .pd-main-content {
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Parcours AAC : drapeau à damier et animations légères de progression.
+   Transform/opacity uniquement, pour rester fluide dans le WKWebView iPhone. */
+.aac-flag-checker {
+  background-image: conic-gradient(#0f172a 25%, #f8fafc 0 50%, #0f172a 0 75%, #f8fafc 0);
+  background-size: 7px 7px;
+}
+
+@keyframes aac-journey-tip-ring {
+  0% { box-shadow: 0 0 0 0 rgba(125, 211, 252, 0.85), 0 0 14px rgba(125, 211, 252, 0.9); }
+  100% { box-shadow: 0 0 0 14px rgba(125, 211, 252, 0), 0 0 14px rgba(125, 211, 252, 0.9); }
+}
+
+.aac-journey-tip-pulse {
+  animation: aac-journey-tip-ring 0.85s ease-out 2;
+}
+
+@keyframes aac-journey-fill-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.35); }
+}
+
+.aac-journey-fill-pulse {
+  animation: aac-journey-fill-glow 0.85s ease-in-out 2;
+}
+
+@keyframes aac-journey-number-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+.aac-journey-number-pulse {
+  animation: aac-journey-number-pop 0.6s ease-out 1;
+  transform-origin: left bottom;
+}
+
+@keyframes aac-journey-chip-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.45); }
+}
+
+.aac-journey-chip-pulse {
+  animation: aac-journey-chip-glow 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-journey-tip-pulse,
+  .aac-journey-fill-pulse,
+  .aac-journey-number-pulse,
+  .aac-journey-chip-pulse {
+    animation: none;
   }
 }

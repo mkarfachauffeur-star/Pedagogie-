@@ -123,6 +123,11 @@ export function isMandatoryRvpSequence(sequence) {
   return n >= 1 && n <= AAC_REQUIRED_RVP_COUNT
 }
 
+/** Seul le personnel gère les rendez-vous pédagogiques (identique à la RLS). */
+export function canManageAacRvp(role) {
+  return role === 'manager' || role === 'secretary' || role === 'teacher'
+}
+
 /** Seuls les rendez-vous 1 et 2 comptent pour la condition légale. */
 export function countMandatoryRvpCompleted(rvp = []) {
   return (rvp || []).filter((row) => isMandatoryRvpSequence(row?.sequence) && row?.completed).length
