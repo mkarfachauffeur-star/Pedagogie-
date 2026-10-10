@@ -9,7 +9,7 @@ import {
   Play,
 } from 'lucide-react'
 import { AAC_KM_TARGET, daysBetween, formatDateFr } from '../../lib/aacRules'
-import { buildRvpMilestones, journeyProgress } from '../../lib/aacJourney'
+import { buildRvpMilestones, journeyProgress, orderedRvpMilestones } from '../../lib/aacJourney'
 import { formatKm } from '../../lib/geolocation'
 
 const KM_TICKS = [500, 1000, 1500, 2000, 2500]
@@ -51,7 +51,7 @@ function LicenseCard() {
   return (
     <div
       aria-hidden="true"
-      className="aac-license relative w-24 rotate-3 rounded-xl border border-sky-200/50 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 p-2 shadow-[0_10px_30px_rgba(56,132,244,0.45)]"
+      className="aac-license relative w-20 shrink-0 rotate-3 rounded-xl border border-sky-200/50 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 p-2 shadow-[0_10px_30px_rgba(56,132,244,0.45)]"
     >
       <div className="flex items-center gap-1.5">
         <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/20">
@@ -155,16 +155,11 @@ export default function AacJourneyCard({
     () => buildRvpMilestones({ rvp, km, target, ffiAt }),
     [rvp, km, target, ffiAt],
   )
-  const [rvp1, rvp2] = milestones.mandatory
+  const [rvp1] = milestones.mandatory
   const rvp1Detail = rvp1.deadline
     ? `Entre le ${formatDateFr(rvp1.windowStart)} et le ${formatDateFr(rvp1.deadline)} (d’après la FFI du ${formatDateFr(ffiAt)})`
     : rvp1.requirement
-  const extras = milestones.extras.map(({ row, state }) => ({
-    row,
-    state,
-    detail: row.heldOn ? `Prévu le ${formatDateFr(row.heldOn)}` : 'Date à définir avec l’enseignant',
-    key: row.id || row.sequence,
-  }))
+  const orderedMilestones = useMemo(() => orderedRvpMilestones(milestones), [milestones])
 
   return (
     <section
@@ -175,18 +170,21 @@ export default function AacJourneyCard({
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-indigo-500/15 blur-3xl" />
 
       <div className="relative">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-300">Mon parcours AAC</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {statusText && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-sky-100">
-                {statusText}
+        <div className="flex items-start justify-between gap-3">
+          <p className="pt-2 text-xs font-bold uppercase tracking-[0.22em] text-sky-300">Mon parcours AAC</p>
+          <div className="flex items-center gap-3">
+            <LicenseCard />
+            <div className="flex flex-col items-end gap-2">
+              {statusText && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-sky-100">
+                  {statusText}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-400/15 px-3 py-1 text-[11px] font-bold text-amber-200">
+                <Award className="h-3.5 w-3.5" aria-hidden="true" />
+                Objectif permis
               </span>
-            )}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-400/15 px-3 py-1 text-[11px] font-bold text-amber-200">
-              <Award className="h-3.5 w-3.5" aria-hidden="true" />
-              Objectif permis
-            </span>
+            </div>
           </div>
         </div>
 
@@ -211,79 +209,98 @@ export default function AacJourneyCard({
           </div>
         </div>
 
-        <div className="relative mt-16 pb-10 pt-2">
-          <div className="relative h-2.5 rounded-full bg-white/10">
-            <div
-              className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-400 shadow-[0_0_18px_rgba(56,189,248,0.65)] transition-[width] duration-700 ease-out ${pulse ? 'aac-journey-fill-pulse' : ''}`}
-              style={{ width: `${fillPercent}%` }}
-            />
-            {KM_TICKS.map((tick) => (
-              <span
-                aria-hidden="true"
-                className="absolute top-1/2 h-4 w-px -translate-y-1/2 bg-white/25"
-                key={tick}
-                style={{ left: `${(tick / target) * 100}%` }}
+        <div className="mt-8 flex items-start gap-2.5">
+          <span
+            aria-hidden="true"
+            className="mt-[-3px] flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-[0_0_16px_rgba(52,211,153,0.35)]"
+          >
+            <Play className="ml-0.5 h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+
+          <div className="relative mt-[10px] flex-1">
+            <div className="relative h-2.5 rounded-full bg-white/10">
+              <div
+                className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-400 shadow-[0_0_18px_rgba(56,189,248,0.65)] transition-[width] duration-700 ease-out ${pulse ? 'aac-journey-fill-pulse' : ''}`}
+                style={{ width: `${fillPercent}%` }}
               />
-            ))}
-            {km > 0 && !finished && (
-              <span
-                aria-hidden="true"
-                className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-sky-400 shadow-[0_0_14px_rgba(125,211,252,0.9)] transition-[left] duration-700 ease-out ${pulse ? 'aac-journey-tip-pulse' : ''}`}
-                style={{ left: `${fillPercent}%` }}
-              />
-            )}
+              {KM_TICKS.map((tick) => (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1/2 h-4 w-px -translate-y-1/2 bg-white/25"
+                  key={tick}
+                  style={{ left: `${(tick / target) * 100}%` }}
+                />
+              ))}
+              {km > 0 && !finished && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-sky-400 shadow-[0_0_14px_rgba(125,211,252,0.9)] transition-[left] duration-700 ease-out ${pulse ? 'aac-journey-tip-pulse' : ''}`}
+                  style={{ left: `${fillPercent}%` }}
+                />
+              )}
+            </div>
+
+            <div className="relative mt-2 h-8 text-[11px] tabular-nums">
+              <span className="absolute left-0 top-0 flex flex-col">
+                <span className="font-bold uppercase tracking-wider text-emerald-200">Départ</span>
+                <span className="text-sky-100/60">{formatDateFr(startedAt)}</span>
+              </span>
+              {KM_TICKS.map((tick) => (
+                <span
+                  aria-hidden={tick % 1000 !== 0}
+                  className={`absolute top-0 -translate-x-1/2 text-sky-100/55 ${tick % 1000 !== 0 ? 'hidden sm:block' : ''}`}
+                  key={tick}
+                  style={{ left: `${(tick / target) * 100}%` }}
+                >
+                  {formatKm(tick)}
+                </span>
+              ))}
+              <span className="absolute right-0 top-0 flex flex-col items-end text-right">
+                <span className="font-bold uppercase tracking-wider text-amber-200">Arrivée</span>
+                <span className="text-sky-100/60">{formatKm(target)} km</span>
+              </span>
+            </div>
           </div>
 
-          <div className="absolute left-0 top-0 flex -translate-y-1 flex-col items-start">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-[0_0_16px_rgba(52,211,153,0.35)]">
-              <Play className="ml-0.5 h-3.5 w-3.5" aria-hidden="true" />
-            </span>
-            <span className="mt-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200">Départ</span>
-            <span className="text-[11px] tabular-nums text-sky-100/60">{formatDateFr(startedAt)}</span>
-          </div>
-
-          {KM_TICKS.map((tick) => (
-            <span
-              aria-hidden={tick % 1000 !== 0}
-              className={`absolute top-full mt-2 -translate-x-1/2 text-[10px] tabular-nums text-sky-100/55 ${tick % 1000 !== 0 ? 'hidden sm:block' : ''}`}
-              key={tick}
-              style={{ left: `${(tick / target) * 100}%` }}
-            >
-              {formatKm(tick)}
-            </span>
-          ))}
-
-          <div className="absolute right-0 top-0 flex -translate-y-1 flex-col items-end">
-            <LicenseCard />
-            <CheckeredFlag className="mt-2" />
-            <span className="mt-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-200">Arrivée</span>
-            <span className="text-[11px] tabular-nums text-sky-100/60">{formatKm(target)} km</span>
-          </div>
+          <CheckeredFlag className="mt-[1px] shrink-0" />
         </div>
 
-        <ul className="mt-2 flex flex-wrap gap-3 border-t border-white/10 pt-4">
-          <RvpMilestone
-            detail={rvp1Detail}
-            icon={CalendarClock}
-            state={rvp1.state}
-            title="RVP 1 · Obligatoire"
-          />
-          {extras.map(({ row, state, detail, key }) => (
-            <RvpMilestone
-              detail={detail}
-              icon={Flag}
-              key={key}
-              state={state}
-              title={`${row.label || `Rendez-vous ${row.sequence}`} · Facultatif`}
-            />
-          ))}
-          <RvpMilestone
-            detail={rvp2.requirement}
-            due={rvp2.due}
-            icon={Flag}
-            state={rvp2.state}
-            title="RVP 2 · Obligatoire · 3 000 km"
-          />
+        <ul className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-4">
+          {orderedMilestones.map((item) => {
+            if (item.sequence === 1) {
+              return (
+                <RvpMilestone
+                  detail={rvp1Detail}
+                  icon={CalendarClock}
+                  key="rvp-1"
+                  state={item.state}
+                  title="RVP 1 · Obligatoire"
+                />
+              )
+            }
+            if (item.sequence === 2) {
+              return (
+                <RvpMilestone
+                  detail={item.requirement}
+                  due={item.due}
+                  icon={Flag}
+                  key="rvp-2"
+                  state={item.state}
+                  title="RVP 2 · Obligatoire · 3 000 km"
+                />
+              )
+            }
+            const { row } = item
+            return (
+              <RvpMilestone
+                detail={row.heldOn ? `Prévu le ${formatDateFr(row.heldOn)}` : 'Date à définir avec l’enseignant'}
+                icon={Flag}
+                key={row.id || row.sequence}
+                state={item.state}
+                title={`${row.label || `Rendez-vous ${row.sequence}`} · Facultatif`}
+              />
+            )
+          })}
         </ul>
 
         <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 text-sm lg:grid-cols-4">

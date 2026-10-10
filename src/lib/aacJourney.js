@@ -62,6 +62,7 @@ export function buildRvpMilestones({ rvp = [], km = 0, target = AAC_KM_TARGET, f
       const held = parseLocalDate(row.heldOn)
       const overdue = Boolean(!row.completed && held && held < today)
       return {
+        sequence: Number(row.sequence),
         row,
         optional: true,
         state: milestoneState({ completed: row.completed, overdue }),
@@ -95,4 +96,13 @@ export function buildRvpMilestones({ rvp = [], km = 0, target = AAC_KM_TARGET, f
     ],
     extras,
   }
+}
+
+/**
+ * Ordre officiel d'affichage : RVP 1 (obligatoire), RVP 2 (obligatoire,
+ * 3 000 km), puis les rendez-vous supplémentaires (facultatifs) par séquence.
+ */
+export function orderedRvpMilestones(milestones) {
+  const mandatory = [...(milestones?.mandatory || [])].sort((a, b) => a.sequence - b.sequence)
+  return [...mandatory, ...(milestones?.extras || [])]
 }

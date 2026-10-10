@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core'
-import { GPS_LIMITS } from './gpsDistance'
+import { GPS_LIMITS } from './gpsDistance.js'
 
 /**
  * Géolocalisation des trajets AAC.
@@ -173,7 +173,7 @@ function tripPluginFrom(loaded) {
   return loaded?.plugin || null
 }
 
-function accessFromNative(result) {
+export function accessFromNative(result) {
   const scope = result?.scope || 'prompt'
   if (scope === 'disabled') return { granted: false, status: 'servicesDisabled', scope, background: false }
   if (scope === 'restricted') return { granted: false, status: 'restricted', scope, background: false }
@@ -410,10 +410,20 @@ function watchIosTrip(onUpdate, onError, options) {
     onUpdate(normalized)
   }
 
+  // Un drain en vol ne doit jamais se doubler : sans ce garde-fou, les appels
+  // toutes les 4 s s'empilent si le natif tarde à répondre.
+  let pullInFlight = false
   const pull = async () => {
-    if (!plugin || stopped) return
-    const drained = await plugin.drain()
-    for (const point of drained?.points || []) emit(point)
+    if (!plugin || stopped || pullInFlight) return
+    pullInFlight = true
+    try {
+      const drained = await traceGpsAwait(plugin.drain(), 'drain', 8000)
+      for (const point of drained?.points || []) emit(point)
+    } catch {
+      // Le drain suivant réessaiera : les points restent dans le tampon natif.
+    } finally {
+      pullInFlight = false
+    }
   }
 
   const ready = (async () => {
@@ -436,8 +446,7 @@ function watchIosTrip(onUpdate, onError, options) {
     }
     trace('13 start terminé')
     gpsLog('AacTripLocation.start retour')
-    const first = await plugin.drain()
-    for (const point of first?.points || []) emit(point)
+    await pull()
     const locationHandle = await plugin.addListener('location', (point) => emit(point))
     const errorHandle = await plugin.addListener('error', (payload) => {
       if (!stopped) onError?.(toLocationError(payload, 'Erreur GPS'))
@@ -554,7 +563,7 @@ export function watchPosition(onUpdate, onError, options = {}) {
   }
 }
 
-export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance'
+export { accumulateDistance, formatKm, haversineKm, measureTrack } from './gpsDistance.js'
 
 export function downsamplePath(points, maxPoints = 200) {
   if (!points?.length) return []

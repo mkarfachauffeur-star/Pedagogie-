@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
+import { Home, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import BrandLogo from '../../BrandLogo'
@@ -143,13 +143,16 @@ export default function LandingHeader() {
         <div className="border-t border-[var(--lp-border)] bg-[var(--lp-bg)]/95 px-4 py-5 backdrop-blur-xl lg:hidden">
           <motion.div animate={{ opacity: 1, y: 0 }} className="grid gap-1" initial={{ opacity: 0, y: -6 }}>
             <Link
-              className="mb-1 flex min-h-11 items-center justify-center rounded-[12px] border-2 border-[var(--lp-ink)] bg-[var(--lp-card)] px-3 text-sm font-semibold text-[var(--lp-ink)] shadow-sm"
+              className="mb-1 flex min-h-11 items-center gap-3 rounded-xl border border-[var(--lp-border)] bg-[var(--lp-card)]/70 px-3 text-sm font-semibold text-[var(--lp-ink)] transition hover:border-sky-400/60 hover:bg-[var(--lp-card)]"
               onClick={() => {
                 setMobileOpen(false)
                 if (isHome) window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
               to="/"
             >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0b2a52] via-[#1d4ed8] to-[#7c3aed] text-white">
+                <Home className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
               {LANDING_HOME_LINK.label}
             </Link>
             {LANDING_MENU_LINKS.map((item) => (

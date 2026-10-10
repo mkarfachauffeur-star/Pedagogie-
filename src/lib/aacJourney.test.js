@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { addMonths, buildRvpMilestones, journeyProgress, milestoneState } from './aacJourney.js'
+import { addMonths, buildRvpMilestones, journeyProgress, milestoneState, orderedRvpMilestones } from './aacJourney.js'
 
 const TODAY = new Date(2026, 9, 10) // 10 octobre 2026
 
@@ -126,6 +126,24 @@ test('rendez-vous supplémentaires : facultatifs, états sur date fiable', () =>
       [6, 'a_effectuer', true],
     ],
   )
+})
+
+test('ordre officiel : RVP 1 obligatoire, RVP 2 obligatoire (3 000 km), puis facultatifs', () => {
+  const milestones = buildRvpMilestones({
+    rvp: [
+      { sequence: 5, completed: false, heldOn: '', label: 'RVP 5' },
+      { sequence: 3, completed: true, heldOn: '2026-07-01', label: 'RVP 3' },
+      { sequence: 2, completed: false },
+      { sequence: 1, completed: false },
+    ],
+    km: 100,
+    today: TODAY,
+  })
+  const ordered = orderedRvpMilestones(milestones)
+  assert.deepEqual(ordered.map((item) => item.sequence), [1, 2, 3, 5])
+  assert.deepEqual(ordered.map((item) => item.optional), [false, false, true, true])
+  assert.equal(ordered[0].requirement, 'Obligatoire — entre 4 et 6 mois après l’attestation de fin de formation initiale')
+  assert.equal(ordered[1].requirement, 'Obligatoire — lorsque 3 000 km ont été parcourus')
 })
 
 test('milestoneState : réalisé prime, puis retard, sinon à effectuer', () => {
