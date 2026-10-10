@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { App } from '@capacitor/app'
 import {
@@ -33,7 +33,6 @@ import {
   AAC_MAX_RVP_COUNT,
   AAC_REQUIRED_RVP_COUNT,
   countMandatoryRvpCompleted,
-  daysBetween,
   drivingConditionLabel,
   formatDateFr,
   mandatoryRvpTitle,
@@ -54,7 +53,7 @@ import {
   traceGpsAwait,
   watchPosition,
 } from '../../lib/geolocation'
-import AacTripMap from './AacTripMap'
+import AacJourneyCard from './AacJourneyCard'
 
 function formatDuration(seconds) {
   const s = Math.max(0, Number(seconds) || 0)
@@ -247,15 +246,6 @@ export default function AacPanel({
   const conditions = profile?.conditions
   const progress = profile?.progress
 
-  const daysElapsed = useMemo(
-    () => (profile?.startedAt ? daysBetween(profile.startedAt) : null),
-    [profile?.startedAt],
-  )
-  const daysToEligible = useMemo(() => {
-    if (!profile?.examEligibleAt) return null
-    return daysBetween(new Date(), profile.examEligibleAt)
-  }, [profile?.examEligibleAt])
-
   async function flushPoints(tripId, orgId) {
     const batch = pointBufferRef.current
     const id = tripId || activeTripRef.current?.id
@@ -406,7 +396,7 @@ export default function AacPanel({
         return
       }
 
-      const fix = await acquireAccuratePosition()
+      const fix = await traceGpsAwait(acquireAccuratePosition(), 'acquireAccuratePosition', 80000)
       if (startTokenRef.current !== token) return
       if (fix.weak) {
         setGpsStatus('weak')
@@ -445,10 +435,11 @@ export default function AacPanel({
         }
       }
     } finally {
-      if (startTokenRef.current === token) {
-        setSaving(false)
-        console.log('[AAC-GPS] saving =', false)
-      }
+      // « Acquisition GPS… » dépend de saving : il doit toujours se terminer,
+      // même si une action plus récente (arrêt, nouveau départ) a pris la main
+      // sur l'état du trajet entre-temps.
+      setSaving(false)
+      console.log('[AAC-GPS] saving =', false)
     }
   }
 
@@ -705,72 +696,22 @@ export default function AacPanel({
         </div>
       )}
 
-      <section className="lesson-glass p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-slate-500">Progression globale</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{progress?.percent || 0}%</p>
-            <p className="mt-1 text-sm text-slate-500">
-              {Math.round(progress?.km || 0)} km sur {progress?.target || 3000} km
-            </p>
-          </div>
-          <span className={`w-fit rounded-full border border-white/80 px-3 py-1 text-xs font-medium ${statusTone(profile.status)}`}>
-            {statusLabel(profile.status)}
-          </span>
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/70">
-          <div
-            className="h-full rounded-full bg-sky-300/90 transition-all duration-500"
-            style={{ width: `${Math.min(100, progress?.percent || 0)}%` }}
-          />
-        </div>
+      <AacJourneyCard
+        examEligibleAt={profile.examEligibleAt}
+        ffiAt={bundle?.ffi?.sentAt || bundle?.ffi?.createdAt || null}
+        progress={progress}
+        rvp={rvp}
+        rvpCompleted={countMandatoryRvpCompleted(rvp)}
+        rvpRequired={AAC_REQUIRED_RVP_COUNT}
+        startedAt={profile.startedAt}
+        statusText={statusLabel(profile.status)}
+        tripActive={tripActive && !isStaff}
+        tripCount={profile.tripCount || 0}
+      />
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat
-            detail={`sur ${progress?.target || 3000} km`}
-            label="Parcourus"
-            value={`${Math.round(progress?.km || 0)} km`}
-          />
-          <Stat
-            detail="avant l’objectif"
-            label="Restants"
-            value={`${Math.round(progress?.remaining || 0)} km`}
-          />
-          <Stat
-            detail="terminés"
-            label="Trajets"
-            value={String(profile.tripCount || 0)}
-          />
-          <Stat
-            detail="obligatoires"
-            label="Rendez-vous"
-            value={`${countMandatoryRvpCompleted(rvp)}/${AAC_REQUIRED_RVP_COUNT}`}
-          />
-        </div>
-
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/70 pt-4 text-sm lg:grid-cols-4">
-            <div>
-              <dt className="text-xs text-slate-400">Début</dt>
-              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.startedAt)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Jours écoulés</dt>
-              <dd className="mt-0.5 tabular-nums text-slate-800">{daysElapsed ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Jours avant un an</dt>
-              <dd className="mt-0.5 tabular-nums text-slate-800">
-                {daysToEligible == null ? '—' : Math.max(0, daysToEligible)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400">Examen possible le</dt>
-              <dd className="mt-0.5 text-slate-800">{formatDateFr(profile.examEligibleAt)}</dd>
-            </div>
-          </dl>
-
-        {isStaff && (
-          <form className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/60 pt-4" onSubmit={saveStartDate}>
+      {isStaff && (
+        <section className="lesson-glass p-5">
+          <form className="flex flex-wrap items-end gap-3" onSubmit={saveStartDate}>
             <label className="text-sm font-medium text-slate-700">
               Date d’entrée
               <input
@@ -798,8 +739,8 @@ export default function AacPanel({
               </button>
             )}
           </form>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="lesson-glass p-4 sm:p-5">
             <h3 className="text-base font-semibold text-slate-900">Conditions pour l’examen</h3>
@@ -955,8 +896,6 @@ export default function AacPanel({
             </div>
           )}
 
-          {tripActive && <AacTripMap className="mt-4" path={livePoints} />}
-
           {lastTripSummary && (
             <div className="mt-6 border-t border-white/70 pt-4">
               <p className="mb-3 text-sm text-slate-500">Dernier trajet</p>
@@ -1042,16 +981,6 @@ export default function AacPanel({
   )
 }
 
-function Stat({ label, value, detail }) {
-  return (
-    <div className="lesson-chip min-w-0 px-3 py-3">
-      <p className="text-xs font-medium text-sky-800/70">{label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
-      {detail ? <p className="mt-0.5 text-xs text-slate-500">{detail}</p> : null}
-    </div>
-  )
-}
-
 function KpiLight({ label, value }) {
   return (
     <div className="lesson-chip px-3 py-3">
@@ -1059,11 +988,6 @@ function KpiLight({ label, value }) {
       <p className="text-xs text-sky-800/70">{label}</p>
     </div>
   )
-}
-
-function statusTone(status) {
-  if (status === 'conditions_remplies' || status === 'terminee') return 'bg-emerald-50/80 text-emerald-800'
-  return 'bg-sky-50/70 text-sky-800'
 }
 
 function emptyRvp(sequence) {
@@ -1243,7 +1167,6 @@ function TripRecap({ trip }) {
         {formatClock(trip.startedAt)} – {formatClock(trip.endedAt)}
       </p>
       </div>
-      <AacTripMap path={trip.pathSummary} />
     </article>
   )
 }

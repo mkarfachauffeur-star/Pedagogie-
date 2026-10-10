@@ -156,7 +156,7 @@ export async function getAacBundle(studentId) {
       profile?.ffi_document_id
         ? supabase
             .from('documents')
-            .select('id, file_name, storage_path, storage_bucket, type, status')
+            .select('id, file_name, storage_path, storage_bucket, type, status, sent_at, created_at')
             .eq('id', profile.ffi_document_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -182,7 +182,7 @@ export async function getAacBundle(studentId) {
         trips,
         activeTrip,
         ffi: ffi
-          ? { ...ffi, url: ffiUrl }
+          ? { ...ffi, url: ffiUrl, sentAt: ffi.sent_at || null, createdAt: ffi.created_at || null }
           : null,
       },
       error: null,

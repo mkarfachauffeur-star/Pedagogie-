@@ -1907,3 +1907,57 @@ html.capacitor-ios .pd-main-content {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Parcours AAC : drapeau à damier et animations légères de progression.
+   Transform/opacity uniquement, pour rester fluide dans le WKWebView iPhone. */
+.aac-flag-checker {
+  background-image: conic-gradient(#0f172a 25%, #f8fafc 0 50%, #0f172a 0 75%, #f8fafc 0);
+  background-size: 7px 7px;
+}
+
+@keyframes aac-journey-tip-ring {
+  0% { box-shadow: 0 0 0 0 rgba(125, 211, 252, 0.85), 0 0 14px rgba(125, 211, 252, 0.9); }
+  100% { box-shadow: 0 0 0 14px rgba(125, 211, 252, 0), 0 0 14px rgba(125, 211, 252, 0.9); }
+}
+
+.aac-journey-tip-pulse {
+  animation: aac-journey-tip-ring 0.85s ease-out 2;
+}
+
+@keyframes aac-journey-fill-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.35); }
+}
+
+.aac-journey-fill-pulse {
+  animation: aac-journey-fill-glow 0.85s ease-in-out 2;
+}
+
+@keyframes aac-journey-number-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+.aac-journey-number-pulse {
+  animation: aac-journey-number-pop 0.6s ease-out 1;
+  transform-origin: left bottom;
+}
+
+@keyframes aac-journey-chip-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.45); }
+}
+
+.aac-journey-chip-pulse {
+  animation: aac-journey-chip-glow 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-journey-tip-pulse,
+  .aac-journey-fill-pulse,
+  .aac-journey-number-pulse,
+  .aac-journey-chip-pulse {
+    animation: none;
+  }
+}
