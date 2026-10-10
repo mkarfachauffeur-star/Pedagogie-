@@ -30,6 +30,7 @@ export const LOCATION_STATUS_MESSAGES = {
   timeout: 'Le GPS n’a pas obtenu de position à temps. Placez-vous à l’extérieur, le ciel dégagé, puis réessayez.',
   weak: 'Signal GPS trop imprécis pour démarrer. Sortez du bâtiment et attendez une précision inférieure à 80 m.',
   inaccurate: 'Signal GPS imprécis pour le moment. Le trajet reste ouvert : aucun kilomètre n’est ajouté tant que la précision ne redevient pas suffisante, et les kilomètres du trajet reprennent ensuite sans rien inventer.',
+  reducedAccuracy: 'La localisation précise est désactivée pour Pedagogia Drive : iOS ne fournira jamais une précision suffisante pour mesurer les kilomètres. Dans Réglages > Pedagogia Drive > Localisation, activez « Localisation précise », puis relancez le trajet.',
 }
 
 function toPosition(coords, timestamp) {
@@ -176,15 +177,16 @@ function tripPluginFrom(loaded) {
 
 export function accessFromNative(result) {
   const scope = result?.scope || 'prompt'
-  if (scope === 'disabled') return { granted: false, status: 'servicesDisabled', scope, background: false }
-  if (scope === 'restricted') return { granted: false, status: 'restricted', scope, background: false }
+  const accuracyAuthorization = result?.accuracyAuthorization || ''
+  if (scope === 'disabled') return { granted: false, status: 'servicesDisabled', scope, background: false, accuracyAuthorization }
+  if (scope === 'restricted') return { granted: false, status: 'restricted', scope, background: false, accuracyAuthorization }
   if (scope === 'denied' || result?.location === 'denied') {
-    return { granted: false, status: 'denied', scope: 'denied', background: false }
+    return { granted: false, status: 'denied', scope: 'denied', background: false, accuracyAuthorization }
   }
   if (result?.location === 'granted') {
-    return { granted: true, status: 'granted', scope, background: Boolean(result.background) || scope === 'always' || scope === 'whenInUse' }
+    return { granted: true, status: 'granted', scope, background: Boolean(result.background) || scope === 'always' || scope === 'whenInUse', accuracyAuthorization }
   }
-  return { granted: false, status: 'prompt', scope, background: false }
+  return { granted: false, status: 'prompt', scope, background: false, accuracyAuthorization }
 }
 
 function normalizeNativePoint(point) {
@@ -194,6 +196,7 @@ function normalizeNativePoint(point) {
     accuracy: point.accuracy == null ? null : Number(point.accuracy),
     timestamp: Number(point.timestamp) || Date.now(),
     sequenceNo: point.sequenceNo == null ? undefined : Number(point.sequenceNo),
+    accuracyAuthorization: point.accuracyAuthorization || null,
   }
 }
 
@@ -449,10 +452,18 @@ function watchIosTrip(onUpdate, onError, options) {
     trace('13 start terminé')
     gpsLog('AacTripLocation.start retour')
     await pull()
-    const locationHandle = await plugin.addListener('location', (point) => emit(point))
-    const errorHandle = await plugin.addListener('error', (payload) => {
-      if (!stopped) onError?.(toLocationError(payload, 'Erreur GPS'))
-    })
+    const locationHandle = await traceGpsAwait(
+      plugin.addListener('location', (point) => emit(point)),
+      'addListener(location)',
+      8000,
+    )
+    const errorHandle = await traceGpsAwait(
+      plugin.addListener('error', (payload) => {
+        if (!stopped) onError?.(toLocationError(payload, 'Erreur GPS'))
+      }),
+      'addListener(error)',
+      8000,
+    )
     removeListeners = async () => {
       await locationHandle?.remove?.()
       await errorHandle?.remove?.()
@@ -478,9 +489,9 @@ function watchIosTrip(onUpdate, onError, options) {
     drainTimer = null
     if (endNative && plugin) {
       try {
-        const drained = await plugin.drain()
+        const drained = await traceGpsAwait(plugin.drain(), 'drain(final)', 8000)
         for (const point of drained?.points || []) onUpdate(normalizeNativePoint(point))
-        await plugin.stop()
+        await traceGpsAwait(plugin.stop(), 'stop', 8000)
       } catch {
         // Un drain final en échec ne doit pas bloquer la clôture du trajet :
         // les points déjà remontés restent dans le tampon JS.

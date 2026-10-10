@@ -333,7 +333,11 @@ export default function AacPanel({
           `distance=${(verdict.distanceKm || 0).toFixed(3)} km`,
         )
         if (document.visibilityState === 'visible') {
-          setGpsStatus(!verdict.accepted && verdict.reason === 'accuracy' ? 'inaccurate' : 'tracking')
+          if (!verdict.accepted && verdict.reason === 'accuracy') {
+            setGpsStatus(pos.accuracyAuthorization === 'reduced' ? 'reducedAccuracy' : 'inaccurate')
+          } else {
+            setGpsStatus('tracking')
+          }
         }
         if (pointBufferRef.current.length >= 4) void flushPoints(trip.id, orgId)
       },
@@ -415,6 +419,13 @@ export default function AacPanel({
         setError(LOCATION_STATUS_MESSAGES[access.status] || LOCATION_STATUS_MESSAGES.prompt)
         return
       }
+      // Précision approximative activée côté iOS : inutile d'attendre un fix,
+      // aucune position ne passera le seuil de mesure. Message actionnable.
+      if (access.accuracyAuthorization === 'reduced') {
+        setGpsStatus('reducedAccuracy')
+        setError(LOCATION_STATUS_MESSAGES.reducedAccuracy)
+        return
+      }
 
       const fix = await traceGpsAwait(acquireAccuratePosition(), 'acquireAccuratePosition', 80000)
       if (startTokenRef.current !== token) return
@@ -479,7 +490,7 @@ export default function AacPanel({
     try {
       let trip = activeTripRef.current || bundle?.activeTrip
       if (!trip?.id && studentId) {
-        const found = await getActiveAacTrip(studentId)
+        const found = await traceGpsAwait(getActiveAacTrip(studentId), 'getActiveAacTrip', 15000)
         if (found.error) throw found.error
         trip = found.trip
       }
@@ -494,18 +505,24 @@ export default function AacPanel({
       }
 
       const orgId = organizationId || bundle?.student?.organization_id || trip.organizationId
-      await flushPoints(trip.id, orgId)
+      // Chaque attente est bornée : en zone sans réseau, l'arrêt doit se
+      // terminer (erreur explicite) au lieu de rester sur « Arrêt du trajet… ».
+      await traceGpsAwait(flushPoints(trip.id, orgId), 'flushPoints(stop)', 20000)
 
       const measured = measureTrack(pointsRef.current)
       const details = detailsRef.current
-      const { trip: completed, error: stopError } = await completeAacTrip(trip.id, studentId, {
-        points: pointsRef.current,
-        distanceKm: measured.distanceKm,
-        startedAt: trip.startedAt,
-        mandatoryRvp: details.mandatoryRvp,
-        extraRvp: details.extraRvp,
-        drivingConditions: details.drivingConditions,
-      })
+      const { trip: completed, error: stopError } = await traceGpsAwait(
+        completeAacTrip(trip.id, studentId, {
+          points: pointsRef.current,
+          distanceKm: measured.distanceKm,
+          startedAt: trip.startedAt,
+          mandatoryRvp: details.mandatoryRvp,
+          extraRvp: details.extraRvp,
+          drivingConditions: details.drivingConditions,
+        }),
+        'completeAacTrip',
+        25000,
+      )
       if (stopError) throw stopError
 
       activeTripRef.current = null
@@ -769,7 +786,7 @@ export default function AacPanel({
                 Précision ± {Math.round(lastAccuracy)} m · {livePoints.length} position{livePoints.length > 1 ? 's' : ''}
               </p>
             )}
-            {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled'].includes(gpsStatus) && (
+            {canOpenLocationSettings() && ['denied', 'restricted', 'servicesDisabled', 'reducedAccuracy'].includes(gpsStatus) && (
               <button
                 className="mt-3 rounded-xl border border-sky-300/40 bg-sky-400/15 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-400/25"
                 onClick={openLocationSettings}
@@ -1041,7 +1058,7 @@ function gpsStatusClass(status) {
   if (status === 'paused' || status === 'acquiring' || status === 'weak' || status === 'timeout' || status === 'inaccurate') {
     return 'border-amber-300/40 bg-amber-400/15 text-amber-100'
   }
-  if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable') {
+  if (status === 'denied' || status === 'restricted' || status === 'servicesDisabled' || status === 'unavailable' || status === 'reducedAccuracy') {
     return 'border-rose-300/40 bg-rose-400/15 text-rose-100'
   }
   return 'border-white/15 bg-white/5 text-sky-50'

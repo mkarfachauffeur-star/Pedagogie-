@@ -36,6 +36,7 @@ test('accessFromNative : Toujours → suivi arrière-plan disponible', () => {
     status: 'granted',
     scope: 'always',
     background: true,
+    accuracyAuthorization: '',
   })
 })
 
@@ -62,6 +63,15 @@ test('accessFromNative : indéterminé → prompt', () => {
   const access = accessFromNative({ location: 'prompt', scope: 'prompt' })
   assert.equal(access.granted, false)
   assert.equal(access.status, 'prompt')
+})
+
+test('accessFromNative : accuracyAuthorization est transmis au JS', () => {
+  const reduced = accessFromNative({ location: 'granted', scope: 'always', background: true, accuracyAuthorization: 'reduced' })
+  assert.equal(reduced.accuracyAuthorization, 'reduced')
+  const full = accessFromNative({ location: 'granted', scope: 'always', background: true, accuracyAuthorization: 'full' })
+  assert.equal(full.accuracyAuthorization, 'full')
+  const absent = accessFromNative({ location: 'granted', scope: 'always', background: true })
+  assert.equal(absent.accuracyAuthorization, '')
 })
 
 test('classifyLocationError : codes et messages natifs vers les statuts UI', () => {

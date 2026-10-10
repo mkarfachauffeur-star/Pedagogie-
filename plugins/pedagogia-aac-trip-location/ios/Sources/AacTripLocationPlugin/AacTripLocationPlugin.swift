@@ -138,6 +138,17 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
 
+    /// Précision approximative (reducedAccuracy) : iOS ne livrera jamais la
+    /// précision requise pour mesurer des kilomètres. Le JS doit pouvoir
+    /// l'afficher explicitement au lieu de rester à 0 km sans explication.
+    private func accuracyAuthLabel(_ manager: CLLocationManager) -> String {
+        switch manager.accuracyAuthorization {
+        case .fullAccuracy: return "full"
+        case .reducedAccuracy: return "reduced"
+        @unknown default: return "unknown(\(manager.accuracyAuthorization.rawValue))"
+        }
+    }
+
     /// CLLocationManager n’est utilisé que sur le fil principal, celui qui l’a créé.
     private func onMain(_ work: @escaping () -> Void) {
         if Thread.isMainThread {
@@ -446,7 +457,7 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         for location in locations {
-            let line = String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+            let line = String(format: "didUpdateLocations lat=%.6f lng=%.6f accuracy=%.1f accuracyAuthorization=%@", location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy, accuracyAuthLabel(manager))
             logGps(line)
             nativeLog(line)
             if !loggedFirstNativeFix && location.horizontalAccuracy >= 0 {
@@ -624,7 +635,8 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             "lng": location.coordinate.longitude,
             "accuracy": location.horizontalAccuracy,
             "timestamp": location.timestamp.timeIntervalSince1970 * 1000,
-            "sequenceNo": sequenceNo
+            "sequenceNo": sequenceNo,
+            "accuracyAuthorization": accuracyAuthLabel(gps)
         ]
     }
 
@@ -672,7 +684,8 @@ public class AacTripLocationPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
             "location": granted ? "granted" : (scope == "prompt" ? "prompt" : "denied"),
             "scope": scope,
             "background": background,
-            "tracking": tracking
+            "tracking": tracking,
+            "accuracyAuthorization": accuracyAuthLabel(gps)
         ]
     }
 
